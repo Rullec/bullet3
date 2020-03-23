@@ -33,6 +33,8 @@ public:
 
 	virtual int getNumJoints(int bodyUniqueId) const = 0;
 
+	virtual int getNumDofs(int bodyUniqueId) const = 0;
+
 	virtual bool getJointInfo(int bodyUniqueId, int jointIndex, struct b3JointInfo& info) const = 0;
 
 	virtual int getNumUserConstraints() const = 0;
@@ -62,6 +64,8 @@ public:
 	virtual void getCachedVisualShapeInformation(struct b3VisualShapeInformation* visualShapesInfo) = 0;
 
 	virtual void getCachedCollisionShapeInformation(struct b3CollisionShapeInformation* collisionShapesInfo) = 0;
+
+	virtual void getCachedMeshData(struct b3MeshData* meshData) = 0;
 
 	virtual void getCachedVREvents(struct b3VREventsData* vrEventsData) = 0;
 

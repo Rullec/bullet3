@@ -243,6 +243,10 @@ public:
 	int addUserForce(const int body_index, const vec3& body_force);
 	/// \copydoc MultiBodyTree::addUserMoment
 	int addUserMoment(const int body_index, const vec3& body_moment);
+	/// get user force
+	int getUserForce(const int body_index, vec3 &) const;
+	/// get user moment
+	int getUserMoment(const int body_index, vec3 &) const;
 
 private:
 	// debug function. print tree structure to stdout

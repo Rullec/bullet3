@@ -348,6 +348,14 @@ public:
 	/// @param body_moment the moment represented in the body-fixed frame of reference
 	/// @return 0 on success, -1 on error
 	int addUserMoment(const int body_index, const vec3& body_moment);
+	/// Get the total external force to a body
+	/// @param body_force the force applied to this body by user, expressed in body-fixed frame
+	/// @return 0 on succ, -1 on error
+	int getUserForce(int body_index, vec3 & body_force) const;
+	/// Get the total external moment to a body
+	/// @param body_force the moment applied to this body by user, expressed in body-fixed frame
+	/// @return 0 on succ, -1 on error
+	int getUserMoment(int body_index, vec3 & body_moment) const;
 
 private:
 	// flag indicating if system has been initialized

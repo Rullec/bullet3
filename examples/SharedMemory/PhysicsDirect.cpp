@@ -22,6 +22,7 @@ struct BodyJointInfoCache2
 	btAlignedObjectArray<b3JointInfo> m_jointInfo;
 	std::string m_bodyName;
 	btAlignedObjectArray<int> m_userDataIds;
+	int m_numDofs;
 
 	~BodyJointInfoCache2()
 	{
@@ -65,6 +66,9 @@ struct PhysicsDirectInternalData
 	btAlignedObjectArray<b3VisualShapeData> m_cachedVisualShapes;
 	btAlignedObjectArray<b3CollisionShapeData> m_cachedCollisionShapes;
 
+	b3MeshData m_cachedMeshData;
+	btAlignedObjectArray<b3MeshVertex> m_cachedVertexPositions;
+
 	btAlignedObjectArray<b3VRControllerEvent> m_cachedVREvents;
 
 	btAlignedObjectArray<b3KeyboardEvent> m_cachedKeyboardEvents;
@@ -90,6 +94,7 @@ struct PhysicsDirectInternalData
 		  m_ownsCommandProcessor(false),
 		  m_timeOutInSeconds(1e30)
 	{
+		memset(&m_cachedMeshData.m_numVertices, 0, sizeof(b3MeshData));
 		memset(&m_command, 0, sizeof(m_command));
 		memset(&m_serverStatus, 0, sizeof(m_serverStatus));
 		memset(m_bulletStreamDataServerToClient, 0, sizeof(m_bulletStreamDataServerToClient));
@@ -585,6 +590,77 @@ bool PhysicsDirect::processCamera(const struct SharedMemoryCommand& orgCommand)
 	return m_data->m_hasStatus;
 }
 
+bool PhysicsDirect::processMeshData(const struct SharedMemoryCommand& orgCommand)
+{
+	SharedMemoryCommand command = orgCommand;
+
+	const SharedMemoryStatus& serverCmd = m_data->m_serverStatus;
+	do
+	{
+		bool hasStatus = m_data->m_commandProcessor->processCommand(command, m_data->m_serverStatus, &m_data->m_bulletStreamDataServerToClient[0], SHARED_MEMORY_MAX_STREAM_CHUNK_SIZE);
+
+		b3Clock clock;
+		double startTime = clock.getTimeInSeconds();
+		double timeOutInSeconds = m_data->m_timeOutInSeconds;
+
+		while ((!hasStatus) && (clock.getTimeInSeconds() - startTime < timeOutInSeconds))
+		{
+			const SharedMemoryStatus* stat = processServerStatus();
+			if (stat)
+			{
+				hasStatus = true;
+			}
+		}
+
+		m_data->m_hasStatus = hasStatus;
+		if (hasStatus)
+		{
+			btAssert(m_data->m_serverStatus.m_type == CMD_REQUEST_MESH_DATA_COMPLETED);
+
+			if (m_data->m_verboseOutput)
+			{
+				b3Printf("Mesh data OK\n");
+			}
+
+			const b3SendMeshDataArgs& args = serverCmd.m_sendMeshDataArgs;
+			int numTotalPixels = args.m_startingVertex +
+								 args.m_numVerticesCopied + args.m_numVerticesRemaining;
+
+			btVector3* verticesReceived =
+				(btVector3*)&m_data->m_bulletStreamDataServerToClient[0];
+
+			
+			m_data->m_cachedVertexPositions.resize(args.m_startingVertex +
+													args.m_numVerticesCopied);
+
+			for (int i = 0; i < args.m_numVerticesCopied; i++)
+			{
+				m_data->m_cachedVertexPositions[i + args.m_startingVertex].x = verticesReceived[i].x();
+				m_data->m_cachedVertexPositions[i + args.m_startingVertex].y = verticesReceived[i].y();
+				m_data->m_cachedVertexPositions[i + args.m_startingVertex].z = verticesReceived[i].z();
+				m_data->m_cachedVertexPositions[i + args.m_startingVertex].w = verticesReceived[i].w();
+			}
+
+			if (args.m_numVerticesRemaining > 0 && args.m_numVerticesCopied)
+			{
+				m_data->m_hasStatus = false;
+
+				// continue requesting remaining vertices
+				command.m_type = CMD_REQUEST_MESH_DATA;
+				command.m_requestMeshDataArgs.m_startingVertex =
+					args.m_startingVertex + args.m_numVerticesCopied;
+			}
+			else
+			{
+				m_data->m_cachedMeshData.m_numVertices = args.m_startingVertex +
+														 args.m_numVerticesCopied;
+			}
+		}
+	} while (serverCmd.m_sendMeshDataArgs.m_numVerticesRemaining > 0 && serverCmd.m_sendMeshDataArgs.m_numVerticesCopied);
+
+	return m_data->m_hasStatus;
+}
+
 void PhysicsDirect::processBodyJointInfo(int bodyUniqueId, const SharedMemoryStatus& serverCmd)
 {
 	BodyJointInfoCache2** cachePtr = m_data->m_bodyJointMap[bodyUniqueId];
@@ -882,7 +958,6 @@ void PhysicsDirect::postProcessStatus(const struct SharedMemoryStatus& serverCmd
 				b3Clock clock;
 				double startTime = clock.getTimeInSeconds();
 				double timeOutInSeconds = m_data->m_timeOutInSeconds;
-
 				while ((!hasStatus) && (clock.getTimeInSeconds() - startTime < timeOutInSeconds))
 				{
 					hasStatus = m_data->m_commandProcessor->receiveStatus(m_data->m_tmpInfoStatus, &m_data->m_bulletStreamDataServerToClient[0], SHARED_MEMORY_MAX_STREAM_CHUNK_SIZE);
@@ -957,6 +1032,7 @@ void PhysicsDirect::postProcessStatus(const struct SharedMemoryStatus& serverCmd
 			b3Warning("createVisualShape failed");
 			break;
 		}
+
 		case CMD_CREATE_VISUAL_SHAPE_COMPLETED:
 		{
 			break;
@@ -976,7 +1052,15 @@ void PhysicsDirect::postProcessStatus(const struct SharedMemoryStatus& serverCmd
 			b3Warning("Request getCollisionInfo failed");
 			break;
 		}
-
+	  case CMD_REQUEST_MESH_DATA_COMPLETED:
+		{
+			break;
+		}
+		case CMD_REQUEST_MESH_DATA_FAILED:
+		{
+			b3Warning("Request mesh data failed");
+			break;
+		}
 		case CMD_CUSTOM_COMMAND_COMPLETED:
 		{
 			break;
@@ -1078,7 +1162,12 @@ void PhysicsDirect::postProcessStatus(const struct SharedMemoryStatus& serverCmd
 		}
 		case CMD_LOAD_SOFT_BODY_COMPLETED:
 		{
-			break;
+                       int bodyUniqueId = serverCmd.m_loadSoftBodyResultArguments.m_objectUniqueId;
+                       BodyJointInfoCache2* bodyJoints = new BodyJointInfoCache2;
+                       m_data->m_bodyJointMap.insert(bodyUniqueId, bodyJoints);
+                       bodyJoints->m_bodyName = serverCmd.m_dataStreamArguments.m_bodyName;
+                       bodyJoints->m_baseName = "baseLink";
+                       break;
 		}
 		case CMD_SYNC_USER_DATA_FAILED:
 		{
@@ -1158,6 +1247,14 @@ void PhysicsDirect::postProcessStatus(const struct SharedMemoryStatus& serverCmd
 			}
 			break;
 		}
+		case CMD_REMOVE_STATE_FAILED:
+		{
+			break;
+		}
+		case CMD_REMOVE_STATE_COMPLETED:
+		{
+			break;
+		}
 		default:
 		{
 			//b3Warning("Unknown server status type");
@@ -1187,6 +1284,11 @@ bool PhysicsDirect::submitClientCommand(const struct SharedMemoryCommand& comman
 	if (command.m_type == CMD_REQUEST_AABB_OVERLAP)
 	{
 		return processOverlappingObjects(command);
+	}
+
+  if (command.m_type == CMD_REQUEST_MESH_DATA)
+	{
+		return processMeshData(command);
 	}
 
 	bool hasStatus = m_data->m_commandProcessor->processCommand(command, m_data->m_serverStatus, &m_data->m_bulletStreamDataServerToClient[0], SHARED_MEMORY_MAX_STREAM_CHUNK_SIZE);
@@ -1275,9 +1377,9 @@ bool PhysicsDirect::getBodyInfo(int bodyUniqueId, struct b3BodyInfo& info) const
 	return false;
 }
 
-int PhysicsDirect::getNumJoints(int bodyIndex) const
+int PhysicsDirect::getNumJoints(int bodyUniqueId) const
 {
-	BodyJointInfoCache2** bodyJointsPtr = m_data->m_bodyJointMap[bodyIndex];
+	BodyJointInfoCache2** bodyJointsPtr = m_data->m_bodyJointMap[bodyUniqueId];
 	if (bodyJointsPtr && *bodyJointsPtr)
 	{
 		BodyJointInfoCache2* bodyJoints = *bodyJointsPtr;
@@ -1285,6 +1387,18 @@ int PhysicsDirect::getNumJoints(int bodyIndex) const
 	}
 	btAssert(0);
 	return 0;
+}
+
+int PhysicsDirect::getNumDofs(int bodyUniqueId) const
+{
+        BodyJointInfoCache2** bodyJointsPtr = m_data->m_bodyJointMap[bodyUniqueId];
+        if (bodyJointsPtr && *bodyJointsPtr)
+        {
+                BodyJointInfoCache2* bodyJoints = *bodyJointsPtr;
+                return bodyJoints->m_numDofs;
+        }
+        btAssert(0);
+        return 0;
 }
 
 bool PhysicsDirect::getJointInfo(int bodyIndex, int jointIndex, struct b3JointInfo& info) const
@@ -1414,6 +1528,15 @@ void PhysicsDirect::getCachedCameraImage(b3CameraImageData* cameraData)
 	}
 }
 
+void PhysicsDirect::getCachedMeshData(struct b3MeshData* meshData)
+{
+	m_data->m_cachedMeshData.m_numVertices = m_data->m_cachedVertexPositions.size();
+
+	m_data->m_cachedMeshData.m_vertices = m_data->m_cachedMeshData.m_numVertices ? &m_data->m_cachedVertexPositions[0] : 0;
+
+	*meshData = m_data->m_cachedMeshData;
+}
+
 void PhysicsDirect::getCachedContactPointInformation(struct b3ContactInformation* contactPointData)
 {
 	contactPointData->m_numContactPoints = m_data->m_cachedContactPoints.size();
@@ -1520,7 +1643,7 @@ int PhysicsDirect::getNumUserData(int bodyUniqueId) const
 void PhysicsDirect::getUserDataInfo(int bodyUniqueId, int userDataIndex, const char** keyOut, int* userDataIdOut, int* linkIndexOut, int* visualShapeIndexOut) const
 {
 	BodyJointInfoCache2** bodyJointsPtr = m_data->m_bodyJointMap[bodyUniqueId];
-	if (!bodyJointsPtr || !(*bodyJointsPtr) || userDataIndex <= 0 || userDataIndex > (*bodyJointsPtr)->m_userDataIds.size())
+	if (!bodyJointsPtr || !(*bodyJointsPtr) || userDataIndex < 0 || userDataIndex > (*bodyJointsPtr)->m_userDataIds.size())
 	{
 		*keyOut = 0;
 		*userDataIdOut = -1;

@@ -65,7 +65,7 @@ public:
 	virtual ~btMultiBody();
 
 	//note: fixed link collision with parent is always disabled
-	void setupFixed(int linkIndex,
+	void setupFixed(int i, //linkIndex
 					btScalar mass,
 					const btVector3 &inertia,
 					int parent,
@@ -83,7 +83,7 @@ public:
 						const btVector3 &thisPivotToThisComOffset,
 						bool disableParentCollision);
 
-	void setupRevolute(int linkIndex,  // 0 to num_links-1
+	void setupRevolute(int i,  // 0 to num_links-1
 					   btScalar mass,
 					   const btVector3 &inertia,
 					   int parentIndex,
@@ -93,7 +93,7 @@ public:
 					   const btVector3 &thisPivotToThisComOffset,    // vector from joint axis to my COM, in MY frame
 					   bool disableParentCollision = false);
 
-	void setupSpherical(int linkIndex,  // 0 to num_links-1
+	void setupSpherical(int i,  // linkIndex, 0 to num_links-1
 						btScalar mass,
 						const btVector3 &inertia,
 						int parent,
@@ -277,15 +277,15 @@ public:
 	//
 	// transform vectors in local frame of link i to world frame (or vice versa)
 	//
-	btVector3 localPosToWorld(int i, const btVector3 &vec) const;
-	btVector3 localDirToWorld(int i, const btVector3 &vec) const;
-	btVector3 worldPosToLocal(int i, const btVector3 &vec) const;
-	btVector3 worldDirToLocal(int i, const btVector3 &vec) const;
+	btVector3 localPosToWorld(int i, const btVector3 &local_pos) const;
+	btVector3 localDirToWorld(int i, const btVector3 &local_dir) const;
+	btVector3 worldPosToLocal(int i, const btVector3 &world_pos) const;
+	btVector3 worldDirToLocal(int i, const btVector3 &world_dir) const;
 
 	//
 	// transform a frame in local coordinate to a frame in world coordinate
 	//
-	btMatrix3x3 localFrameToWorld(int i, const btMatrix3x3 &mat) const;
+	btMatrix3x3 localFrameToWorld(int i, const btMatrix3x3 &local_frame) const;
 
 	//
 	// calculate kinetic energy and angular momentum
@@ -319,13 +319,16 @@ public:
 	void addBaseConstraintTorque(const btVector3 &t) { m_baseConstraintTorque += t; }
 	void addLinkConstraintForce(int i, const btVector3 &f);
 	void addLinkConstraintTorque(int i, const btVector3 &t);
-
+	
+	// add joint torque: in local frame
 	void addJointTorque(int i, btScalar Q);
 	void addJointTorqueMultiDof(int i, int dof, btScalar Q);
 	void addJointTorqueMultiDof(int i, const btScalar *Q);
 
 	const btVector3 &getBaseForce() const { return m_baseForce; }
 	const btVector3 &getBaseTorque() const { return m_baseTorque; }
+	const btVector3 & getBaseConstraintedForce() const { return m_baseConstraintForce; }
+	const btVector3 & getBaseConstraintedTorque() const { return m_baseConstraintTorque; }
 	const btVector3 &getLinkForce(int i) const;
 	const btVector3 &getLinkTorque(int i) const;
 	btScalar getJointTorque(int i) const;
@@ -348,7 +351,7 @@ public:
 	// allocation appears to be fairly slow).
 	//
 
-	void computeAccelerationsArticulatedBodyAlgorithmMultiDof(btScalar dt,
+	virtual void computeAccelerationsArticulatedBodyAlgorithmMultiDof(btScalar dt,
 															  btAlignedObjectArray<btScalar> & scratch_r,
 															  btAlignedObjectArray<btVector3> & scratch_v,
 															  btAlignedObjectArray<btMatrix3x3> & scratch_m,
@@ -576,11 +579,11 @@ public:
 	{
 		return m_internalNeedsJointFeedback;
 	}
-	void forwardKinematics(btAlignedObjectArray<btQuaternion> & scratch_q, btAlignedObjectArray<btVector3> & scratch_m);
+	void forwardKinematics(btAlignedObjectArray<btQuaternion>& world_to_local, btAlignedObjectArray<btVector3> & local_origin);
 
 	void compTreeLinkVelocities(btVector3 * omega, btVector3 * vel) const;
 
-	void updateCollisionObjectWorldTransforms(btAlignedObjectArray<btQuaternion> & scratch_q, btAlignedObjectArray<btVector3> & scratch_m);
+	void updateCollisionObjectWorldTransforms(btAlignedObjectArray<btQuaternion> & world_to_local, btAlignedObjectArray<btVector3> & local_origin);
 
 	virtual int calculateSerializeBufferSize() const;
 
@@ -636,9 +639,28 @@ public:
 		btVector3 &top_out,         // top part of output vector
 		btVector3 &bottom_out);      // bottom part of output vector
 
+	const btAlignedObjectArray<btScalar>& getRealBuf() const
+	{
+		return m_realBuf;
+	}
 
+	void setRealBuf(const btAlignedObjectArray<btScalar> realbuf)
+	{
+		btAssert(realbuf.size() == m_realBuf.size());
+		m_realBuf = realbuf;
+	}
 
-private:
+	const btAlignedObjectArray<btScalar>& getDeltaV() const
+	{
+		return m_deltaV;
+	}
+
+	void clearDeltaV()
+	{
+		for (int i = 0; i < m_deltaV.size(); i++) m_deltaV[i] = 0;
+	}
+
+protected:
 	btMultiBody(const btMultiBody &);     // not implemented
 	void operator=(const btMultiBody &);  // not implemented
 
@@ -659,7 +681,7 @@ private:
 
 	void mulMatrix(btScalar * pA, btScalar * pB, int rowsA, int colsA, int rowsB, int colsB, btScalar *pC) const;
 
-private:
+protected:
 	btMultiBodyLinkCollider *m_baseCollider;  //can be NULL
 	const char *m_baseName;                   //memory needs to be manager by user!
 

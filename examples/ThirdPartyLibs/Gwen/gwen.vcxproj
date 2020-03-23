@@ -1,0 +1,448 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|x64">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|x64">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{12541EFB-BC2C-3CD4-BDEB-1F33C27DEB6E}</ProjectGuid>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
+    <Keyword>Win32Proj</Keyword>
+    <Platform>x64</Platform>
+    <ProjectName>gwen</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\VS2017Projects\bullet3-master\lib\Debug\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gwen.dir\Debug\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gwen_Debug</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\VS2017Projects\bullet3-master\lib\Release\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gwen.dir\Release\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gwen</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\VS2017Projects\bullet3-master\lib\MinSizeRel\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">gwen.dir\MinSizeRel\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">gwen_MinsizeRel</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\VS2017Projects\bullet3-master\lib\RelWithDebInfo\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">gwen.dir\RelWithDebInfo\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">gwen_RelWithDebugInfo</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">.lib</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\VS2017Projects\bullet3-master\src;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\glad;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>Debug/</AssemblerListingLocation>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4244;4267</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <Optimization>Disabled</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <StringPooling>true</StringPooling>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WIN64;BT_USE_DOUBLE_PRECISION;USE_GRAPHICAL_BENCHMARK;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;GLEW_STATIC;GWEN_COMPILE_STATIC;_HAS_EXCEPTIONS=0;CMAKE_INTDIR="Debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WIN64;BT_USE_DOUBLE_PRECISION;USE_GRAPHICAL_BENCHMARK;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;GLEW_STATIC;GWEN_COMPILE_STATIC;_HAS_EXCEPTIONS=0;CMAKE_INTDIR=\"Debug\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\VS2017Projects\bullet3-master\src;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\glad;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\VS2017Projects\bullet3-master\src;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\glad;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\VS2017Projects\bullet3-master\src;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\glad;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>Release/</AssemblerListingLocation>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <DisableSpecificWarnings>4244;4267</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <StringPooling>true</StringPooling>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WIN64;BT_USE_DOUBLE_PRECISION;USE_GRAPHICAL_BENCHMARK;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;GLEW_STATIC;GWEN_COMPILE_STATIC;_HAS_EXCEPTIONS=0;CMAKE_INTDIR="Release";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WIN64;BT_USE_DOUBLE_PRECISION;USE_GRAPHICAL_BENCHMARK;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;GLEW_STATIC;GWEN_COMPILE_STATIC;_HAS_EXCEPTIONS=0;CMAKE_INTDIR=\"Release\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\VS2017Projects\bullet3-master\src;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\glad;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\VS2017Projects\bullet3-master\src;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\glad;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\VS2017Projects\bullet3-master\src;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\glad;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>MinSizeRel/</AssemblerListingLocation>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <DisableSpecificWarnings>4244;4267</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <Optimization>MinSpace</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <StringPooling>true</StringPooling>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WIN64;BT_USE_DOUBLE_PRECISION;USE_GRAPHICAL_BENCHMARK;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;GLEW_STATIC;GWEN_COMPILE_STATIC;_HAS_EXCEPTIONS=0;CMAKE_INTDIR="MinSizeRel";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WIN64;BT_USE_DOUBLE_PRECISION;USE_GRAPHICAL_BENCHMARK;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;GLEW_STATIC;GWEN_COMPILE_STATIC;_HAS_EXCEPTIONS=0;CMAKE_INTDIR=\"MinSizeRel\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\VS2017Projects\bullet3-master\src;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\glad;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\VS2017Projects\bullet3-master\src;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\glad;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\VS2017Projects\bullet3-master\src;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\glad;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>RelWithDebInfo/</AssemblerListingLocation>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4244;4267</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <StringPooling>true</StringPooling>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WIN64;BT_USE_DOUBLE_PRECISION;USE_GRAPHICAL_BENCHMARK;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;GLEW_STATIC;GWEN_COMPILE_STATIC;_HAS_EXCEPTIONS=0;CMAKE_INTDIR="RelWithDebInfo";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WIN64;BT_USE_DOUBLE_PRECISION;USE_GRAPHICAL_BENCHMARK;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;GLEW_STATIC;GWEN_COMPILE_STATIC;_HAS_EXCEPTIONS=0;CMAKE_INTDIR=\"RelWithDebInfo\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\VS2017Projects\bullet3-master\src;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\glad;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\VS2017Projects\bullet3-master\src;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\glad;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\CMakeLists.txt">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule E:/VS2017Projects/bullet3-master/examples/ThirdPartyLibs/Gwen/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+D:\cmake-3.12.1-win64-x64\bin\cmake.exe -HE:/VS2017Projects/bullet3-master -BE:/VS2017Projects/bullet3-master --check-stamp-file E:/VS2017Projects/bullet3-master/examples/ThirdPartyLibs/Gwen/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:/VS2017Projects/bullet3-master/examples/ThirdPartyLibs/Gwen/CMakeLists.txt;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\CMakeLists.txt;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule E:/VS2017Projects/bullet3-master/examples/ThirdPartyLibs/Gwen/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+D:\cmake-3.12.1-win64-x64\bin\cmake.exe -HE:/VS2017Projects/bullet3-master -BE:/VS2017Projects/bullet3-master --check-stamp-file E:/VS2017Projects/bullet3-master/examples/ThirdPartyLibs/Gwen/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:/VS2017Projects/bullet3-master/examples/ThirdPartyLibs/Gwen/CMakeLists.txt;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\CMakeLists.txt;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Building Custom Rule E:/VS2017Projects/bullet3-master/examples/ThirdPartyLibs/Gwen/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+D:\cmake-3.12.1-win64-x64\bin\cmake.exe -HE:/VS2017Projects/bullet3-master -BE:/VS2017Projects/bullet3-master --check-stamp-file E:/VS2017Projects/bullet3-master/examples/ThirdPartyLibs/Gwen/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:/VS2017Projects/bullet3-master/examples/ThirdPartyLibs/Gwen/CMakeLists.txt;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\CMakeLists.txt;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule E:/VS2017Projects/bullet3-master/examples/ThirdPartyLibs/Gwen/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+D:\cmake-3.12.1-win64-x64\bin\cmake.exe -HE:/VS2017Projects/bullet3-master -BE:/VS2017Projects/bullet3-master --check-stamp-file E:/VS2017Projects/bullet3-master/examples/ThirdPartyLibs/Gwen/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:/VS2017Projects/bullet3-master/examples/ThirdPartyLibs/Gwen/CMakeLists.txt;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\CMakeLists.txt;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Anim.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\BaseRender.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\Base.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\Button.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\Canvas.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\CheckBox.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\ColorControls.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\ColorPicker.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\ComboBox.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\CrossSplitter.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\Dialog\FileOpen.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\Dialog\FileSave.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\Dialog\Query.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\DockBase.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\DockedTabControl.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\Dragger.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\GroupBox.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\HSVColorPicker.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\HorizontalScrollBar.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\HorizontalSlider.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\ImagePanel.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\Label.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\LabelClickable.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\ListBox.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\Menu.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\MenuItem.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\MenuStrip.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\NumericUpDown.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\PanelListPanel.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\ProgressBar.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\Properties.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\RadioButton.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\RadioButtonController.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\ResizableControl.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\Resizer.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\RichLabel.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\ScrollBar.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\ScrollBarBar.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\ScrollBarButton.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\ScrollControl.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\Slider.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\SplitterBar.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\TabButton.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\TabControl.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\TabStrip.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\Text.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\TextBox.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\TextBoxNumeric.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\TreeControl.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\TreeNode.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\VerticalScrollBar.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\VerticalSlider.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\WindowControl.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\DragAndDrop.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Gwen.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Hook.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Platforms\Null.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Platforms\Windows.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Renderers\OpenGL_DebugFont.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Skin.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\ToolTip.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Utility.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\events.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\inputhandler.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Align.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Anim.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\BaseRender.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Config.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\Base.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\Button.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\Canvas.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\CheckBox.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\ColorControls.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\ColorPicker.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\ComboBox.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\CrossSplitter.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\Dialogs\FileOpen.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\Dialogs\FileSave.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\Dialogs\Query.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\DockBase.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\DockedTabControl.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\Dragger.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\GroupBox.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\HSVColorPicker.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\Highlight.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\HorizontalScrollBar.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\HorizontalSlider.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\ImagePanel.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\Label.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\LabelClickable.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\Layout\Splitter.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\Layout\Table.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\ListBox.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\Menu.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\MenuItem.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\MenuStrip.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\Modal.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\NumericUpDown.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\PanelListPanel.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\ProgressBar.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\Properties.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\Property\BaseProperty.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\Property\ColorSelector.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\Property\Text.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\PropertyTree.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\RadioButton.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\RadioButtonController.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\ResizableControl.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\Resizer.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\RichLabel.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\ScrollBar.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\ScrollBarBar.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\ScrollBarButton.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\ScrollControl.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\Slider.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\SplitterBar.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\StatusBar.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\Symbol.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\TabButton.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\TabControl.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\TabStrip.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\TabTitleBar.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\Text.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\TextBox.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\ToolBar.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\TreeControl.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\TreeNode.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\VerticalScrollBar.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\VerticalSlider.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Controls\WindowControl.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\DragAndDrop.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Events.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Exports.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Font.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Gwen.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Hook.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Input\SDL13.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Input\SFML.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Input\Windows.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\InputHandler.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Macros.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Platform.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Renderers\DirectX9.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Renderers\FontData.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Renderers\GDIPlus.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Renderers\OpenGL.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Renderers\OpenGL_DebugFont.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Renderers\SFML.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Skin.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Skins\Simple.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Skins\TexturedBase.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Skins\Texturing.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Structures.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\TextObject.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Texture.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\ToolTip.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\Utility.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\ZERO_CHECK.vcxproj">
+      <Project>{66149EB1-15CC-315B-B5A0-C1328F59ADDF}</Project>
+      <Name>ZERO_CHECK</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

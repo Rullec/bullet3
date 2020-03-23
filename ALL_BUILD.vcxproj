@@ -1,0 +1,347 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|x64">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|x64">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{BD8C2027-FA48-3833-B08C-541C0210B040}</ProjectGuid>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
+    <Keyword>Win32Proj</Keyword>
+    <Platform>x64</Platform>
+    <ProjectName>ALL_BUILD</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="E:\VS2017Projects\bullet3-master\CMakeLists.txt">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule E:/VS2017Projects/bullet3-master/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+D:\cmake-3.12.1-win64-x64\bin\cmake.exe -HE:/VS2017Projects/bullet3-master -BE:/VS2017Projects/bullet3-master --check-stamp-file E:/VS2017Projects/bullet3-master/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:/VS2017Projects/bullet3-master/CMakeLists.txt;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeCCompiler.cmake.in;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeCCompilerABI.c;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeCInformation.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeCXXCompiler.cmake.in;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeCXXCompilerABI.cpp;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeCXXInformation.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeCommonLanguageInclude.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeCompilerIdDetection.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeDetermineCCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeDetermineCXXCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeDetermineCompileFeatures.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeDetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeDetermineCompilerABI.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeDetermineCompilerId.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeDetermineRCCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeDetermineSystem.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeFindBinUtils.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeGenericSystem.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeInitializeConfigs.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeLanguageInformation.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeParseImplicitLinkInfo.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeRCCompiler.cmake.in;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeRCInformation.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeSystem.cmake.in;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeSystemSpecificInformation.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeSystemSpecificInitialize.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeTestCCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeTestCXXCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeTestCompilerCommon.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeTestRCCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\ADSP-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\ARMCC-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\AppleClang-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Borland-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Bruce-C-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\CMakeCommonCompilerMacros.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Clang-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Clang-DetermineCompilerInternal.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Comeau-CXX-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Compaq-C-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Compaq-CXX-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Cray-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Embarcadero-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Fujitsu-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\GHS-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\GNU-C-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\GNU-CXX-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\HP-C-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\HP-CXX-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\IAR-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\IBMCPP-C-DetermineVersionInternal.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\IBMCPP-CXX-DetermineVersionInternal.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Intel-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\MIPSpro-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\MSVC-C-FeatureTests.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\MSVC-C.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\MSVC-CXX-FeatureTests.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\MSVC-CXX.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\MSVC-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\NVIDIA-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\OpenWatcom-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\PGI-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\PathScale-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\SCO-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\SDCC-C-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\SunPro-C-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\SunPro-CXX-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\TI-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\TinyCC-C-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\VisualAge-C-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\VisualAge-CXX-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Watcom-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\XL-C-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\XL-CXX-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\zOS-C-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\zOS-CXX-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CompilerId\VS-10.vcxproj.in;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\FindOpenGL.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\FindPackageHandleStandardArgs.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\FindPackageMessage.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Internal\FeatureTesting.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Platform\Windows-Determine-CXX.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Platform\Windows-MSVC-C.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Platform\Windows-MSVC-CXX.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Platform\Windows-MSVC.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Platform\Windows.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Platform\WindowsPaths.cmake;E:\VS2017Projects\bullet3-master\BulletConfig.cmake.in;E:\VS2017Projects\bullet3-master\CMakeFiles\3.12.1\CMakeCCompiler.cmake;E:\VS2017Projects\bullet3-master\CMakeFiles\3.12.1\CMakeCXXCompiler.cmake;E:\VS2017Projects\bullet3-master\CMakeFiles\3.12.1\CMakeRCCompiler.cmake;E:\VS2017Projects\bullet3-master\CMakeFiles\3.12.1\CMakeSystem.cmake;E:\VS2017Projects\bullet3-master\CMakeFiles\feature_tests.c;E:\VS2017Projects\bullet3-master\CMakeFiles\feature_tests.cxx;E:\VS2017Projects\bullet3-master\CMakeLists.txt;E:\VS2017Projects\bullet3-master\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\VS2017Projects\bullet3-master\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule E:/VS2017Projects/bullet3-master/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+D:\cmake-3.12.1-win64-x64\bin\cmake.exe -HE:/VS2017Projects/bullet3-master -BE:/VS2017Projects/bullet3-master --check-stamp-file E:/VS2017Projects/bullet3-master/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:/VS2017Projects/bullet3-master/CMakeLists.txt;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeCCompiler.cmake.in;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeCCompilerABI.c;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeCInformation.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeCXXCompiler.cmake.in;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeCXXCompilerABI.cpp;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeCXXInformation.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeCommonLanguageInclude.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeCompilerIdDetection.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeDetermineCCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeDetermineCXXCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeDetermineCompileFeatures.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeDetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeDetermineCompilerABI.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeDetermineCompilerId.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeDetermineRCCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeDetermineSystem.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeFindBinUtils.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeGenericSystem.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeInitializeConfigs.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeLanguageInformation.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeParseImplicitLinkInfo.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeRCCompiler.cmake.in;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeRCInformation.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeSystem.cmake.in;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeSystemSpecificInformation.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeSystemSpecificInitialize.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeTestCCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeTestCXXCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeTestCompilerCommon.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeTestRCCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\ADSP-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\ARMCC-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\AppleClang-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Borland-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Bruce-C-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\CMakeCommonCompilerMacros.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Clang-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Clang-DetermineCompilerInternal.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Comeau-CXX-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Compaq-C-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Compaq-CXX-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Cray-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Embarcadero-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Fujitsu-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\GHS-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\GNU-C-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\GNU-CXX-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\HP-C-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\HP-CXX-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\IAR-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\IBMCPP-C-DetermineVersionInternal.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\IBMCPP-CXX-DetermineVersionInternal.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Intel-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\MIPSpro-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\MSVC-C-FeatureTests.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\MSVC-C.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\MSVC-CXX-FeatureTests.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\MSVC-CXX.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\MSVC-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\NVIDIA-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\OpenWatcom-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\PGI-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\PathScale-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\SCO-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\SDCC-C-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\SunPro-C-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\SunPro-CXX-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\TI-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\TinyCC-C-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\VisualAge-C-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\VisualAge-CXX-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Watcom-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\XL-C-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\XL-CXX-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\zOS-C-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\zOS-CXX-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CompilerId\VS-10.vcxproj.in;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\FindOpenGL.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\FindPackageHandleStandardArgs.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\FindPackageMessage.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Internal\FeatureTesting.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Platform\Windows-Determine-CXX.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Platform\Windows-MSVC-C.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Platform\Windows-MSVC-CXX.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Platform\Windows-MSVC.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Platform\Windows.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Platform\WindowsPaths.cmake;E:\VS2017Projects\bullet3-master\BulletConfig.cmake.in;E:\VS2017Projects\bullet3-master\CMakeFiles\3.12.1\CMakeCCompiler.cmake;E:\VS2017Projects\bullet3-master\CMakeFiles\3.12.1\CMakeCXXCompiler.cmake;E:\VS2017Projects\bullet3-master\CMakeFiles\3.12.1\CMakeRCCompiler.cmake;E:\VS2017Projects\bullet3-master\CMakeFiles\3.12.1\CMakeSystem.cmake;E:\VS2017Projects\bullet3-master\CMakeFiles\feature_tests.c;E:\VS2017Projects\bullet3-master\CMakeFiles\feature_tests.cxx;E:\VS2017Projects\bullet3-master\CMakeLists.txt;E:\VS2017Projects\bullet3-master\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\VS2017Projects\bullet3-master\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Building Custom Rule E:/VS2017Projects/bullet3-master/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+D:\cmake-3.12.1-win64-x64\bin\cmake.exe -HE:/VS2017Projects/bullet3-master -BE:/VS2017Projects/bullet3-master --check-stamp-file E:/VS2017Projects/bullet3-master/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:/VS2017Projects/bullet3-master/CMakeLists.txt;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeCCompiler.cmake.in;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeCCompilerABI.c;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeCInformation.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeCXXCompiler.cmake.in;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeCXXCompilerABI.cpp;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeCXXInformation.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeCommonLanguageInclude.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeCompilerIdDetection.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeDetermineCCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeDetermineCXXCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeDetermineCompileFeatures.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeDetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeDetermineCompilerABI.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeDetermineCompilerId.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeDetermineRCCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeDetermineSystem.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeFindBinUtils.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeGenericSystem.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeInitializeConfigs.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeLanguageInformation.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeParseImplicitLinkInfo.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeRCCompiler.cmake.in;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeRCInformation.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeSystem.cmake.in;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeSystemSpecificInformation.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeSystemSpecificInitialize.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeTestCCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeTestCXXCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeTestCompilerCommon.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeTestRCCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\ADSP-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\ARMCC-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\AppleClang-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Borland-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Bruce-C-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\CMakeCommonCompilerMacros.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Clang-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Clang-DetermineCompilerInternal.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Comeau-CXX-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Compaq-C-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Compaq-CXX-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Cray-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Embarcadero-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Fujitsu-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\GHS-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\GNU-C-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\GNU-CXX-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\HP-C-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\HP-CXX-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\IAR-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\IBMCPP-C-DetermineVersionInternal.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\IBMCPP-CXX-DetermineVersionInternal.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Intel-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\MIPSpro-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\MSVC-C-FeatureTests.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\MSVC-C.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\MSVC-CXX-FeatureTests.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\MSVC-CXX.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\MSVC-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\NVIDIA-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\OpenWatcom-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\PGI-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\PathScale-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\SCO-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\SDCC-C-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\SunPro-C-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\SunPro-CXX-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\TI-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\TinyCC-C-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\VisualAge-C-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\VisualAge-CXX-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Watcom-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\XL-C-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\XL-CXX-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\zOS-C-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\zOS-CXX-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CompilerId\VS-10.vcxproj.in;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\FindOpenGL.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\FindPackageHandleStandardArgs.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\FindPackageMessage.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Internal\FeatureTesting.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Platform\Windows-Determine-CXX.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Platform\Windows-MSVC-C.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Platform\Windows-MSVC-CXX.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Platform\Windows-MSVC.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Platform\Windows.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Platform\WindowsPaths.cmake;E:\VS2017Projects\bullet3-master\BulletConfig.cmake.in;E:\VS2017Projects\bullet3-master\CMakeFiles\3.12.1\CMakeCCompiler.cmake;E:\VS2017Projects\bullet3-master\CMakeFiles\3.12.1\CMakeCXXCompiler.cmake;E:\VS2017Projects\bullet3-master\CMakeFiles\3.12.1\CMakeRCCompiler.cmake;E:\VS2017Projects\bullet3-master\CMakeFiles\3.12.1\CMakeSystem.cmake;E:\VS2017Projects\bullet3-master\CMakeFiles\feature_tests.c;E:\VS2017Projects\bullet3-master\CMakeFiles\feature_tests.cxx;E:\VS2017Projects\bullet3-master\CMakeLists.txt;E:\VS2017Projects\bullet3-master\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\VS2017Projects\bullet3-master\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule E:/VS2017Projects/bullet3-master/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+D:\cmake-3.12.1-win64-x64\bin\cmake.exe -HE:/VS2017Projects/bullet3-master -BE:/VS2017Projects/bullet3-master --check-stamp-file E:/VS2017Projects/bullet3-master/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:/VS2017Projects/bullet3-master/CMakeLists.txt;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeCCompiler.cmake.in;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeCCompilerABI.c;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeCInformation.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeCXXCompiler.cmake.in;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeCXXCompilerABI.cpp;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeCXXInformation.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeCommonLanguageInclude.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeCompilerIdDetection.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeDetermineCCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeDetermineCXXCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeDetermineCompileFeatures.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeDetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeDetermineCompilerABI.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeDetermineCompilerId.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeDetermineRCCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeDetermineSystem.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeFindBinUtils.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeGenericSystem.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeInitializeConfigs.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeLanguageInformation.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeParseImplicitLinkInfo.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeRCCompiler.cmake.in;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeRCInformation.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeSystem.cmake.in;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeSystemSpecificInformation.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeSystemSpecificInitialize.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeTestCCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeTestCXXCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeTestCompilerCommon.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CMakeTestRCCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\ADSP-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\ARMCC-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\AppleClang-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Borland-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Bruce-C-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\CMakeCommonCompilerMacros.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Clang-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Clang-DetermineCompilerInternal.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Comeau-CXX-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Compaq-C-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Compaq-CXX-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Cray-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Embarcadero-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Fujitsu-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\GHS-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\GNU-C-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\GNU-CXX-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\HP-C-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\HP-CXX-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\IAR-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\IBMCPP-C-DetermineVersionInternal.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\IBMCPP-CXX-DetermineVersionInternal.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Intel-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\MIPSpro-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\MSVC-C-FeatureTests.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\MSVC-C.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\MSVC-CXX-FeatureTests.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\MSVC-CXX.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\MSVC-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\NVIDIA-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\OpenWatcom-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\PGI-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\PathScale-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\SCO-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\SDCC-C-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\SunPro-C-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\SunPro-CXX-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\TI-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\TinyCC-C-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\VisualAge-C-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\VisualAge-CXX-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\Watcom-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\XL-C-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\XL-CXX-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\zOS-C-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Compiler\zOS-CXX-DetermineCompiler.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\CompilerId\VS-10.vcxproj.in;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\FindOpenGL.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\FindPackageHandleStandardArgs.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\FindPackageMessage.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Internal\FeatureTesting.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Platform\Windows-Determine-CXX.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Platform\Windows-MSVC-C.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Platform\Windows-MSVC-CXX.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Platform\Windows-MSVC.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Platform\Windows.cmake;D:\cmake-3.12.1-win64-x64\share\cmake-3.12\Modules\Platform\WindowsPaths.cmake;E:\VS2017Projects\bullet3-master\BulletConfig.cmake.in;E:\VS2017Projects\bullet3-master\CMakeFiles\3.12.1\CMakeCCompiler.cmake;E:\VS2017Projects\bullet3-master\CMakeFiles\3.12.1\CMakeCXXCompiler.cmake;E:\VS2017Projects\bullet3-master\CMakeFiles\3.12.1\CMakeRCCompiler.cmake;E:\VS2017Projects\bullet3-master\CMakeFiles\3.12.1\CMakeSystem.cmake;E:\VS2017Projects\bullet3-master\CMakeFiles\feature_tests.c;E:\VS2017Projects\bullet3-master\CMakeFiles\feature_tests.cxx;E:\VS2017Projects\bullet3-master\CMakeLists.txt;E:\VS2017Projects\bullet3-master\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\VS2017Projects\bullet3-master\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\ZERO_CHECK.vcxproj">
+      <Project>{66149EB1-15CC-315B-B5A0-C1328F59ADDF}</Project>
+      <Name>ZERO_CHECK</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\examples\BasicDemo\AppBasicExampleGui.vcxproj">
+      <Project>{FC0476A0-B35F-3086-938B-A67310DF6615}</Project>
+      <Name>AppBasicExampleGui</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\examples\BasicDemo\App_BasicExample.vcxproj">
+      <Project>{6A94D296-BF11-38CC-92F5-34400C45BF20}</Project>
+      <Name>App_BasicExample</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\App_ExampleBrowser.vcxproj">
+      <Project>{9476728B-B621-3BCC-A05B-CD089C4355F8}</Project>
+      <Name>App_ExampleBrowser</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\examples\RobotSimulator\App_HelloBulletRobotics.vcxproj">
+      <Project>{5AE624DB-8F30-375B-AD5F-08A6BCCDCED3}</Project>
+      <Name>App_HelloBulletRobotics</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\examples\HelloWorld\App_HelloWorld.vcxproj">
+      <Project>{DC2F88ED-7E84-3580-9C1D-97BD8371FD8D}</Project>
+      <Name>App_HelloWorld</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\App_PhysicsServer_SharedMemory.vcxproj">
+      <Project>{0CD1C3E3-41FE-350B-9890-EE5651BFE557}</Project>
+      <Name>App_PhysicsServer_SharedMemory</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\App_PhysicsServer_SharedMemory_GUI.vcxproj">
+      <Project>{B95D172C-25BD-3F7E-BB51-C4CBE1D21DD5}</Project>
+      <Name>App_PhysicsServer_SharedMemory_GUI</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\App_PhysicsServer_SharedMemory_VR.vcxproj">
+      <Project>{4C1EB6BE-E7D3-32C1-A2DC-EE2B5A73191D}</Project>
+      <Name>App_PhysicsServer_SharedMemory_VR</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\examples\RobotSimulator\App_RobotSimulator.vcxproj">
+      <Project>{5734EFE3-1EDD-3E25-A61F-4AEE96F331EA}</Project>
+      <Name>App_RobotSimulator</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\examples\RobotSimulator\App_RobotSimulator_NoGUI.vcxproj">
+      <Project>{CCB7EDB2-5814-3A99-AAA7-1EEC9D935C01}</Project>
+      <Name>App_RobotSimulator_NoGUI</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\examples\TwoJoint\App_TwoJoint.vcxproj">
+      <Project>{EC52325A-1AAE-3EC6-9D61-758693A8CC50}</Project>
+      <Name>App_TwoJoint</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\Extras\obj2sdf\App_obj2sdf.vcxproj">
+      <Project>{484B16AB-F3B9-35A1-A659-8B7C54D0A770}</Project>
+      <Name>App_obj2sdf</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\src\Bullet3Serialize\Bullet2FileLoader\Bullet2FileLoader.vcxproj">
+      <Project>{55DD5992-F084-33F2-91B8-ED1F6936C46D}</Project>
+      <Name>Bullet2FileLoader</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\src\Bullet3Collision\Bullet3Collision.vcxproj">
+      <Project>{2EA438E8-7079-3834-97F8-BE98ABAB7376}</Project>
+      <Name>Bullet3Collision</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\src\Bullet3Common\Bullet3Common.vcxproj">
+      <Project>{9904A7D8-15AE-37DF-A4E5-D96CD3DBE02C}</Project>
+      <Name>Bullet3Common</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\src\Bullet3Dynamics\Bullet3Dynamics.vcxproj">
+      <Project>{66C1973D-6036-3DC8-B86E-B10C7A0EB084}</Project>
+      <Name>Bullet3Dynamics</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\src\Bullet3Geometry\Bullet3Geometry.vcxproj">
+      <Project>{6644FB91-353E-3EA4-9283-89D9A3EC7A08}</Project>
+      <Name>Bullet3Geometry</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\src\Bullet3OpenCL\Bullet3OpenCL_clew.vcxproj">
+      <Project>{B2243281-E9E5-3607-97F3-80C8A57627E7}</Project>
+      <Name>Bullet3OpenCL_clew</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\src\BulletCollision\BulletCollision.vcxproj">
+      <Project>{85222E1D-1917-3723-86B7-ACACCCC38A26}</Project>
+      <Name>BulletCollision</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\src\BulletDynamics\BulletDynamics.vcxproj">
+      <Project>{D1566F81-B72F-38F6-BD3A-0BF2166015E6}</Project>
+      <Name>BulletDynamics</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\BulletExampleBrowserLib.vcxproj">
+      <Project>{49E8CE2F-B569-3590-862F-CBC8ED4AB706}</Project>
+      <Name>BulletExampleBrowserLib</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\Extras\Serialize\BulletFileLoader\BulletFileLoader.vcxproj">
+      <Project>{B073BAE5-7F0A-3F20-A3DD-032F9570DF95}</Project>
+      <Name>BulletFileLoader</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\src\BulletInverseDynamics\BulletInverseDynamics.vcxproj">
+      <Project>{ABF6E71F-78CE-3433-B7FA-F0023D1A502A}</Project>
+      <Name>BulletInverseDynamics</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\Extras\InverseDynamics\BulletInverseDynamicsUtils.vcxproj">
+      <Project>{0E181588-C047-3941-877A-80D85511E7E5}</Project>
+      <Name>BulletInverseDynamicsUtils</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\Extras\BulletRobotics\BulletRobotics.vcxproj">
+      <Project>{2B045043-7FAF-35A5-8532-4E812F6464FA}</Project>
+      <Name>BulletRobotics</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\src\BulletSoftBody\BulletSoftBody.vcxproj">
+      <Project>{621DCD50-CAFE-352E-9C6F-FBB4A0600BA7}</Project>
+      <Name>BulletSoftBody</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\Extras\Serialize\BulletWorldImporter\BulletWorldImporter.vcxproj">
+      <Project>{CA229045-CD42-37DD-AA56-340D4DFDB96F}</Project>
+      <Name>BulletWorldImporter</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\Extras\Serialize\BulletXmlWorldImporter\BulletXmlWorldImporter.vcxproj">
+      <Project>{48516BA9-33B8-350C-8544-9E1A1F4AB087}</Project>
+      <Name>BulletXmlWorldImporter</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\BussIK\BussIK.vcxproj">
+      <Project>{123AA6F8-3E25-3BA6-BA2A-E718B04E11E6}</Project>
+      <Name>BussIK</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\Extras\ConvexDecomposition\ConvexDecomposition.vcxproj">
+      <Project>{062B5DB6-0D62-3029-A7AC-E56559901C9C}</Project>
+      <Name>ConvexDecomposition</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\Extras\GIMPACTUtils\GIMPACTUtils.vcxproj">
+      <Project>{8972957F-4500-38BA-9476-8BD7FD5049FD}</Project>
+      <Name>GIMPACTUtils</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\Extras\HACD\HACD.vcxproj">
+      <Project>{4BDC172E-7564-3E53-A7EA-30E55307C9A0}</Project>
+      <Name>HACD</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\src\LinearMath\LinearMath.vcxproj">
+      <Project>{223785BB-0BD4-361D-8B73-576271D41702}</Project>
+      <Name>LinearMath</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\examples\OpenGLWindow\OpenGLWindow.vcxproj">
+      <Project>{D7E174B0-2DDC-35D0-8ADB-FB2A5276BE58}</Project>
+      <Name>OpenGLWindow</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\test\BulletDynamics\pendulum\Test_BulletDynamics.vcxproj">
+      <Project>{F84B4408-E671-3ADC-97DA-1D0AAADD7D02}</Project>
+      <Name>Test_BulletDynamics</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\test\InverseDynamics\Test_BulletInverseDynamics.vcxproj">
+      <Project>{B150B9BF-97A5-3C0E-8C10-2552DCF32488}</Project>
+      <Name>Test_BulletInverseDynamics</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\test\InverseDynamics\Test_BulletInverseDynamicsJacobian.vcxproj">
+      <Project>{E08A229C-0425-3A49-BEEE-DDE676349D8B}</Project>
+      <Name>Test_BulletInverseDynamicsJacobian</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\test\InverseDynamics\Test_BulletInverseForwardDynamics.vcxproj">
+      <Project>{96081DDE-3BEF-3111-A3A8-6DCBB7496072}</Project>
+      <Name>Test_BulletInverseForwardDynamics</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\test\collision\Test_Collision.vcxproj">
+      <Project>{84940F76-F7E3-3FAA-84C3-25527A92C054}</Project>
+      <Name>Test_Collision</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\test\SharedMemory\Test_PhysicsClientServer.vcxproj">
+      <Project>{B0E67616-1E14-32B8-8EB9-01ACDB713D69}</Project>
+      <Name>Test_PhysicsClientServer</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\test\BulletDynamics\Test_btKinematicCharacterController.vcxproj">
+      <Project>{A4A1F411-0E36-3451-8F70-E3DA1195D38D}</Project>
+      <Name>Test_btKinematicCharacterController</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\clsocket\clsocket.vcxproj">
+      <Project>{FD38565A-D40E-3205-8882-E450AB6FF7DF}</Project>
+      <Name>clsocket</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\test\gtest-1.7.0\gtest.vcxproj">
+      <Project>{9EC3CD63-E423-3761-B1B1-8291310A1D3A}</Project>
+      <Name>gtest</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\gwen.vcxproj">
+      <Project>{12541EFB-BC2C-3CD4-BDEB-1F33C27DEB6E}</Project>
+      <Name>gwen</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

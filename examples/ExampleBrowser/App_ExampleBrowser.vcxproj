@@ -1,0 +1,642 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|x64">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|x64">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{9476728B-B621-3BCC-A05B-CD089C4355F8}</ProjectGuid>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
+    <Keyword>Win32Proj</Keyword>
+    <Platform>x64</Platform>
+    <ProjectName>App_ExampleBrowser</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\Debug\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">App_ExampleBrowser.dir\Debug\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">App_ExampleBrowser</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.exe</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateManifest>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\Release\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">App_ExampleBrowser.dir\Release\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">App_ExampleBrowser</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.exe</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</GenerateManifest>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\MinSizeRel\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">App_ExampleBrowser.dir\MinSizeRel\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">App_ExampleBrowser</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">.exe</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">true</GenerateManifest>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\RelWithDebInfo\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">App_ExampleBrowser.dir\RelWithDebInfo\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">App_ExampleBrowser</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">.exe</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">true</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">true</GenerateManifest>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\.;E:\VS2017Projects\bullet3-master\src;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\glad;E:\VS2017Projects\bullet3-master\examples\SharedMemory;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>Debug/</AssemblerListingLocation>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4244;4267</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <Optimization>Disabled</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <StringPooling>true</StringPooling>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WIN64;BT_USE_DOUBLE_PRECISION;USE_GRAPHICAL_BENCHMARK;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;GLEW_STATIC;INCLUDE_CLOTH_DEMOS;CMAKE_INTDIR="Debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WIN64;BT_USE_DOUBLE_PRECISION;USE_GRAPHICAL_BENCHMARK;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;GLEW_STATIC;INCLUDE_CLOTH_DEMOS;CMAKE_INTDIR=\"Debug\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\.;E:\VS2017Projects\bullet3-master\src;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\glad;E:\VS2017Projects\bullet3-master\examples\SharedMemory;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\.;E:\VS2017Projects\bullet3-master\src;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\glad;E:\VS2017Projects\bullet3-master\examples\SharedMemory;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <PostBuildEvent>
+      <Message>
+      </Message>
+      <Command>setlocal
+D:\cmake-3.12.1-win64-x64\bin\cmake.exe -E copy_directory E:/VS2017Projects/bullet3-master/data E:/VS2017Projects/bullet3-master/data
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+    </PostBuildEvent>
+    <Link>
+      <AdditionalDependencies>..\..\lib\Debug\BulletExampleBrowserLib_Debug.lib;..\..\lib\Debug\Bullet3Common_Debug.lib;..\..\lib\Debug\BulletSoftBody_Debug.lib;..\..\lib\Debug\BulletDynamics_Debug.lib;..\..\lib\Debug\BulletCollision_Debug.lib;..\..\lib\Debug\BulletInverseDynamicsUtils_Debug.lib;..\..\lib\Debug\BulletInverseDynamics_Debug.lib;..\..\lib\Debug\LinearMath_Debug.lib;..\..\lib\Debug\OpenGLWindow_Debug.lib;..\..\lib\Debug\gwen_Debug.lib;..\..\lib\Debug\BussIK_Debug.lib;opengl32.lib;glu32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>E:/VS2017Projects/bullet3-master/examples/ExampleBrowser/Debug/App_ExampleBrowser.lib</ImportLibrary>
+      <OptimizeReferences>true</OptimizeReferences>
+      <ProgramDataBaseFile>E:/VS2017Projects/bullet3-master/examples/ExampleBrowser/Debug/App_ExampleBrowser.pdb</ProgramDataBaseFile>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\.;E:\VS2017Projects\bullet3-master\src;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\glad;E:\VS2017Projects\bullet3-master\examples\SharedMemory;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>Release/</AssemblerListingLocation>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <DisableSpecificWarnings>4244;4267</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <StringPooling>true</StringPooling>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WIN64;BT_USE_DOUBLE_PRECISION;USE_GRAPHICAL_BENCHMARK;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;GLEW_STATIC;INCLUDE_CLOTH_DEMOS;CMAKE_INTDIR="Release";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WIN64;BT_USE_DOUBLE_PRECISION;USE_GRAPHICAL_BENCHMARK;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;GLEW_STATIC;INCLUDE_CLOTH_DEMOS;CMAKE_INTDIR=\"Release\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\.;E:\VS2017Projects\bullet3-master\src;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\glad;E:\VS2017Projects\bullet3-master\examples\SharedMemory;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\.;E:\VS2017Projects\bullet3-master\src;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\glad;E:\VS2017Projects\bullet3-master\examples\SharedMemory;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <PostBuildEvent>
+      <Message>
+      </Message>
+      <Command>setlocal
+D:\cmake-3.12.1-win64-x64\bin\cmake.exe -E copy_directory E:/VS2017Projects/bullet3-master/data E:/VS2017Projects/bullet3-master/data
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+    </PostBuildEvent>
+    <Link>
+      <AdditionalDependencies>..\..\lib\Release\BulletExampleBrowserLib.lib;..\..\lib\Release\Bullet3Common.lib;..\..\lib\Release\BulletSoftBody.lib;..\..\lib\Release\BulletDynamics.lib;..\..\lib\Release\BulletCollision.lib;..\..\lib\Release\BulletInverseDynamicsUtils.lib;..\..\lib\Release\BulletInverseDynamics.lib;..\..\lib\Release\LinearMath.lib;..\..\lib\Release\OpenGLWindow.lib;..\..\lib\Release\gwen.lib;..\..\lib\Release\BussIK.lib;opengl32.lib;glu32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>E:/VS2017Projects/bullet3-master/examples/ExampleBrowser/Release/App_ExampleBrowser.lib</ImportLibrary>
+      <OptimizeReferences>true</OptimizeReferences>
+      <ProgramDataBaseFile>E:/VS2017Projects/bullet3-master/examples/ExampleBrowser/Release/App_ExampleBrowser.pdb</ProgramDataBaseFile>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\.;E:\VS2017Projects\bullet3-master\src;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\glad;E:\VS2017Projects\bullet3-master\examples\SharedMemory;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>MinSizeRel/</AssemblerListingLocation>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <DisableSpecificWarnings>4244;4267</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <Optimization>MinSpace</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <StringPooling>true</StringPooling>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WIN64;BT_USE_DOUBLE_PRECISION;USE_GRAPHICAL_BENCHMARK;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;GLEW_STATIC;INCLUDE_CLOTH_DEMOS;CMAKE_INTDIR="MinSizeRel";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WIN64;BT_USE_DOUBLE_PRECISION;USE_GRAPHICAL_BENCHMARK;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;GLEW_STATIC;INCLUDE_CLOTH_DEMOS;CMAKE_INTDIR=\"MinSizeRel\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\.;E:\VS2017Projects\bullet3-master\src;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\glad;E:\VS2017Projects\bullet3-master\examples\SharedMemory;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\.;E:\VS2017Projects\bullet3-master\src;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\glad;E:\VS2017Projects\bullet3-master\examples\SharedMemory;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <PostBuildEvent>
+      <Message>
+      </Message>
+      <Command>setlocal
+D:\cmake-3.12.1-win64-x64\bin\cmake.exe -E copy_directory E:/VS2017Projects/bullet3-master/data E:/VS2017Projects/bullet3-master/data
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+    </PostBuildEvent>
+    <Link>
+      <AdditionalDependencies>..\..\lib\MinSizeRel\BulletExampleBrowserLib_MinsizeRel.lib;..\..\lib\MinSizeRel\Bullet3Common_MinsizeRel.lib;..\..\lib\MinSizeRel\BulletSoftBody_MinsizeRel.lib;..\..\lib\MinSizeRel\BulletDynamics_MinsizeRel.lib;..\..\lib\MinSizeRel\BulletCollision_MinsizeRel.lib;..\..\lib\MinSizeRel\BulletInverseDynamicsUtils_MinsizeRel.lib;..\..\lib\MinSizeRel\BulletInverseDynamics_MinsizeRel.lib;..\..\lib\MinSizeRel\LinearMath_MinsizeRel.lib;..\..\lib\MinSizeRel\OpenGLWindow_MinsizeRel.lib;..\..\lib\MinSizeRel\gwen_MinsizeRel.lib;..\..\lib\MinSizeRel\BussIK_MinsizeRel.lib;opengl32.lib;glu32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>E:/VS2017Projects/bullet3-master/examples/ExampleBrowser/MinSizeRel/App_ExampleBrowser.lib</ImportLibrary>
+      <OptimizeReferences>true</OptimizeReferences>
+      <ProgramDataBaseFile>E:/VS2017Projects/bullet3-master/examples/ExampleBrowser/MinSizeRel/App_ExampleBrowser.pdb</ProgramDataBaseFile>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\.;E:\VS2017Projects\bullet3-master\src;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\glad;E:\VS2017Projects\bullet3-master\examples\SharedMemory;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>RelWithDebInfo/</AssemblerListingLocation>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4244;4267</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <StringPooling>true</StringPooling>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WIN64;BT_USE_DOUBLE_PRECISION;USE_GRAPHICAL_BENCHMARK;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;GLEW_STATIC;INCLUDE_CLOTH_DEMOS;CMAKE_INTDIR="RelWithDebInfo";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WIN64;BT_USE_DOUBLE_PRECISION;USE_GRAPHICAL_BENCHMARK;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;GLEW_STATIC;INCLUDE_CLOTH_DEMOS;CMAKE_INTDIR=\"RelWithDebInfo\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\.;E:\VS2017Projects\bullet3-master\src;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\glad;E:\VS2017Projects\bullet3-master\examples\SharedMemory;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\.;E:\VS2017Projects\bullet3-master\src;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\glad;E:\VS2017Projects\bullet3-master\examples\SharedMemory;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <PostBuildEvent>
+      <Message>
+      </Message>
+      <Command>setlocal
+D:\cmake-3.12.1-win64-x64\bin\cmake.exe -E copy_directory E:/VS2017Projects/bullet3-master/data E:/VS2017Projects/bullet3-master/data
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+    </PostBuildEvent>
+    <Link>
+      <AdditionalDependencies>..\..\lib\RelWithDebInfo\BulletExampleBrowserLib_RelWithDebugInfo.lib;..\..\lib\RelWithDebInfo\Bullet3Common_RelWithDebugInfo.lib;..\..\lib\RelWithDebInfo\BulletSoftBody_RelWithDebugInfo.lib;..\..\lib\RelWithDebInfo\BulletDynamics_RelWithDebugInfo.lib;..\..\lib\RelWithDebInfo\BulletCollision_RelWithDebugInfo.lib;..\..\lib\RelWithDebInfo\BulletInverseDynamicsUtils_RelWithDebugInfo.lib;..\..\lib\RelWithDebInfo\BulletInverseDynamics_RelWithDebugInfo.lib;..\..\lib\RelWithDebInfo\LinearMath_RelWithDebugInfo.lib;..\..\lib\RelWithDebInfo\OpenGLWindow_RelWithDebugInfo.lib;..\..\lib\RelWithDebInfo\gwen_RelWithDebugInfo.lib;..\..\lib\RelWithDebInfo\BussIK_RelWithDebugInfo.lib;opengl32.lib;glu32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>E:/VS2017Projects/bullet3-master/examples/ExampleBrowser/RelWithDebInfo/App_ExampleBrowser.lib</ImportLibrary>
+      <OptimizeReferences>true</OptimizeReferences>
+      <ProgramDataBaseFile>E:/VS2017Projects/bullet3-master/examples/ExampleBrowser/RelWithDebInfo/App_ExampleBrowser.pdb</ProgramDataBaseFile>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\BulletDynamics\Featherstone\cCollisionWorld.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\main.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\ExampleEntries.cpp" />
+    <ClCompile Include="ID_test\cIDSolver.cpp" />
+    <ClCompile Include="ID_test\MathUtil.cpp" />
+    <ClInclude Include="..\..\src\BulletDynamics\Featherstone\cCollisionWorld.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\ExampleEntries.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ExtendedTutorials\Chain.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ExtendedTutorials\Chain.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ExtendedTutorials\Bridge.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ExtendedTutorials\Bridge.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ExtendedTutorials\RigidBodyFromObj.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ExtendedTutorials\RigidBodyFromObj.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ExtendedTutorials\SimpleBox.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ExtendedTutorials\SimpleBox.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ExtendedTutorials\MultipleBoxes.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ExtendedTutorials\MultipleBoxes.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ExtendedTutorials\CompoundBoxes.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ExtendedTutorials\CompoundBoxes.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ExtendedTutorials\SimpleCloth.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ExtendedTutorials\SimpleCloth.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ExtendedTutorials\SimpleJoint.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ExtendedTutorials\SimpleJoint.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ExtendedTutorials\NewtonsCradle.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ExtendedTutorials\NewtonsCradle.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ExtendedTutorials\InclinedPlane.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ExtendedTutorials\InclinedPlane.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ExtendedTutorials\MultiPendulum.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ExtendedTutorials\MultiPendulum.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\BulletRobotics\FixJointBoxes.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\BulletRobotics\BoxStack.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\BulletRobotics\JointLimit.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\TinyRenderer\geometry.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\TinyRenderer\model.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\TinyRenderer\tgaimage.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\TinyRenderer\our_gl.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\TinyRenderer\TinyRenderer.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\plugins\collisionFilterPlugin\collisionFilterPlugin.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\plugins\collisionFilterPlugin\collisionFilterPlugin.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\plugins\pdControlPlugin\pdControlPlugin.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\plugins\pdControlPlugin\pdControlPlugin.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\plugins\tinyRendererPlugin\tinyRendererPlugin.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\plugins\tinyRendererPlugin\TinyRendererVisualShapeConverter.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\IKTrajectoryHelper.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\IKTrajectoryHelper.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\PhysicsServer.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\PhysicsClientSharedMemory.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\PhysicsClientSharedMemory_C_API.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\PhysicsClient.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\PhysicsClientC_API.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\GraphicsServerExample.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\GraphicsClientExample.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\RemoteGUIHelper.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\GraphicsServerExample.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\GraphicsClientExample.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\RemoteGUIHelper.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\GraphicsSharedMemoryCommands.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\GraphicsSharedMemoryPublic.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\PhysicsServerExample.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\PhysicsServerExampleBullet2.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\PhysicsClientExample.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\PosixSharedMemory.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\Win32SharedMemory.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\InProcessMemory.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\PhysicsServerSharedMemory.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\PhysicsDirect.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\PhysicsDirect.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\PhysicsDirectC_API.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\PhysicsDirectC_API.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\SharedMemoryInProcessPhysicsC_API.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\PhysicsLoopBack.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\PhysicsLoopBack.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\PhysicsLoopBackC_API.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\PhysicsLoopBackC_API.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\PhysicsServerCommandProcessor.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\PhysicsServerCommandProcessor.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\SharedMemoryCommands.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\SharedMemoryPublic.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\b3PluginManager.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\b3RobotSimulatorClientAPI_NoGUI.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\b3RobotSimulatorClientAPI_NoGUI.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\b3RobotSimulatorClientAPI_NoDirect.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\SharedMemory\b3RobotSimulatorClientAPI_NoDirect.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\RobotSimulator\b3RobotSimulatorClientAPI.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\RobotSimulator\b3RobotSimulatorClientAPI.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\BasicDemo\BasicExample.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\BasicDemo\BasicExample.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\InverseDynamics\InverseDynamicsExample.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\InverseDynamics\InverseDynamicsExample.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\InverseKinematics\InverseKinematicsExample.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\InverseKinematics\InverseKinematicsExample.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ForkLift\ForkLiftDemo.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ForkLift\ForkLiftDemo.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\MultiThreadedDemo\MultiThreadedDemo.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\MultiThreadedDemo\MultiThreadedDemo.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\MultiThreadedDemo\CommonRigidBodyMTBase.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\MultiThreadedDemo\CommonRigidBodyMTBase.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\Heightfield\HeightfieldExample.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Heightfield\HeightfieldExample.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\BlockSolver\btBlockSolver.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\BlockSolver\btBlockSolver.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\BlockSolver\BlockSolverExample.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\BlockSolver\BlockSolverExample.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\BlockSolver\RigidBodyBoxes.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\BlockSolver\RigidBodyBoxes.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\Tutorial\Tutorial.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Tutorial\Tutorial.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\Tutorial\Dof6ConstraintTutorial.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Tutorial\Dof6ConstraintTutorial.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\Evolution\NN3DWalkers.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Evolution\NN3DWalkers.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Evolution\NN3DWalkersTimeWarpBase.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ExtendedTutorials\NewtonsRopeCradle.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ExtendedTutorials\NewtonsRopeCradle.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\Collision\CollisionSdkC_Api.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Collision\CollisionSdkC_Api.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\Collision\CollisionTutorialBullet2.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Collision\CollisionTutorialBullet2.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\Collision\Internal\Bullet2CollisionSdk.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Collision\Internal\Bullet2CollisionSdk.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Collision\Internal\CollisionSdkInterface.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\Collision\Internal\RealTimeBullet3CollisionSdk.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Collision\Internal\RealTimeBullet3CollisionSdk.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\GyroscopicDemo\GyroscopicSetup.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\GyroscopicDemo\GyroscopicSetup.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\Planar2D\Planar2D.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Planar2D\Planar2D.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\RollingFrictionDemo\RollingFrictionDemo.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\RollingFrictionDemo\RollingFrictionDemo.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\FractureDemo\FractureDemo.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\FractureDemo\btFractureBody.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\FractureDemo\btFractureDynamicsWorld.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\FractureDemo\FractureDemo.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\FractureDemo\btFractureBody.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\FractureDemo\btFractureDynamicsWorld.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\DynamicControlDemo\MotorDemo.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\DynamicControlDemo\MotorDemo.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\MultiThreading\MultiThreadingExample.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\MultiThreading\b3PosixThreadSupport.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\MultiThreading\b3Win32ThreadSupport.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\MultiThreading\b3ThreadSupportInterface.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\RenderingExamples\TinyRendererSetup.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\RenderingExamples\TimeSeriesCanvas.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\RenderingExamples\TimeSeriesCanvas.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\RenderingExamples\TimeSeriesFontData.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\RenderingExamples\TimeSeriesFontData.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\RenderingExamples\DynamicTexturedCubeDemo.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\RenderingExamples\DynamicTexturedCubeDemo.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\RenderingExamples\TinyVRGui.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\RenderingExamples\TinyVRGui.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\RoboticsLearning\GripperGraspExample.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\RoboticsLearning\GripperGraspExample.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\RoboticsLearning\R2D2GraspExample.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\RoboticsLearning\R2D2GraspExample.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\RoboticsLearning\KukaGraspExample.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\RoboticsLearning\KukaGraspExample.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\RenderingExamples\CoordinateSystemDemo.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\RenderingExamples\CoordinateSystemDemo.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\RenderingExamples\RaytracerSetup.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\RenderingExamples\RaytracerSetup.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\RenderingExamples\RenderInstancingDemo.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\RenderingExamples\RenderInstancingDemo.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\RenderingExamples\TimeSeriesExample.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\Benchmarks\BenchmarkDemo.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Benchmarks\BenchmarkDemo.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Benchmarks\landscapeData.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Benchmarks\TaruData.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\Raycast\RaytestDemo.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Importers\ImportBsp\BspConverter.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\Importers\ImportBullet\SerializeSetup.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Importers\ImportBullet\SerializeSetup.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\Importers\ImportMeshUtility\b3ImportMeshUtility.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Importers\ImportMeshUtility\b3ImportMeshUtility.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\Extras\Serialize\BulletWorldImporter\btWorldImporter.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\Extras\Serialize\BulletWorldImporter\btMultiBodyWorldImporter.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\Extras\Serialize\BulletWorldImporter\btBulletWorldImporter.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\Extras\Serialize\BulletFileLoader\bChunk.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\Extras\Serialize\BulletFileLoader\bFile.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\Extras\Serialize\BulletFileLoader\bDNA.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\Extras\Serialize\BulletFileLoader\btBulletFile.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Importers\ImportBsp\BspLoader.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Importers\ImportBsp\ImportBspExample.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Importers\ImportColladaDemo\btMatrix4x4.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Importers\ImportColladaDemo\ColladaGraphicsInstance.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Importers\ImportColladaDemo\ImportColladaSetup.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Importers\ImportColladaDemo\LoadMeshFromCollada.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Importers\ImportObjDemo\ImportObjExample.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Importers\ImportObjDemo\LoadMeshFromObj.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Importers\ImportObjDemo\Wavefront2GLInstanceGraphicsShape.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Importers\ImportSTLDemo\ImportSTLSetup.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Importers\ImportSTLDemo\LoadMeshFromSTL.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Importers\ImportURDFDemo\ConvertRigidBodies2MultiBody.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Importers\ImportURDFDemo\ImportURDFSetup.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Importers\ImportURDFDemo\URDF2Bullet.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Importers\ImportURDFDemo\urdf_samples.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\Importers\ImportMJCFDemo\BulletMJCFImporter.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Importers\ImportMJCFDemo\BulletMJCFImporter.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\Importers\ImportMJCFDemo\ImportMJCFSetup.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Importers\ImportMJCFDemo\ImportMJCFSetup.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\Importers\ImportBsp\BspConverter.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\Importers\ImportBsp\BspLoader.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\Importers\ImportBsp\ImportBspExample.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\Importers\ImportColladaDemo\ImportColladaSetup.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\Importers\ImportColladaDemo\LoadMeshFromCollada.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\Importers\ImportObjDemo\ImportObjExample.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\Importers\ImportObjDemo\LoadMeshFromObj.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\Importers\ImportObjDemo\Wavefront2GLInstanceGraphicsShape.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\Importers\ImportSTLDemo\ImportSTLSetup.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\Importers\ImportSDFDemo\ImportSDFSetup.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\Importers\ImportURDFDemo\ImportURDFSetup.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\Importers\ImportURDFDemo\URDF2Bullet.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\Importers\ImportURDFDemo\MyMultiBodyCreator.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Importers\ImportURDFDemo\MyMultiBodyCreator.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\Importers\ImportURDFDemo\UrdfParser.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\Utils\RobotLoggingUtil.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Utils\RobotLoggingUtil.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\Importers\ImportURDFDemo\urdfStringSplit.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Importers\ImportURDFDemo\urdfStringSplit.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\Importers\ImportURDFDemo\BulletUrdfImporter.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Importers\ImportURDFDemo\BulletUrdfImporter.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\VoronoiFracture\VoronoiFractureDemo.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\VoronoiFracture\VoronoiFractureDemo.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\VoronoiFracture\btConvexConvexMprAlgorithm.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\VoronoiFracture\btConvexConvexMprAlgorithm.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\Vehicles\Hinge2Vehicle.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Vehicles\Hinge2Vehicle.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\MultiBody\Pendulum.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\MultiBody\MultiBodySoftContact.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\MultiBody\TestJointTorqueSetup.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\MultiBody\TestJointTorqueSetup.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\MultiBody\InvertedPendulumPDControl.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\MultiBody\InvertedPendulumPDControl.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\MultiBody\MultiBodyConstraintFeedback.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\SoftDemo\SoftDemo.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\SoftDemo\SoftDemo.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\MultiBody\MultiDofDemo.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\MultiBody\MultiDofDemo.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\RigidBody\RigidBodySoftContact.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\Constraints\TestHingeTorque.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Constraints\TestHingeTorque.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\Constraints\ConstraintDemo.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Constraints\ConstraintDemo.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\Constraints\Dof6Spring2Setup.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Constraints\Dof6Spring2Setup.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\Constraints\ConstraintPhysicsSetup.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Constraints\ConstraintPhysicsSetup.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\stb_image\stb_image.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\stb_image\stb_image.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\stb_image\stb_image_write.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Wavefront\tiny_obj_loader.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\tinyxml2\tinyxml2.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\InProcessExampleBrowser.cpp" />
+    <ClInclude Include="ID_test\BulletUtil.h" />
+    <ClInclude Include="ID_test\cIDSolver.h" />
+    <ClInclude Include="ID_test\MathUtil.h" />
+    <ResourceCompile Include="E:\VS2017Projects\bullet3-master\build3\bullet.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\ZERO_CHECK.vcxproj">
+      <Project>{66149EB1-15CC-315B-B5A0-C1328F59ADDF}</Project>
+      <Name>ZERO_CHECK</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\src\Bullet3Common\Bullet3Common.vcxproj">
+      <Project>{9904A7D8-15AE-37DF-A4E5-D96CD3DBE02C}</Project>
+      <Name>Bullet3Common</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\src\BulletCollision\BulletCollision.vcxproj">
+      <Project>{85222E1D-1917-3723-86B7-ACACCCC38A26}</Project>
+      <Name>BulletCollision</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\src\BulletDynamics\BulletDynamics.vcxproj">
+      <Project>{D1566F81-B72F-38F6-BD3A-0BF2166015E6}</Project>
+      <Name>BulletDynamics</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\BulletExampleBrowserLib.vcxproj">
+      <Project>{49E8CE2F-B569-3590-862F-CBC8ED4AB706}</Project>
+      <Name>BulletExampleBrowserLib</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\src\BulletInverseDynamics\BulletInverseDynamics.vcxproj">
+      <Project>{ABF6E71F-78CE-3433-B7FA-F0023D1A502A}</Project>
+      <Name>BulletInverseDynamics</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\Extras\InverseDynamics\BulletInverseDynamicsUtils.vcxproj">
+      <Project>{0E181588-C047-3941-877A-80D85511E7E5}</Project>
+      <Name>BulletInverseDynamicsUtils</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\src\BulletSoftBody\BulletSoftBody.vcxproj">
+      <Project>{621DCD50-CAFE-352E-9C6F-FBB4A0600BA7}</Project>
+      <Name>BulletSoftBody</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\BussIK\BussIK.vcxproj">
+      <Project>{123AA6F8-3E25-3BA6-BA2A-E718B04E11E6}</Project>
+      <Name>BussIK</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\src\LinearMath\LinearMath.vcxproj">
+      <Project>{223785BB-0BD4-361D-8B73-576271D41702}</Project>
+      <Name>LinearMath</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\examples\OpenGLWindow\OpenGLWindow.vcxproj">
+      <Project>{D7E174B0-2DDC-35D0-8ADB-FB2A5276BE58}</Project>
+      <Name>OpenGLWindow</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\Gwen\gwen.vcxproj">
+      <Project>{12541EFB-BC2C-3CD4-BDEB-1F33C27DEB6E}</Project>
+      <Name>gwen</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

@@ -5,8 +5,12 @@ if [ -e CMakeCache.txt ]; then
 fi
 mkdir -p build_cmake
 cd build_cmake
-cmake -DBUILD_PYBULLET=ON -DBUILD_PYBULLET_NUMPY=ON -DUSE_DOUBLE_PRECISION=ON -DBT_USE_EGL=ON -DCMAKE_BUILD_TYPE=Release .. || exit 1
-make -j $(command nproc 2>/dev/null || echo 12) || exit 1
+# double
+cmake -DBUILD_PYBULLET=OFF -DBUILD_PYBULLET_NUMPY=OFF -DUSE_DOUBLE_PRECISION=ON -DBT_USE_EGL=ON -DCMAKE_BUILD_TYPE=Release .. || exit 1
+# float
+# cmake -DBUILD_PYBULLET=ON -DBUILD_PYBULLET_NUMPY=ON -DUSE_DOUBLE_PRECISION=OFF -DBT_USE_EGL=ON -DCMAKE_BUILD_TYPE=Release .. || exit 1
+
+make -j $(command nproc 2>/dev/null || echo 12) V=1 || exit 1
 cd examples
 cd pybullet
 if [ -e pybullet.dylib ]; then

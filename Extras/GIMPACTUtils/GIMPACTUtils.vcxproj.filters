@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\Extras\GIMPACTUtils\btGImpactConvexDecompositionShape.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\Extras\GIMPACTUtils\btGImpactConvexDecompositionShape.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="E:\VS2017Projects\bullet3-master\Extras\GIMPACTUtils\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{24704709-D686-31E0-82FF-4A04548DC297}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{2D80533D-35AE-38B5-B044-9B93252ABAA9}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

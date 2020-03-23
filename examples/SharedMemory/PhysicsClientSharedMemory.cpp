@@ -20,7 +20,7 @@ struct BodyJointInfoCache
 	b3AlignedObjectArray<b3JointInfo> m_jointInfo;
 	std::string m_bodyName;
 	btAlignedObjectArray<int> m_userDataIds;
-
+	int m_numDofs;
 	~BodyJointInfoCache()
 	{
 	}
@@ -52,6 +52,9 @@ struct PhysicsClientSharedMemoryInternalData
 	btAlignedObjectArray<b3OverlappingObject> m_cachedOverlappingObjects;
 	btAlignedObjectArray<b3VisualShapeData> m_cachedVisualShapes;
 	btAlignedObjectArray<b3CollisionShapeData> m_cachedCollisionShapes;
+
+	b3MeshData m_cachedMeshData;
+	btAlignedObjectArray<b3MeshVertex> m_cachedVertexPositions;
 
 	btAlignedObjectArray<b3VRControllerEvent> m_cachedVREvents;
 	btAlignedObjectArray<b3KeyboardEvent> m_cachedKeyboardEvents;
@@ -97,6 +100,8 @@ struct PhysicsClientSharedMemoryInternalData
 		  m_verboseOutput(false),
 		  m_timeOutInSeconds(1e30)
 	{
+		m_cachedMeshData.m_numVertices = 0;
+		m_cachedMeshData.m_vertices = 0;
 	}
 
 	void processServerStatus();
@@ -142,6 +147,17 @@ int PhysicsClientSharedMemory::getNumJoints(int bodyUniqueId) const
 		return bodyJoints->m_jointInfo.size();
 	}
 	return 0;
+}
+
+int PhysicsClientSharedMemory::getNumDofs(int bodyUniqueId) const
+{
+        BodyJointInfoCache** bodyJointsPtr = m_data->m_bodyJointMap[bodyUniqueId];
+        if (bodyJointsPtr && *bodyJointsPtr)
+        {
+                BodyJointInfoCache* bodyJoints = *bodyJointsPtr;
+                return bodyJoints->m_numDofs;
+        }
+        return 0;
 }
 
 bool PhysicsClientSharedMemory::getJointInfo(int bodyUniqueId, int jointIndex, b3JointInfo& info) const
@@ -1021,6 +1037,24 @@ const SharedMemoryStatus* PhysicsClientSharedMemory::processServerStatus()
 				b3Warning("Camera image FAILED\n");
 				break;
 			}
+			case CMD_REQUEST_MESH_DATA_COMPLETED:
+			{
+				m_data->m_cachedVertexPositions.resize(serverCmd.m_sendMeshDataArgs.m_startingVertex + serverCmd.m_sendMeshDataArgs.m_numVerticesCopied);
+				btVector3* verticesReceived = (btVector3*)m_data->m_testBlock1->m_bulletStreamDataServerToClientRefactor;
+				for (int i = 0; i < serverCmd.m_sendMeshDataArgs.m_numVerticesCopied; i++)
+				{
+					m_data->m_cachedVertexPositions[i + serverCmd.m_sendMeshDataArgs.m_startingVertex].x = verticesReceived[i].x();
+					m_data->m_cachedVertexPositions[i + serverCmd.m_sendMeshDataArgs.m_startingVertex].y = verticesReceived[i].y();
+					m_data->m_cachedVertexPositions[i + serverCmd.m_sendMeshDataArgs.m_startingVertex].z = verticesReceived[i].z();
+					m_data->m_cachedVertexPositions[i + serverCmd.m_sendMeshDataArgs.m_startingVertex].w = verticesReceived[i].w();
+				}
+				break;
+			}
+			case CMD_REQUEST_MESH_DATA_FAILED:
+			{
+				b3Warning("Request mesh data failed");
+				break;
+			}
 			case CMD_CALCULATED_INVERSE_DYNAMICS_COMPLETED:
 			{
 				break;
@@ -1387,12 +1421,51 @@ const SharedMemoryStatus* PhysicsClientSharedMemory::processServerStatus()
 			}
 			case CMD_LOAD_SOFT_BODY_FAILED:
 			{
-				b3Warning("loadSoftBody failed");
-				break;
+                            B3_PROFILE("CMD_LOAD_SOFT_BODY_FAILED");
+
+                            if (m_data->m_verboseOutput)
+                            {
+                                b3Printf("Server failed loading the SoftBody...\n");
+                            }
+                            break;
 			}
 			case CMD_LOAD_SOFT_BODY_COMPLETED:
 			{
-				break;
+                          B3_PROFILE("CMD_LOAD_SOFT_BODY_COMPLETED");
+
+                          if (m_data->m_verboseOutput)
+                          {
+                            b3Printf("Server loading the SoftBody OK\n");
+                          }
+                          
+                          b3Assert(serverCmd.m_numDataStreamBytes);
+                          if (serverCmd.m_numDataStreamBytes > 0)
+                          {
+			       bParse::btBulletFile bf(
+                                   this->m_data->m_testBlock1->m_bulletStreamDataServerToClientRefactor,
+                                   serverCmd.m_numDataStreamBytes);
+                               bf.setFileDNAisMemoryDNA();
+                               bf.parse(false);
+                               int bodyUniqueId = serverCmd.m_dataStreamArguments.m_bodyUniqueId;
+                               
+                               BodyJointInfoCache* bodyJoints = new BodyJointInfoCache;
+                               m_data->m_bodyJointMap.insert(bodyUniqueId, bodyJoints);
+                               bodyJoints->m_bodyName = serverCmd.m_dataStreamArguments.m_bodyName;
+                               bodyJoints->m_baseName = "baseLink";
+                                        
+                               if (bf.ok())
+                               {
+                                 if (m_data->m_verboseOutput)
+                                 {
+                                   b3Printf("Received robot description ok!\n");
+                                 }
+                               }
+                               else
+                               {
+                                 b3Warning("Robot description not received when loading soft body!");
+                               }
+                          }
+                          break;
 			}
 			case CMD_SYNC_USER_DATA_FAILED:
 			{
@@ -1418,6 +1491,8 @@ const SharedMemoryStatus* PhysicsClientSharedMemory::processServerStatus()
 			case CMD_SYNC_USER_DATA_COMPLETED:
 			case CMD_REMOVE_USER_DATA_COMPLETED:
 			case CMD_ADD_USER_DATA_COMPLETED:
+			case CMD_REMOVE_STATE_FAILED:
+			case CMD_REMOVE_STATE_COMPLETED:
 			{
 				break;
 			}
@@ -1706,6 +1781,26 @@ const SharedMemoryStatus* PhysicsClientSharedMemory::processServerStatus()
 			}
 		}
 
+		if (serverCmd.m_type == CMD_REQUEST_MESH_DATA_COMPLETED)
+		{
+			B3_PROFILE("CMD_REQUEST_MESH_DATA_COMPLETED");
+			SharedMemoryCommand& command = m_data->m_testBlock1->m_clientCommands[0];
+
+			if (serverCmd.m_sendMeshDataArgs.m_numVerticesRemaining > 0 && serverCmd.m_sendMeshDataArgs.m_numVerticesCopied)
+			{
+				command.m_type = CMD_REQUEST_MESH_DATA;
+				command.m_requestMeshDataArgs.m_startingVertex =
+					serverCmd.m_sendMeshDataArgs.m_startingVertex +
+					serverCmd.m_sendMeshDataArgs.m_numVerticesCopied;
+				submitClientCommand(command);
+				return 0;
+			}
+			else
+			{
+				m_data->m_cachedMeshData.m_numVertices = serverCmd.m_sendMeshDataArgs.m_startingVertex + serverCmd.m_sendMeshDataArgs.m_numVerticesCopied;
+			}
+		}
+
 		if ((serverCmd.m_type == CMD_DEBUG_LINES_COMPLETED) &&
 			(serverCmd.m_sendDebugLinesArgs.m_numRemainingDebugLines > 0))
 		{
@@ -1888,6 +1983,15 @@ void PhysicsClientSharedMemory::getCachedCollisionShapeInformation(struct b3Coll
 	collisionShapesInfo->m_collisionShapeData = collisionShapesInfo->m_numCollisionShapes ? &m_data->m_cachedCollisionShapes[0] : 0;
 }
 
+void PhysicsClientSharedMemory::getCachedMeshData(struct b3MeshData* meshData)
+{
+	m_data->m_cachedMeshData.m_numVertices = m_data->m_cachedVertexPositions.size();
+	
+	m_data->m_cachedMeshData.m_vertices = m_data->m_cachedMeshData.m_numVertices ? &m_data->m_cachedVertexPositions[0] : 0;
+	
+	*meshData = m_data->m_cachedMeshData;
+}
+
 const float* PhysicsClientSharedMemory::getDebugLinesFrom() const
 {
 	if (m_data->m_debugLinesFrom.size())
@@ -1999,3 +2103,4 @@ void PhysicsClientSharedMemory::popProfileTiming()
 		delete sample;
 	}
 }
+

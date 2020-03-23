@@ -94,6 +94,9 @@ LINK_LIBRARIES(
         BulletExampleBrowserLib Bullet3Common BulletSoftBody BulletDynamics BulletCollision BulletInverseDynamicsUtils BulletInverseDynamics LinearMath OpenGLWindow gwen BussIK
 )
 
+
+add_definitions(-DINCLUDE_CLOTH_DEMOS)
+
 IF (WIN32)
 	INCLUDE_DIRECTORIES(
 		${BULLET_PHYSICS_SOURCE_DIR}/examples/ThirdPartyLibs/glad
@@ -168,6 +171,14 @@ SET(BulletExampleBrowser_SRCS
 	../SharedMemory/PhysicsClientSharedMemory_C_API.cpp
 	../SharedMemory/PhysicsClient.cpp
 	../SharedMemory/PhysicsClientC_API.cpp
+	../SharedMemory/GraphicsServerExample.cpp
+	../SharedMemory/GraphicsClientExample.cpp
+	../SharedMemory/RemoteGUIHelper.cpp
+	../SharedMemory/GraphicsServerExample.h
+	../SharedMemory/GraphicsClientExample.h
+	../SharedMemory/RemoteGUIHelper.h
+	../SharedMemory/GraphicsSharedMemoryCommands.h
+	../SharedMemory/GraphicsSharedMemoryPublic.h
 	../SharedMemory/PhysicsServerExample.cpp
 	../SharedMemory/PhysicsServerExampleBullet2.cpp
 	../SharedMemory/PhysicsClientExample.cpp
@@ -207,10 +218,14 @@ SET(BulletExampleBrowser_SRCS
 	../MultiThreadedDemo/MultiThreadedDemo.h
 	../MultiThreadedDemo/CommonRigidBodyMTBase.cpp
 	../MultiThreadedDemo/CommonRigidBodyMTBase.h
+	../Heightfield/HeightfieldExample.cpp
+	../Heightfield/HeightfieldExample.h
 	../BlockSolver/btBlockSolver.cpp
 	../BlockSolver/btBlockSolver.h
 	../BlockSolver/BlockSolverExample.cpp
 	../BlockSolver/BlockSolverExample.h
+	../BlockSolver/RigidBodyBoxes.cpp
+	../BlockSolver/RigidBodyBoxes.h
 	../Tutorial/Tutorial.cpp
 	../Tutorial/Tutorial.h
 	../Tutorial/Dof6ConstraintTutorial.cpp
@@ -342,8 +357,15 @@ SET(BulletExampleBrowser_SRCS
   ../MultiBody/InvertedPendulumPDControl.cpp
   ../MultiBody/InvertedPendulumPDControl.h
  ../MultiBody/MultiBodyConstraintFeedback.cpp
+  ../SoftDemo/SoftDemo.cpp
+  ../SoftDemo/SoftDemo.h
   ../MultiBody/MultiDofDemo.cpp
   ../MultiBody/MultiDofDemo.h
+  ./ID_test/cIDSolver.cpp
+  ./ID_test/cIDSolver.h
+  ./ID_test/MathUtil.cpp
+  ./ID_test/MathUtil.h
+  ./ID_test/BulletUtil.h
   ../RigidBody/RigidBodySoftContact.cpp
   ../Constraints/TestHingeTorque.cpp
   ../Constraints/TestHingeTorque.h

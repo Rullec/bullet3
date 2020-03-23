@@ -107,9 +107,14 @@ bool PhysicsLoopBack::getBodyInfo(int bodyUniqueId, struct b3BodyInfo& info) con
 	return m_data->m_physicsClient->getBodyInfo(bodyUniqueId, info);
 }
 
-int PhysicsLoopBack::getNumJoints(int bodyIndex) const
+int PhysicsLoopBack::getNumJoints(int bodyUniqueId) const
 {
-	return m_data->m_physicsClient->getNumJoints(bodyIndex);
+	return m_data->m_physicsClient->getNumJoints(bodyUniqueId);
+}
+
+int PhysicsLoopBack::getNumDofs(int bodyUniqueId) const
+{
+        return m_data->m_physicsClient->getNumDofs(bodyUniqueId);
 }
 
 bool PhysicsLoopBack::getJointInfo(int bodyIndex, int jointIndex, struct b3JointInfo& info) const
@@ -173,8 +178,10 @@ void PhysicsLoopBack::getCachedCameraImage(struct b3CameraImageData* cameraData)
 	return m_data->m_physicsClient->getCachedCameraImage(cameraData);
 }
 
-
-
+void PhysicsLoopBack::getCachedMeshData(struct b3MeshData* meshData)
+{
+	return m_data->m_physicsClient->getCachedMeshData(meshData);
+}
 
 void PhysicsLoopBack::getCachedContactPointInformation(struct b3ContactInformation* contactPointData)
 {

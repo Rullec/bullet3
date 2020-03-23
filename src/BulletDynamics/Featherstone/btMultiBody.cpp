@@ -344,6 +344,7 @@ void btMultiBody::finalizeMultiDof()
 	m_deltaV.resize(6 + m_dofCount);
 	m_realBuf.resize(6 + m_dofCount + m_dofCount * m_dofCount + 6 + m_dofCount);  //m_dofCount for joint-space vels + m_dofCount^2 for "D" matrices + delta-pos vector (6 base "vels" + joint "vels")
 	m_vectorBuf.resize(2 * m_dofCount);                                           //two 3-vectors (i.e. one six-vector) for each system dof	("h" matrices)
+	m_matrixBuf.resize(m_links.size() + 1);
 	for (int i = 0; i < m_vectorBuf.size(); i++)
 	{
 		m_vectorBuf[i].setValue(0, 0, 0);
@@ -351,9 +352,9 @@ void btMultiBody::finalizeMultiDof()
 	updateLinksDofOffsets();
 }
 
-int btMultiBody::getParent(int i) const
+int btMultiBody::getParent(int link_num) const
 {
-	return m_links[i].m_parent;
+	return m_links[link_num].m_parent;
 }
 
 btScalar btMultiBody::getLinkMass(int i) const
@@ -1609,7 +1610,10 @@ void btMultiBody::stepPositionsMultiDof(btScalar dt, btScalar *pq, btScalar *pqd
 			btVector3 angvel;
 
 			if (!baseBody)
+			{
 				angvel = quatRotate(quat, omega);  //if quat is not m_baseQuat, it is alibi => ok
+			}
+				
 			else
 				angvel = omega;
 

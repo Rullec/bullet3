@@ -1,0 +1,314 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|x64">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|x64">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{49E8CE2F-B569-3590-862F-CBC8ED4AB706}</ProjectGuid>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
+    <Keyword>Win32Proj</Keyword>
+    <Platform>x64</Platform>
+    <ProjectName>BulletExampleBrowserLib</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\VS2017Projects\bullet3-master\lib\Debug\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">BulletExampleBrowserLib.dir\Debug\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">BulletExampleBrowserLib_Debug</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\VS2017Projects\bullet3-master\lib\Release\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">BulletExampleBrowserLib.dir\Release\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">BulletExampleBrowserLib</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\VS2017Projects\bullet3-master\lib\MinSizeRel\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">BulletExampleBrowserLib.dir\MinSizeRel\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">BulletExampleBrowserLib_MinsizeRel</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\VS2017Projects\bullet3-master\lib\RelWithDebInfo\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">BulletExampleBrowserLib.dir\RelWithDebInfo\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">BulletExampleBrowserLib_RelWithDebugInfo</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">.lib</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\.;E:\VS2017Projects\bullet3-master\src;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\glad;E:\VS2017Projects\bullet3-master\examples\SharedMemory;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>Debug/</AssemblerListingLocation>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4244;4267</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <Optimization>Disabled</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <StringPooling>true</StringPooling>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WIN64;BT_USE_DOUBLE_PRECISION;USE_GRAPHICAL_BENCHMARK;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;GLEW_STATIC;INCLUDE_CLOTH_DEMOS;CMAKE_INTDIR="Debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WIN64;BT_USE_DOUBLE_PRECISION;USE_GRAPHICAL_BENCHMARK;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;GLEW_STATIC;INCLUDE_CLOTH_DEMOS;CMAKE_INTDIR=\"Debug\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\.;E:\VS2017Projects\bullet3-master\src;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\glad;E:\VS2017Projects\bullet3-master\examples\SharedMemory;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\.;E:\VS2017Projects\bullet3-master\src;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\glad;E:\VS2017Projects\bullet3-master\examples\SharedMemory;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\.;E:\VS2017Projects\bullet3-master\src;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\glad;E:\VS2017Projects\bullet3-master\examples\SharedMemory;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>Release/</AssemblerListingLocation>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <DisableSpecificWarnings>4244;4267</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <StringPooling>true</StringPooling>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WIN64;BT_USE_DOUBLE_PRECISION;USE_GRAPHICAL_BENCHMARK;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;GLEW_STATIC;INCLUDE_CLOTH_DEMOS;CMAKE_INTDIR="Release";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WIN64;BT_USE_DOUBLE_PRECISION;USE_GRAPHICAL_BENCHMARK;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;GLEW_STATIC;INCLUDE_CLOTH_DEMOS;CMAKE_INTDIR=\"Release\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\.;E:\VS2017Projects\bullet3-master\src;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\glad;E:\VS2017Projects\bullet3-master\examples\SharedMemory;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\.;E:\VS2017Projects\bullet3-master\src;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\glad;E:\VS2017Projects\bullet3-master\examples\SharedMemory;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\.;E:\VS2017Projects\bullet3-master\src;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\glad;E:\VS2017Projects\bullet3-master\examples\SharedMemory;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>MinSizeRel/</AssemblerListingLocation>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <DisableSpecificWarnings>4244;4267</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <Optimization>MinSpace</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <StringPooling>true</StringPooling>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WIN64;BT_USE_DOUBLE_PRECISION;USE_GRAPHICAL_BENCHMARK;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;GLEW_STATIC;INCLUDE_CLOTH_DEMOS;CMAKE_INTDIR="MinSizeRel";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WIN64;BT_USE_DOUBLE_PRECISION;USE_GRAPHICAL_BENCHMARK;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;GLEW_STATIC;INCLUDE_CLOTH_DEMOS;CMAKE_INTDIR=\"MinSizeRel\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\.;E:\VS2017Projects\bullet3-master\src;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\glad;E:\VS2017Projects\bullet3-master\examples\SharedMemory;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\.;E:\VS2017Projects\bullet3-master\src;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\glad;E:\VS2017Projects\bullet3-master\examples\SharedMemory;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\.;E:\VS2017Projects\bullet3-master\src;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\glad;E:\VS2017Projects\bullet3-master\examples\SharedMemory;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>RelWithDebInfo/</AssemblerListingLocation>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4244;4267</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <StringPooling>true</StringPooling>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WIN64;BT_USE_DOUBLE_PRECISION;USE_GRAPHICAL_BENCHMARK;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;GLEW_STATIC;INCLUDE_CLOTH_DEMOS;CMAKE_INTDIR="RelWithDebInfo";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WIN64;BT_USE_DOUBLE_PRECISION;USE_GRAPHICAL_BENCHMARK;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;GLEW_STATIC;INCLUDE_CLOTH_DEMOS;CMAKE_INTDIR=\"RelWithDebInfo\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\.;E:\VS2017Projects\bullet3-master\src;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\glad;E:\VS2017Projects\bullet3-master\examples\SharedMemory;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\.;E:\VS2017Projects\bullet3-master\src;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs;E:\VS2017Projects\bullet3-master\examples\ThirdPartyLibs\glad;E:\VS2017Projects\bullet3-master\examples\SharedMemory;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\CMakeLists.txt">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule E:/VS2017Projects/bullet3-master/examples/ExampleBrowser/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+D:\cmake-3.12.1-win64-x64\bin\cmake.exe -HE:/VS2017Projects/bullet3-master -BE:/VS2017Projects/bullet3-master --check-stamp-file E:/VS2017Projects/bullet3-master/examples/ExampleBrowser/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:/VS2017Projects/bullet3-master/examples/ExampleBrowser/CMakeLists.txt;E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\CMakeLists.txt;E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule E:/VS2017Projects/bullet3-master/examples/ExampleBrowser/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+D:\cmake-3.12.1-win64-x64\bin\cmake.exe -HE:/VS2017Projects/bullet3-master -BE:/VS2017Projects/bullet3-master --check-stamp-file E:/VS2017Projects/bullet3-master/examples/ExampleBrowser/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:/VS2017Projects/bullet3-master/examples/ExampleBrowser/CMakeLists.txt;E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\CMakeLists.txt;E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Building Custom Rule E:/VS2017Projects/bullet3-master/examples/ExampleBrowser/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+D:\cmake-3.12.1-win64-x64\bin\cmake.exe -HE:/VS2017Projects/bullet3-master -BE:/VS2017Projects/bullet3-master --check-stamp-file E:/VS2017Projects/bullet3-master/examples/ExampleBrowser/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:/VS2017Projects/bullet3-master/examples/ExampleBrowser/CMakeLists.txt;E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\CMakeLists.txt;E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule E:/VS2017Projects/bullet3-master/examples/ExampleBrowser/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+D:\cmake-3.12.1-win64-x64\bin\cmake.exe -HE:/VS2017Projects/bullet3-master -BE:/VS2017Projects/bullet3-master --check-stamp-file E:/VS2017Projects/bullet3-master/examples/ExampleBrowser/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:/VS2017Projects/bullet3-master/examples/ExampleBrowser/CMakeLists.txt;E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\CMakeLists.txt;E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\OpenGLExampleBrowser.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\OpenGLGuiHelper.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\GL_ShapeDrawer.cpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\CollisionShape2TriangleMesh.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\CollisionShape2TriangleMesh.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\Utils\b3Clock.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Utils\b3Clock.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\Utils\ChromeTraceUtil.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Utils\ChromeTraceUtil.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\Utils\b3ResourcePath.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Utils\b3ResourcePath.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Utils\b3ERPCFMHelper.hpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\Utils\b3ReferenceFrameHelper.hpp" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\GwenGUISupport\GraphingTexture.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\GwenGUISupport\GraphingTexture.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\GwenGUISupport\GwenParameterInterface.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\GwenGUISupport\GwenParameterInterface.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\GwenGUISupport\GwenProfileWindow.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\GwenGUISupport\GwenProfileWindow.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\GwenGUISupport\GwenTextureWindow.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\GwenGUISupport\GwenTextureWindow.h" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\GwenGUISupport\gwenInternalData.h" />
+    <ClCompile Include="E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\GwenGUISupport\gwenUserInterface.cpp" />
+    <ClInclude Include="E:\VS2017Projects\bullet3-master\examples\ExampleBrowser\GwenGUISupport\gwenUserInterface.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="E:\VS2017Projects\bullet3-master\ZERO_CHECK.vcxproj">
+      <Project>{66149EB1-15CC-315B-B5A0-C1328F59ADDF}</Project>
+      <Name>ZERO_CHECK</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

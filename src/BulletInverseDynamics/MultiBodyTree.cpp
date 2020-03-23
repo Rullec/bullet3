@@ -545,4 +545,14 @@ int MultiBodyTree::addUserMoment(const int body_index, const vec3 &body_moment)
 	return m_impl->addUserMoment(body_index, body_moment);
 }
 
-}  // namespace btInverseDynamics
+int MultiBodyTree::getUserForce(int body_index, vec3 & body_force) const
+{
+	return m_impl->getUserForce(body_index, body_force);
+}
+
+int MultiBodyTree::getUserMoment(int body_index, vec3 & body_moment) const
+{
+	return m_impl->getUserMoment(body_index, body_moment);
+}
+
+}  	// namespace btInverseDynamics

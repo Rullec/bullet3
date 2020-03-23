@@ -167,6 +167,8 @@ mat33 transformX(const idScalar &alpha)
 	T(2, 1) = -sin_alpha;
 	T(2, 2) = cos_alpha;
 
+	// 20200107: transpose: local to parent
+	T = T.transpose();
 	return T;
 }
 
@@ -190,6 +192,8 @@ mat33 transformY(const idScalar &beta)
 	T(2, 1) = 0.0;
 	T(2, 2) = cos_beta;
 
+	// 20200107: transpose
+	T = T.transpose();
 	return T;
 }
 
@@ -213,6 +217,8 @@ mat33 transformZ(const idScalar &gamma)
 	T(2, 1) = 0.0;
 	T(2, 2) = 1.0;
 
+	// 20200107: transpose
+	T = T.transpose();
 	return T;
 }
 

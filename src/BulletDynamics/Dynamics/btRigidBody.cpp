@@ -111,7 +111,8 @@ void btRigidBody::saveKinematicState(btScalar timeStep)
 		if (getMotionState())
 			getMotionState()->getWorldTransform(m_worldTransform);
 		btVector3 linVel, angVel;
-
+		// 从上一步位移到这一步位移，所需要的线速度和角速度。
+		// 把他们赋值为插值线速度、插值角速度、插值世界变换。
 		btTransformUtil::calculateVelocity(m_interpolationWorldTransform, m_worldTransform, timeStep, m_linearVelocity, m_angularVelocity);
 		m_interpolationLinearVelocity = m_linearVelocity;
 		m_interpolationAngularVelocity = m_angularVelocity;

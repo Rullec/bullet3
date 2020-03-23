@@ -7,8 +7,9 @@
 //Please don't replace an existing magic number:
 //instead, only ADD a new one at the top, comment-out previous one
 
-
-#define SHARED_MEMORY_MAGIC_NUMBER 201902120
+#define SHARED_MEMORY_MAGIC_NUMBER 2019060190
+// #define SHARED_MEMORY_MAGIC_NUMBER 201904030
+//#define SHARED_MEMORY_MAGIC_NUMBER 201902120
 //#define SHARED_MEMORY_MAGIC_NUMBER 201811260
 //#define SHARED_MEMORY_MAGIC_NUMBER 201810250
 //#define SHARED_MEMORY_MAGIC_NUMBER 201809030
@@ -93,6 +94,7 @@ enum EnumSharedMemoryClientCommand
 	CMD_REQUEST_PHYSICS_SIMULATION_PARAMETERS,
 	CMD_SAVE_STATE,
 	CMD_RESTORE_STATE,
+	CMD_REMOVE_STATE,
 	CMD_REQUEST_COLLISION_SHAPE_INFO,
 
 	CMD_SYNC_USER_DATA,
@@ -100,6 +102,7 @@ enum EnumSharedMemoryClientCommand
 	CMD_ADD_USER_DATA,
 	CMD_REMOVE_USER_DATA,
 	CMD_COLLISION_FILTER,
+	CMD_REQUEST_MESH_DATA,
 
 	//don't go beyond this command!
 	CMD_MAX_CLIENT_COMMANDS,
@@ -218,6 +221,11 @@ enum EnumSharedMemoryServerStatus
 	CMD_ADD_USER_DATA_FAILED,
 	CMD_REMOVE_USER_DATA_COMPLETED,
 	CMD_REMOVE_USER_DATA_FAILED,
+	CMD_REMOVE_STATE_COMPLETED,
+	CMD_REMOVE_STATE_FAILED,
+
+	CMD_REQUEST_MESH_DATA_COMPLETED,
+	CMD_REQUEST_MESH_DATA_FAILED,
 	//don't go beyond 'CMD_MAX_SERVER_COMMANDS!
 	CMD_MAX_SERVER_COMMANDS
 };
@@ -403,6 +411,17 @@ struct b3CameraImageData
 	const int* m_segmentationMaskValues;  //m_pixelWidth*m_pixelHeight ints
 };
 
+struct b3MeshVertex
+{
+	double x, y, z, w;
+};
+
+struct b3MeshData
+{
+	int m_numVertices;
+	struct b3MeshVertex* m_vertices;
+};
+
 struct b3OpenGLVisualizerCameraInfo
 {
 	int m_width;
@@ -530,6 +549,7 @@ enum b3NotificationType
 	VISUAL_SHAPE_CHANGED = 6,
 	TRANSFORM_CHANGED = 7,
 	SIMULATION_STEPPED = 8,
+	SOFTBODY_CHANGED = 9,
 };
 
 struct b3BodyNotificationArgs
@@ -568,6 +588,12 @@ struct b3TransformChangeNotificationArgs
 	double m_localScaling[3];
 };
 
+struct b3SoftBodyChangeNotificationArgs
+{
+	int m_bodyUniqueId;
+	int m_linkIndex;
+};
+
 struct b3Notification
 {
 	int m_notificationType;
@@ -577,6 +603,7 @@ struct b3Notification
 		struct b3LinkNotificationArgs m_linkArgs;
 		struct b3VisualShapeNotificationArgs m_visualShapeArgs;
 		struct b3TransformChangeNotificationArgs m_transformChangeArgs;
+		struct b3SoftBodyChangeNotificationArgs m_softBodyChangeArgs;
 	};
 };
 
@@ -826,6 +853,7 @@ enum eCONNECT_METHOD
 	eCONNECT_MUJOCO = 11,
 	eCONNECT_GRPC = 12,
 	eCONNECT_PHYSX=13,
+	eCONNECT_SHARED_MEMORY_GUI=14,
 };
 
 enum eURDF_Flags
@@ -900,7 +928,7 @@ struct b3PluginArguments
 struct b3PhysicsSimulationParameters
 {
 	double m_deltaTime;
-        double m_simulationTimestamp;  // Output only timestamp of simulation.
+	double m_simulationTimestamp;  // user logging timestamp of simulation.
 	double m_gravityAcceleration[3];
 	int m_numSimulationSubSteps;
 	int m_numSolverIterations;
@@ -926,7 +954,9 @@ struct b3PhysicsSimulationParameters
 	int m_enableSAT;
 	int m_constraintSolverType;
 	int m_minimumSolverIslandSize;
+	int m_reportSolverAnalytics;
 };
+
 
 enum eConstraintSolverTypes
 {
@@ -936,6 +966,25 @@ enum eConstraintSolverTypes
 	eConstraintSolverLCP_LEMKE,
 	eConstraintSolverLCP_NNCG,
 	eConstraintSolverLCP_BLOCK_PGS,
+};
+
+struct b3ForwardDynamicsAnalyticsIslandData
+{
+	int m_islandId;
+	int m_numBodies;
+	int m_numContactManifolds;
+	int m_numIterationsUsed;
+	double m_remainingLeastSquaresResidual;
+};
+
+#define MAX_ISLANDS_ANALYTICS 64
+
+struct b3ForwardDynamicsAnalyticsArgs
+{
+	int m_numSteps;
+	int m_numIslands;
+	int m_numSolverCalls;
+	struct b3ForwardDynamicsAnalyticsIslandData m_islandData[MAX_ISLANDS_ANALYTICS];
 };
 
 enum eFileIOActions
