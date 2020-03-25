@@ -50,8 +50,9 @@ cIDSolver::cIDSolver(btMultiBody * body, btMultiBodyDynamicsWorld * world)
 	// init vars
 	mEnableExternalForce = true;
 	mEnableExternalTorque = true;
-	mEnableAppliedJointTorque = false;
-	mEnableSolveID = true;
+	mEnableAppliedJointTorque = true;
+	mEnableSolveID = false;
+	mEnableVerifyVars = true;
 	mFloatingBase = !(mMultibody->hasFixedBase());
 	mDof = mMultibody->getNumDofs();
 	if (mFloatingBase == true)
@@ -97,6 +98,7 @@ cIDSolver::cIDSolver(btMultiBody * body, btMultiBodyDynamicsWorld * world)
 void cIDSolver::SetTimestep(double deltaTime)
 {
 	mCurTimestep = deltaTime;
+	// std::cout <<"time step = " << mCurTimestep << std::endl;
 }
 
 void cIDSolver::ClearID()
@@ -114,7 +116,6 @@ void cIDSolver::ClearID()
 		exit(1);
 	}
 
-	mEnableSolveID = true;
 	mFloatingBase = !(mMultibody->hasFixedBase());
 	mDof = mMultibody->getNumDofs();
 	if (mFloatingBase == true)
@@ -136,9 +137,11 @@ void cIDSolver::ClearID()
 		mLinkRot[i].resize(mNumLinks);
 		mLinkPos[i].resize(mNumLinks);
 		mLinkVel[i].resize(mNumLinks);
+		mLinkOmega[i].resize(mNumLinks);
 		for (auto & x : mLinkRot[i]) x.setIdentity();
 		for (auto & x : mLinkPos[i]) x.setZero();
 		for (auto & x : mLinkVel[i]) x.setZero();
+		for (auto & x : mLinkOmega[i]) x.setZero();
 	}
 
 	solve_joint_force_bt.resize(mDof);
@@ -167,7 +170,7 @@ void cIDSolver::ClearID()
 // tVector base_pos_old, base_pos_new, base_vel;
 void cIDSolver::PreSim()
 {
-	std::cout << "--------------------------------\n";
+	std::cout << "[log] ---------- cIDSolver frame " << mFrameId << "----------\n";
 	ClearID();
 	AddJointForces();
 	AddExternalForces();
@@ -175,7 +178,7 @@ void cIDSolver::PreSim()
 	RecordGeneralizedInfo(mBuffer_q[mFrameId], mBuffer_u[mFrameId]);
 
 	// if(0 == mFrameId)
-	RecordMultibodyInfo(mLinkRot[mFrameId], mLinkPos[mFrameId], mLinkVel[mFrameId]);
+	RecordMultibodyInfo(mLinkRot[mFrameId], mLinkPos[mFrameId], mLinkVel[mFrameId], mLinkOmega[mFrameId]);
 
 	// check link vel
 	// std::cout << cBulletUtil::btVectorTotVector0(mMultibody->getLinkCollider(0)->getInterpolationAngularVelocity());
@@ -194,58 +197,16 @@ void cIDSolver::PostSim()
 	GetContactForces();
 	
 	// record for this frame(after mFrameId++)
-	RecordMultibodyInfo(mLinkRot[mFrameId], mLinkPos[mFrameId], mLinkVel[mFrameId]);
+	RecordMultibodyInfo(mLinkRot[mFrameId], mLinkPos[mFrameId], mLinkVel[mFrameId], mLinkOmega[mFrameId]);
 
 
+	// verify link pos and link vel, system momemtums
+	if(mEnableVerifyVars)
 	{
-		// verify vel = (pos_new - pos_old) / time
-		tVector diff_vel = tVector::Zero();
-		for(int i=0; i<mNumLinks; i++)
-		{
-			tVector pred_vel = (mLinkPos[mFrameId][i] - mLinkPos[mFrameId-1][i]) / this->mCurTimestep,
-					true_vel = mLinkVel[mFrameId][i];
-			
-			double relative_error = (true_vel - pred_vel).norm() / true_vel.norm();
-			std::cout <<"link " << i <<" relative error = " << relative_error*100 << std::endl;
-			// std::cout <<"frame " << mFrameId << " link " << i << " pred vel / true vel diff = " << diff_vel.transpose() << std::endl;
-
-			// if(i == 1)
-			// {
-			// 	std::cout <<"pred_vel = " << pred_vel.transpose() << ", norm = " << pred_vel.norm() << std::endl;
-			// 	std::cout <<"treu vel = " << true_vel.transpose() << ", norm = " << true_vel.norm() << std::endl;
-			// }
-		}
-		
-		// verify linear momentum
-		double mass = 0, total_mass = 0;
-		tVector old_momentum = tVector::Zero(), new_momentum = tVector::Zero();
-		for(int i=0; i<mNumLinks; i++)
-		{
-			if(i ==0) mass = mMultibody->getBaseMass();
-			else mass = mMultibody->getLinkMass(i - 1);
-			old_momentum += mLinkVel[mFrameId- 1][i] * mass;
-			new_momentum += mLinkVel[mFrameId][i] * mass;
-			total_mass += mass;
-		}
-		tVector impulse = cBulletUtil::btVectorTotVector0(gGravity) * total_mass;
-		// add external forces
-		for(int i=0; i<mNumLinks; i++) impulse += mExternalForces[i];
-		impulse *= mCurTimestep;
-
-		tVector momentum_changes = new_momentum - old_momentum;
-		// std::ofstream fout("test_res.txt", std::ios::app);
-		// fout <<"----- frame " << mFrameId << std::endl;
-		// fout <<"cur momentum = " << new_momentum.norm() << std::endl;
-		// fout <<"momentum changes = " << (momentum_changes).transpose() << std::endl;
-		// fout <<"impulse = " << (impulse).transpose() << std::endl;
-		// fout <<"relative error = " << (impulse - momentum_changes).norm() / impulse.norm() * 100 << "%" << std::endl;
+		VerifyLinkVel();
 	}
 
-	// base_pos_new = cBulletUtil::btVectorTotVector0(mMultibody->getBasePos());
-	// base_vel = cBulletUtil::btVectorTotVector0(mMultibody->getBaseVel());
-	// tVector base_vel_pred = (base_pos_new - base_pos_old) / mCurTimestep;
-	// std::cout <<"Base vel diff = " << (base_vel - base_vel_pred).transpose() << std::endl;
-
+	// verify generalized coordinates
 	if (mSolvingMode == eSolvingMode::VEL)
 	{
 		if (mFrameId >= 1)
@@ -511,8 +472,9 @@ void cIDSolver::GetContactForces()
 	}
 }
 
-void cIDSolver::RecordMultibodyInfo(std::vector<tMatrix>& local_to_world_rot, std::vector<tVector>& link_pos_world, std::vector<tVector> & link_vel_world) const
+void cIDSolver::RecordMultibodyInfo(std::vector<tMatrix>& local_to_world_rot, std::vector<tVector>& link_pos_world, std::vector<tVector> & link_vel_world, std::vector<tVector> & link_omega_world) const
 {
+	// std::cout <<"begin info \n";
 	assert(local_to_world_rot.size() == mNumLinks);
 	assert(link_pos_world.size() == mNumLinks);
 
@@ -525,6 +487,7 @@ void cIDSolver::RecordMultibodyInfo(std::vector<tMatrix>& local_to_world_rot, st
 			local_to_world_rot[0] = cMathUtil::RotMat(cBulletUtil::btQuaternionTotQuaternion(mMultibody->getWorldToBaseRot().inverse()));
 			link_pos_world[0] = cBulletUtil::btVectorTotVector1(mMultibody->getBasePos());
 			link_vel_world[0] = cBulletUtil::btVectorTotVector0(mMultibody->getBaseVel());
+			link_omega_world[0]= cBulletUtil::btVectorTotVector0(mMultibody->getBaseOmega());
 		}
 		else
 		{
@@ -533,8 +496,10 @@ void cIDSolver::RecordMultibodyInfo(std::vector<tMatrix>& local_to_world_rot, st
 			local_to_world_rot[ID_link_id] = cBulletUtil::btMatrixTotMatrix1(cur_trans.getBasis());
 			link_pos_world[ID_link_id] = cBulletUtil::btVectorTotVector1(cur_trans.getOrigin());
 			link_vel_world[ID_link_id] = cBulletUtil::btVectorTotVector0(quatRotate(cur_trans.getRotation(), vel_buffer[ID_link_id]));
+			link_omega_world[ID_link_id] = cBulletUtil::btVectorTotVector0(quatRotate(cur_trans.getRotation(), omega_buffer[ID_link_id]));
 		}
 	}
+	// std::cout <<"end info \n";
 }
 void cIDSolver::RecordGeneralizedInfo(tVectorXd & _q, tVectorXd & _q_dot) const
 {
@@ -643,7 +608,7 @@ void cIDSolver::SolveID()
 	{
 		double threshold = 1e-8;
 		double sum_error = 0;
-		std::cout << "solve joint torque diff = ";
+		std::cout << "[log] solve joint torque diff = ";
 		Eigen::VectorXd solved_joint_force = cBulletUtil::btIDArrayToEigenArray(solve_joint_force_bt);
 		std::vector<double> true_joint_force(0);
 		double err = 0;

@@ -3,7 +3,7 @@
 #include <vector>
 #define THROW_IF(val) if (val) throw "[error] in " __FUNCTION__;
 #define THROW_IF_LOG(val, log) if(val) throw "[error] in " + __FUNCTION__ + log;
-#define M_PI  3.14159265358979323
+// #define M_PI  3.14159265358979323
 
 typedef Eigen::Vector4d tVector;
 typedef Eigen::VectorXd tVectorXd;

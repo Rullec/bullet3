@@ -29,6 +29,7 @@ private:
 	bool mEnableExternalTorque;
 	bool mEnableAppliedJointTorque;
 	bool mEnableSolveID;
+	bool mEnableVerifyVars;
 	bool mFloatingBase;
 	int mDof;
 	int mNumLinks;		// including root
@@ -46,7 +47,7 @@ private:
 	std::vector<tVector> mExternalForces;// for each link, external forces in COM
 	std::vector<tVector> mExternalTorques;	// for each link, external torques
 	std::vector<tMatrix> mLinkRot[MAX_FRAME_NUM];	// local to world rotation mats
-	std::vector<tVector> mLinkPos[MAX_FRAME_NUM], mLinkVel[MAX_FRAME_NUM];	// link COM pos in world frame
+	std::vector<tVector> mLinkPos[MAX_FRAME_NUM], mLinkVel[MAX_FRAME_NUM], mLinkOmega[MAX_FRAME_NUM];	// link COM pos in world frame
 	btVector3 *omega_buffer, *vel_buffer;
 	//// permanent memory
 	tVectorXd mBuffer_q[MAX_FRAME_NUM];		// generalized coordinate "q" buffer, storaged for each frame
@@ -57,11 +58,17 @@ private:
 	void AddJointForces();
 	void AddExternalForces();
 	void GetContactForces();
-	void RecordMultibodyInfo(std::vector<tMatrix> & local_to_world_rot, std::vector<tVector> & link_pos_world, std::vector<tVector> & link_vel_world) const;
+	void RecordMultibodyInfo(std::vector<tMatrix> & local_to_world_rot, std::vector<tVector> & link_pos_world, std::vector<tVector> & link_vel_world, std::vector<tVector> & link_omega_world) const;
 	void RecordGeneralizedInfo(btInverseDynamicsBullet3::vecx & q, btInverseDynamicsBullet3::vecx & q_dot) const;
 	void RecordGeneralizedInfo(tVectorXd & q, tVectorXd & q_dot) const;
 	void SolveID();
 	void ApplyContactForcesToID();
 	void ApplyExternalForcesToID();
 	tVectorXd CalculateGeneralizedVel(const tVectorXd & q_before, const tVectorXd & q_after, double timestep) const;
+
+	// the conservation of momentums
+	void VerifyLinearMomentum();
+	void VerifyAngMomentum();
+	void VerifyMomentum();
+	void VerifyLinkVel();
 };

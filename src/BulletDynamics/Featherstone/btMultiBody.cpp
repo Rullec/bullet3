@@ -543,6 +543,7 @@ btMatrix3x3 btMultiBody::localFrameToWorld(int i, const btMatrix3x3 &local_frame
 	return result;
 }
 
+#include <iostream>
 void btMultiBody::compTreeLinkVelocities(btVector3 *omega, btVector3 *vel) const
 {
 	int num_links = getNumLinks();
@@ -551,16 +552,24 @@ void btMultiBody::compTreeLinkVelocities(btVector3 *omega, btVector3 *vel) const
 	omega[0] = quatRotate(base_rot, getBaseOmega());
 	vel[0] = quatRotate(base_rot, getBaseVel());
 
+	// printf("joint 0 local omega = %.5f, %.5f, %.5f, vel = %.5f, %.5f, %.5f\n"
+	// 	,omega[0][0],omega[0][1],omega[0][2],
+	// 	vel[0][0], vel[0][1],vel[0][2]);
+	// num_links doesn't include root link, so we need "idx+1" 
 	for (int i = 0; i < num_links; ++i)
 	{
 		const btMultibodyLink& link = getLink(i);
 		const int parent = link.m_parent;
 
+		// std::cout <<"link " << i << " parent " << parent << std::endl;
 		// transform parent vel into this frame, store in omega[i+1], vel[i+1]
 		spatialTransform(btMatrix3x3(link.m_cachedRotParentToThis), link.m_cachedRVector,
 			omega[parent + 1], vel[parent + 1],
 			omega[i + 1], vel[i + 1]);
 
+		// printf("joint %d local omega part 1 = %.5f, %.5f, %.5f, vel = %.5f, %.5f, %.5f\n",
+		// i+1, omega[i + 1][0],omega[i + 1][1],omega[i + 1][2],
+		// vel[i + 1][0], vel[i + 1][1],vel[i + 1][2]);
 		// now add qidot * shat_i
 		const btScalar* jointVel = getJointVelMultiDof(i);
 		for (int dof = 0; dof < link.m_dofCount; ++dof)
@@ -568,7 +577,11 @@ void btMultiBody::compTreeLinkVelocities(btVector3 *omega, btVector3 *vel) const
 			omega[i + 1] += jointVel[dof] * link.getAxisTop(dof);
 			vel[i + 1] += jointVel[dof] * link.getAxisBottom(dof);
 		}
+		// printf("joint %d local omega final = %.5f, %.5f, %.5f, vel = %.5f, %.5f, %.5f\n",
+		// i+1, omega[i + 1][0],omega[i + 1][1],omega[i + 1][2],
+		// vel[i + 1][0], vel[i + 1][1],vel[i + 1][2]);
 	}
+	// exit(1);
 }
 
 btScalar btMultiBody::getKineticEnergy() const

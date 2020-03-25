@@ -1,4 +1,4 @@
-#pragma once
+// #pragma once
 #include "MultiDofDemo.h"
 #include "../OpenGLWindow/SimpleOpenGL3App.h"
 #include "btBulletDynamicsCommon.h"
@@ -215,8 +215,8 @@ void MultiDofDemo::initPhysics()
 	/////////////////////////////////////////////////////////////////
 	bool damping = false;
 	bool gyro = true;
-	int numLinks = 1;
-	bool spherical = true;  //set it ot false -to use 1DoF hinges instead of 3DoF sphericals
+	int numLinks = 5;
+	bool spherical = false;  //set it ot false -to use 1DoF hinges instead of 3DoF sphericals
 	bool multibodyOnly = false;
 	bool canSleep = false;
 	bool selfCollide = true;
@@ -265,7 +265,7 @@ void MultiDofDemo::initPhysics()
 	addColliders_testMultiDof(mbC, m_dynamicsWorld, baseHalfExtents, linkHalfExtents);
 
 	/////////////////////////////////////////////////////////////////
-	btScalar groundHeight = -152.55;
+	btScalar groundHeight = -52.55;
 	if (!multibodyOnly)
 	{
 		btScalar mass(0.);
@@ -548,6 +548,4 @@ void MultiDofDemo::RecordSimLog()
 
 		}
 	}
-
-
 }

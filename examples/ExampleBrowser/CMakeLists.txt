@@ -363,6 +363,7 @@ SET(BulletExampleBrowser_SRCS
   ../MultiBody/MultiDofDemo.h
   ./ID_test/cIDSolver.cpp
   ./ID_test/cIDSolver.h
+  ./ID_test/cIDSolver_Verify.cpp
   ./ID_test/MathUtil.cpp
   ./ID_test/MathUtil.h
   ./ID_test/BulletUtil.h
