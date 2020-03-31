@@ -99,7 +99,16 @@ tQuaternion cMathUtil::RotMatToQuaternion(const tMatrix &mat)
 		}
 	}
 
-	return tQuaternion(q1, q2, q3, q4);
+	// shape sign
+	
+	int sign[4] = {};
+	sign[0] = cMathUtil::sign(q1);
+	sign[1] = cMathUtil::sign(mat(2, 1) - mat(1, 2));
+	sign[2] = cMathUtil::sign(mat(0, 2) - mat(2, 0));
+	sign[3] = cMathUtil::sign(mat(1, 0) - mat(0, 1));
+	if(sign[0]<0) for(int i=1; i<4; i++) sign[i] *= -1;
+
+	return tQuaternion(sign[0] * q1, sign[1] * q2, sign[2] * q3, sign[3] * q4);
 }
 
 tVector cMathUtil::QuaternionToCoef(const tQuaternion & quater)

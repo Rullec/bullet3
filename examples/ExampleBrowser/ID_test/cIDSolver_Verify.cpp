@@ -8,7 +8,8 @@ extern btVector3 gGravity;
 // the conservation of momentums
 void cIDSolver::VerifyLinearMomentum()
 {
-    assert(mEnableVerifyVars);
+    assert(mEnableVerifyMomentum);
+    assert(this->mContactForces.size() ==0 );
     std::cout <<" void cIDSolver::VerifyLinearMomentum() begin\n";
 
     
@@ -17,6 +18,8 @@ void cIDSolver::VerifyLinearMomentum()
 		// verify linear momentum
 		double mass = 0, total_mass = 0;
 		tVector old_momentum = tVector::Zero(), new_momentum = tVector::Zero();
+        assert(mLinkVel[mFrameId].size() == mNumLinks);
+        assert(mLinkVel[mFrameId - 1].size() == mNumLinks);
 		for(int i=0; i<mNumLinks; i++)
 		{
 			if(i ==0) mass = mMultibody->getBaseMass();
@@ -29,8 +32,17 @@ void cIDSolver::VerifyLinearMomentum()
 		// add external forces
 		for(int i=0; i<mNumLinks; i++) impulse += mExternalForces[i];
 		impulse *= mCurTimestep;
-
 		tVector momentum_changes = new_momentum - old_momentum;
+        tVector error_vec = (impulse - momentum_changes);
+		// std::cout <<"----- frame " << mFrameId << std::endl;
+		std::cout <<"before momentum = " << old_momentum.transpose() << std::endl;
+		std::cout <<"cur momentum = " << new_momentum.transpose() << std::endl;
+		std::cout <<"momentum changes = " << (momentum_changes).transpose() << std::endl;
+		std::cout <<"impulse = " << (impulse).transpose() << std::endl;
+		std::cout <<"error vector = " << (error_vec).transpose() << std::endl;
+		std::cout <<"relative error = " << error_vec.norm() / impulse.norm() * 100 << "%" << std::endl;
+
+		
 		// std::ofstream fout("test_res.txt", std::ios::app);
 		// fout <<"----- frame " << mFrameId << std::endl;
 		// fout <<"cur momentum = " << new_momentum.norm() << std::endl;
@@ -45,20 +57,21 @@ void cIDSolver::VerifyLinearMomentum()
 	// std::cout <<"Base vel diff = " << (base_vel - base_vel_pred).transpose() << std::endl;
 	
 
-    exit(1);
+    // exit(1);
 }
 
 void cIDSolver::VerifyAngMomentum()
 {
-    assert(mEnableVerifyVars);
+    assert(mEnableVerifyMomentum);
     std::cout <<" void cIDSolver::VerifyAngMomentum()\n";
-    exit(1);
+    // exit(1);
 }
 
 void cIDSolver::VerifyMomentum()
 {
-    assert(mEnableVerifyVars);
+    assert(mEnableVerifyMomentum);
     std::cout <<" void cIDSolver::VerifyMomentum()\n";
+    VerifyLinearMomentum();
     exit(1);
 }
 
@@ -71,38 +84,6 @@ void cIDSolver::VerifyLinkVel()
 {
     // now calculate the vel of link COM by myself
     std::vector<tVector> compute_link_vel(mNumLinks), compute_link_omega(mNumLinks);
-    /*
-void btMultiBody::compTreeLinkVelocities(btVector3 *omega, btVector3 *vel) const
-{
-	int num_links = getNumLinks();
-	// Calculates the velocities of each link (and the base) in its local frame
-	const btQuaternion& base_rot = getWorldToBaseRot();
-	omega[0] = quatRotate(base_rot, getBaseOmega());
-	vel[0] = quatRotate(base_rot, getBaseVel());
-
-	// num_links doesn't include root link, so we need "idx+1" 
-	for (int i = 0; i < num_links; ++i)
-	{
-		const btMultibodyLink& link = getLink(i);
-		const int parent = link.m_parent;
-
-		// std::cout <<"link " << i << " parent " << parent << std::endl;
-		// transform parent vel into this frame, store in omega[i+1], vel[i+1]
-		spatialTransform(btMatrix3x3(link.m_cachedRotParentToThis), link.m_cachedRVector,
-			omega[parent + 1], vel[parent + 1],
-			omega[i + 1], vel[i + 1]);
-
-		// now add qidot * shat_i
-		const btScalar* jointVel = getJointVelMultiDof(i);
-		for (int dof = 0; dof < link.m_dofCount; ++dof)
-		{
-			omega[i + 1] += jointVel[dof] * link.getAxisTop(dof);
-			vel[i + 1] += jointVel[dof] * link.getAxisBottom(dof);
-		}
-	}
-	// exit(1);
-}
-    */
     {
         // set up for base link
         btVector3 base_omega_world = btVector3(mMultibody->getRealBuf()[0], mMultibody->getRealBuf()[1], mMultibody->getRealBuf()[2]),
@@ -191,7 +172,7 @@ void btMultiBody::compTreeLinkVelocities(btVector3 *omega, btVector3 *vel) const
     // std::ofstream fout("verify_link_vel.log", std::ios::app);
 
     const std::string info []={"disabled", "enabled"};
-    assert(mEnableVerifyVars);
+    assert(mEnableVerifyVel);
 #ifdef DEBUG_LOG_VEL
     std::cout <<"ext force = " << info[mEnableExternalForce] <<", ext torque = " << info[mEnableExternalTorque]\
         << ", applied joint torque " << info[mEnableAppliedJointTorque] << "\n";
@@ -213,6 +194,39 @@ void btMultiBody::compTreeLinkVelocities(btVector3 *omega, btVector3 *vel) const
         }
         std::cout << std::endl;
 #endif
+    }
+    // exit(1);
+}
+
+void cIDSolver::VerifyLinkOmega()
+{
+    assert(mEnableVerifyVel);
+
+    double err = 0;
+    for(int i=0; i<mNumLinks; i++)
+    {
+        // tQuaternion new_rot = cMathUtil::RotMatToQuaternion(mLinkRot[mFrameId][i]);
+        // tQuaternion old_rot = cMathUtil::RotMatToQuaternion(mLinkRot[mFrameId-1][i]);
+        // tQuaternion diff_rot = new_rot * old_rot.inverse();
+        tQuaternion diff_rot = cMathUtil::RotMatToQuaternion(mLinkRot[mFrameId][i] * mLinkRot[mFrameId-1][i].transpose());
+        tVector aa_omega = cMathUtil::QuaternionToAxisAngle(diff_rot) / mCurTimestep;
+#ifdef DEBUG_LOG_VEL
+        std::cout <<"link " << i <<" calculated omega = " << aa_omega.transpose() << std::endl;
+        std::cout <<"link " << i <<" true omega = " << mLinkOmega[mFrameId][i].transpose() << std::endl;
+        
+
+        tVector error_vector = aa_omega - mLinkOmega[mFrameId][i];
+        std::cout <<"link " << i <<" diff = " << error_vector.transpose() << std::endl;
+        std::cout <<"link " << i <<" omega relative error = " << error_vector.norm()/ (mLinkOmega[mFrameId][i].norm() + 1e-6) * 100 << "%\n";
+#endif
+        // if(error_vector.norm() > 1e-6)
+        // {
+        //     std::cout <<"rot mat = \n"<< mLinkRot[mFrameId][i] * mLinkRot[mFrameId-1][i].transpose() << std::endl;
+        //     std::cout <<"diff quaternion = " << diff_rot.coeffs().transpose() <<", axis angle = " << aa_omega.transpose() * mCurTimestep << std::endl;;
+        //     std::cout <<"axis angle to quater = " << cMathUtil::AxisAngleToQuaternion(aa_omega * mCurTimestep).coeffs().transpose() << std::endl;
+        //     std::cout <<"from quater to rotmat = \n" << cMathUtil::RotMat(diff_rot) << std::endl;
+        //     // exit(1);
+        // }
     }
     // exit(1);
 }

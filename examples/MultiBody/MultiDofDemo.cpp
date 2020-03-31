@@ -215,8 +215,8 @@ void MultiDofDemo::initPhysics()
 	/////////////////////////////////////////////////////////////////
 	bool damping = false;
 	bool gyro = true;
-	int numLinks = 5;
-	bool spherical = false;  //set it ot false -to use 1DoF hinges instead of 3DoF sphericals
+	int numLinks = 1;
+	bool spherical = true;  //set it ot false -to use 1DoF hinges instead of 3DoF sphericals
 	bool multibodyOnly = false;
 	bool canSleep = false;
 	bool selfCollide = true;
@@ -243,6 +243,8 @@ void MultiDofDemo::initPhysics()
 		mbC->setAngularDamping(0.9f);
 	}
 	//
+	mbC->setBaseVel(btVector3(1, 1, 1));
+	mbC->setBaseOmega(btVector3(-7, -3, 5));
 	m_dynamicsWorld->setGravity(gGravity);
 	//m_dynamicsWorld->getSolverInfo().m_numIterations = 100;
 	//////////////////////////////////////////////

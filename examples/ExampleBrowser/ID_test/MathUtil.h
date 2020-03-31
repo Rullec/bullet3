@@ -40,6 +40,8 @@ public:
 	static tVector AngularVelToqdot(const tVector & omega, const tVector & cur_q, const eRotationOrder & order);
 	static tMatrix VectorToSkewMat(const tVector &);
 	static tVector SkewMatToVector(const tMatrix &);
+	template<typename T>
+	static int sign(const T &x) {return (x > 0) ? 1 : ((x < 0) ? -1 : 0);}
 };
 
 

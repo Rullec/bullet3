@@ -7,7 +7,17 @@
 #define MAX_FRAME_NUM 10000
 class btMultiBody;
 class btMultiBodyDynamicsWorld;
-struct tForceInfo;
+
+struct tForceInfo {
+	int mId;
+	tVector mPos, mForce;
+	tForceInfo()
+	{
+		mId = -1;
+		mPos = mForce = tVector::Zero();
+	}
+};
+
 class cIDSolver {
 public:
 	enum eSolvingMode {
@@ -29,7 +39,7 @@ private:
 	bool mEnableExternalTorque;
 	bool mEnableAppliedJointTorque;
 	bool mEnableSolveID;
-	bool mEnableVerifyVars;
+	bool mEnableVerifyVel, mEnableVerifyMomentum;
 	bool mFloatingBase;
 	int mDof;
 	int mNumLinks;		// including root
@@ -71,4 +81,5 @@ private:
 	void VerifyAngMomentum();
 	void VerifyMomentum();
 	void VerifyLinkVel();
+	void VerifyLinkOmega();
 };

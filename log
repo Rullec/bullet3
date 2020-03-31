@@ -1,0 +1,1077 @@
+Version = 4.1 INTEL-12.10.12
+Vendor = Intel Inc.
+Renderer = Intel(R) Iris(TM) Plus Graphics 655
+b3Printf: Selected demo: MultiDof
+b3Printf: Constraint Solver: Sequential Impulse
+[debug] cCollisionWorld::cCollisionWorld constructed
+[log] create cCollisionWorld succ
+raw world to base rot = 0.258819        0        0 0.965926
+[log] world_to_base_rot = 0.258819        0        0 0.965926
+[log] base_world_rot = -0.258819         0         0  0.965926
+b3Printf: base: mass= 1.000000, bt_inertia= [0.056667 0.004167 0.054167]
+Io= [0.056667 0.000000 0.000000;
+    0.000000 0.004167 0.000000;
+    0.000000 0.000000 0.054167]
+
+b3Printf: bt->id: converting link 0
+
+b3Printf: mass= 1.000000
+
+b3Printf: com= 0.000000 -0.400000 0.000000
+
+b3Printf: link 0: mass= 1.000000, bt_inertia= [0.056667 0.004167 0.054167]
+Io= [0.216667 0.000000 0.000000;
+    0.000000 0.004167 0.000000;
+    0.000000 0.000000 0.214167]
+
+b3Printf: body_T_parent_ref= 1.000000 0.000000 0.000000
+                   0.000000 1.000000 0.000000
+                   0.000000 0.000000 1.000000
+
+b3Printf: parent_r_parent_body_ref= 0.000000 -0.400000 0.000000
+
+b3Printf: bt->id: converting link 1
+
+b3Printf: mass= 1.000000
+
+b3Printf: com= 0.000000 -0.400000 0.000000
+
+b3Printf: link 1: mass= 1.000000, bt_inertia= [0.056667 0.004167 0.054167]
+Io= [0.216667 0.000000 0.000000;
+    0.000000 0.004167 0.000000;
+    0.000000 0.000000 0.214167]
+
+b3Printf: body_T_parent_ref= 1.000000 0.000000 0.000000
+                   0.000000 1.000000 0.000000
+                   0.000000 0.000000 1.000000
+
+b3Printf: parent_r_parent_body_ref= 0.000000 -0.800000 0.000000
+
+[log] ---------- cIDSolver frame 0----------
+link 0 calculated omega = -6.72311 -3.00151  4.92606        0
+link 0 true omega = -6.72311 -3.00151  4.92606        0
+link 0 diff =  -3.4639e-14 -8.88178e-16            0            0
+link 0 omega relative error = 3.91148e-13%
+link 1 calculated omega = -7.06673 -3.03637  5.11384        0
+link 1 true omega = -7.06731 -3.03703  5.11265        0
+link 1 diff = 0.000580986 0.000656436  0.00119276           0
+link 1 omega relative error = 0.0160264%
+link 2 calculated omega = -6.9113 -3.0898 5.01817       0
+link 2 true omega = -6.91104 -3.09027  5.01825        0
+link 2 diff = -0.000259775  0.000465121 -8.28222e-05            0
+link 2 omega relative error = 0.005936%
+[log] ---------- cIDSolver frame 1----------
+link 0 calculated omega = -6.44431 -3.00561  4.85022        0
+link 0 true omega = -6.44431 -3.00561  4.85022        0
+link 0 diff = -7.99361e-14 -2.66454e-15  5.32907e-15            0
+link 0 omega relative error = 9.31265e-13%
+link 1 calculated omega = -7.12859 -3.07404  5.22618        0
+link 1 true omega = -7.12978 -3.07541  5.22376        0
+link 1 diff = 0.00118291 0.00136654 0.00241789          0
+link 1 omega relative error = 0.0322572%
+link 2 calculated omega = -6.82114 -3.17593  5.03927        0
+link 2 true omega = -6.82068 -3.17686  5.03936        0
+link 2 diff = -0.000467604  0.000928978 -9.14008e-05            0
+link 2 omega relative error = 0.0115288%
+[log] ---------- cIDSolver frame 2----------
+link 0 calculated omega = -6.16348 -3.01229   4.7728        0
+link 0 true omega = -6.16348 -3.01229   4.7728        0
+link 0 diff =  2.57572e-14  1.77636e-15 -1.77636e-15            0
+link 0 omega relative error = 3.09668e-13%
+link 1 calculated omega = -7.18554 -3.11282  5.33723        0
+link 1 true omega = -7.18735 -3.11495  5.33355        0
+link 1 diff = 0.00180863 0.00213272 0.00368017          0
+link 1 omega relative error = 0.0487727%
+link 2 calculated omega = -6.72982 -3.25824  5.06323        0
+link 2 true omega =  -6.7292 -3.25963  5.06325        0
+link 2 diff = -0.000619382   0.00139916 -1.77677e-05            0
+link 2 omega relative error = 0.0169458%
+[log] ---------- cIDSolver frame 3----------
+link 0 calculated omega =  -5.8805 -3.02153  4.69415        0
+link 0 true omega =  -5.8805 -3.02153  4.69415        0
+link 0 diff =  8.88178e-15 -1.33227e-15  1.77636e-15            0
+link 0 omega relative error = 1.1291e-13%
+link 1 calculated omega = -7.23755 -3.15247  5.44719        0
+link 1 true omega = -7.24001 -3.15543   5.4422        0
+link 1 diff = 0.00246067 0.00295812 0.00498382          0
+link 1 omega relative error = 0.0656467%
+link 2 calculated omega = -6.63762  -3.3366  5.08997        0
+link 2 true omega =  -6.6369 -3.33849  5.08983        0
+link 2 diff = -0.000711714   0.00188391  0.000144953            0
+link 2 omega relative error = 0.0224203%
+[log] ---------- cIDSolver frame 4----------
+link 0 calculated omega =  -5.5953 -3.03324  4.61457        0
+link 0 true omega =  -5.5953 -3.03324  4.61457        0
+link 0 diff = 7.10543e-15           0 8.88178e-16           0
+link 0 omega relative error = 9.10866e-14%
+link 1 calculated omega =  -7.2846 -3.19275  5.55625        0
+link 1 true omega = -7.28775  -3.1966  5.54992        0
+link 1 diff =  0.0031412 0.00384648 0.00633247          0
+link 1 omega relative error = 0.0829461%
+link 2 calculated omega =  -6.5448 -3.41094  5.11944        0
+link 2 true omega = -6.54406 -3.41333  5.11903        0
+link 2 diff = -0.000741932   0.00239194   0.00040249            0
+link 2 omega relative error = 0.0282392%
+[log] ---------- cIDSolver frame 5----------
+link 0 calculated omega = -5.30782 -3.04733  4.53439        0
+link 0 true omega = -5.30782 -3.04733  4.53439        0
+link 0 diff = -1.77636e-15   3.9968e-15  2.66454e-15            0
+link 0 omega relative error = 6.72368e-14%
+link 1 calculated omega = -7.32674 -3.23339  5.66459        0
+link 1 true omega = -7.3306 -3.2382 5.65686       0
+link 1 diff = 0.00385196 0.00480208 0.00772905          0
+link 1 omega relative error = 0.100731%
+link 2 calculated omega = -6.45166 -3.48115  5.15155        0
+link 2 true omega = -6.45095 -3.48408  5.15079        0
+link 2 diff = -0.000708097   0.00293233  0.000759384            0
+link 2 omega relative error = 0.0347174%
+[log] ---------- cIDSolver frame 6----------
+link 0 calculated omega = -5.01801 -3.06367  4.45391        0
+link 0 true omega = -5.01801 -3.06367  4.45391        0
+link 0 diff = -6.75016e-14 -5.77316e-15  1.77636e-15            0
+link 0 omega relative error = 9.1882e-13%
+link 1 calculated omega = -7.36403 -3.27412  5.77238        0
+link 1 true omega = -7.36862 -3.27995   5.7632        0
+link 1 diff = 0.00459427 0.00582968 0.00917574          0
+link 1 omega relative error = 0.119055%
+link 2 calculated omega = -6.35847 -3.54718  5.18624        0
+link 2 true omega = -6.35786  -3.5507  5.18502        0
+link 2 diff = -0.000608991   0.00351436   0.00121897            0
+link 2 omega relative error = 0.0421645%
+[log] ---------- cIDSolver frame 7----------
+link 0 calculated omega = -4.72585  -3.0821  4.37342        0
+link 0 true omega = -4.72585  -3.0821  4.37342        0
+link 0 diff = -4.26326e-14 -3.55271e-15 -1.77636e-15            0
+link 0 omega relative error = 5.99797e-13%
+link 1 calculated omega = -7.39654 -3.31463  5.87975        0
+link 1 true omega = -7.40191 -3.32157  5.86908        0
+link 1 diff =   0.005369 0.00693435   0.010674          0
+link 1 omega relative error = 0.137963%
+link 2 calculated omega = -6.26549 -3.60899  5.22345        0
+link 2 true omega = -6.26504 -3.61314  5.22167        0
+link 2 diff = -0.00044411   0.0041474  0.00178335           0
+link 2 omega relative error = 0.0508544%
+[log] ---------- cIDSolver frame 8----------
+link 0 calculated omega = -4.43133 -3.10244  4.29319        0
+link 0 true omega = -4.43133 -3.10244  4.29319        0
+link 0 diff =  7.01661e-14  7.99361e-15 -6.21725e-15            0
+link 0 omega relative error = 1.02654e-12%
+link 1 calculated omega = -7.42441 -3.35463  5.98684        0
+link 1 true omega = -7.43058 -3.36275  5.97462        0
+link 1 diff = 0.00617648 0.00812146  0.0122244          0
+link 1 omega relative error = 0.157494%
+link 2 calculated omega = -6.17299 -3.66654  5.26312        0
+link 2 true omega = -6.17278 -3.67138  5.26067        0
+link 2 diff = -0.000213644   0.00484076   0.00245343            0
+link 2 omega relative error = 0.0610066%
+[log] ---------- cIDSolver frame 9----------
+link 0 calculated omega = -4.13447 -3.12447   4.2135        0
+link 0 true omega = -4.13447 -3.12447   4.2135        0
+link 0 diff = -6.03961e-14 -2.66454e-15  1.77636e-15            0
+link 0 omega relative error = 9.05532e-13%
+link 1 calculated omega = -7.44777 -3.39381  6.09375        0
+link 1 true omega = -7.45479 -3.40321  6.07993        0
+link 1 diff = 0.00701658 0.00939655  0.0138269          0
+link 1 omega relative error = 0.177679%
+link 2 calculated omega = -6.08124 -3.71982  5.30521        0
+link 2 true omega = -6.08132 -3.72542  5.30198        0
+link 2 diff = 8.15457e-05  0.00560358   0.0032289           0
+link 2 omega relative error = 0.0727813%
+[log] ---------- cIDSolver frame 10----------
+link 0 calculated omega =  -3.8353 -3.14799  4.13459        0
+link 0 true omega =  -3.8353 -3.14799  4.13459        0
+link 0 diff =  6.92779e-14  1.33227e-14 -1.77636e-15            0
+link 0 omega relative error = 1.09264e-12%
+link 1 calculated omega = -7.46682 -3.43185  6.20057        0
+link 1 true omega =  -7.4747 -3.44262  6.18509        0
+link 1 diff = 0.00788858  0.0107652  0.0154803          0
+link 1 omega relative error = 0.198543%
+link 2 calculated omega = -5.99049 -3.76883  5.34967        0
+link 2 true omega = -5.99093 -3.77527  5.34556        0
+link 2 diff = 0.000439948  0.00644472   0.0041083           0
+link 2 omega relative error = 0.0862842%
+[log] ---------- cIDSolver frame 11----------
+link 0 calculated omega = -3.53388 -3.17273   4.0567        0
+link 0 true omega = -3.53388 -3.17273   4.0567        0
+link 0 diff = -4.44089e-16 -1.77636e-15 -9.76996e-15            0
+link 0 omega relative error = 1.59145e-13%
+link 1 calculated omega = -7.48174 -3.46846  6.30734        0
+link 1 true omega = -7.49053  -3.4807  6.29016        0
+link 1 diff = 0.00879123  0.0122331  0.0171828          0
+link 1 omega relative error = 0.220102%
+link 2 calculated omega = -5.90099 -3.81357  5.39646        0
+link 2 true omega = -5.90185 -3.82094  5.39137        0
+link 2 diff = 0.000859433  0.00737264  0.00508903           0
+link 2 omega relative error = 0.101576%
+[log] ---------- cIDSolver frame 12----------
+link 0 calculated omega = -3.23028 -3.19845  3.98005        0
+link 0 true omega = -3.23028 -3.19845  3.98005        0
+link 0 diff = -7.63833e-14 -1.59872e-14  8.88178e-15            0
+link 0 omega relative error = 1.29994e-12%
+link 1 calculated omega = -7.49276 -3.50333  6.41411        0
+link 1 true omega = -7.50248 -3.51714  6.39518        0
+link 1 diff = 0.00972267  0.0138057  0.0189317          0
+link 1 omega relative error = 0.242364%
+link 2 calculated omega =   -5.813 -3.85407  5.44556        0
+link 2 true omega = -5.81434 -3.86247  5.43939        0
+link 2 diff = 0.00133728 0.00839531 0.00616741          0
+link 2 omega relative error = 0.118682%
+[log] ---------- cIDSolver frame 13----------
+link 0 calculated omega = -2.92459 -3.22486  3.90486        0
+link 0 true omega = -2.92459 -3.22486  3.90486        0
+link 0 diff =  5.24025e-14  1.77636e-15 -4.88498e-15            0
+link 0 omega relative error = 9.0045e-13%
+link 1 calculated omega = -7.50013 -3.53617  6.52087        0
+link 1 true omega = -7.51081 -3.55166  6.50015        0
+link 1 diff = 0.0106804 0.0154882 0.0207234         0
+link 1 omega relative error = 0.265332%
+link 2 calculated omega = -5.72677 -3.89036  5.49695        0
+link 2 true omega = -5.72864 -3.89988  5.48961        0
+link 2 diff =  0.0018702 0.00952011 0.00733877          0
+link 2 omega relative error = 0.137599%
+[log] ---------- cIDSolver frame 14----------
+link 0 calculated omega = -2.61693 -3.25168  3.83133        0
+link 0 true omega = -2.61693 -3.25168  3.83133        0
+link 0 diff =  5.77316e-14  1.46549e-14 -1.28786e-14            0
+link 0 omega relative error = 1.07557e-12%
+link 1 calculated omega = -7.50411 -3.56671   6.6276        0
+link 1 true omega = -7.51577   -3.584  6.60505        0
+link 1 diff = 0.0116614 0.0172856 0.0225535         0
+link 1 omega relative error = 0.289%
+link 2 calculated omega = -5.64253 -3.92248  5.55061        0
+link 2 true omega = -5.64498 -3.93324  5.54202        0
+link 2 diff = 0.00245435  0.0107537 0.00859743          0
+link 2 omega relative error = 0.158299%
+[log] ---------- cIDSolver frame 15----------
+link 0 calculated omega = -2.30744 -3.27859  3.75966        0
+link 0 true omega = -2.30744 -3.27859  3.75966        0
+link 0 diff = 1.24345e-14 8.88178e-16 9.76996e-15           0
+link 0 omega relative error = 2.8817e-13%
+link 1 calculated omega = -7.50497 -3.59469  6.73425        0
+link 1 true omega = -7.51763 -3.61389  6.70983        0
+link 1 diff = 0.0126617 0.0192026 0.0244167         0
+link 1 omega relative error = 0.313354%
+link 2 calculated omega = -5.56054 -3.95048  5.60656        0
+link 2 true omega = -5.56362 -3.96258  5.59663        0
+link 2 diff = 0.00308541  0.0121022 0.00993685          0
+link 2 omega relative error = 0.180737%
+[log] ---------- cIDSolver frame 16----------
+link 0 calculated omega = -1.99628 -3.30528  3.69004        0
+link 0 true omega = -1.99628 -3.30528  3.69004        0
+link 0 diff = -9.10383e-15  3.55271e-15            0            0
+link 0 omega relative error = 1.82971e-13%
+link 1 calculated omega =   -7.503 -3.61986  6.84072        0
+link 1 true omega = -7.51668  -3.6411  6.81441        0
+link 1 diff = 0.0136769  0.021243 0.0263069         0
+link 1 omega relative error = 0.338373%
+link 2 calculated omega = -5.48104  -3.9744  5.66481        0
+link 2 true omega =  -5.4848 -3.98797  5.65346        0
+link 2 diff = 0.0037585 0.0135705 0.0113497         0
+link 2 omega relative error = 0.20485%
+[log] ---------- cIDSolver frame 17----------
+link 0 calculated omega = -1.68365 -3.33139  3.62267        0
+link 0 true omega = -1.68365 -3.33139  3.62267        0
+link 0 diff = -5.19584e-14 -1.55431e-14  1.37668e-14            0
+link 0 omega relative error = 1.0757e-12%
+link 1 calculated omega = -7.49847 -3.64202  6.94688        0
+link 1 true omega = -7.51318 -3.66543  6.91867        0
+link 1 diff = 0.0147017 0.0234103 0.0282171         0
+link 1 omega relative error = 0.364028%
+link 2 calculated omega =  -5.4043 -3.99432  5.72539        0
+link 2 true omega = -5.40876 -4.00948  5.71256        0
+link 2 diff = 0.00446831   0.015163  0.0128278          0
+link 2 omega relative error = 0.230558%
+[log] ---------- cIDSolver frame 18----------
+link 0 calculated omega = -1.36977 -3.35658  3.55773        0
+link 0 true omega = -1.36977 -3.35658  3.55773        0
+link 0 diff =  7.39409e-14  1.95399e-14 -1.02141e-14            0
+link 0 omega relative error = 1.51904e-12%
+link 1 calculated omega = -7.49167 -3.66097  7.05258        0
+link 1 true omega =  -7.5074 -3.68667  7.02244        0
+link 1 diff =   0.01573  0.025707 0.0301396         0
+link 1 omega relative error = 0.390282%
+link 2 calculated omega = -5.33055 -4.01028  5.78834        0
+link 2 true omega = -5.33576 -4.02716  5.77398        0
+link 2 diff = 0.00520902  0.0168828  0.0143623          0
+link 2 omega relative error = 0.257766%
+[log] ---------- cIDSolver frame 19----------
+link 0 calculated omega = -1.05492 -3.38048  3.49544        0
+link 0 true omega = -1.05492 -3.38048  3.49544        0
+link 0 diff = -3.10862e-15  2.66454e-15 -1.55431e-14            0
+link 0 omega relative error = 3.2303e-13%
+link 1 calculated omega = -7.48286 -3.67655  7.15761        0
+link 1 true omega = -7.49962 -3.70469  7.12554        0
+link 1 diff = 0.0167548 0.0281346 0.0320656         0
+link 1 omega relative error = 0.41709%
+link 2 calculated omega = -5.26008 -4.02236  5.85372        0
+link 2 true omega = -5.26606  -4.0411  5.83778        0
+link 2 diff = 0.00597434  0.0187321  0.0159439          0
+link 2 omega relative error = 0.286363%
+[log] ---------- cIDSolver frame 20----------
+link 0 calculated omega = -0.739401  -3.40269     3.436         0
+link 0 true omega = -0.739401  -3.40269     3.436         0
+link 0 diff = -6.37268e-14 -1.64313e-14  2.44249e-14            0
+link 0 omega relative error = 1.43496e-12%
+link 1 calculated omega = -7.47229 -3.68865  7.26172        0
+link 1 true omega = -7.49006 -3.71935  7.22773        0
+link 1 diff = 0.0177685 0.0306935 0.0339856         0
+link 1 omega relative error = 0.444399%
+link 2 calculated omega = -5.19317 -4.03063   5.9216        0
+link 2 true omega = -5.19992 -4.05134  5.90404        0
+link 2 diff = 0.00675753  0.0207119  0.0175625          0
+link 2 omega relative error = 0.316224%
+[log] ---------- cIDSolver frame 21----------
+link 0 calculated omega = -0.423582   -3.4228   3.37964         0
+link 0 true omega = -0.423582   -3.4228   3.37964         0
+link 0 diff =  9.10383e-15 -7.99361e-15 -1.33227e-14            0
+link 0 omega relative error = 3.72922e-13%
+link 1 calculated omega = -7.46016 -3.69717  7.36463        0
+link 1 true omega = -7.47892 -3.73055  7.32875        0
+link 1 diff = 0.0187623 0.0333828  0.035889         0
+link 1 omega relative error = 0.472145%
+link 2 calculated omega = -5.13009 -4.03516  5.99207        0
+link 2 true omega = -5.13764 -4.05798  5.97286        0
+link 2 diff = 0.00755139  0.0228219  0.0192076          0
+link 2 omega relative error = 0.347207%
+[log] ---------- cIDSolver frame 22----------
+link 0 calculated omega = -0.107896  -3.44039    3.3266         0
+link 0 true omega = -0.107896  -3.44039    3.3266         0
+link 0 diff = 6.21864e-14 1.55431e-14           0           0
+link 0 omega relative error = 1.33906e-12%
+link 1 calculated omega = -7.44664 -3.70205  7.46602        0
+link 1 true omega = -7.46637 -3.73825  7.42825        0
+link 1 diff = 0.0197265 0.0361998 0.0377647         0
+link 1 omega relative error = 0.500258%
+link 2 calculated omega = -5.07117 -4.03601  6.06523        0
+link 2 true omega = -5.07952 -4.06107  6.04436        0
+link 2 diff = 0.00834822  0.0250606  0.0208684          0
+link 2 omega relative error = 0.379154%
+[log] ---------- cIDSolver frame 23----------
+link 0 calculated omega = 0.207151 -3.45502  3.27717        0
+link 0 true omega = 0.207151 -3.45502  3.27717        0
+link 0 diff = -3.88856e-14 -4.44089e-15  1.33227e-14            0
+link 0 omega relative error = 8.67373e-13%
+link 1 calculated omega = -7.43187 -3.70327   7.5655        0
+link 1 true omega = -7.45252 -3.74241   7.5259        0
+link 1 diff = 0.0206507 0.0391402 0.0396002         0
+link 1 omega relative error = 0.528656%
+link 2 calculated omega = -5.01673 -4.03327  6.14121        0
+link 2 true omega = -5.02587  -4.0607  6.11868        0
+link 2 diff = 0.00913992  0.0274249  0.0225335          0
+link 2 omega relative error = 0.411888%
+[log] ---------- cIDSolver frame 24----------
+link 0 calculated omega = 0.520961 -3.46622  3.23165        0
+link 0 true omega = 0.520961 -3.46622  3.23165        0
+link 0 diff =  1.55431e-14 -1.06581e-14 -7.99361e-15            0
+link 0 omega relative error = 4.29392e-13%
+link 1 calculated omega = -7.41587 -3.70084  7.66265        0
+link 1 true omega =  -7.4374 -3.74304  7.62126        0
+link 1 diff = 0.0215233 0.0421973 0.0413824         0
+link 1 omega relative error = 0.557248%
+link 2 calculated omega = -4.96711 -4.02702  6.22014        0
+link 2 true omega = -4.97703 -4.05693  6.19595        0
+link 2 diff = 0.00991793  0.0299102  0.0241911          0
+link 2 omega relative error = 0.445216%
+[log] ---------- cIDSolver frame 25----------
+link 0 calculated omega = 0.832839 -3.47351  3.19036        0
+link 0 true omega = 0.832839 -3.47351  3.19036        0
+link 0 diff = -4.15223e-14 -7.54952e-15 -8.88178e-16            0
+link 0 omega relative error = 8.81391e-13%
+link 1 calculated omega = -7.39864 -3.69481  7.75699        0
+link 1 true omega = -7.42098 -3.74018   7.7139        0
+link 1 diff = 0.0223323 0.0453621 0.0430971         0
+link 1 omega relative error = 0.585932%
+link 2 calculated omega = -4.92269 -4.01733  6.30216        0
+link 2 true omega = -4.93336 -4.04984  6.27633        0
+link 2 diff = 0.0106733 0.0325101 0.0258294         0
+link 2 omega relative error = 0.478926%
+[log] ---------- cIDSolver frame 26----------
+link 0 calculated omega =  1.14197 -3.47643  3.15369        0
+link 0 true omega =  1.14197 -3.47643  3.15369        0
+link 0 diff = -4.21885e-14   3.9968e-15 -1.37668e-14            0
+link 0 omega relative error = 9.22386e-13%
+link 1 calculated omega = -7.38006 -3.68527  7.84803        0
+link 1 true omega = -7.40312 -3.73389   7.8033        0
+link 1 diff = 0.0230644 0.0486228 0.0447294         0
+link 1 omega relative error = 0.614596%
+link 2 calculated omega = -4.88386 -4.00428  6.38745        0
+link 2 true omega = -4.89525  -4.0395  6.36001        0
+link 2 diff = 0.0113967 0.0352167  0.027436         0
+link 2 omega relative error = 0.512788%
+[log] ---------- cIDSolver frame 27----------
+link 0 calculated omega =  1.44741 -3.47447  3.12202        0
+link 0 true omega =  1.44741 -3.47447  3.12202        0
+link 0 diff =  7.10543e-15  2.22045e-15 -1.06581e-14            0
+link 0 omega relative error = 2.65849e-13%
+link 1 calculated omega =  -7.3599 -3.67231  7.93519        0
+link 1 true omega = -7.38361 -3.72428  7.88892        0
+link 1 diff = 0.0237064 0.0519644 0.0462632         0
+link 1 omega relative error = 0.643118%
+link 2 calculated omega = -4.85102 -3.98796  6.47616        0
+link 2 true omega =  -4.8631 -4.02598  6.44716        0
+link 2 diff = 0.0120786 0.0380196 0.0289985         0
+link 2 omega relative error = 0.546552%
+[log] ---------- cIDSolver frame 28----------
+link 0 calculated omega =  1.74808 -3.46717  3.09582        0
+link 0 true omega =  1.74808 -3.46717  3.09582        0
+link 0 diff =  3.44169e-14   3.4639e-14 -6.21725e-15            0
+link 0 omega relative error = 9.91227e-13%
+link 1 calculated omega = -7.33784 -3.65607  8.01788        0
+link 1 true omega = -7.36208 -3.71144  7.97019        0
+link 1 diff = 0.0242445 0.0553686 0.0476821         0
+link 1 omega relative error = 0.671364%
+link 2 calculated omega = -4.82462 -3.96847  6.56847        0
+link 2 true omega = -4.83733 -4.00938  6.53797        0
+link 2 diff = 0.0127093 0.0409068 0.0305043         0
+link 2 omega relative error = 0.579951%
+[log] ---------- cIDSolver frame 29----------
+link 0 calculated omega =  2.04274 -3.45406  3.07555        0
+link 0 true omega =  2.04274 -3.45406  3.07555        0
+link 0 diff = -2.04281e-14 -1.06581e-14  -1.9984e-14            0
+link 0 omega relative error = 6.03258e-13%
+link 1 calculated omega = -7.31341 -3.63669  8.09546        0
+link 1 true omega = -7.33808 -3.69551  8.04649        0
+link 1 diff = 0.0246648 0.0588133 0.0489688         0
+link 1 omega relative error = 0.699192%
+link 2 calculated omega = -4.80509 -3.94589  6.66454        0
+link 2 true omega = -4.81837 -3.98975   6.6326        0
+link 2 diff = 0.0132791  0.043864 0.0319408         0
+link 2 omega relative error = 0.612703%
+[log] ---------- cIDSolver frame 30----------
+link 0 calculated omega =     2.33 -3.43474  3.06171        0
+link 0 true omega =     2.33 -3.43474  3.06171        0
+link 0 diff = -6.52811e-14  -6.4837e-14  2.08722e-14            0
+link 0 omega relative error = 1.82927e-12%
+link 1 calculated omega = -7.28605 -3.61433   8.1673        0
+link 1 true omega =  -7.311 -3.6766 8.11719       0
+link 1 diff = 0.0249544 0.0622728  0.050106         0
+link 1 omega relative error = 0.726449%
+link 2 calculated omega = -4.79288 -3.92033  6.76453        0
+link 2 true omega = -4.80666  -3.9672  6.73124        0
+link 2 diff = 0.0137785 0.0468746 0.0332954         0
+link 2 omega relative error = 0.644513%
+[log] ---------- cIDSolver frame 31----------
+link 0 calculated omega =  2.60832 -3.40883  3.05481        0
+link 0 true omega =  2.60832 -3.40883  3.05481        0
+link 0 diff =  1.82077e-14  1.11022e-14 -1.33227e-15            0
+link 0 omega relative error = 4.05576e-13%
+link 1 calculated omega = -7.25505 -3.58911  8.23273        0
+link 1 true omega = -7.28015 -3.65483  8.18165        0
+link 1 diff = 0.0251011 0.0657173 0.0510761         0
+link 1 omega relative error = 0.752974%
+link 2 calculated omega = -4.78843 -3.89189  6.86857        0
+link 2 true omega = -4.80262 -3.94181  6.83402        0
+link 2 diff = 0.0141987   0.04992 0.0345555         0
+link 2 omega relative error = 0.675078%
+[log] ---------- cIDSolver frame 32----------
+link 0 calculated omega =  2.87601 -3.37604  3.05537        0
+link 0 true omega =  2.87601 -3.37604  3.05537        0
+link 0 diff =  3.59712e-14 -9.76996e-15  1.95399e-14            0
+link 0 omega relative error = 7.81449e-13%
+link 1 calculated omega = -7.21959 -3.56118   8.2911        0
+link 1 true omega = -7.24468 -3.63029  8.23923        0
+link 1 diff = 0.0250944 0.0691133 0.0518622         0
+link 1 omega relative error = 0.778603%
+link 2 calculated omega = -4.79216 -3.86069  6.97676        0
+link 2 true omega = -4.80669 -3.91367  6.94105        0
+link 2 diff = 0.0145315 0.0529796 0.0357092         0
+link 2 omega relative error = 0.704095%
+[log] ---------- cIDSolver frame 33----------
+link 0 calculated omega =  3.13128 -3.33618  3.06389        0
+link 0 true omega =  3.13128 -3.33618  3.06389        0
+link 0 diff = 1.95399e-14 8.43769e-15 1.02141e-14           0
+link 0 omega relative error = 4.28721e-13%
+link 1 calculated omega = -7.17876 -3.53063  8.34178        0
+link 1 true omega = -7.20368 -3.60305  8.28934        0
+link 1 diff = 0.0249262 0.0724241 0.0524485         0
+link 1 omega relative error = 0.803164%
+link 2 calculated omega = -4.80445 -3.82685  7.08914        0
+link 2 true omega = -4.81922 -3.88288   7.0524        0
+link 2 diff = 0.0147697 0.0560308  0.036745         0
+link 2 omega relative error = 0.731263%
+[log] ---------- cIDSolver frame 34----------
+link 0 calculated omega =  3.37224 -3.28918  3.08081        0
+link 0 true omega =  3.37224 -3.28918  3.08081        0
+link 0 diff =  1.42109e-14 -1.46549e-14  4.88498e-15            0
+link 0 omega relative error = 3.72911e-13%
+link 1 calculated omega = -7.13156 -3.49751  8.38422        0
+link 1 true omega = -7.15615 -3.57312   8.3314        0
+link 1 diff = 0.0245913   0.07561 0.0528205         0
+link 1 omega relative error = 0.826487%
+link 2 calculated omega = -4.82563 -3.79049  7.20571        0
+link 2 true omega = -4.84054 -3.84954  7.16806        0
+link 2 diff =  0.014908 0.0590501 0.0376521         0
+link 2 omega relative error = 0.756304%
+[log] ---------- cIDSolver frame 35----------
+link 0 calculated omega =  3.59698 -3.23512  3.10652        0
+link 0 true omega =  3.59698 -3.23512  3.10652        0
+link 0 diff = -5.01821e-14 -1.73195e-14  5.06262e-14            0
+link 0 omega relative error = 1.27592e-12%
+link 1 calculated omega = -7.07699 -3.46183  8.41791        0
+link 1 true omega = -7.10108 -3.54046  8.36494        0
+link 1 diff = 0.0240885 0.0786298 0.0529664         0
+link 1 omega relative error = 0.848404%
+link 2 calculated omega = -4.85595 -3.75176  7.32639        0
+link 2 true omega = -4.87089 -3.81378  7.28797        0
+link 2 diff = 0.0149426 0.0620127 0.0384211         0
+link 2 omega relative error = 0.77896%
+[log] ---------- cIDSolver frame 36----------
+link 0 calculated omega =  3.80362 -3.17422  3.14132        0
+link 0 true omega =  3.80362 -3.17422  3.14132        0
+link 0 diff = -1.33227e-15 -2.22045e-15 -3.55271e-15            0
+link 0 omega relative error = 7.49435e-14%
+link 1 calculated omega = -7.01403 -3.42352  8.44245        0
+link 1 true omega = -7.03745 -3.50496  8.38957        0
+link 1 diff = 0.0234206 0.0814414 0.0528774         0
+link 1 omega relative error = 0.868755%
+link 2 calculated omega = -4.89555 -3.71079  7.45099        0
+link 2 true omega = -4.91042 -3.77568  7.41195        0
+link 2 diff = 0.0148719 0.0648941 0.0390437         0
+link 2 omega relative error = 0.799015%
+[log] ---------- cIDSolver frame 37----------
+link 0 calculated omega =  3.99039 -3.10691  3.18538        0
+link 0 true omega =  3.99039 -3.10691  3.18538        0
+link 0 diff =  2.44249e-14 -9.32587e-15 -1.06581e-14            0
+link 0 omega relative error = 4.72385e-13%
+link 1 calculated omega = -6.94172 -3.38245  8.45756        0
+link 1 true omega = -6.96432 -3.46645  8.40502        0
+link 1 diff = 0.0225951 0.0840038 0.0525483         0
+link 1 omega relative error = 0.887389%
+link 2 calculated omega = -4.94447 -3.66771  7.57926        0
+link 2 true omega = -4.95917 -3.73538  7.53974        0
+link 2 diff = 0.0146967 0.0676702 0.0395134         0
+link 2 omega relative error = 0.816301%
+[log] ---------- cIDSolver frame 38----------
+link 0 calculated omega =  4.15568 -3.03375  3.23874        0
+link 0 true omega =  4.15568 -3.03375  3.23874        0
+link 0 diff = -3.81917e-14 -2.70894e-14 -9.76996e-15            0
+link 0 omega relative error = 7.86748e-13%
+link 1 calculated omega = -6.85926 -3.33843  8.46313        0
+link 1 true omega = -6.88088 -3.42471  8.41115        0
+link 1 diff = 0.0216244 0.0862783 0.0519783         0
+link 1 omega relative error = 0.90417%
+link 2 calculated omega =  -5.0026 -3.62264   7.7108        0
+link 2 true omega = -5.01702 -3.69296  7.67097        0
+link 2 diff = 0.0144202 0.0703184 0.0398258         0
+link 2 omega relative error = 0.830706%
+[log] ---------- cIDSolver frame 39----------
+link 0 calculated omega =  4.29818 -2.95549  3.30129        0
+link 0 true omega =  4.29818 -2.95549  3.30129        0
+link 0 diff =  5.68434e-14 -3.10862e-15 -6.21725e-15            0
+link 0 omega relative error = 9.27676e-13%
+link 1 calculated omega = -6.76597  -3.2912  8.45915        0
+link 1 true omega =  -6.7865 -3.37943  8.40798        0
+link 1 diff = 0.0205258 0.0882304 0.0511717         0
+link 1 omega relative error = 0.918983%
+link 2 calculated omega = -5.06969 -3.57573  7.84514        0
+link 2 true omega = -5.08374 -3.64855  7.80516        0
+link 2 diff = 0.0140481 0.0728188 0.0399785         0
+link 2 omega relative error = 0.842185%
+[log] ---------- cIDSolver frame 40----------
+link 0 calculated omega =  4.41689 -2.87304  3.37276        0
+link 0 true omega =  4.41689 -2.87304  3.37276        0
+link 0 diff =  5.77316e-14  4.44089e-16 -3.10862e-15            0
+link 0 omega relative error = 9.24169e-13%
+link 1 calculated omega = -6.66143 -3.24046  8.44581        0
+link 1 true omega = -6.68076 -3.33029  8.39567        0
+link 1 diff = 0.0193205 0.0898313 0.0501372         0
+link 1 omega relative error = 0.931733%
+link 2 calculated omega = -5.14536 -3.52707  7.98169        0
+link 2 true omega = -5.15895 -3.60222  7.94172        0
+link 2 diff = 0.0135884 0.0751546 0.0399711         0
+link 2 omega relative error = 0.850759%
+[log] ---------- cIDSolver frame 41----------
+link 0 calculated omega =  4.51119 -2.78741  3.45272        0
+link 0 true omega =  4.51119 -2.78741  3.45272        0
+link 0 diff = -7.90479e-14 -4.52971e-14  1.06581e-14            0
+link 0 omega relative error = 1.44959e-12%
+link 1 calculated omega = -6.54548 -3.18587  8.42342        0
+link 1 true omega = -6.56351 -3.27693  8.37454        0
+link 1 diff = 0.0180334 0.0910595 0.0488887         0
+link 1 omega relative error = 0.94235%
+link 2 calculated omega = -5.22907 -3.47676  8.11977        0
+link 2 true omega = -5.24212 -3.55407  8.07996        0
+link 2 diff = 0.0130507 0.0773128 0.0398059         0
+link 2 omega relative error = 0.856514%
+[log] ---------- cIDSolver frame 42----------
+link 0 calculated omega =  4.58092 -2.69971  3.54062        0
+link 0 true omega =  4.58092 -2.69971  3.54062        0
+link 0 diff = 3.73035e-14 2.22045e-15 6.21725e-15           0
+link 0 omega relative error = 5.93017e-13%
+link 1 calculated omega = -6.41821 -3.12708  8.39247        0
+link 1 true omega =  -6.4349 -3.21899  8.34503        0
+link 1 diff = 0.0166922 0.0919012 0.0474443         0
+link 1 omega relative error = 0.95079%
+link 2 calculated omega = -5.32019 -3.42488  8.25862        0
+link 2 true omega = -5.33264 -3.50416  8.21914        0
+link 2 diff = 0.0124465 0.0792848 0.0394869         0
+link 2 omega relative error = 0.859599%
+[log] ---------- cIDSolver frame 43----------
+link 0 calculated omega =  4.62631 -2.61106  3.63577        0
+link 0 true omega =  4.62631 -2.61106  3.63577        0
+link 0 diff = -2.84217e-14  3.28626e-14            0            0
+link 0 omega relative error = 6.74941e-13%
+link 1 calculated omega = -6.28001 -3.06378  8.35353        0
+link 1 true omega = -6.29534 -3.15613  8.30771        0
+link 1 diff = 0.0153255 0.0923514 0.0458261         0
+link 1 omega relative error = 0.957033%
+link 2 calculated omega = -5.41797 -3.37149  8.39743        0
+link 2 true omega = -5.42976 -3.45256  8.35841        0
+link 2 diff = 0.0117879 0.0810664 0.0390203         0
+link 2 omega relative error = 0.860214%
+[log] ---------- cIDSolver frame 44----------
+link 0 calculated omega =  4.64805 -2.52261  3.73742        0
+link 0 true omega =  4.64805 -2.52261  3.73742        0
+link 0 diff =  6.12843e-14  5.37348e-14 -5.15143e-14            0
+link 0 omega relative error = 1.48893e-12%
+link 1 calculated omega = -6.13156 -2.99566  8.30728        0
+link 1 true omega = -6.14552 -3.08807  8.26322        0
+link 1 diff = 0.0139624 0.0924134 0.0440588         0
+link 1 omega relative error = 0.961086%
+link 2 calculated omega = -5.52162 -3.31665  8.53535        0
+link 2 true omega = -5.53271 -3.39931  8.49693        0
+link 2 diff = 0.0110872  0.082658 0.0384134         0
+link 2 omega relative error = 0.858601%
+[log] ---------- cIDSolver frame 45----------
+link 0 calculated omega =  4.64717 -2.43543  3.84476        0
+link 0 true omega =  4.64717 -2.43543  3.84476        0
+link 0 diff =  1.06581e-14 -2.75335e-14  4.35207e-14            0
+link 0 omega relative error = 8.08512e-13%
+link 1 calculated omega = -5.97374 -2.92249  8.25445        0
+link 1 true omega = -5.98637 -3.01459  8.21228        0
+link 1 diff = 0.0126307 0.0920988 0.0421692         0
+link 1 omega relative error = 0.962976%
+link 2 calculated omega = -5.63029  -3.2604   8.6715        0
+link 2 true omega = -5.64065 -3.34446  8.63382        0
+link 2 diff = 0.0103568 0.0840639 0.0376752         0
+link 2 omega relative error = 0.855028%
+[log] ---------- cIDSolver frame 46----------
+link 0 calculated omega =  4.62503 -2.35055  3.95697        0
+link 0 true omega =  4.62503 -2.35055  3.95697        0
+link 0 diff =  2.66454e-14 -6.66134e-15 -1.77636e-15            0
+link 0 omega relative error = 4.21815e-13%
+link 1 calculated omega = -5.80763  -2.8441  8.19582        0
+link 1 true omega = -5.81899 -2.93552  8.15564        0
+link 1 diff = 0.0113565 0.0914259 0.0401846         0
+link 1 omega relative error = 0.962754%
+link 2 calculated omega = -5.74315 -3.20277  8.80502        0
+link 2 true omega = -5.75276 -3.28807  8.76821        0
+link 2 diff = 0.0096082 0.0852916 0.0368149         0
+link 2 omega relative error = 0.849778%
+[log] ---------- cIDSolver frame 47----------
+link 0 calculated omega =  4.58326 -2.26884  4.07327        0
+link 0 true omega =  4.58326 -2.26884  4.07327        0
+link 0 diff = -5.50671e-14 -2.35367e-14 -1.59872e-14            0
+link 0 omega relative error = 9.4805e-13%
+link 1 calculated omega = -5.63449  -2.7604  8.13216        0
+link 1 true omega = -5.64465 -2.85082  8.09403        0
+link 1 diff = 0.0101627 0.0904189 0.0381323         0
+link 1 omega relative error = 0.960485%
+link 2 calculated omega = -5.85938 -3.14381  8.93509        0
+link 2 true omega = -5.86824 -3.23017  8.89925        0
+link 2 diff = 0.00885178  0.0863516  0.0358425          0
+link 2 omega relative error = 0.843136%
+[log] ---------- cIDSolver frame 48----------
+link 0 calculated omega =  4.52361 -2.19106  4.19289        0
+link 0 true omega =  4.52361 -2.19106  4.19289        0
+link 0 diff = -4.44089e-15 -5.77316e-15  1.68754e-14            0
+link 0 omega relative error = 2.80804e-13%
+link 1 calculated omega = -5.45562  -2.6714  8.06422        0
+link 1 true omega = -5.46468 -2.76051  8.02818        0
+link 1 diff = 0.00906905  0.0891066  0.0360387          0
+link 1 omega relative error = 0.956247%
+link 2 calculated omega = -5.97824 -3.08357  9.06091        0
+link 2 true omega = -5.98633 -3.17083  9.02614        0
+link 2 diff = 0.00809664  0.0872564  0.0347677          0
+link 2 omega relative error = 0.835379%
+[log] ---------- cIDSolver frame 49----------
+link 0 calculated omega =  4.44798 -2.11785  4.31516        0
+link 0 true omega =  4.44798 -2.11785  4.31516        0
+link 0 diff =  1.59872e-14   3.4639e-14 -1.95399e-14            0
+link 0 omega relative error = 6.54492e-13%
+link 1 calculated omega = -5.27238 -2.57719  7.99272        0
+link 1 true omega = -5.28047 -2.66471   7.9588        0
+link 1 diff = 0.00809166  0.0875205  0.0339281          0
+link 1 omega relative error = 0.950132%
+link 2 calculated omega = -6.09901 -3.02212  9.18173        0
+link 2 true omega = -6.10636 -3.11014  9.14813        0
+link 2 diff = 0.0073504 0.0880194    0.0336         0
+link 2 omega relative error = 0.826766%
+[log] ---------- cIDSolver frame 50----------
+link 0 calculated omega =  4.35826 -2.04969   4.4395        0
+link 0 true omega =  4.35826 -2.04969   4.4395        0
+link 0 diff =  5.41789e-14  5.59552e-14 -3.01981e-14            0
+link 0 omega relative error = 1.27532e-12%
+link 1 calculated omega = -5.08615 -2.47791  7.91834        0
+link 1 true omega = -5.09339 -2.56361  7.88652        0
+link 1 diff = 0.00724289  0.0856941  0.0318228          0
+link 1 omega relative error = 0.942237%
+link 2 calculated omega = -6.22107 -2.95954  9.29687        0
+link 2 true omega = -6.22769  -3.0482  9.26452        0
+link 2 diff = 0.00661919  0.0886548  0.0323483          0
+link 2 omega relative error = 0.817536%
+[log] ---------- cIDSolver frame 51----------
+link 0 calculated omega =  4.25631 -1.98694  4.56541        0
+link 0 true omega =  4.25631 -1.98694  4.56541        0
+link 0 diff = -2.04281e-14  7.99361e-15  6.21725e-15            0
+link 0 omega relative error = 3.4808e-13%
+link 1 calculated omega = -4.89824 -2.37381  7.84169        0
+link 1 true omega = -4.90477 -2.45748  7.81195        0
+link 1 diff = 0.0065316 0.0836612 0.0297425         0
+link 1 omega relative error = 0.932668%
+link 2 calculated omega = -6.34388 -2.89597   9.4057        0
+link 2 true omega = -6.34979 -2.98515  9.37468        0
+link 2 diff = 0.00590776  0.0891762   0.031021          0
+link 2 omega relative error = 0.807901%
+[log] ---------- cIDSolver frame 52----------
+link 0 calculated omega =  4.14395 -1.92981  4.69248        0
+link 0 true omega =  4.14395 -1.92981  4.69248        0
+link 0 diff = -1.95399e-14  7.10543e-15 -7.10543e-15            0
+link 0 omega relative error = 3.35403e-13%
+link 1 calculated omega = -4.70991 -2.26518  7.76333        0
+link 1 true omega = -4.71587 -2.34664  7.73563        0
+link 1 diff = 0.00596345  0.0814551  0.0277043          0
+link 1 omega relative error = 0.921534%
+link 2 calculated omega = -6.46695 -2.83156  9.50767        0
+link 2 true omega = -6.47217 -2.92116  9.47804        0
+link 2 diff = 0.00521963   0.089597  0.0296256          0
+link 2 omega relative error = 0.798045%
+[log] ---------- cIDSolver frame 53----------
+link 0 calculated omega =  4.02285 -1.87845   4.8204        0
+link 0 true omega =  4.02285 -1.87845   4.8204        0
+link 0 diff =  -2.4869e-14 -8.88178e-16 -7.99361e-15            0
+link 0 omega relative error = 3.98829e-13%
+link 1 calculated omega = -4.52232 -2.15235  7.68376        0
+link 1 true omega = -4.52787 -2.23146  7.65804        0
+link 1 diff = 0.00554125  0.0791082  0.0257224          0
+link 1 omega relative error = 0.908949%
+link 2 calculated omega = -6.58987 -2.76649  9.60226        0
+link 2 true omega = -6.59442 -2.85642  9.57409        0
+link 2 diff = 0.0045573 0.0899292 0.0281691         0
+link 2 omega relative error = 0.788126%
+[log] ---------- cIDSolver frame 54----------
+link 0 calculated omega =  3.89457 -1.83288  4.94895        0
+link 0 true omega =  3.89457 -1.83288  4.94895        0
+link 0 diff =  1.73195e-14 -3.84137e-14  1.15463e-14            0
+link 0 omega relative error = 6.66131e-13%
+link 1 calculated omega = -4.33657 -2.03571  7.60344        0
+link 1 true omega = -4.34184 -2.11236  7.57963        0
+link 1 diff = 0.0052654 0.0766507 0.0238088         0
+link 1 omega relative error = 0.895033%
+link 2 calculated omega = -6.71226 -2.70099  9.68904        0
+link 2 true omega = -6.71618 -2.79117  9.66238        0
+link 2 diff = 0.00392245  0.0901838  0.0266577          0
+link 2 omega relative error = 0.778277%
+[log] ---------- cIDSolver frame 55----------
+link 0 calculated omega =  3.76055 -1.79307  5.07799        0
+link 0 true omega =  3.76055 -1.79307  5.07799        0
+link 0 diff = -3.10862e-15  4.84057e-14 -2.93099e-14            0
+link 0 omega relative error = 8.62826e-13%
+link 1 calculated omega = -4.15363 -1.91564  7.52277        0
+link 1 true omega = -4.15876 -1.98975   7.5008        0
+link 1 diff = 0.00513433  0.0741112  0.0219729          0
+link 1 omega relative error = 0.879909%
+link 2 calculated omega = -6.8338 -2.6353  9.7676       0
+link 2 true omega = -6.83712 -2.72567   9.7425        0
+link 2 diff = 0.00331623  0.0903703  0.0250971          0
+link 2 omega relative error = 0.768605%
+[log] ---------- cIDSolver frame 56----------
+link 0 calculated omega =  3.62206 -1.75891  5.20743        0
+link 0 true omega =  3.62206 -1.75891  5.20743        0
+link 0 diff =  8.43769e-15 -3.73035e-14   1.5099e-14            0
+link 0 omega relative error = 6.24655e-13%
+link 1 calculated omega = -3.97437 -1.79257  7.44211        0
+link 1 true omega = -3.97952 -1.86409  7.42189        0
+link 1 diff = 0.00514488  0.0715158  0.0202221          0
+link 1 omega relative error = 0.863711%
+link 2 calculated omega = -6.95419 -2.56972   9.8376        0
+link 2 true omega = -6.95693 -2.66021  9.81411        0
+link 2 diff = 0.00273942  0.0904968  0.0234925          0
+link 2 omega relative error = 0.7592%
+[log] ---------- cIDSolver frame 57----------
+link 0 calculated omega =  3.48024 -1.73027  5.33725        0
+link 0 true omega =  3.48024 -1.73027  5.33725        0
+link 0 diff =  3.64153e-14  1.02141e-13 -5.32907e-14            0
+link 0 omega relative error = 1.83e-12%
+link 1 calculated omega =  -3.7996 -1.66694   7.3618        0
+link 1 true omega = -3.80489 -1.73583  7.34324        0
+link 1 diff = 0.00529271  0.0688885  0.0185619          0
+link 1 omega relative error = 0.846579%
+link 2 calculated omega = -7.07315 -2.50454  9.89876        0
+link 2 true omega = -7.07534 -2.59511  9.87691        0
+link 2 diff = 0.00219266    0.09057   0.021849          0
+link 2 omega relative error = 0.75013%
+[log] ---------- cIDSolver frame 58----------
+link 0 calculated omega =  3.33613 -1.70695  5.46746        0
+link 0 true omega =  3.33613 -1.70695  5.46746        0
+link 0 diff = -7.14984e-14 -2.02061e-14   4.9738e-14            0
+link 0 omega relative error = 1.34888e-12%
+link 1 calculated omega =    -3.63 -1.53917  7.28214        0
+link 1 true omega = -3.63558 -1.60542  7.26515        0
+link 1 diff = 0.00557255   0.066251  0.0169963          0
+link 1 omega relative error = 0.828668%
+link 2 calculated omega = -7.19038 -2.44009  9.95081        0
+link 2 true omega = -7.19205 -2.53069  9.93064        0
+link 2 diff = 0.00167662  0.0905952  0.0201714          0
+link 2 omega relative error = 0.741451%
+[log] ---------- cIDSolver frame 59----------
+link 0 calculated omega =  3.19062 -1.68876  5.59813        0
+link 0 true omega =  3.19062 -1.68876  5.59813        0
+link 0 diff =  4.04121e-14  2.17604e-14 -6.39488e-14            0
+link 0 omega relative error = 1.18171e-12%
+link 1 calculated omega = -3.4662 -1.4097 7.20341       0
+link 1 true omega = -3.47218 -1.47332  7.18788        0
+link 1 diff = 0.00597854   0.063623  0.0155279          0
+link 1 omega relative error = 0.810145%
+link 2 calculated omega =  -7.3056 -2.37672  9.99354        0
+link 2 true omega = -7.30679  -2.4673  9.97508        0
+link 2 diff = 0.00119213  0.0905769  0.0184644          0
+link 2 omega relative error = 0.733204%
+[log] ---------- cIDSolver frame 60----------
+link 0 calculated omega =  3.04451 -1.67546  5.72932        0
+link 0 true omega =  3.04451 -1.67546  5.72932        0
+link 0 diff = -1.06581e-14  1.42109e-14 -3.55271e-15            0
+link 0 omega relative error = 2.70344e-13%
+link 1 calculated omega = -3.30874 -1.27895  7.12586        0
+link 1 true omega = -3.31525 -1.33997   7.1117        0
+link 1 diff = 0.00650436  0.0610222   0.014158          0
+link 1 omega relative error = 0.791198%
+link 2 calculated omega = -7.41851 -2.31476  10.0268        0
+link 2 true omega = -7.41925 -2.40528  10.0101        0
+link 2 diff = 0.000740276   0.0905183    0.016733           0
+link 2 omega relative error = 0.725422%
+[log] ---------- cIDSolver frame 61----------
+link 0 calculated omega =  2.89851 -1.66683  5.86114        0
+link 0 true omega =  2.89851 -1.66683  5.86114        0
+link 0 diff = -1.11022e-14  -3.5083e-14 -3.55271e-15            0
+link 0 omega relative error = 5.47867e-13%
+link 1 calculated omega =  -3.1581 -1.14736  7.04974        0
+link 1 true omega = -3.16524 -1.20582  7.03685        0
+link 1 diff = 0.00714346  0.0584645  0.0128872          0
+link 1 omega relative error = 0.772032%
+link 2 calculated omega = -7.52879 -2.25456  10.0504        0
+link 2 true omega = -7.52911 -2.34498  10.0354        0
+link 2 diff = 0.000322478   0.0904221    0.014982           0
+link 2 omega relative error = 0.718129%
+[log] ---------- cIDSolver frame 62----------
+link 0 calculated omega =  2.75327 -1.66262  5.99368        0
+link 0 true omega =  2.75327 -1.66262  5.99368        0
+link 0 diff =  1.95399e-14   1.9984e-15 -2.66454e-15            0
+link 0 omega relative error = 2.91405e-13%
+link 1 calculated omega = -3.01467 -1.01532  6.97527        0
+link 1 true omega = -3.02256 -1.07129  6.96356        0
+link 1 diff = 0.00788914  0.0559643   0.011715          0
+link 1 omega relative error = 0.752877%
+link 2 calculated omega =  -7.6361 -2.19646  10.0643        0
+link 2 true omega = -7.63604 -2.28675  10.0511        0
+link 2 diff = -5.95016e-05    0.0902904    0.0132168            0
+link 2 omega relative error = 0.711342%
+[log] ---------- cIDSolver frame 63----------
+link 0 calculated omega =  2.60934 -1.66258  6.12707        0
+link 0 true omega =  2.60934 -1.66258  6.12707        0
+link 0 diff =   3.4639e-14  9.61453e-14 -3.28626e-14            0
+link 0 omega relative error = 1.56395e-12%
+link 1 calculated omega =  -2.87882 -0.883249   6.90267         0
+link 1 true omega =  -2.88755 -0.936784   6.89203         0
+link 1 diff = 0.00873466  0.0535345  0.0106406          0
+link 1 omega relative error = 0.733984%
+link 2 calculated omega = -7.74008 -2.14079  10.0685        0
+link 2 true omega = -7.73968 -2.23091  10.0571        0
+link 2 diff = -0.000403553    0.0901251    0.0114427            0
+link 2 omega relative error = 0.705077%
+[log] ---------- cIDSolver frame 64----------
+link 0 calculated omega =  2.46726 -1.66646  6.26139        0
+link 0 true omega =  2.46726 -1.66646  6.26139        0
+link 0 diff = -2.44249e-14 -5.52891e-14  5.06262e-14            0
+link 0 omega relative error = 1.1372e-12%
+link 1 calculated omega =  -2.75083 -0.751522   6.83214         0
+link 1 true omega =  -2.76051 -0.802708   6.82248         0
+link 1 diff = 0.00967328  0.0511866 0.00966214          0
+link 1 omega relative error = 0.715627%
+link 2 calculated omega = -7.84036 -2.08785  10.0629        0
+link 2 true omega = -7.83966 -2.17778  10.0533        0
+link 2 diff = -0.000707261    0.0899277   0.00966557            0
+link 2 omega relative error = 0.699344%
+[log] ---------- cIDSolver frame 65----------
+link 0 calculated omega =  2.32749 -1.67401  6.39676        0
+link 0 true omega =  2.32749 -1.67401  6.39676        0
+link 0 diff =  3.9968e-15 6.63913e-14 -3.9968e-14           0
+link 0 omega relative error = 1.10696e-12%
+link 1 calculated omega = -2.63095 -0.62051  6.76386        0
+link 1 true omega =  -2.64165 -0.669441   6.75508         0
+link 1 diff =  0.0106983   0.048931 0.00877767          0
+link 1 omega relative error = 0.698103%
+link 2 calculated omega = -7.93655 -2.03793  10.0476        0
+link 2 true omega = -7.93558 -2.12763  10.0397        0
+link 2 diff = -0.000967967    0.0897001   0.00789127            0
+link 2 omega relative error = 0.694152%
+[log] ---------- cIDSolver frame 66----------
+link 0 calculated omega =  2.19047 -1.68495  6.53327        0
+link 0 true omega =  2.19047 -1.68495  6.53327        0
+link 0 diff = -3.10862e-14 -1.06137e-13  6.30607e-14            0
+link 0 omega relative error = 1.7947e-12%
+link 1 calculated omega =  -2.51935 -0.490567     6.698         0
+link 1 true omega =  -2.53116 -0.537344   6.69001         0
+link 1 diff =  0.0118032  0.0467772 0.00798461          0
+link 1 omega relative error = 0.681719%
+link 2 calculated omega = -8.02825 -1.99128  10.0226        0
+link 2 true omega = -8.02706 -2.08072  10.0165        0
+link 2 diff = -0.00118285   0.0894442  0.00612589           0
+link 2 omega relative error = 0.689513%
+[log] ---------- cIDSolver frame 67----------
+link 0 calculated omega =  2.05663 -1.69903  6.67098        0
+link 0 true omega =  2.05663 -1.69903  6.67098        0
+link 0 diff = -1.33227e-15 -1.88738e-14  1.42109e-14            0
+link 0 omega relative error = 3.29359e-13%
+link 1 calculated omega =  -2.41618 -0.362023   6.63471         0
+link 1 true omega =  -2.42916 -0.406757   6.62743         0
+link 1 diff = 0.0129814 0.0447335   0.00728         0
+link 1 omega relative error = 0.666795%
+link 2 calculated omega = -8.11504 -1.94813  9.98814        0
+link 2 true omega = -8.11369  -2.0373  9.98376        0
+link 2 diff = -0.00134905   0.0891623  0.00437561           0
+link 2 omega relative error = 0.685434%
+[log] ---------- cIDSolver frame 68----------
+link 0 calculated omega =  1.92634 -1.71598  6.80996        0
+link 0 true omega =  1.92634 -1.71598  6.80996        0
+link 0 diff =  4.70735e-14  1.41887e-13 -7.54952e-14            0
+link 0 omega relative error = 2.29975e-12%
+link 1 calculated omega =   -2.3215 -0.235188   6.57413         0
+link 1 true omega =  -2.33572 -0.277995   6.56747         0
+link 1 diff =  0.0142264  0.0428071 0.00666057          0
+link 1 omega relative error = 0.653645%
+link 2 calculated omega = -8.19654 -1.90867  9.94428        0
+link 2 true omega = -8.19508 -1.99753  9.94163        0
+link 2 diff = -0.00146375   0.0888573  0.00264656           0
+link 2 omega relative error = 0.681928%
+[log] ---------- cIDSolver frame 69----------
+link 0 calculated omega =  1.79997 -1.73553  6.95026        0
+link 0 true omega =  1.79997 -1.73553  6.95026        0
+link 0 diff = -5.61773e-14 -1.84297e-13  1.03917e-13            0
+link 0 omega relative error = 2.96366e-12%
+link 1 calculated omega =  -2.23533 -0.110346   6.51637         0
+link 1 true omega =  -2.25087 -0.151351   6.51025         0
+link 1 diff =  0.0155321  0.0410047 0.00612265          0
+link 1 omega relative error = 0.642569%
+link 2 calculated omega = -8.27236 -1.87305  9.89127        0
+link 2 true omega = -8.27083 -1.96158  9.89032        0
+link 2 diff = -0.00152431   0.0885324 0.000944749           0
+link 2 omega relative error = 0.679006%
+[log] ---------- cIDSolver frame 70----------
+link 0 calculated omega =  1.67788 -1.75739  7.09191        0
+link 0 true omega =  1.67788 -1.75739  7.09191        0
+link 0 diff =  2.44249e-15  6.55032e-14 -5.59552e-14            0
+link 0 omega relative error = 1.14964e-12%
+link 1 calculated omega =  -2.15766 0.0122476   6.46151         0
+link 1 true omega =   -2.17455 -0.0270842    6.45585          0
+link 1 diff =  0.0168921  0.0393318 0.00566233          0
+link 1 omega relative error = 0.633834%
+link 2 calculated omega = -8.34212 -1.84138  9.82937        0
+link 2 true omega = -8.34059 -1.92957  9.83009        0
+link 2 diff =  -0.00152839    0.0881913 -0.000724109            0
+link 2 omega relative error = 0.676681%
+[log] ---------- cIDSolver frame 71----------
+link 0 calculated omega =  1.56039 -1.78127  7.23493        0
+link 0 true omega =  1.56039 -1.78127  7.23493        0
+link 0 diff =  2.44249e-15 -2.08722e-14  2.84217e-14            0
+link 0 omega relative error = 4.6432e-13%
+link 1 calculated omega = -2.08839 0.132365  6.40963        0
+link 1 true omega =  -2.10669 0.0945723   6.40435         0
+link 1 diff =  0.0183005  0.0377931 0.00527536          0
+link 1 omega relative error = 0.627663%
+link 2 calculated omega = -8.40548 -1.81374  9.75888        0
+link 2 true omega = -8.40401 -1.90158  9.76123        0
+link 2 diff = -0.00147401   0.0878384 -0.00235468           0
+link 2 omega relative error = 0.67497%
+[log] ---------- cIDSolver frame 72----------
+link 0 calculated omega =   1.4478 -1.80689  7.37933        0
+link 0 true omega =   1.4478 -1.80689  7.37933        0
+link 0 diff =  5.77316e-15  5.35127e-14 -2.39808e-14            0
+link 0 omega relative error = 7.61876e-13%
+link 1 calculated omega = -2.02738 0.249813  6.36075        0
+link 1 true omega = -2.04713 0.213421  6.35579        0
+link 1 diff =  0.0197514  0.0363924 0.00495726          0
+link 1 omega relative error = 0.624219%
+link 2 calculated omega = -8.46213 -1.79016  9.68014        0
+link 2 true omega = -8.46077 -1.87764  9.68408        0
+link 2 diff = -0.00135969   0.0874784 -0.00394215           0
+link 2 omega relative error = 0.673891%
+[log] ---------- cIDSolver frame 73----------
+link 0 calculated omega =  1.34042 -1.83393   7.5251        0
+link 0 true omega =  1.34042 -1.83393   7.5251        0
+link 0 diff =  -2.4869e-14  3.68594e-14 -4.44089e-15            0
+link 0 omega relative error = 5.68485e-13%
+link 1 calculated omega = -1.97445 0.364431  6.31488        0
+link 1 true omega = -1.99569 0.329298  6.31017        0
+link 1 diff =  0.0212389  0.0351327 0.00470332          0
+link 1 omega relative error = 0.623597%
+link 2 calculated omega =  -8.5118 -1.77064  9.59353        0
+link 2 true omega = -8.51062 -1.85775  9.59902        0
+link 2 diff = -0.00118448   0.0871163 -0.00548235           0
+link 2 omega relative error = 0.673462%
+[log] ---------- cIDSolver frame 74----------
+link 0 calculated omega =  1.23849 -1.86209  7.67222        0
+link 0 true omega =  1.23849 -1.86209  7.67222        0
+link 0 diff =  1.77636e-15 -7.77156e-15  8.88178e-16            0
+link 0 omega relative error = 1.00373e-13%
+link 1 calculated omega = -1.92936 0.476093    6.272        0
+link 1 true omega = -1.95212 0.442077  6.26749        0
+link 1 diff =  0.0227576  0.0340162 0.00450859          0
+link 1 omega relative error = 0.625816%
+link 2 calculated omega = -8.55426 -1.75514  9.49948        0
+link 2 true omega = -8.55331  -1.8419  9.50645        0
+link 2 diff = -0.000948036    0.0867574   -0.0069718            0
+link 2 omega relative error = 0.673706%
+[log] ---------- cIDSolver frame 75----------
+link 0 calculated omega =  1.14228 -1.89103  7.82066        0
+link 0 true omega =  1.14228 -1.89103  7.82066        0
+link 0 diff = -2.66454e-14 -6.21725e-14  6.21725e-14            0
+link 0 omega relative error = 1.13052e-12%
+link 1 calculated omega = -1.89184 0.584711  6.23206        0
+link 1 true omega = -1.91614 0.551667  6.22769        0
+link 1 diff =  0.0243021  0.0330442 0.00436799          0
+link 1 omega relative error = 0.630825%
+link 2 calculated omega = -8.58932 -1.74359  9.39842        0
+link 2 true omega = -8.58867    -1.83  9.40683        0
+link 2 diff = -0.000650593    0.0864073  -0.00840783            0
+link 2 omega relative error = 0.674645%
+[log] ---------- cIDSolver frame 76----------
+link 0 calculated omega =    1.052 -1.92045  7.97041        0
+link 0 true omega =    1.052 -1.92045  7.97041        0
+link 0 diff = -7.99361e-15  1.49658e-13 -9.59233e-14            0
+link 0 omega relative error = 2.15275e-12%
+link 1 calculated omega = -1.86155 0.690231  6.19498        0
+link 1 true omega = -1.88742 0.658014   6.1907        0
+link 1 diff =  0.0258674  0.0322171 0.00427627          0
+link 1 omega relative error = 0.638506%
+link 2 calculated omega = -8.61684 -1.73589  9.29083        0
+link 2 true omega = -8.61654 -1.82196  9.30062        0
+link 2 diff = -0.00029299   0.0860712  -0.0097886           0
+link 2 omega relative error = 0.676304%
+[log] ---------- cIDSolver frame 77----------
+link 0 calculated omega = 0.967823 -1.94998  8.12142        0
+link 0 true omega = 0.967823 -1.94998  8.12142        0
+link 0 diff = -1.82077e-14 -1.57652e-14  4.44089e-14            0
+link 0 omega relative error = 6.0084e-13%
+link 1 calculated omega = -1.83815 0.792636  6.16065        0
+link 1 true omega =  -1.8656 0.761102  6.15642        0
+link 1 diff =  0.0274486  0.0315346 0.00422808          0
+link 1 omega relative error = 0.648691%
+link 2 calculated omega = -8.63673  -1.7319  9.17721        0
+link 2 true omega = -8.63685 -1.81765  9.18832        0
+link 2 diff = 0.000123372   0.0857546  -0.0111131           0
+link 2 omega relative error = 0.678707%
+[log] ---------- cIDSolver frame 78----------
+link 0 calculated omega = 0.889923 -1.97931  8.27366        0
+link 0 true omega = 0.889923 -1.97931  8.27366        0
+link 0 diff =  1.75415e-14  3.37508e-14 -1.59872e-14            0
+link 0 omega relative error = 4.82376e-13%
+link 1 calculated omega = -1.82126 0.891942  6.12894        0
+link 1 true omega =  -1.8503 0.860947  6.12472        0
+link 1 diff =   0.029041  0.0309958 0.00421803          0
+link 1 omega relative error = 0.661173%
+link 2 calculated omega = -8.64895 -1.73146  9.05805        0
+link 2 true omega = -8.64955 -1.81692  9.07043        0
+link 2 diff = 0.000596583   0.0854625  -0.0123813           0
+link 2 omega relative error = 0.681882%
+[debug] cCollisionWorld::cCollisionWorld deconstructed

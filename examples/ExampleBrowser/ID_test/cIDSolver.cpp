@@ -20,15 +20,7 @@
 
 extern btVector3 gGravity;
 
-struct tForceInfo {
-	int mId;
-	tVector mPos, mForce;
-	tForceInfo()
-	{
-		mId = -1;
-		mPos = mForce = tVector::Zero();
-	}
-};
+
 cIDSolver::cIDSolver(btMultiBody * body, btMultiBodyDynamicsWorld * world)
 {
 	mMultibody = body;
@@ -48,11 +40,12 @@ cIDSolver::cIDSolver(btMultiBody * body, btMultiBodyDynamicsWorld * world)
 	}
 
 	// init vars
-	mEnableExternalForce = true;
-	mEnableExternalTorque = true;
-	mEnableAppliedJointTorque = true;
+	mEnableExternalForce = false;
+	mEnableExternalTorque = false;
+	mEnableAppliedJointTorque = false;
 	mEnableSolveID = false;
-	mEnableVerifyVars = true;
+	mEnableVerifyVel = true;
+	mEnableVerifyMomentum = true;
 	mFloatingBase = !(mMultibody->hasFixedBase());
 	mDof = mMultibody->getNumDofs();
 	if (mFloatingBase == true)
@@ -201,11 +194,16 @@ void cIDSolver::PostSim()
 
 
 	// verify link pos and link vel, system momemtums
-	if(mEnableVerifyVars)
+	if(mEnableVerifyVel)
 	{
 		VerifyLinkVel();
+		VerifyLinkOmega();
 	}
 
+	if(mEnableVerifyMomentum)
+	{
+		VerifyLinearMomentum();
+	}
 	// verify generalized coordinates
 	if (mSolvingMode == eSolvingMode::VEL)
 	{
@@ -370,6 +368,8 @@ void cIDSolver::AddJointForces()
 
 void cIDSolver::AddExternalForces()
 {
+	for(int i=0; i<mNumLinks; i++) mExternalForces[i].setZero(), mExternalTorques[i].setZero();
+
 	// add random force
 	if (true == mEnableExternalForce)
 	{
@@ -396,6 +396,9 @@ void cIDSolver::AddExternalForces()
 	}
 
 	// add random torque
+	// btVector3 torque = btVector3(1,1,1);
+	// mMultibody->addBaseTorque(torque);
+	// mExternalTorques[0] = cBulletUtil::btVectorTotVector0(torque);
 	if (true == mEnableExternalTorque)
 	{
 		tVector external_torque = tVector::Zero();
