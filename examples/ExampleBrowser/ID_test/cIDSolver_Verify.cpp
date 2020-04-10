@@ -2,7 +2,7 @@
 #include "BulletDynamics/Featherstone/btMultiBodyLinkCollider.h"
 #include <iostream>
 #include <fstream>
-// #define DEBUG_LOG_VEL
+#define DEBUG_LOG_VEL
 extern btVector3 gGravity;
 
 // the conservation of momentums
@@ -10,11 +10,8 @@ void cIDSolver::VerifyLinearMomentum()
 {
     assert(mEnableVerifyMomentum);
     assert(this->mContactForces.size() ==0 );
-    std::cout <<" void cIDSolver::VerifyLinearMomentum() begin\n";
-
     
 	{
-		
 		// verify linear momentum
 		double mass = 0, total_mass = 0;
 		tVector old_momentum = tVector::Zero(), new_momentum = tVector::Zero();
@@ -34,14 +31,15 @@ void cIDSolver::VerifyLinearMomentum()
 		impulse *= mCurTimestep;
 		tVector momentum_changes = new_momentum - old_momentum;
         tVector error_vec = (impulse - momentum_changes);
+#ifdef DEBUG_LOG_VEL
 		// std::cout <<"----- frame " << mFrameId << std::endl;
-		std::cout <<"before momentum = " << old_momentum.transpose() << std::endl;
-		std::cout <<"cur momentum = " << new_momentum.transpose() << std::endl;
-		std::cout <<"momentum changes = " << (momentum_changes).transpose() << std::endl;
-		std::cout <<"impulse = " << (impulse).transpose() << std::endl;
-		std::cout <<"error vector = " << (error_vec).transpose() << std::endl;
-		std::cout <<"relative error = " << error_vec.norm() / impulse.norm() * 100 << "%" << std::endl;
-
+		// std::cout <<"[linear mom] before momentum = " << old_momentum.transpose() << std::endl;
+		// std::cout <<"cur momentum = " << new_momentum.transpose() << std::endl;
+		std::cout <<"[linear mom] linear momentum changes = " << (momentum_changes).transpose() << std::endl;
+		std::cout <<"[linear mom] lienar impulse = " << (impulse).transpose() << std::endl;
+		// std::cout <<"error vector = " << (error_vec).transpose() << std::endl;
+		std::cout <<"[linear mom] relative error = " << error_vec.norm() / impulse.norm() * 100 << "%" << std::endl;
+#endif
 		
 		// std::ofstream fout("test_res.txt", std::ios::app);
 		// fout <<"----- frame " << mFrameId << std::endl;
@@ -60,11 +58,46 @@ void cIDSolver::VerifyLinearMomentum()
     // exit(1);
 }
 
+/*
+    Function: VerifyAngMomentum
+        This function will calculate
+*/
 void cIDSolver::VerifyAngMomentum()
 {
     assert(mEnableVerifyMomentum);
-    std::cout <<" void cIDSolver::VerifyAngMomentum()\n";
-    // exit(1);
+
+    // std::cout <<" void cIDSolver::VerifyAngMomentum()\n";
+
+    // calculate ang momentum of this multibody
+    /*
+        L_k = m_k*(x_k - p) x v_k + I0 \omega_k
+        p is a selected point for calculating it
+        I0 = R I_body R^T
+        R rotate a vector in local frame to world frame
+    */
+   tVector old_ang_mom = CalcAngMomentum(mFrameId - 1),
+            new_ang_mom = CalcAngMomentum(mFrameId);
+
+    tVector mom_changes = new_ang_mom - old_ang_mom;
+    // std::cout << "ang momentum changes = " << mom_changes.transpose() << std::endl;
+    // std::cout <<"new ang momentum = " << new_ang_mom.transpose() << std::endl;    
+    // tVector base_torque = mExternalTorques[0];
+    // std::cout <<"base torque = " << base_torque.transpose() << std::endl;
+    // tVector impulse = base_torque * mCurTimestep,
+    //         mom_changes = new_ang_mom - old_ang_mom;
+    // std::cout <<"impulse = " << impulse.transpose()<<"\nang mom changes = " << mom_changes.transpose() << std::endl;
+    // std::cout <<"diff = " << (impulse - mom_changes).transpose() << std::endl;
+    // double err = (impulse - mom_changes).norm() / impulse.norm() * 100 ;
+    // std::cout <<"omega/err = " << mLinkOmega[mFrameId][0].norm() << " " << err << "\n";
+    // std::cout <<"omega = " << mLinkOmega[mFrameId][0].transpose() << "\n";
+    tVector ext_torque = mExternalTorques[0];
+    tVector impulse = ext_torque * mCurTimestep;
+    auto error_vec = mom_changes - impulse;
+    std::cout <<"[ang mom] ang momentum changes = " << (mom_changes).transpose() << std::endl;
+    std::cout <<"[ang mom] ang impulse = " << impulse.transpose() << std::endl;
+    std::cout <<"error vector = " << (error_vec).transpose() << std::endl;
+    std::cout <<"[ang mom] relative error = " << error_vec.norm() / impulse.norm() * 100 << "%" << std::endl;
+
 }
 
 void cIDSolver::VerifyMomentum()
@@ -211,13 +244,13 @@ void cIDSolver::VerifyLinkOmega()
         tQuaternion diff_rot = cMathUtil::RotMatToQuaternion(mLinkRot[mFrameId][i] * mLinkRot[mFrameId-1][i].transpose());
         tVector aa_omega = cMathUtil::QuaternionToAxisAngle(diff_rot) / mCurTimestep;
 #ifdef DEBUG_LOG_VEL
-        std::cout <<"link " << i <<" calculated omega = " << aa_omega.transpose() << std::endl;
-        std::cout <<"link " << i <<" true omega = " << mLinkOmega[mFrameId][i].transpose() << std::endl;
+        // std::cout <<"link " << i <<" calculated omega = " << aa_omega.transpose() << std::endl;
+        // std::cout <<"link " << i <<" true omega = " << mLinkOmega[mFrameId][i].transpose() << std::endl;
         
 
         tVector error_vector = aa_omega - mLinkOmega[mFrameId][i];
-        std::cout <<"link " << i <<" diff = " << error_vector.transpose() << std::endl;
-        std::cout <<"link " << i <<" omega relative error = " << error_vector.norm()/ (mLinkOmega[mFrameId][i].norm() + 1e-6) * 100 << "%\n";
+        // std::cout <<"link " << i <<" diff = " << error_vector.transpose() << std::endl;
+        // std::cout <<"link " << i <<" omega relative error = " << error_vector.norm()/ (mLinkOmega[mFrameId][i].norm() + 1e-6) * 100 << "%\n";
 #endif
         // if(error_vector.norm() > 1e-6)
         // {
@@ -229,4 +262,51 @@ void cIDSolver::VerifyLinkOmega()
         // }
     }
     // exit(1);
+}
+
+tVector cIDSolver::CalcCOM(int frame_id)
+{
+    assert(frame_id >=0 && frame_id <= mFrameId);
+    tVector COM = tVector::Zero();
+    for(int i=0; i<mNumLinks; i++)
+    {
+        COM += mLinkMass[i] * mLinkPos[frame_id][i];
+    }
+    COM /= mTotalMass;
+    return COM;
+}
+
+tVector cIDSolver::CalcAngMomentum(int frame_id)
+{
+    assert(frame_id >=0 && frame_id <= mFrameId);
+    tVector ang_m = tVector::Zero();
+    for(int i=0; i<mNumLinks; i++)
+    {
+        double m_k = mLinkMass[i];
+        tVector x_k = mLinkPos[frame_id][i];
+        tVector p = CalcCOM(frame_id);
+        // tVector p = tVector::Zero();
+        tVector v_k = mLinkVel[frame_id][i];
+        tVector w_k = mLinkOmega[frame_id][i];
+        tMatrix R = mLinkRot[frame_id][i];
+        tMatrix I_body;
+        if(i == 0)
+        {
+            I_body = cBulletUtil::btVectorTotVector0(mMultibody->getBaseInertia()).asDiagonal();
+        }
+        else
+        {
+            I_body = cBulletUtil::btVectorTotVector0(mMultibody->getLinkInertia(i-1)).asDiagonal();
+        }
+        
+        // tVector I0 = R * I_body * R.transpose();
+        tMatrix I0 = R * I_body * R.transpose();
+        tVector part1 = m_k * (x_k - p).cross3(v_k),
+                part2 = I0 * w_k;
+        ang_m += part2;
+    }
+    
+    // std::cout <<" I body = " << I_body.diagonal().transpose() << std::endl;
+    // std::cout <<" part1 = " << part1.transpose() << std::endl;
+    return ang_m;
 }

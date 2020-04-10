@@ -29,7 +29,8 @@ public:
 	void SetTimestep(double deltaTime);
 	void PreSim();
 	void PostSim();
-	
+	tVector CalcAngMomentum(int frame_id);
+	tVector CalcCOM(int frame_id);
 private:
 	// ID vars
 	btMultiBody* mMultibody;
@@ -63,6 +64,8 @@ private:
 	tVectorXd mBuffer_q[MAX_FRAME_NUM];		// generalized coordinate "q" buffer, storaged for each frame
 	tVectorXd mBuffer_u[MAX_FRAME_NUM];		// q_dot = u buffer, storaged for each frame
 	tVectorXd mBuffer_u_dot[MAX_FRAME_NUM];	//
+	std::vector<double> mLinkMass;
+	double mTotalMass;
 
 	// tools 
 	void AddJointForces();

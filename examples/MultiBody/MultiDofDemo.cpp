@@ -105,7 +105,6 @@ MultiDofDemo::~MultiDofDemo()
 }
 
 
-
 btVector3 gGravity = btVector3(0, -10, 0);
 
 void MultiDofDemo::stepSimulation(float deltaTime)
@@ -125,7 +124,6 @@ void MultiDofDemo::stepSimulation(float deltaTime)
 
 	mIDSolver->PostSim();
 }
-
 
 class CommonExampleInterface* MultiDofCreateFunc(struct CommonExampleOptions& options)
 {
@@ -215,8 +213,8 @@ void MultiDofDemo::initPhysics()
 	/////////////////////////////////////////////////////////////////
 	bool damping = false;
 	bool gyro = true;
-	int numLinks = 1;
-	bool spherical = true;  //set it ot false -to use 1DoF hinges instead of 3DoF sphericals
+	int numLinks = 2;
+	bool spherical = false;  //set it ot false -to use 1DoF hinges instead of 3DoF sphericals
 	bool multibodyOnly = false;
 	bool canSleep = false;
 	bool selfCollide = true;
@@ -243,8 +241,10 @@ void MultiDofDemo::initPhysics()
 		mbC->setAngularDamping(0.9f);
 	}
 	//
-	mbC->setBaseVel(btVector3(1, 1, 1));
-	mbC->setBaseOmega(btVector3(-7, -3, 5));
+	mbC->setBaseVel(btVector3(10, 10, 10));
+	mbC->setBaseOmega(btVector3(10, 10, 10));
+	// mbC->setMaxCoordinateVelocity(3.0f);
+	// mbC->setBaseOmega(btVector3(0, 0, 5));
 	m_dynamicsWorld->setGravity(gGravity);
 	//m_dynamicsWorld->getSolverInfo().m_numIterations = 100;
 	//////////////////////////////////////////////
@@ -358,7 +358,7 @@ btMultiBody* MultiDofDemo::createFeatherstoneMultiBody_testMultiDof(btMultiBodyD
 
 	// 这里设置的是world to base rot，也就是一个世界坐标系向量想要转换到base坐标系中，需要旋转多少角度。
 	// 坐标系的旋转和向量的旋转是相反角度关系。
-	double theta = 30.0 / 180 * M_PI;
+	double theta = 0.0 / 180 * M_PI;
 	double cos_theta_2 = std::cos(theta / 2),
 			sin_theta_2 = std::sin(theta / 2);
 	//btQuaternion baseOriQuat(0.f, 0.5f, 0.f, 0.866f);

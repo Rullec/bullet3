@@ -54,7 +54,8 @@ cIDSolver::cIDSolver(btMultiBody * body, btMultiBodyDynamicsWorld * world)
 	}
 
 	mNumLinks = mMultibody->getNumLinks() + 1;
-
+	std::cout <<"link num = " << mNumLinks << std::endl;
+	// exit(1);
 	// clear buffer
 	solve_joint_force_bt.resize(mDof);
 	solve_joint_force_bt.setZero();
@@ -79,6 +80,16 @@ cIDSolver::cIDSolver(btMultiBody * body, btMultiBodyDynamicsWorld * world)
 		}
 		mWorldId2InverseId[world_id] = inverse_id;
 		mInverseId2WorldId[inverse_id] = world_id;
+	}
+
+	// calculate mass info
+
+	mLinkMass.resize(mNumLinks);
+	mTotalMass = 0;
+	for(int i=0; i<mNumLinks; i++)
+	{
+		mLinkMass[i] = i==0? mMultibody->getBaseMass(): mMultibody->getLinkMass(i-1);
+		mTotalMass += mLinkMass[i];
 	}
 
 	// init other vars
@@ -170,6 +181,7 @@ void cIDSolver::PreSim()
 
 	RecordGeneralizedInfo(mBuffer_q[mFrameId], mBuffer_u[mFrameId]);
 
+	
 	// if(0 == mFrameId)
 	RecordMultibodyInfo(mLinkRot[mFrameId], mLinkPos[mFrameId], mLinkVel[mFrameId], mLinkOmega[mFrameId]);
 
@@ -203,7 +215,9 @@ void cIDSolver::PostSim()
 	if(mEnableVerifyMomentum)
 	{
 		VerifyLinearMomentum();
+		VerifyAngMomentum();
 	}
+
 	// verify generalized coordinates
 	if (mSolvingMode == eSolvingMode::VEL)
 	{
@@ -396,9 +410,17 @@ void cIDSolver::AddExternalForces()
 	}
 
 	// add random torque
-	// btVector3 torque = btVector3(1,1,1);
+	// btVector3 torque = btVector3(2, 0, 0);
 	// mMultibody->addBaseTorque(torque);
+	// std::cout <<"base torque = " << cBulletUtil::btVectorTotVector0(mMultibody->getBaseTorque()).transpose() << std::endl;
 	// mExternalTorques[0] = cBulletUtil::btVectorTotVector0(torque);
+
+	// add torque for joint 1
+	// btVector3 torque = btVector3(2, 2, 2);
+	// btScalar q[3] = {2, 2, 2};
+	// mMultibody->addJointTorqueMultiDof(0, q);
+	// mExternalTorques[0] = cBulletUtil::btVectorTotVector0(torque);
+
 	if (true == mEnableExternalTorque)
 	{
 		tVector external_torque = tVector::Zero();
