@@ -77,4 +77,10 @@ public:
 
 		return res;
 	}
+	static btMatrix3x3 AsDiagnoal(const btVector3 & vec)
+	{
+		btMatrix3x3 mat = btMatrix3x3::getIdentity();
+		for(int i=0; i<3; i++) mat[i][i] = vec[i];
+		return mat;
+	}
 };

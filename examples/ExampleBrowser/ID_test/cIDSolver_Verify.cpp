@@ -36,8 +36,8 @@ void cIDSolver::VerifyLinearMomentum()
 		// std::cout <<"[linear mom] before momentum = " << old_momentum.transpose() << std::endl;
 		// std::cout <<"cur momentum = " << new_momentum.transpose() << std::endl;
 		std::cout <<"[linear mom] linear momentum changes = " << (momentum_changes).transpose() << std::endl;
-		std::cout <<"[linear mom] lienar impulse = " << (impulse).transpose() << std::endl;
-		// std::cout <<"error vector = " << (error_vec).transpose() << std::endl;
+		// std::cout <<"[linear mom] lienar impulse = " << (impulse).transpose() << std::endl;
+		// // std::cout <<"error vector = " << (error_vec).transpose() << std::endl;
 		std::cout <<"[linear mom] relative error = " << error_vec.norm() / impulse.norm() * 100 << "%" << std::endl;
 #endif
 		
@@ -95,9 +95,12 @@ void cIDSolver::VerifyAngMomentum()
     auto error_vec = mom_changes - impulse;
     std::cout <<"[ang mom] ang momentum changes = " << (mom_changes).transpose() << std::endl;
     std::cout <<"[ang mom] ang impulse = " << impulse.transpose() << std::endl;
-    std::cout <<"error vector = " << (error_vec).transpose() << std::endl;
-    std::cout <<"[ang mom] relative error = " << error_vec.norm() / impulse.norm() * 100 << "%" << std::endl;
-
+    std::cout <<"[ang mom] old ang momentum = " << old_ang_mom.transpose() << std::endl;
+    std::cout <<"[ang mom] abs error = " << (error_vec).transpose() << std::endl;
+    if(impulse.norm() > 1e-10)
+        std::cout <<"[ang mom] relative error = " << error_vec.norm() / impulse.norm() * 100 << "%" << std::endl;
+    else
+        std::cout <<"[ang mom] relative error = " << error_vec.norm() / old_ang_mom.norm() * 100 << "%" << std::endl;
 }
 
 void cIDSolver::VerifyMomentum()
@@ -219,7 +222,7 @@ void cIDSolver::VerifyLinkVel()
         
         double relative_error = (true_vel - pred_vel).norm() / true_vel.norm();
 #ifdef DEBUG_LOG_VEL
-        std::cout <<"link " << i <<" relative error = " << relative_error * 100 << "%";
+        std::cout <<"[log] link " << i <<" discrete vel relative error = " << relative_error * 100 << "%";
 
         if(relative_error > 1e-10)
         {

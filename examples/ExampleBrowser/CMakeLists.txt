@@ -376,7 +376,10 @@ SET(BulletExampleBrowser_SRCS
   ../Constraints/Dof6Spring2Setup.h
   ../Constraints/ConstraintPhysicsSetup.cpp
   ../Constraints/ConstraintPhysicsSetup.h
-
+  ../Constraints/ConstraintMBDemo.cpp
+  ../Constraints/ConstraintMBDemo.h
+  ../Constraints/ConstraintMultibody.cpp
+  ../Constraints/ConstraintMultibody.hpp
 
 	../ThirdPartyLibs/stb_image/stb_image.cpp
 	../ThirdPartyLibs/stb_image/stb_image.h

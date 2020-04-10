@@ -418,6 +418,9 @@ public:
 		for (int dof = 0; dof < 6 + getNumDofs(); ++dof)
 		{
 			m_realBuf[dof] += delta_vee[dof] * multiplier;
+			// if(dof < 3)
+			// 	printf("add omega dot %d = %.6f\n", dof, delta_vee[dof]);
+			// printf("multiplier = %.6f",  multiplier);
 			btClamp(m_realBuf[dof], -m_maxCoordinateVelocity, m_maxCoordinateVelocity);
 		}
 	}

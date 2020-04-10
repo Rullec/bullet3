@@ -30,6 +30,7 @@
 #include "../GyroscopicDemo/GyroscopicSetup.h"
 #include "../Constraints/Dof6Spring2Setup.h"
 #include "../Constraints/ConstraintPhysicsSetup.h"
+#include "../Constraints/ConstraintMBDemo.h"
 #include "../MultiBody/TestJointTorqueSetup.h"
 #include "../MultiBody/Pendulum.h"
 #include "../MultiBody/MultiBodySoftContact.h"
@@ -124,6 +125,8 @@ static ExampleEntry gDefaultExamples[] =
 		ExampleEntry(1, "Motorized Hinge", "Use of a btHingeConstraint. You can adjust the first slider to change the target velocity, and the second slider to adjust the maximum impulse applied to reach the target velocity. Note that the hinge angle can reach beyond -360 and 360 degrees.", ConstraintCreateFunc),
 		ExampleEntry(1, "TestHingeTorque", "Apply a torque in the hinge axis. This example uses a btHingeConstraint and btRigidBody. The setup is similar to the multi body example TestJointTorque.",
 					 TestHingeTorqueCreateFunc),
+		ExampleEntry(1, "ConstraintMBDemo", "Create a joint chain by adding constraints between rigid bodies and test whether their momentum is conservated",
+					ConstraintMBDemoCreateFunc),
 		//	ExampleEntry(0,"What's new in 2.83"),
 
 		ExampleEntry(1, "6DofSpring2", "Show the use of the btGeneric6DofSpring2Constraint. This is a replacement of the btGeneric6DofSpringConstraint, it has various improvements. This includes improved spring implementation and better control over the restitution (bounce) when the constraint hits its limits.",

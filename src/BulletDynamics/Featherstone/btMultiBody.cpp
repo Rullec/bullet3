@@ -741,7 +741,9 @@ inline btMatrix3x3 outerProduct(const btVector3 &v0, const btVector3 &v1)  //ren
 
 #define vecMulVecTranspose(v0, v1Transposed) outerProduct(v0, v1Transposed)
 //
-
+// #include <ID_test/BulletUtil.h>
+// #include <ID_test/BulletUtil.h>
+// #include "../../../examples/ExampleBrowser/ID_test/BulletUtil.h"
 void btMultiBody::computeAccelerationsArticulatedBodyAlgorithmMultiDof(btScalar dt,
     btAlignedObjectArray<btScalar> &scratch_r,
     btAlignedObjectArray<btVector3> &scratch_v,
@@ -862,9 +864,16 @@ void btMultiBody::computeAccelerationsArticulatedBodyAlgorithmMultiDof(btScalar 
 		//
 		//p += vhat x Ihat vhat - done in a simpler way
 		if (m_useGyroTerm)
+		{
 			zeroAccSpatFrc[0].addAngular(spatVel[0].getAngular().cross(m_baseInertia * spatVel[0].getAngular()));
-		//
+		}
+			
+		// btVector3 tmp = m_baseMass * spatVel[0].getAngular().cross(spatVel[0].getLinear());
 		zeroAccSpatFrc[0].addLinear(m_baseMass * spatVel[0].getAngular().cross(spatVel[0].getLinear()));
+		// printf("linear vel = %.6f, %.6f, %.6f\n", spatVel[0].getLinear().getX(), spatVel[0].getLinear().getY(), spatVel[0].getLinear().getZ());
+		// printf("ang vel = %.6f, %.6f, %.6f\n", spatVel[0].getAngular().getX(), spatVel[0].getAngular().getY(), spatVel[0].getAngular().getZ());
+		// printf("z.a.f linear part = %.6f, %.6f, %.6f\n", tmp.getX(), tmp.getY(), tmp.getZ());
+		// exit(1);
 	}
 
 	//init the spatial AB inertia (it has the simple form thanks to choosing local body frames origins at their COMs)
@@ -1110,7 +1119,15 @@ void btMultiBody::computeAccelerationsArticulatedBodyAlgorithmMultiDof(btScalar 
 		}
 
 		solveImatrix(zeroAccSpatFrc[0], result);
+		// printf("[debug] root link zero acc force linear part = %.6f, %.6f, %.6f\n",
+		// 	zeroAccSpatFrc[0].getLinear().getX(), 
+		// 	zeroAccSpatFrc[0].getLinear().getY(), 
+		// 	zeroAccSpatFrc[0].getLinear().getZ());
 		spatAcc[0] = -result;
+		// printf("[debug] solved accel linear part(should be 0) = %.6f, %.6f, %.6f\n",
+		// 	spatAcc[0].getLinear().getX(), 
+		// 	spatAcc[0].getLinear().getY(), 
+		// 	spatAcc[0].getLinear().getZ());
 	}
 
 	// now do the loop over the m_links
@@ -1190,10 +1207,21 @@ void btMultiBody::computeAccelerationsArticulatedBodyAlgorithmMultiDof(btScalar 
 
 	// transform base accelerations back to the world frame.
 	const btVector3 omegadot_out = rot_from_parent[0].transpose() * spatAcc[0].getAngular();
+
+	// test code, calculate base omega dot by my self
+	{
+		// btMatrix3x3 Ibody = cBulletUtil::AsDiagnoal(m_baseInertia);
+		// btMatrix3x3 I0 = rot_from_world[0].transpose() * Ibody * rot_from_world[0];
+		// btVector3 omegadot_self = I0.inverse() * (base_omega.cross(I0 * base_omega));
+		// printf("self omega dot = %.6f, %.6f, %.6f\n", omegadot_self.getX(), omegadot_self.getY(), omegadot_self.getZ());
+		// printf("res omega dot = %.6f, %.6f, %.6f\n", omegadot_out.getX(), omegadot_out.getY(), omegadot_out.getZ());
+		// exit(1);
+	}
+
 	output[0] = omegadot_out[0];
 	output[1] = omegadot_out[1];
 	output[2] = omegadot_out[2];
-
+	// printf("omega dot output = %.6f, %.6f, %.6f\n", output[0], output[1], output[2]);
 	const btVector3 vdot_out = rot_from_parent[0].transpose() * (spatAcc[0].getLinear() + spatVel[0].getAngular().cross(spatVel[0].getLinear()));
 	output[3] = vdot_out[0];
 	output[4] = vdot_out[1];
@@ -1283,6 +1311,9 @@ void btMultiBody::computeAccelerationsArticulatedBodyAlgorithmMultiDof(btScalar 
 			fromWorld.transformInverseRotationOnly(spatJointVel, m_links[i].m_absFrameLocVelocity);
 		}
 	}
+	
+	// printf("[log] compute Accel is called, base omega = %.5f %.5f %.5f\n",
+	// 	 getBaseOmega().getX(),  getBaseOmega().getY(),  getBaseOmega().getZ());
 }
 
 void btMultiBody::solveImatrix(const btVector3 &rhs_top, const btVector3 &rhs_bot, btScalar result[6]) const

@@ -235,7 +235,7 @@ void cIDSolver::PostSim()
 			mBuffer_u[mFrameId] = CalculateGeneralizedVel(mBuffer_q[mFrameId - 1], mBuffer_q[mFrameId], mCurTimestep);
 			mBuffer_u_dot[mFrameId - 1] = (mBuffer_u[mFrameId] - mBuffer_u[mFrameId - 1]) / mCurTimestep;
 
-			double threshold = 1e-8;
+			double threshold = 1e-6;
 			{
 				{
 					// check tool func
@@ -410,10 +410,10 @@ void cIDSolver::AddExternalForces()
 	}
 
 	// add random torque
-	// btVector3 torque = btVector3(2, 0, 0);
-	// mMultibody->addBaseTorque(torque);
-	// std::cout <<"base torque = " << cBulletUtil::btVectorTotVector0(mMultibody->getBaseTorque()).transpose() << std::endl;
-	// mExternalTorques[0] = cBulletUtil::btVectorTotVector0(torque);
+	btVector3 torque = btVector3(5, -3, 10) * 10;
+	mMultibody->addBaseTorque(torque);
+	std::cout <<"base torque = " << cBulletUtil::btVectorTotVector0(mMultibody->getBaseTorque()).transpose() << std::endl;
+	mExternalTorques[0] = cBulletUtil::btVectorTotVector0(torque);
 
 	// add torque for joint 1
 	// btVector3 torque = btVector3(2, 2, 2);

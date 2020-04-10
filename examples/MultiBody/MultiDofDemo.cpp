@@ -105,11 +105,14 @@ MultiDofDemo::~MultiDofDemo()
 }
 
 
-btVector3 gGravity = btVector3(0, -10, 0);
+btVector3 gGravity = btVector3(0, 0, 0);
 
 void MultiDofDemo::stepSimulation(float deltaTime)
 {
-	deltaTime = 3e-3;
+	// 3e-3: relative err 2%
+	// 1e-3: relative err 0.2%
+	// 3e-4: relative err 0.02%
+	deltaTime = 1e-3;
 #ifdef OUTPUT_SIMULATION_LOG
 	RecordSimLog();
 #endif // OUTPUT_SIMULATION_LOG
@@ -119,8 +122,12 @@ void MultiDofDemo::stepSimulation(float deltaTime)
 	mIDSolver->SetTimestep(deltaTime);
 	mIDSolver->PreSim();
 
-// for easy debug 
+	btVector3 omega_pre = mMultibody->getBaseOmega();
+	std::cout <<"[log] pre sim omega = " << cBulletUtil::btVectorTotVector0(omega_pre).transpose() << std::endl;
 	m_dynamicsWorld->stepSimulation(deltaTime, 0, deltaTime);
+	btVector3 omega_post = mMultibody->getBaseOmega();
+	std::cout <<"[log] post sim omega = " << cBulletUtil::btVectorTotVector0(omega_post).transpose() << std::endl;
+	std::cout <<"[log] omega  dot = " << cBulletUtil::btVectorTotVector0((omega_post - omega_pre)/deltaTime).transpose() << std::endl;
 
 	mIDSolver->PostSim();
 }
@@ -213,7 +220,7 @@ void MultiDofDemo::initPhysics()
 	/////////////////////////////////////////////////////////////////
 	bool damping = false;
 	bool gyro = true;
-	int numLinks = 2;
+	int numLinks = 0;
 	bool spherical = false;  //set it ot false -to use 1DoF hinges instead of 3DoF sphericals
 	bool multibodyOnly = false;
 	bool canSleep = false;
@@ -241,8 +248,8 @@ void MultiDofDemo::initPhysics()
 		mbC->setAngularDamping(0.9f);
 	}
 	//
-	mbC->setBaseVel(btVector3(10, 10, 10));
-	mbC->setBaseOmega(btVector3(10, 10, 10));
+	mbC->setBaseVel(btVector3(20, 10, 30));
+	mbC->setBaseOmega(btVector3(30, 60, 20));
 	// mbC->setMaxCoordinateVelocity(3.0f);
 	// mbC->setBaseOmega(btVector3(0, 0, 5));
 	m_dynamicsWorld->setGravity(gGravity);
