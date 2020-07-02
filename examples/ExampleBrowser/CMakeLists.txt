@@ -25,7 +25,6 @@ ELSE(WIN32)
      		ENDIF(APPLE)
 ENDIF(WIN32)
 
-
 ADD_LIBRARY(BulletExampleBrowserLib
 	OpenGLExampleBrowser.cpp
 	OpenGLGuiHelper.cpp
@@ -42,8 +41,8 @@ ADD_LIBRARY(BulletExampleBrowserLib
 	../Utils/b3ReferenceFrameHelper.hpp
 	${GwenGUISupport_SRCS}
 	${GwenGUISupport_HDRS}
-	
 )
+target_link_libraries(BulletExampleBrowserLib jsoncpp)
 
 SET_TARGET_PROPERTIES(BulletExampleBrowserLib PROPERTIES VERSION ${BULLET_VERSION})
 SET_TARGET_PROPERTIES(BulletExampleBrowserLib PROPERTIES SOVERSION ${BULLET_VERSION})
@@ -145,6 +144,26 @@ SET(ExtendedTutorialsSources
 	../ExtendedTutorials/MultiPendulum.cpp
 	../ExtendedTutorials/MultiPendulum.h
 )
+
+
+
+# add matlab
+if (UNIX)
+    find_package(Matlab REQUIRED)
+    if(Matlab_FOUND)
+        include_directories(${Matlab_INCLUDE_DIRS})
+    endif()
+
+    # add matlab QP solver
+    find_library(qp_lib
+                NAMES libQUADASSINPROG.so libQUADASSINPROG.dylib
+                PATHS "../CustomEngine/ContactSolver/MatlabQPSolver/"
+    )
+
+    set(matlab_lib ${qp_lib} mwmclmcrrt)
+endif()
+
+
 
 SET(BulletExampleBrowser_SRCS
         ../BulletRobotics/FixJointBoxes.cpp
@@ -367,6 +386,43 @@ SET(BulletExampleBrowser_SRCS
   ./ID_test/MathUtil.cpp
   ./ID_test/MathUtil.h
   ./ID_test/BulletUtil.h
+  ../CustomEngine/MainDemo.cpp
+  ../CustomEngine/MainDemo.h
+  ../CustomEngine/Simulator.cpp
+  ../CustomEngine/SimObj.cpp
+  ../CustomEngine/ColObjBase.cpp
+  ../CustomEngine/ContactSolver/ContactSolver.cpp
+  ../CustomEngine/ContactSolver/ConstraintData.cpp
+  ../CustomEngine/ContactSolver/LCPSolver/error.cpp
+  ../CustomEngine/ContactSolver/LCPSolver/fastdot.cpp
+  ../CustomEngine/ContactSolver/LCPSolver/fastldlt.cpp
+  ../CustomEngine/ContactSolver/LCPSolver/fastlsolve.cpp
+  ../CustomEngine/ContactSolver/LCPSolver/fastltsolve.cpp
+  ../CustomEngine/ContactSolver/LCPSolver/lcp.cpp
+  ../CustomEngine/ContactSolver/LCPSolver/LCPSolver.cpp
+  ../CustomEngine/ContactSolver/LCPSolver/Lemke.cpp
+  ../CustomEngine/ContactSolver/LCPSolver/matrix.cpp
+  ../CustomEngine/ContactSolver/LCPSolver/misc.cpp
+  ../CustomEngine/ContactSolver/QPSolver/EigenQP.cpp
+  ../CustomEngine/ContactSolver/MatlabQPSolver/MatlabQPSolver.cpp
+  ../CustomEngine/ContactSolver/MatlabQPSolver/libQUADASSINPROG.cpp
+	# ../CustomEngine/ContactSolver/QPSolver/uQuadProg++.cc
+	# ../CustomEngine/ContactSolver/QPSolver/QPSolver.cpp
+	../CustomEngine/Model/BaseObject.cpp
+	../CustomEngine/Model/EulerAngelRotationMatrix.cpp
+	../CustomEngine/Model/Joint.cpp
+	../CustomEngine/Model/Link.cpp
+	../CustomEngine/Model/Printer.cpp
+	../CustomEngine/Model/RobotModel.cpp
+	../CustomEngine/Model/RootJoint.cpp
+	../CustomEngine/Model/tools.cpp
+	../CustomEngine/Model/Tinyxml/tinystr.cpp
+	../CustomEngine/Model/RobotCollider.cpp
+../CustomEngine/Model/Tinyxml/tinyxml.cpp
+../CustomEngine/Model/Tinyxml/tinyxmlerror.cpp
+../CustomEngine/Model/Tinyxml/tinyxmlparser.cpp
+
+
   ../RigidBody/RigidBodySoftContact.cpp
   ../Constraints/TestHingeTorque.cpp
   ../Constraints/TestHingeTorque.h
@@ -391,8 +447,6 @@ SET(BulletExampleBrowser_SRCS
 	${BULLET_PHYSICS_SOURCE_DIR}/build3/bullet.rc
 )
 
-
-
 ADD_EXECUTABLE(App_ExampleBrowser
 		main.cpp
 		ExampleEntries.cpp
@@ -400,6 +454,7 @@ ADD_EXECUTABLE(App_ExampleBrowser
 		${ExtendedTutorialsSources}
 		${BulletExampleBrowser_SRCS} 
 )
+target_link_libraries(App_ExampleBrowser ${matlab_lib})
 
 FILE( MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/data" )
 

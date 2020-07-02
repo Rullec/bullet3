@@ -1,0 +1,9 @@
+{
+    "add_multibody": false,
+    "add_obj": true,
+    "enable_gravity": true,
+    "enable_lcp": true,
+    "damping": 0,
+    "multibody_num": 4,
+    "obj_num": 10
+}

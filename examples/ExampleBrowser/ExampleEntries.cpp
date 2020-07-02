@@ -61,6 +61,7 @@
 #include "../RoboticsLearning/KukaGraspExample.h"
 #include "../RoboticsLearning/GripperGraspExample.h"
 #include "../InverseKinematics/InverseKinematicsExample.h"
+#include "../CustomEngine/MainDemo.h"
 
 #ifdef B3_ENABLE_TINY_AUDIO
 #include "../TinyAudio/TinyAudioExample.h"
@@ -138,6 +139,8 @@ static ExampleEntry gDefaultExamples[] =
 
 		ExampleEntry(1, "Soft Contact", "Using the error correction parameter (ERP) and constraint force mixing (CFM) values for contacts to simulate compliant contact.", RigidBodySoftContactCreateFunc),
 
+		ExampleEntry(0, "CustomEngine"),
+		ExampleEntry(1, "MainDemo", "The main demo of my custom rigid body simulation engine", CustomMainCreateFunc),
 		ExampleEntry(0, "MultiBody"),
 		ExampleEntry(1, "MultiDof", "Create a basic btMultiBody with 3-DOF spherical joints (mobilizers). The demo uses a fixed base or a floating base at restart.", MultiDofCreateFunc),
 		ExampleEntry(1, "TestJointTorque", "Apply a torque to a btMultiBody with 1-DOF joints (mobilizers). This setup is similar to API/TestHingeTorque.", TestJointTorqueCreateFunc),

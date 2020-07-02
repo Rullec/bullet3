@@ -363,8 +363,8 @@ btMultiBody* MultiDofDemo::createFeatherstoneMultiBody_testMultiDof(btMultiBodyD
 	btMultiBody* pMultiBody = new btMultiBody(numLinks, baseMass, baseInertiaDiag, !floating, canSleep);
 	
 
-	// 这里设置的是world to base rot，也就是一个世界坐标系向量想要转换到base坐标系中，需要旋转多少角度。
-	// 坐标系的旋转和向量的旋转是相反角度关系。
+	// 锟斤拷锟斤拷锟斤拷锟矫碉拷锟斤拷world to base rot锟斤拷也锟斤拷锟斤拷一锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷系锟斤拷锟斤拷锟斤拷要转锟斤拷锟斤拷base锟斤拷锟斤拷系锟叫ｏ拷锟斤拷要锟斤拷转锟斤拷锟劫角度★拷
+	// 锟斤拷锟斤拷系锟斤拷锟斤拷转锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷转锟斤拷锟洁反锟角度癸拷系锟斤拷
 	double theta = 0.0 / 180 * M_PI;
 	double cos_theta_2 = std::cos(theta / 2),
 			sin_theta_2 = std::sin(theta / 2);
