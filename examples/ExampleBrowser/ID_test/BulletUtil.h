@@ -1,7 +1,7 @@
 #pragma once
 #include <LinearMath/btMatrix3x3.h>
 #include "MathUtil.h"
-
+#include <iostream>
 #include "BulletInverseDynamics/IDConfig.hpp"
 #include "../Extras/InverseDynamics/btMultiBodyTreeCreator.hpp"
 
@@ -84,10 +84,63 @@ public:
 
 		return res;
 	}
+
+	static btMatrixXu tMatrixXdTobtMatrixX(const tMatrixXd& mat)
+	{
+		// TODO: alternative memcpy
+		btMatrixXu res(mat.rows(), mat.cols());
+		for (int i = 0; i < mat.rows(); i++)
+			for (int j = 0; j < mat.cols(); j++) res.setElem(i, j, mat(i, j));
+		return res;
+	}
+
+	static tMatrixXd btMatrixXTotMatrixXd(const btMatrixXu& mat)
+	{
+		// TODO: alternative memcpy
+		tMatrixXd res(mat.rows(), mat.cols());
+		for (int i = 0; i < mat.rows(); i++)
+			for (int j = 0; j < mat.cols(); j++) res(i, j) = mat(i, j);
+		return res;
+	}
+
+	static btVectorXu tVectorXdTobtVectorXd(const tVectorXd& vec)
+	{
+		btVectorXu res(vec.size());
+		for (int i = 0; i < vec.size(); i++) res[i] = vec[i];
+		return res;
+	}
+
+	static tVectorXd btVectorXdTotVectorXd(const btVectorXu& vec)
+	{
+		tVectorXd res(vec.size());
+		for (int i = 0; i < vec.size(); i++) res[i] = vec[i];
+		return res;
+	}
+
 	static btMatrix3x3 AsDiagnoal(const btVector3& vec)
 	{
 		btMatrix3x3 mat = btMatrix3x3::getIdentity();
 		for (int i = 0; i < 3; i++) mat[i][i] = vec[i];
 		return mat;
+	}
+
+	template <typename T>
+	static void PrintBulletVars(const T& mat)
+	{
+		int rows = mat.rows(),
+			cols = mat.cols();
+		if (typeid(T) == typeid(btVectorXu))
+		{
+			cols = rows;
+			rows = 1;
+		}
+		for (int i = 0; i < rows; i++)
+		{
+			for (int j = 0; j < cols; j++)
+			{
+				std::cout << mat(i, j) << " ";
+			}
+			std::cout << std::endl;
+		}
 	}
 };

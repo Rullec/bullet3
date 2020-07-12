@@ -38,7 +38,7 @@ subject to the following restrictions:
 #include "../OpenGLWindow/LoadShader.h"
 extern char OpenSansData[];
 bool printStats = false;
-bool pauseSimulation = false;
+bool gPauseSimulation = false;
 bool shootObject = false;
 
 int m_glutScreenWidth;
@@ -292,8 +292,8 @@ int main(int argc, char* argv[])
 	args.GetCmdLineArgument("enable_interop", useInterop);
 	printf("useInterop=%d\n", useInterop);
 
-	args.GetCmdLineArgument("pause_simulation", pauseSimulation);
-	printf("pause_simulation=%d\n", pauseSimulation);
+	args.GetCmdLineArgument("pause_simulation", gPauseSimulation);
+	printf("pause_simulation=%d\n", gPauseSimulation);
 
 	char* tmpfile = 0;
 	args.GetCmdLineArgument("load_bulletfile", tmpfile);
@@ -604,7 +604,7 @@ int main(int argc, char* argv[])
 
 		static bool printStats = true;
 
-		if (printStats && !pauseSimulation)
+		if (printStats && !gPauseSimulation)
 		{
 			static int count = 0;
 			count--;

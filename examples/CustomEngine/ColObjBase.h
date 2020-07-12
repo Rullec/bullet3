@@ -19,10 +19,12 @@ public:
 
 	virtual void ApplyForce(const tVector &force, const tVector &pos) = 0;
 	virtual void UpdateVelocity(double dt) = 0;
+	virtual void ClearForce() = 0;
 	virtual tVector GetVelocityOnPoint(const tVector &pt) = 0;
 	virtual bool IsStatic() const = 0;
-	virtual void PushState() = 0;
-	virtual void PopState() = 0;
+	virtual void PushState(const std::string &tag, bool only_vel_and_force = false) = 0;
+	virtual void PopState(const std::string &tag, bool only_vel_and_force = false) = 0;
+
 protected:
 	eColObjType mType;
 	std::string mName;

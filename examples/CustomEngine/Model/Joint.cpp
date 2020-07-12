@@ -72,6 +72,7 @@ void Joint::InitTerms()
 		dependent_dof_id.push_back(f.id);
 	}
 	total_freedoms = prev_freedoms + GetNumOfFreedom();
+	local_jac_buf.resize(3, total_freedoms);
 	InitMatrix();
 }
 
@@ -119,7 +120,7 @@ void Joint::InitMatrix()
 
 /**
  * \brief					���µ�ǰ�Ƕ���joint��ȫ����Ϣ
- * \param compute_gradient	�Ƿ�����ݶȣ��ڲ���ʱ�������ݶȣ����Ż�ʱ��Ҫ�����ݶȡ�
+ * \param compute_gradient	�Ƿ�����ݶȣ��ڲ���ʱ�������ݶȣ����Ż�ʱ��Ҫ�����ݶȡ�?
  */
 void Joint::UpdateState(bool compute_gradient)
 {
@@ -226,7 +227,7 @@ void Joint::ComputeLocalSecondDeriveMatrix()
 
 /**
  * \brief					���� local orientation
- * \param m					���ؽ��
+ * \param m					���ؽ��?
  */
 void Joint::GetRotations(tMatrix3d& m)
 {
@@ -321,7 +322,7 @@ void Joint::ComputeLocalTransformSecondDerive()
 				else if (k == i && i == j)
 				{
 					//mTqq[i][j] = r_m_second_deriv[k] * mTqq[i][j];
-					Tools::AVX4x4v1(r_m_first_deriv[k], mTqq[i][j], t);
+					Tools::AVX4x4v1(r_m_second_deriv[k], mTqq[i][j], t);
 					mTqq[i][j] = t;
 				}
 				else if (k != i && k == j)
@@ -358,8 +359,7 @@ void Joint::ComputeGlobalTransformSecondDerive()
 		for (int j = 0; j <= i; j++)
 		{
 			//mWqq[i][j].noalias() = parent_joint->GetMWQQ(i, j) * parent_t_child * local_transform;
-			const tMatrix& m = parent_joint->GetMWQQ(i, j);
-			Tools::AVX4x4v1_3mat(m, parent_t_child, local_transform, mWqq[i][j]);
+			Tools::AVX4x4v1_3mat(parent_joint->GetMWQQ(i, j), parent_t_child, local_transform, mWqq[i][j]);
 		}
 		//for (int j = 0; j < local_freedom; j++)	{
 		//	if (parent_joint)
@@ -410,13 +410,14 @@ void Joint::ComputeGlobalTransformSecondDerive()
  */
 void Joint::ComputeJacobiByGivenPoint(tMatrixXd& j, tVector& p)
 {
-	j.resize(3, total_freedoms);
-	j.setZero();
+	if (j.rows() != 3 || j.cols() != total_freedoms) j.resize(3, total_freedoms);
+
 	tVector column;
 	for (size_t i = 0; i < mWq.size(); i++)
 	{
 		Tools::MatMul4x1(mWq[i], p, column);
-		j.col(i) = Tools::GettVector3d(column);
+		// j.col(i) = Tools::GettVector3d(column);
+		j.col(i).noalias() = column.segment(0, 3);
 	}
 }
 
@@ -446,13 +447,12 @@ void Joint::ComputeHessianByGivenPoint(EIGEN_V_MATXD& ms, tVector& p)
 void Joint::ComputeJacobiByGivenPointTotalDOF(tMatrixXd& j, tVector p)
 {
 	// 1. get the dependent Jacobian
-	tMatrixXd j_dependent_dof;
-	ComputeJacobiByGivenPoint(j_dependent_dof, p);
+	ComputeJacobiByGivenPoint(local_jac_buf, p);
 	// std::cout <<"Joint::Compute short = \n" << j_dependent_dof << std::endl;
-	assert(j_dependent_dof.cols() == this->total_freedoms);
+	assert(local_jac_buf.cols() == this->total_freedoms);
 
 	// 2. map this jacobian to global jacobian
-	j.resize(3, global_freedom);
+	if(j.cols()!= 3 || j.rows() != global_freedom) j.resize(3, global_freedom);
 	j.setZero();
 	// std::cout <<"prev size = " << prev_freedoms <<", freedoms size = " << freedoms.size() << std::endl;
 
@@ -464,14 +464,14 @@ void Joint::ComputeJacobiByGivenPointTotalDOF(tMatrixXd& j, tVector p)
 	// 2.1 map other dependent freedom
 	for (int i = 0; i < prev_freedoms; i++)
 	{
-		j.col(dependent_dof_id[i]) = j_dependent_dof.col(i);
+		j.col(dependent_dof_id[i]) = local_jac_buf.col(i);
 		// j.col(i) = j_dependent_dof.col(prev_freedom_id[i]);
 	}
 
 	// 2.2 map myself dependent freedom
 	for (int i = 0; i < freedoms.size(); i++)
 	{
-		j.col(freedoms[i].id) = j_dependent_dof.col(prev_freedoms + i);
+		j.col(freedoms[i].id) = local_jac_buf.col(prev_freedoms + i);
 	}
 }
 

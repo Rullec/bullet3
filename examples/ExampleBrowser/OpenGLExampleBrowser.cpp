@@ -136,7 +136,7 @@ static bool gEnableDefaultKeyboardShortcuts = true;
 static bool gEnableDefaultMousePicking = true;
 
 int gDebugDrawFlags = 0;
-static bool pauseSimulation = false;
+bool gPauseSimulation = false;
 static bool singleStepSimulation = false;
 int midiBaseIndex = 176;
 extern bool gDisableDeactivation;
@@ -242,7 +242,7 @@ void MyKeyboardCallback(int key, int state)
 
 		if (key == 'i' && state)
 		{
-			pauseSimulation = !pauseSimulation;
+			gPauseSimulation = !gPauseSimulation;
 		}
 		if (key == 'o' && state)
 		{
@@ -1151,7 +1151,7 @@ void OpenGLExampleBrowser::updateGraphics()
 {
 	if (sCurrentDemo)
 	{
-		if (!pauseSimulation || singleStepSimulation)
+		if (!gPauseSimulation || singleStepSimulation)
 		{
 			//B3_PROFILE("sCurrentDemo->updateGraphics");
 			sCurrentDemo->updateGraphics();
@@ -1216,7 +1216,7 @@ void OpenGLExampleBrowser::update(float deltaTime)
 
 	if (sCurrentDemo)
 	{
-		if (!pauseSimulation || singleStepSimulation)
+		if (!gPauseSimulation || singleStepSimulation)
 		{
 			//printf("---------------------------------------------------\n");
 			//printf("Framecount = %d\n",frameCount);
@@ -1280,7 +1280,7 @@ void OpenGLExampleBrowser::update(float deltaTime)
 		B3_PROFILE("renderGui");
 #ifndef BT_NO_PROFILE
 
-		if (!pauseSimulation || singleStepSimulation)
+		if (!gPauseSimulation || singleStepSimulation)
 		{
 			if (isProfileWindowVisible(s_profWindow))
 			{

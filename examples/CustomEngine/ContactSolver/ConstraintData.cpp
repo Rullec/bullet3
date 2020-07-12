@@ -1,12 +1,24 @@
 #include "ConstraintData.h"
 #include "../SimObj.h"
 #include "../Model/RobotCollider.h"
-#include "../Model/RobotModel.h"
+#include "../Model/RobotModelDynamics.h"
 #include <iostream>
 
 extern cSimRigidBody* UpcastRigidBody(const btCollisionObject* col);
 extern cRobotCollider* UpcastRobotCollider(const btCollisionObject* col);
 extern cCollisionObject* UpcastColObj(const btCollisionObject* col);
+
+tJointLimitData::tJointLimitData(int constraint_id_, cRobotModelDynamics* multibody_,
+								 int dof_id_, bool is_upper_bound_)
+{
+	this->constraint_id = constraint_id_;
+	multibody = multibody_;
+	dof_id = dof_id_;
+	is_upper_bound = is_upper_bound_;
+
+	joint_direction = multibody->GetFreedomDirectionWorldFrame(dof_id);
+	// if (is_upper_bound) joint_direction *= -1;
+}
 
 tContactPointData::tContactPointData(int c_id, double dt_)
 {
@@ -15,6 +27,29 @@ tContactPointData::tContactPointData(int c_id, double dt_)
 	mbody0GroupId = -1;
 	mbody1GroupId = -2;
 	mIsSelfCollision = false;
+}
+
+void tJointLimitData::ApplyJointTorque(double val)
+{
+	tVector3d torque = joint_direction * val;
+
+	// when this joint limit is the upper bound, the input of torque is -tau which is positive
+	// and the output of it is -qdot which should be positive, aka qdot should be negative, q should be descrese
+	if (is_upper_bound)
+	{
+		// std::cout << "[joint limit] it is upperbound, so torque *=-1, raw val = " << torque.transpose() << ", after val = " << torque.transpose() * -1 << std::endl;
+
+		torque *= -1;
+	}
+
+	// std::cout << "[joint limit] add torque " << torque.transpose() << std::endl;
+	multibody->ApplyJointTorque(multibody->GetJointByDofId(dof_id)->GetId(), cMathUtil::Expand(torque, 0));
+}
+
+void tJointLimitData::ApplyGeneralizedForce(double val)
+{
+	if (is_upper_bound) val *= -1;
+	multibody->ApplyGeneralizedForce(dof_id, val);
 }
 
 /**
@@ -99,12 +134,12 @@ int tContactPointData::GetBody1Id()
 
 tVector tContactPointData::GetVelOnBody0()
 {
-	return mBodyA->GetVelocityOnPoint(mContactPtOnA);
+	return cMathUtil::Expand(mBodyA->GetVelocityOnPoint(mContactPtOnA), 0);
 }
 
 tVector tContactPointData::GetVelOnBody1()
 {
-	return mBodyB->GetVelocityOnPoint(mContactPtOnB);
+	return cMathUtil::Expand(mBodyB->GetVelocityOnPoint(mContactPtOnB), 0);
 }
 
 tVector tContactPointData::GetRelVel()
@@ -158,14 +193,27 @@ tCollisionObjData::tCollisionObjData(cCollisionObject* obj)
 
 void tCollisionObjData::Clear()
 {
+	mJointLimits.clear();
 	mContactPts.clear();
 	mIsBody0.clear();
+
+	num_local_contacts = 0;
+	num_self_contacts = 0;
+	num_nonself_contacts = 0;
+	num_joint_constraint = 0;
+	map_world_contact_id_to_local_contact_id.clear();
 }
 
 void tCollisionObjData::AddContactPoint(tContactPointData* data, bool isbody0)
 {
+	// std::cout << "contact " << data->contact_id << " add for body " << mBody->GetName() <<" isbody0 = " << isbody0 << std::endl;
 	mContactPts.push_back(data);
 	mIsBody0.push_back(isbody0);
+}
+
+void tCollisionObjData::AddJointLimitConstraint(tJointLimitData* data)
+{
+	mJointLimits.push_back(data);
 }
 
 /**
@@ -175,10 +223,17 @@ void tCollisionObjData::AddContactPoint(tContactPointData* data, bool isbody0)
  * 			A multibody = a collision group
  * 			A link in multibody should belong to but != a colision group
 */
-void tCollisionObjData::Setup(int n_total_contacts)
+#include <fstream>
+// extern std::string gOutputLogPath;
+void tCollisionObjData::Setup(int n_total_contact, int n_total_joint_limits)
 {
-	mConvertCartesianForceToVelocityMat.resize(3 * n_total_contacts, 3 * n_total_contacts), mConvertCartesianForceToVelocityMat.setZero();
-	mConvertCartesianForceToVelocityVec.resize(3 * n_total_contacts), mConvertCartesianForceToVelocityVec.setZero();
+	num_total_contacts = n_total_contact;
+	num_total_joint_limits = n_total_joint_limits;
+	num_total_constraints = num_total_contacts + num_total_joint_limits;
+
+	int total_length = num_total_contacts * 3 + num_total_joint_limits;
+	mConvertCartesianForceToVelocityMat.resize(total_length, total_length), mConvertCartesianForceToVelocityMat.setZero();
+	mConvertCartesianForceToVelocityVec.resize(total_length), mConvertCartesianForceToVelocityVec.setZero();
 	// std::cout << "my contact size = " << mContactPts.size() << std::endl;
 	// for this collision obj, calculate the convert mat from full forces to velcoity
 	if (mBody->IsStatic() == true) return;
@@ -194,49 +249,304 @@ void tCollisionObjData::Setup(int n_total_contacts)
 			std::cout << "wrong type\n";
 			exit(1);
 	}
+
+	// std::ofstream fout(gOutputLogPath, std::ios::app);
+	// fout << "abs convert mat = \n"
+	// 	 << mConvertCartesianForceToVelocityMat << std::endl;
+	// fout << "abs convert vec = "
+	// 	 << mConvertCartesianForceToVelocityVec.transpose() << std::endl;
+	// fout.close();
 }
 
+template <typename T1, typename T2, typename T3>
+void Solve(const T1& solver, const T2& mat, const T3& residual, T3& result, double& error)
+{
+	result = solver.solve(residual);
+	error = (mat * result - residual).norm();
+}
+
+template <typename T1, typename T2>
+T2 AccurateSolve(const T1& mat, const T2& residual, double& min_error)
+{
+	// 1. FullPivLU
+	T2 final_result, my_result;
+	min_error = 1e4;
+	double my_error;
+	std::string name;
+	{
+		Solve(Eigen::FullPivLU<T1>(mat), mat, residual, my_result, my_error);
+		// std::cout << "FullPivLU error = " << my_error << std::endl;
+		if (min_error > my_error)
+		{
+			name = "FullPivLU";
+			final_result = my_result;
+			min_error = my_error;
+		}
+	}
+
+	// 2. ComPivHouseHolderQR
+	{
+		Solve(Eigen::ColPivHouseholderQR<T1>(mat), mat, residual, my_result, my_error);
+		// std::cout << "ColPivHouseholderQR error = " << my_error << std::endl;
+		if (min_error > my_error)
+		{
+			name = "ColPivHouseholderQR";
+			final_result = my_result;
+			min_error = my_error;
+		}
+	}
+
+	// 3. LDLT
+	{
+		Solve(Eigen::LDLT<T1>(mat), mat, residual, my_result, my_error);
+		// std::cout << "LDLT error = " << my_error << std::endl;
+		if (min_error > my_error)
+		{
+			name = "LDLT";
+			final_result = my_result;
+			min_error = my_error;
+		}
+	}
+	// 4. LLT
+	{
+		Solve(Eigen::LLT<T1>(mat), mat, residual, my_result, my_error);
+		// std::cout << "LLT error = " << my_error << std::endl;
+		if (min_error > my_error)
+		{
+			name = "LLT";
+			final_result = my_result;
+			min_error = my_error;
+		}
+	}
+	// 5. FullPivHouseholderQR
+	{
+		Solve(Eigen::FullPivHouseholderQR<T1>(mat), mat, residual, my_result, my_error);
+		// std::cout << "FullPivHouseholderQR error = " << my_error << std::endl;
+		if (min_error > my_error)
+		{
+			name = "FullPivHouseholderQR";
+			final_result = my_result;
+			min_error = my_error;
+		}
+	}
+	// 6. BDCSVD
+	{
+		Solve(Eigen::BDCSVD<T1>(mat, Eigen::ComputeThinU | Eigen::ComputeThinV), mat, residual, my_result, my_error);
+		// std::cout << "BDCSVD error = " << my_error << std::endl;
+		if (min_error > my_error)
+		{
+			name = "BDCSVD";
+			final_result = my_result;
+			min_error = my_error;
+		}
+	}
+	// 7. JacobiSVD
+	{
+		Solve(Eigen::JacobiSVD<T1>(mat, Eigen::ComputeThinU | Eigen::ComputeThinV), mat, residual, my_result, my_error);
+		// std::cout << "JacobiSVD error = " << my_error << std::endl;
+		if (min_error > my_error)
+		{
+			name = "JacobiSVD";
+			final_result = my_result;
+			min_error = my_error;
+		}
+	}
+
+	std::cout << "here we use " << name << " method, error = " << min_error << std::endl;
+	return final_result;
+}
+
+extern bool gEnablePauseWhenSolveError;
+extern bool gEnableResolveWhenSolveError;
+extern bool gPauseSimulation;
 void tCollisionObjData::SetupRobotCollider()
 {
-	int n_my_contact = mContactPts.size();
-	if (n_my_contact == 0) return;
+	// std::cout << "----------set up robot collider begin----------\n";
+	// 1. calculate some essential statistics
+	SetupRobotColliderVars();
+	int num_constraints = num_local_contacts + num_joint_constraint;
+	if (num_constraints == 0) return;
+
 	cRobotCollider* collider = UpcastRobotCollider(mBody);
-	cRobotModel* model = collider->mModel;
-	// int link_id = mContactPts[];
-	// auto link = model->GetLinkById(link_id);
-
-	tEigenArr<tMatrixXd> non_self_contact_pt_jacobians(n_my_contact);      // jacobian for link affected (non self collision case)
-	std::vector<int> map_contact_id_to_self_contact_id(n_my_contact, -1);  // idx: contact id from 0-n_my_contact-1, value: self contact id used to access self_contact_point_jacobians_link0
-	tEigenArr<tMatrixXd> self_contact_point_jacobians_link0(0);            // jacobian arrays for body 0 in self collisoin case
-	tEigenArr<tMatrixXd> self_contact_point_jacobians_link1(0);            // for body 1 in self collision case
-
-	tMatrixXd inv_M = model->GetMassMatrix().inverse();
-	tMatrixXd Coriolis_mat = model->GetCoriolisMatrix();
-	tMatrixXd damping_mat = model->GetDampingMatrix();
-	// std::cout << "[setup] M inv = \n"
-	// 		  << inv_M << std::endl;
-	// std::cout << "[setup] C = \n"
-	// 		  << Coriolis_mat << std::endl;
-
+	cRobotModelDynamics* model = collider->mModel;
 	int n_dof = model->GetNumOfFreedom();
-	double dt = mContactPts[0]->dt;
-	int n_self_contact = 0;  // self collision number
-	for (int i = 0; i < n_my_contact; i++)
-	{
-		tContactPointData* data = mContactPts[i];
-		int contact_id = data->contact_id;
+	double dt = 0;
+	if (num_local_contacts)
+		dt = mContactPts[0]->dt;
+	else
+		dt = mJointLimits[0]->dt;
 
+	// 1.1 calcualte the contact jacobian
+	tEigenArr<tMatrixXd> nonself_contact_point_jac(num_nonself_contacts, tMatrixXd::Zero(3, model->GetNumOfFreedom()));
+	tEigenArr<tMatrixXd> self_contact_point_jac(num_self_contacts, tMatrixXd::Zero(3, model->GetNumOfFreedom()));
+	GetContactJacobianArrayRobotCollider(nonself_contact_point_jac, self_contact_point_jac);
+
+	// 1.2 calculate the joint limit jacobian
+	// convert the torque magnitute(can be negative for upper bound) to the generalized force
+	tEigenArr<tMatrixXd> joint_limit_selection_jac(num_joint_constraint, tMatrixXd::Zero(1, n_dof));
+	GetJointLimitJaocibanArrayRobotCollider(joint_limit_selection_jac);
+
+	M = model->GetMassMatrix();
+	inv_M = model->GetInvMassMatrix();
+	coriolis_mat = model->GetCoriolisMatrix();
+	damping_mat = model->GetDampingMatrix();
+	const tMatrixXd I = tMatrixXd::Identity(n_dof, n_dof);
+
+	tMatrixXd residual_part = (I - dt * inv_M * (coriolis_mat + damping_mat)) * model->Getqdot();  // used as the last part of residual as shown below
+
+	// 2. begin to form the ultimate velocity convert mat, handle the contact point part
+	tMatrixXd Jac_partA;
+	tMatrixXd Jac_partB;
+	int i_st = 0, i_size = 0;
+	int j_st = 0, j_size = 0;
+	for (int i_cons_id = 0; i_cons_id < num_constraints; i_cons_id++)
+	{
+		// 2.1 init the data and i global id
+		tContactPointData* i_contact_point_data = nullptr;
+		tJointLimitData* i_joint_limit_data = nullptr;
+		int i_global_id = -1;
+
+		// fetch the data by contact point id
+		if (i_cons_id < num_local_contacts)
+		{
+			i_contact_point_data = mContactPts[i_cons_id];
+			i_global_id = mContactPts[i_cons_id]->contact_id;
+			i_st = i_global_id * 3;
+			i_size = 3;
+		}
+		else
+		{
+			// determine the position of target matrix
+			i_joint_limit_data = mJointLimits[i_cons_id - num_local_contacts];
+			i_global_id = mJointLimits[i_cons_id - num_local_contacts]->constraint_id;
+			i_st = num_total_contacts * 3 + (i_joint_limit_data->constraint_id - num_total_contacts) * 1;
+			i_size = 1;
+		}
+
+		tMatrixXd* residual_a = nullptr;
+		if (i_contact_point_data != nullptr)
+		{
+			if (i_contact_point_data->mIsSelfCollision == false)
+			{
+				int nonself_local_id = map_local_contact_id_to_nonself_contact_id[i_cons_id];
+				Jac_partA = nonself_contact_point_jac[nonself_local_id];
+				// std::cout << "[debug] for contact " << i_cons_id << ", res = \n" << dt * inv_M * Jac_partA.transpose() << std::endl;
+				residual_a = &(nonself_contact_point_jac[nonself_local_id]);
+			}
+			else
+			{
+				int self_local_id = map_local_contact_id_to_self_contact_id[i_cons_id];
+				Jac_partA = self_contact_point_jac[self_local_id];
+				residual_a = &(self_contact_point_jac[self_local_id]);
+			}
+		}
+		else
+		{
+			assert(i_joint_limit_data != nullptr);
+			int i_joint_limit_id = i_cons_id - num_local_contacts;
+
+			// set Jac part A
+			Jac_partA = joint_limit_selection_jac[i_joint_limit_id];
+			// if (i_joint_limit_data->is_upper_bound) Jac_partA *= -1;
+			// std::cout << "Jac partA = " << Jac_partA << std::endl;
+			// set residual a
+			residual_a = &(joint_limit_selection_jac[i_joint_limit_id]);
+			// std::cout << "residaul a before = " << residual_a << std::endl;
+		}
+
+		// 2.2 Jac_partA = i_contact_jacobian * dt * M^{-1}
+		Jac_partA *= dt * inv_M;
+
+		// for each contact point that takes effect on this i-th contact point
+		for (int j_cons_id = 0; j_cons_id < num_constraints; j_cons_id++)
+		{
+			// int j_global_id = mContactPts[j_local_id]->contact_id;
+			tContactPointData* j_contact_point_data = nullptr;
+			tJointLimitData* j_joint_limit_data = nullptr;
+			int j_global_id = -1;
+
+			// fetch the data by contact point id
+			if (j_cons_id < num_local_contacts)
+			{
+				j_contact_point_data = mContactPts[j_cons_id];
+				j_global_id = mContactPts[j_cons_id]->contact_id;
+
+				j_st = j_global_id * 3;
+				j_size = 3;
+			}
+			else
+			{
+				j_joint_limit_data = mJointLimits[j_cons_id - num_local_contacts];
+				j_global_id = mJointLimits[j_cons_id - num_local_contacts]->constraint_id;
+				j_st = num_total_contacts * 3 + (j_joint_limit_data->constraint_id - num_total_contacts) * 1;
+				j_size = 1;
+			}
+
+			if (j_contact_point_data != nullptr)
+			{
+				// jth constraint is a contact point constraint
+				if (mContactPts[j_cons_id]->mIsSelfCollision == false)
+				{
+					int symbol = mIsBody0[j_cons_id] == false ? -1 : 1;
+					int nonself_local_id_j = map_local_contact_id_to_nonself_contact_id[j_cons_id];
+					Jac_partB = symbol * nonself_contact_point_jac[nonself_local_id_j].transpose();
+				}
+				else
+				{
+					// for self collsiion
+					int self_col_contact_id_j = map_local_contact_id_to_self_contact_id[j_cons_id];
+					Jac_partB = self_contact_point_jac[self_col_contact_id_j].transpose();
+				}
+			}
+			else
+			{
+				// jth constraint is a joint limit constraint
+				Jac_partB = joint_limit_selection_jac[j_cons_id - num_local_contacts].transpose();
+				// std::cout << "Jac partB = \n"
+				// 		  << Jac_partB.transpose() << std::endl;
+			}
+			// std::cout << "i " << i_cons_id << " j " << j_cons_id << " JacA size = " << Jac_partA.rows() << " " << Jac_partA.cols() << ", JacB size = " << Jac_partB.rows() << " " << Jac_partB.cols() << std::endl;
+			// 2.3 final part = Jac_partA * Jac_partB
+			mConvertCartesianForceToVelocityMat.block(i_st, j_st, i_size, j_size).noalias() = Jac_partA * Jac_partB;
+		}
+		// std::cout << "residaul a after = " << (*residual_a) << std::endl;
+		// std::cout << "residual part = " << residual_part.transpose() << std::endl;
+		mConvertCartesianForceToVelocityVec.segment(i_st, i_size).noalias() =
+			(*residual_a) *
+			residual_part;
+	}
+	// std::cout << "convert mat = \n"
+	// 		  << mConvertCartesianForceToVelocityMat << std::endl;
+	// std::cout << "convert vec = " << mConvertCartesianForceToVelocityVec.transpose() << std::endl;
+	// std::cout << "----------set up robot collider end----------\n";
+}
+
+void tCollisionObjData::GetContactJacobianArrayRobotCollider(tEigenArr<tMatrixXd>& nonself_contact_point_jac, tEigenArr<tMatrixXd>& self_contact_point_jac0_minus_jac1)
+{
+	cRobotCollider* collider = UpcastRobotCollider(mBody);
+	cRobotModelDynamics* model = collider->mModel;
+	int n_dof = model->GetNumOfFreedom();
+	tMatrixXd Jac0_buf(3, n_dof), Jac1_buf(3, n_dof);
+	for (int i_local_id = 0; i_local_id < num_local_contacts; i_local_id++)
+	{
+		// std::cout << "robot collider begin to set up contact " << i << std::endl;
+		tContactPointData* data = mContactPts[i_local_id];
+		int contact_id = data->contact_id;
+		// std::cout <<"contact id = " << contact_id << std::endl;
 		if (data->mIsSelfCollision == false)
 		{
 			int link_id = -1;
-			if (mIsBody0[i] == true)
+			if (mIsBody0[i_local_id] == true)
 				link_id = UpcastRobotCollider(data->mBodyA)->mLinkId;
 			else
 				link_id = UpcastRobotCollider(data->mBodyB)->mLinkId;
-			tVector contact_pt = mIsBody0[i] == true ? data->mContactPtOnA : data->mContactPtOnB;
+			tVector contact_pt = mIsBody0[i_local_id] == true ? data->mContactPtOnA : data->mContactPtOnB;
 
+			// std::cout << "contact point = " << contact_pt.transpose() << std::endl;
 			// for non self-collision
-			model->ComputeJacobiByGivenPointTotalDOFWorldFrame(link_id, contact_pt.segment(0, 3), non_self_contact_pt_jacobians[i]);
+			int nonself_contact_local_id = map_local_contact_id_to_nonself_contact_id[i_local_id];
+			model->ComputeJacobiByGivenPointTotalDOFWorldFrame(link_id, contact_pt.segment(0, 3), nonself_contact_point_jac[nonself_contact_local_id]);
+			// // std::cout << "[inner test] pred link id " << link_id << ", contact pt = " << contact_pt.transpose() << std::endl;
 		}
 		else
 		{
@@ -244,125 +554,36 @@ void tCollisionObjData::SetupRobotCollider()
 			// calculate 2 jacobians "Jv" w.r.t contact point and put them into "self contact point jacobian pairs"
 			int link0_id = UpcastRobotCollider(data->mBodyA)->mLinkId,
 				link1_id = UpcastRobotCollider(data->mBodyB)->mLinkId;
-			tMatrixXd jac_buffer;
-			model->ComputeJacobiByGivenPointTotalDOFWorldFrame(link0_id, data->mContactPtOnA.segment(0, 3), jac_buffer);
-			self_contact_point_jacobians_link0.push_back(jac_buffer);
+			model->ComputeJacobiByGivenPointTotalDOFWorldFrame(link0_id, data->mContactPtOnA.segment(0, 3), Jac0_buf);
+			// self_contact_point_jacobians_link0.push_back(jac_buffer);
 
-			model->ComputeJacobiByGivenPointTotalDOFWorldFrame(link1_id, data->mContactPtOnB.segment(0, 3), jac_buffer);
-			self_contact_point_jacobians_link1.push_back(jac_buffer);
-
+			model->ComputeJacobiByGivenPointTotalDOFWorldFrame(link1_id, data->mContactPtOnB.segment(0, 3), Jac1_buf);
+			// self_contact_point_jacobians_link1.push_back(jac_buffer);
+			int selfcontact_local_id = map_local_contact_id_to_self_contact_id[i_local_id];
+			self_contact_point_jac0_minus_jac1[selfcontact_local_id].noalias() = Jac0_buf - Jac1_buf;
 			// so that we can use new_id = map_contact_id_to_self_contact_id[i] to access these 2 arrays above
-			map_contact_id_to_self_contact_id[i] = n_self_contact;
-			n_self_contact++;
 		}
-	}
-	// std::cout << "[setup] jac = \n"
-	// 		  << contact_pt_jacobians[0] << std::endl;
-	// std::cout << "[setup] Q = " << (contact_pt_jacobians[0].transpose() * tVector3d(0, 1, 0)).transpose() << std::endl;
-
-	// 2. begin to form the ultimate velocity convert mat
-	for (int i = 0; i < n_my_contact; i++)
-	{
-		auto& i_data = mContactPts[i];
-		int i_id = mContactPts[i]->contact_id;
-		if (i_data->mIsSelfCollision == false)
-		{
-			// if ith contact is not self collision, then the matrix which we want to calculate can
-			// convert full size cartesian force into the abs velocity next frame in this contact point in myself body
-			for (int j = 0; j < n_my_contact; j++)
-			{
-				int j_id = mContactPts[j]->contact_id;
-
-				// here, ith contact is not a self contact, but the jth contact is a self contact
-				// and the contact force in jth point, can aboselute affect the velocity in i th point
-				if (mContactPts[j]->mIsSelfCollision == false)
-				{
-					int symbol = mIsBody0[j] == false ? -1 : 1;
-					mConvertCartesianForceToVelocityMat.block(3 * i_id, 3 * j_id, 3, 3) =
-						symbol * dt *
-						non_self_contact_pt_jacobians[i] *
-						inv_M *
-						non_self_contact_pt_jacobians[j].transpose();
-				}
-				else
-				{
-					// for self collsiion
-					int self_col_contact_id_j = map_contact_id_to_self_contact_id[j];
-					mConvertCartesianForceToVelocityMat.block(3 * i_id, 3 * j_id, 3, 3) =
-						dt *
-						non_self_contact_pt_jacobians[i] *
-						inv_M *
-						(self_contact_point_jacobians_link0[self_col_contact_id_j] - self_contact_point_jacobians_link1[self_col_contact_id_j]).transpose();
-				}
-			}
-
-			// the residual here is the the velocity of contact point at this moment (history)
-			mConvertCartesianForceToVelocityVec.segment(i * 3, 3) =
-				non_self_contact_pt_jacobians[i] *
-				(tMatrixXd::Identity(n_dof, n_dof) - dt * inv_M * (Coriolis_mat + damping_mat)) * model->Getqdot();
-		}
-		else
-		{
-			// here if ith contact is self collision, we need to slightly violate the functionality of this method.
-			// this method is originally use to calculate the ABOSULUTE CONTACT VELOCITY CONVERT MAT in this contact,
-			// but in self-collision case, we must put the final RELATIVE CONTACT VELOCITY CONVERT MAT here...
-
-			// so what we compute later is :
-			// a mat which can convert full size carteisan contact force into the relative contact velocity next frame in this self-contact point
-			// a vec as residual to represent relative contact velocity
-
-			/*
-				FORMULAE:
-					(hint: o means other non self collsioin contact point)
-				v_a = dt * Jvai * Minv * [0, ..., (Jvaj-Jvbj)^T, ..., Jvo^T, ...] [..., fa, ..., fo] + Jvai * (In - dt * Minv * C) qdot
-				v_b = dt * Jvbi * Minv * [0, ..., (Jvaj-Jvbj)^T, ..., Jvo^T, ...] [..., fa, ..., fo] + Jvbi * (In - dt * Minv * C) qdot
-				u 	= v_a - v_b
-					= 	dt * (Jvai - Jvbi) * Min * [0, ..., (Jaj-Jbj)^T, ..., Jvo^T, ...] [..., fa, ..., fo] 
-						+
-						(Jvai - Jvbi) * (In = dt * Minv * C) qdot
-
-				u = mat * F + vec
-				mat = dt * (Jvai - Jvbi) * Min * [0, ..., (Jaj-Jbj)^T, ..., Jvo^T, ...] \in 3x(3m)
-				vec = (Jvai - Jvbi) * (In = dt * Minv * C) qdot \in 3x1
-				
-			*/
-			int i_self_col_id = map_contact_id_to_self_contact_id[i];
-			tMatrixXd Jva_i_minus_Jvb_i = self_contact_point_jacobians_link0[i_self_col_id] - self_contact_point_jacobians_link1[i_self_col_id];
-
-			for (int j = 0; j < n_my_contact; j++)
-			{
-				if (mContactPts[j]->mIsSelfCollision == false)
-				{
-					mConvertCartesianForceToVelocityMat.block(3 * i_id, 3 * j, 3, 3) =
-						dt *
-						Jva_i_minus_Jvb_i *
-						inv_M *
-						non_self_contact_pt_jacobians[j].transpose();
-				}
-				else
-				{
-					// self collision in here jth
-					int j_self_col_id = map_contact_id_to_self_contact_id[j];
-					tMatrixXd Jva_j_minus_Jvb_j = self_contact_point_jacobians_link0[j_self_col_id] - self_contact_point_jacobians_link1[j_self_col_id];
-					mConvertCartesianForceToVelocityMat.block(3 * i_id, 3 * j, 3, 3) =
-						dt *
-						Jva_i_minus_Jvb_i *
-						inv_M *
-						Jva_j_minus_Jvb_j.transpose();
-				}
-			}
-
-			// self collsiion relative velocity residual part
-			mConvertCartesianForceToVelocityVec.segment(i * 3, 3) =
-				Jva_i_minus_Jvb_i *
-				(tMatrixXd::Identity(n_dof, n_dof) - dt * inv_M * (Coriolis_mat + damping_mat)) * model->Getqdot();
-		}
-
-		// std::cout <<"[abs convert] mat = \n" << mConvertCartesianForceToVelocityMat << std::endl;
-		// std::cout <<"[abs convert] vec = " << mConvertCartesianForceToVelocityVec.transpose() << std::endl;
 	}
 }
+#include "../Model/RobotModelDynamics.h"
+void tCollisionObjData::GetJointLimitJaocibanArrayRobotCollider(tEigenArr<tMatrixXd>& generalized_convert_list)
+{
+	for (int i = 0; i < num_joint_constraint; i++)
+	{
+		// 1. determine the joint id, its parent link and child link
+		auto& joint_limit = mJointLimits[i];
+		auto& mb = joint_limit->multibody;
 
+		const auto& cur_joint = mb->GetJointByDofId(joint_limit->dof_id);
+		const auto& child_link = cur_joint->GetFirstChild();
+		const auto& parent_link = cur_joint->GetParent();
+		generalized_convert_list[i](0, joint_limit->dof_id) = 1;
+		if (joint_limit->is_upper_bound)
+		{
+			generalized_convert_list[i] *= -1;
+		}
+	}
+}
 void tCollisionObjData::SetupRigidBody()
 {
 	// 1. create buffer
@@ -407,7 +628,35 @@ void tCollisionObjData::SetupRigidBody()
 		// form the residual
 		mConvertCartesianForceToVelocityVec.segment(i_id * 3, 3) =
 			(rigidbody->GetLinVel() - RelPosSkew[i] * angvel +
-			 cMathUtil::VectorToSkewMat(dt * RelPosSkew[i] * inv_inertia * angvel) * (inertia * angvel))
+			 dt * RelPosSkew[i] * inv_inertia * cMathUtil::VectorToSkewMat(angvel) * inertia * angvel)
 				.segment(0, 3);
 	}
+}
+
+void tCollisionObjData::SetupRobotColliderVars()
+{
+	// num of world contacts
+	// num of local contacts
+	num_local_contacts = mContactPts.size();
+
+	// num of self contacts
+	for (int local_id = 0; local_id < num_local_contacts; local_id++)
+	{
+		auto& data = mContactPts[local_id];
+
+		if (data->mIsSelfCollision == true)
+		{
+			map_local_contact_id_to_self_contact_id[local_id] = num_self_contacts;
+			num_self_contacts++;
+		}
+		else
+		{
+			map_local_contact_id_to_nonself_contact_id[local_id] = num_nonself_contacts;
+			num_nonself_contacts++;
+		}
+
+		map_world_contact_id_to_local_contact_id[data->contact_id] = local_id;
+	}
+
+	num_joint_constraint = mJointLimits.size();
 }

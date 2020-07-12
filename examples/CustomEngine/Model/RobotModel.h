@@ -31,7 +31,7 @@ public:
 	cRobotModel(const char* model_file);
 	~cRobotModel();
 
-	cRobotModel(const char* model_file, int type);
+	cRobotModel(const char* model_file, double scale, int type);
 
 	const std::string& GetName() const;
 
@@ -40,6 +40,8 @@ public:
 	BaseObject* GetLink(std::string name) const;
 
 	int GetNumOfFreedom() const;
+	void GetJointLimit(tVectorXd& lb, tVectorXd& up) const;
+	tVector3d GetFreedomDirectionWorldFrame(int dof_id) const;
 
 	void ComputeGradientNumerically();
 	void ComputeGradientByGeometry();
@@ -50,7 +52,6 @@ public:
 	// void ComputeJacobiByGivenPointTotalDOFLocalFrame(int link_id, const tVector3d& point, tMatrixXd& j) const;
 	void ComputeCoMJacobi(tMatrixXd& j);
 	void ComputeComJacobiNumerically();
-	void TestJacobian();
 
 	void ComputeSecondDeriveNumerically();
 	void ComputeSecondDeriveNumerically(tVectorXd& q_dot, int frame = 0);
@@ -65,19 +66,13 @@ public:
 	void ComputeJv();  // compute link jv
 	void ComputeJw();  // compute link jw
 	void ComputeAngularVelocity(tMatrixXd& omega, tVectorXd& q_dot);
-	void ComputeMassMatrix();
-	void ComputeCoriolisMatrix(tVectorXd& q_dot);
-	void ComputeDampingMatrix();
-	void ComputeDCdqdot(tVectorXd& q_dot, tMatrixXd& dcdqdot);
 	void SetOmega(EIGEN_V_tVector& omega, int st_joint);
 	const tMatrixXd& GetMassMatrix() const { return mass_matrix; }
 	const tMatrixXd& GetCoriolisMatrix() const { return coriolis_matrix; }
-	const tMatrixXd& GetDampingMatrix() const { return damping_matrix; }
-	const tVectorXd& Getqdot() const { return qdot; }
-	const tVectorXd& Getq() const { return q; }
 
 	void InitModel();
 	void InitChildrenChain();
+	void InitDofidToJointMap();
 	void InitLocalPos();
 	void InitDeepMimicMotionSize();
 	void InitMatrix();
@@ -96,6 +91,7 @@ public:
 	int GetDeepMimicMotionSize() const { return deep_mimic_motion_size; };
 	BaseObject* GetLinkById(int id) const;
 	BaseObject* GetJointById(int id) const;
+	BaseObject* GetJointByDofId(int dof_id) const;
 
 	void PrintLocalTransform();
 	EIGEN_V_tVector3d GetJointPos();
@@ -117,22 +113,16 @@ public:
 	BaseObject* GetEndLink() { return end_link; }
 
 	void SetComputeSecondDerive(bool flag);
-
-	// ----------------------simulation APIs----------------------
-	void InitSimVars(btDiscreteDynamicsWorld* world);
-	void SetPose(const tVectorXd& q, const tVectorXd& qdot);
-	void ApplyGravity(const tVector& g);  // apply force
-	void ApplyForce(int link_id, const tVector& f, const tVector& applied_pos);
-	void ApplyTorque(int link_id, const tVector& torque);
-	void ClearForces();
-	void UpdateVelocity(float dt);
-	void UpdateTransform(float dt);
-	void SyncToBullet();
-	bool IsMaxVel();
-	void PushState();
-	void PopState();
+	const tVectorXd& Getqdot() const { return qdot; }
+	const tVectorXd& Getq() const { return q; }
 
 protected:
+	// compute methods is prohibited to be called outside of the class
+	void ComputeMassMatrix();
+	void ComputeCoriolisMatrix(tVectorXd& q_dot);
+	void ComputeDampingMatrix();
+	void ComputeDCdqdot(tVectorXd& q_dot, tMatrixXd& dcdqdot);
+
 	void Travel() const;
 
 	void Update(bool compute_gradient = false);
@@ -150,7 +140,6 @@ protected:
 	void SaveModel(const char* file);
 	void SetAns(std::vector<double>& ans_q) { this->ans = ans_q; }
 
-private:
 	void Load(const char* model_file);
 
 	void LoadFreedom(const char* name, TiXmlElement* doc_joint, tVector3d& joint_pose);
@@ -169,15 +158,15 @@ private:
 
 	void AddJoint(std::string joint_name, std::string father_name, std::string child_name,
 				  const tVector3d& local_pos, const tVector3d& local_rotation);
-	void AddSphericalFreedoms(BaseObject* joint);
-	void AddRevoluteJointFreedoms(BaseObject* joint);
+	void AddSphericalFreedoms(BaseObject* joint, const tVector3d& lower_limit, const tVector3d& upper_limit);
+	void AddRevoluteJointFreedoms(BaseObject* joint, double lower_limit = -M_PI, double upper_limit = M_PI);
 	void UpdateFreedomId();
 
 	void LoadBaseMesh();
 
 	void LoadAsf(const char* file_path);
 
-	void LoadJsonModel(const char* file_path);
+	void LoadJsonModel(const char* file_path, double scale);
 
 	void GetMeshRotation(tVector3d& mesh_rotation, tVector3d& direction) const;
 
@@ -192,6 +181,7 @@ private:
 	std::map<int, BaseObject*> joint_id_map;
 	std::map<int, BaseObject*> link_id_map;
 	std::map<int, Freedom*> freedoms;
+	std::vector<int> dof_joint_map;  // map the dof id to joint id
 
 	//std::map<std::string, Mesh*>		mesh_map;
 	tMatrix4f joint_mesh_mat;
@@ -219,26 +209,12 @@ private:
 	tMatrixXd Jv;  // (k * n_freedom, 3 * n_links)
 	tMatrixXd Jw;  // (k * n_freedom, 3 * n_joints)
 	tMatrixXd mass_matrix;
+	tMatrixXd inv_mass_matrix;
 	tMatrixXd coriolis_matrix;
-	tMatrixXd damping_matrix;
 	std::vector<BaseObject*> ee;
 
-	// -------------------------simulation vars-----------------------
-	// Bullet collider vars
-	std::vector<cRobotCollider*> multibody_colliders;  // used in bullet collision detection for multibody structure
-	tEigenArr<tVector> link_forces, link_torques;      //
-	const double damping_coef;
+	// sim vars
 	tVectorXd q, qdot;
-	float max_vel;
-
-	struct
-	{
-		// EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-		tVectorXd q, qdot;
-		tEigenArr<tVector> link_forces, link_torques;
-		tMatrixXd mass_matrix;
-		tMatrixXd coriolis_matrix;
-	} mOldState;
 };
 
 #endif  //ROBOT_ROBOTMODEL_H

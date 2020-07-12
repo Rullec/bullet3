@@ -301,7 +301,7 @@ protected:
 	int global_freedom;  // global freedom is all freedoms of the whole character
 	tVector3d omega;
 
-	EIGEN_V_MATXD jkv_dq;
+	EIGEN_V_MATXD jkv_dq;	// 3 nxn
 	EIGEN_V_MATXD jkw_dq;
 
 	// ============================================================================

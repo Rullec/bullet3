@@ -50,10 +50,24 @@ public:
 	static tMatrix EulerAnglesToRotMatDot(const tVector &euler, const eRotationOrder &order);
 	static tVector AngularVelToqdot(const tVector &omega, const tVector &cur_q, const eRotationOrder &order);
 	static tMatrix VectorToSkewMat(const tVector &);
-	static tVector SkewMatToVector(const tMatrix &);
+	template <typename T>
+	static tVector SkewMatToVector(const T &mat)
+	{
+		// verify mat is a skew matrix
+		assert((mat + mat.transpose()).norm() < 1e-10);
+
+		// squeeze a mat to a vector
+		tVector res = tVector::Zero();
+		res[0] = mat(2, 1);
+		res[1] = mat(0, 2);
+		res[2] = mat(1, 0);
+		return res;
+	}
 	static tMatrixXd ExpandFrictionCone(int num_friction_dirs, const tVector &normal);
 	static tMatrix InverseTransform(const tMatrix &);
 	static tMatrix DirToRotMat(const tVector &dir, const tVector &up);
+	static double CalcConditionNumber(const tMatrixXd &mat);
+	static tMatrixXd JacobPreconditioner(const tMatrixXd &mat);
 	// static void RoundZero(tMatrixXd &mat, double threshold = 1e-10);
 
 	template <typename T>

@@ -57,6 +57,7 @@ void RootJoint::GetRotations(tMatrix3d& m)
 		local_pos_parent_joint[i] = freedoms[i].v;
 	}
 	m.setIdentity();
+
 	xconventionTransform(r_m[REVOLUTE_X], freedoms[REVOLUTE_X].v);
 	xconventionRotation_dx(r_m_first_deriv[REVOLUTE_X], freedoms[REVOLUTE_X].v);
 
@@ -84,6 +85,16 @@ void RootJoint::GetRotations(tMatrix3d& m)
 	r_m_first_deriv[TRANSLATE_Z].setZero();
 	r_m_first_deriv[TRANSLATE_Z].data()[14] = 1;
 	m = r_m[REVOLUTE_Z].topLeftCorner<3, 3>() * r_m[REVOLUTE_Y].topLeftCorner<3, 3>() * r_m[REVOLUTE_X].topLeftCorner<3, 3>();
+	// std::cout << "------------------begin to output root joint rotation matrix-----------------\n";
+	// std::cout << "Rz = \n"
+	// 		  << r_m[REVOLUTE_Z].topLeftCorner<3, 3>() << std::endl;
+	// std::cout << "Ry = \n"
+	// 		  << r_m[REVOLUTE_Y].topLeftCorner<3, 3>() << std::endl;
+	// std::cout << "Rx = \n"
+	// 		  << r_m[REVOLUTE_X].topLeftCorner<3, 3>() << std::endl;
+	// std::cout << "final R = \n"
+	// 		  << m << std::endl;
+	// std::cout << "------------------end to output root joint rotation matrix-----------------\n";
 }
 
 void RootJoint::Tell()

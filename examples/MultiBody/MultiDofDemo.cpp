@@ -24,13 +24,13 @@
 
 #include "../CommonInterfaces/CommonMultiBodyBase.h"
 
-#include "ID_test/cIDSolver.h" 
+#include "ID_test/cIDSolver.h"
 #include "BulletDynamics/Featherstone/cCollisionWorld.h"
 
 #include <fstream>
 #include <iostream>
 
-#define OUTPUT_SIMULATION_LOG
+// #define OUTPUT_SIMULATION_LOG
 
 class MultiDofDemo : public CommonMultiBodyBase
 {
@@ -58,7 +58,7 @@ public:
 
 protected:
 	btMultiBody* mMultibody;
-	cIDSolver * mIDSolver;
+	cIDSolver* mIDSolver;
 	int mFrameId;
 
 	// log path
@@ -72,7 +72,7 @@ static bool g_floatingBase = true;
 static bool g_firstInit = true;
 static float scaling = 0.4f;
 static float friction = 1.;
-static int g_constraintSolverType = 0;
+static int g_constraintSolverType = 5;
 #define ARRAY_SIZE_X 5
 #define ARRAY_SIZE_Y 5
 #define ARRAY_SIZE_Z 5
@@ -94,49 +94,49 @@ MultiDofDemo::MultiDofDemo(GUIHelperInterface* helper) : CommonMultiBodyBase(hel
 
 	// rewrite all log files to null
 	mSimLog.open("custom_world_sim.log");
-	
+
 	mSimLog << "";
 	mFrameId = 0;
-
 }
 MultiDofDemo::~MultiDofDemo()
 {
 	mSimLog.close();
 }
 
+btVector3 gGravity = btVector3(0, -10, 0);
 
-btVector3 gGravity = btVector3(0, 0, 0);
-
+#include "../ExampleBrowser/ID_test/TimeUtil.hpp"
 void MultiDofDemo::stepSimulation(float deltaTime)
 {
+	cTimeUtil::Begin("stepsim_mb");
 	// 3e-3: relative err 2%
 	// 1e-3: relative err 0.2%
 	// 3e-4: relative err 0.02%
-	deltaTime = 1e-3;
+	deltaTime = 3e-3;
 #ifdef OUTPUT_SIMULATION_LOG
 	RecordSimLog();
-#endif // OUTPUT_SIMULATION_LOG
+#endif  // OUTPUT_SIMULATION_LOG
 
 	mFrameId++;
-	
+
 	mIDSolver->SetTimestep(deltaTime);
-	mIDSolver->PreSim();
+	// mIDSolver->PreSim();
 
 	btVector3 omega_pre = mMultibody->getBaseOmega();
-	std::cout <<"[log] pre sim omega = " << cBulletUtil::btVectorTotVector0(omega_pre).transpose() << std::endl;
+	// std::cout <<"[log] pre sim omega = " << cBulletUtil::btVectorTotVector0(omega_pre).transpose() << std::endl;
 	m_dynamicsWorld->stepSimulation(deltaTime, 0, deltaTime);
-	btVector3 omega_post = mMultibody->getBaseOmega();
-	std::cout <<"[log] post sim omega = " << cBulletUtil::btVectorTotVector0(omega_post).transpose() << std::endl;
-	std::cout <<"[log] omega  dot = " << cBulletUtil::btVectorTotVector0((omega_post - omega_pre)/deltaTime).transpose() << std::endl;
+	cTimeUtil::End("stepsim_mb");
+	// btVector3 omega_post = mMultibody->getBaseOmega();
+	// std::cout <<"[log] post sim omega = " << cBulletUtil::btVectorTotVector0(omega_post).transpose() << std::endl;
+	// std::cout <<"[log] omega  dot = " << cBulletUtil::btVectorTotVector0((omega_post - omega_pre)/deltaTime).transpose() << std::endl;
 
-	mIDSolver->PostSim();
+	// mIDSolver->PostSim();
 }
 
 class CommonExampleInterface* MultiDofCreateFunc(struct CommonExampleOptions& options)
 {
 	return new MultiDofDemo(options.m_guiHelper);
 }
-
 
 void MultiDofDemo::initPhysics()
 {
@@ -166,33 +166,33 @@ void MultiDofDemo::initPhysics()
 	btMLCPSolverInterface* mlcp;
 	switch (g_constraintSolverType++)
 	{
-	case 0:
-		sol = new btMultiBodyConstraintSolver;
-		b3Printf("Constraint Solver: Sequential Impulse");
-		break;
-	case 1:
-		mlcp = new btSolveProjectedGaussSeidel();
-		sol = new btMultiBodyMLCPConstraintSolver(mlcp);
-		b3Printf("Constraint Solver: MLCP + PGS");
-		break;
-	case 2:
-		mlcp = new btDantzigSolver();
-		sol = new btMultiBodyMLCPConstraintSolver(mlcp);
-		b3Printf("Constraint Solver: MLCP + Dantzig");
-		break;
-	default:
-		mlcp = new btLemkeSolver();
-		sol = new btMultiBodyMLCPConstraintSolver(mlcp);
-		b3Printf("Constraint Solver: MLCP + Lemke");
-		break;
+		case 0:
+			sol = new btMultiBodyConstraintSolver;
+			b3Printf("Constraint Solver: Sequential Impulse");
+			break;
+		case 1:
+			mlcp = new btSolveProjectedGaussSeidel();
+			sol = new btMultiBodyMLCPConstraintSolver(mlcp);
+			b3Printf("Constraint Solver: MLCP + PGS");
+			break;
+		case 2:
+			mlcp = new btDantzigSolver();
+			sol = new btMultiBodyMLCPConstraintSolver(mlcp);
+			b3Printf("Constraint Solver: MLCP + Dantzig");
+			break;
+		default:
+			mlcp = new btLemkeSolver();
+			sol = new btMultiBodyMLCPConstraintSolver(mlcp);
+			b3Printf("Constraint Solver: MLCP + Lemke");
+			break;
 	}
 
 	m_solver = sol;
 
 	// create new world
 	{
-		cCollisionWorld * my_world = new cCollisionWorld(m_dispatcher, m_broadphase, sol, m_collisionConfiguration);
-		btMultiBodyDynamicsWorld * world = static_cast<btMultiBodyDynamicsWorld *>(my_world);
+		cCollisionWorld* my_world = new cCollisionWorld(m_dispatcher, m_broadphase, sol, m_collisionConfiguration);
+		btMultiBodyDynamicsWorld* world = static_cast<btMultiBodyDynamicsWorld*>(my_world);
 		if (world != nullptr && nullptr != world)
 		{
 			std::cout << "[log] create cCollisionWorld succ\n";
@@ -202,9 +202,6 @@ void MultiDofDemo::initPhysics()
 		m_dynamicsWorld->setGravity(gGravity);
 		m_dynamicsWorld->getSolverInfo().m_globalCfm = 1e-3;
 	}
-
-
-
 
 	///create a few basic rigid bodies
 	btVector3 groundHalfExtents(50, 50, 50);
@@ -220,16 +217,16 @@ void MultiDofDemo::initPhysics()
 	/////////////////////////////////////////////////////////////////
 	bool damping = false;
 	bool gyro = true;
-	int numLinks = 0;
-	bool spherical = false;  //set it ot false -to use 1DoF hinges instead of 3DoF sphericals
+	int numLinks = 15;
+	bool spherical = true;  //set it ot false -to use 1DoF hinges instead of 3DoF sphericals
 	bool multibodyOnly = false;
 	bool canSleep = false;
 	bool selfCollide = true;
 	bool multibodyConstraint = false;
-	btVector3 linkHalfExtents(0.05, 0.4, 0.1);
-	btVector3 baseHalfExtents(0.05, 0.4, 0.1);
+	btVector3 linkHalfExtents(0.1, 0.2, 0.1);
+	btVector3 baseHalfExtents(0.1, 0.2, 0.1);
 
-	btMultiBody* mbC = createFeatherstoneMultiBody_testMultiDof(m_dynamicsWorld, numLinks, btVector3(0.f, 0.f, 0.f), linkHalfExtents, baseHalfExtents, spherical, g_floatingBase);
+	btMultiBody* mbC = createFeatherstoneMultiBody_testMultiDof(m_dynamicsWorld, numLinks, btVector3(0.f, 2.2f, 0.f), linkHalfExtents, baseHalfExtents, spherical, g_floatingBase);
 	//mbC->forceMultiDof();							//if !spherical, you can comment this line to check the 1DoF algorithm
 	mMultibody = mbC;
 
@@ -248,8 +245,8 @@ void MultiDofDemo::initPhysics()
 		mbC->setAngularDamping(0.9f);
 	}
 	//
-	mbC->setBaseVel(btVector3(20, 10, 30));
-	mbC->setBaseOmega(btVector3(30, 60, 20));
+	// mbC->setBaseVel(btVector3(20, 10, 30));
+	// mbC->setBaseOmega(btVector3(30, 60, 20));
 	// mbC->setMaxCoordinateVelocity(3.0f);
 	// mbC->setBaseOmega(btVector3(0, 0, 5));
 	m_dynamicsWorld->setGravity(gGravity);
@@ -257,17 +254,20 @@ void MultiDofDemo::initPhysics()
 	//////////////////////////////////////////////
 	if (numLinks > 0)
 	{
-		btScalar q0 = 90.f * SIMD_PI / 180.f;
-		//btScalar q0 = 90.f * SIMD_PI / 180.f;
-		if (!spherical)
+		for (int i = 0; i < numLinks - 1; i++)
 		{
-			mbC->setJointPosMultiDof(0, &q0);
-		}
-		else
-		{
-			btQuaternion quat0(btVector3(1, 1, 0).normalized(), q0);
-			quat0.normalize();
-			mbC->setJointPosMultiDof(0, quat0);
+			btScalar q0 = std::rand() % 30 * SIMD_PI / 180.f;
+			//btScalar q0 = 90.f * SIMD_PI / 180.f;
+			if (!spherical)
+			{
+				mbC->setJointPosMultiDof(i, &q0);
+			}
+			else
+			{
+				btQuaternion quat0(btVector3(1, 1, 0).normalized(), q0);
+				quat0.normalize();
+				mbC->setJointPosMultiDof(i, quat0);
+			}
 		}
 	}
 	///
@@ -361,13 +361,12 @@ btMultiBody* MultiDofDemo::createFeatherstoneMultiBody_testMultiDof(btMultiBodyD
 
 	bool canSleep = false;
 	btMultiBody* pMultiBody = new btMultiBody(numLinks, baseMass, baseInertiaDiag, !floating, canSleep);
-	
 
 	// �������õ���world to base rot��Ҳ����һ����������ϵ������Ҫת����base����ϵ�У���Ҫ��ת���ٽǶȡ�
 	// ����ϵ����ת����������ת���෴�Ƕȹ�ϵ��
 	double theta = 0.0 / 180 * M_PI;
 	double cos_theta_2 = std::cos(theta / 2),
-			sin_theta_2 = std::sin(theta / 2);
+		   sin_theta_2 = std::sin(theta / 2);
 	//btQuaternion baseOriQuat(0.f, 0.5f, 0.f, 0.866f);
 	// btQuaternion baseOriQuat(0.f, 0.f, 0.f, 1.f);
 	btQuaternion baseOriQuat(1.0f * sin_theta_2, 0.f, 0.f, 1.f * cos_theta_2);
@@ -381,9 +380,9 @@ btMultiBody* MultiDofDemo::createFeatherstoneMultiBody_testMultiDof(btMultiBodyD
 	base_world_trans = pMultiBody->getBaseWorldTransform();
 	world_to_base_rot = pMultiBody->getWorldToBaseRot();
 	base_world_rot = base_world_trans.getRotation();
-	std::cout <<"raw world to base rot = " << cBulletUtil::btQuaternionTotQuaternion(baseOriQuat).coeffs().transpose() << std::endl;
-	std::cout <<"[log] world_to_base_rot = " << cBulletUtil::btQuaternionTotQuaternion(world_to_base_rot).coeffs().transpose() << std::endl;
-	std::cout <<"[log] base_world_rot = " << cBulletUtil::btQuaternionTotQuaternion(base_world_rot).coeffs().transpose() << std::endl;
+	std::cout << "raw world to base rot = " << cBulletUtil::btQuaternionTotQuaternion(baseOriQuat).coeffs().transpose() << std::endl;
+	std::cout << "[log] world_to_base_rot = " << cBulletUtil::btQuaternionTotQuaternion(world_to_base_rot).coeffs().transpose() << std::endl;
+	std::cout << "[log] base_world_rot = " << cBulletUtil::btQuaternionTotQuaternion(base_world_rot).coeffs().transpose() << std::endl;
 
 	//init the links
 	btVector3 hingeJointAxis(1, 0, 0);
@@ -434,7 +433,7 @@ void MultiDofDemo::addColliders_testMultiDof(btMultiBody* pMultiBody, btMultiBod
 
 	{
 		//	float pos[4]={local_origin[0].x(),local_origin[0].y(),local_origin[0].z(),1};
-		btScalar quat[4] = { -world_to_local[0].x(), -world_to_local[0].y(), -world_to_local[0].z(), world_to_local[0].w() };
+		btScalar quat[4] = {-world_to_local[0].x(), -world_to_local[0].y(), -world_to_local[0].z(), world_to_local[0].w()};
 
 		if (1)
 		{
@@ -467,7 +466,7 @@ void MultiDofDemo::addColliders_testMultiDof(btMultiBody* pMultiBody, btMultiBod
 		btVector3 posr = local_origin[i + 1];
 		//	float pos[4]={posr.x(),posr.y(),posr.z(),1};
 
-		btScalar quat[4] = { -world_to_local[i + 1].x(), -world_to_local[i + 1].y(), -world_to_local[i + 1].z(), world_to_local[i + 1].w() };
+		btScalar quat[4] = {-world_to_local[i + 1].x(), -world_to_local[i + 1].y(), -world_to_local[i + 1].z(), world_to_local[i + 1].w()};
 
 		btCollisionShape* box = new btBoxShape(linkHalfExtents);
 		btMultiBodyLinkCollider* col = new btMultiBodyLinkCollider(pMultiBody, i);
@@ -544,7 +543,8 @@ void MultiDofDemo::RecordSimLog()
 		if (i == 0)
 		{
 			mSimLog << "for root link:\n";
-			mSimLog << "\tpos = " << cBulletUtil::btVectorTotVector1(mMultibody->getBasePos()).transpose() << std::endl;;
+			mSimLog << "\tpos = " << cBulletUtil::btVectorTotVector1(mMultibody->getBasePos()).transpose() << std::endl;
+			;
 			mSimLog << "\torientation = " << cBulletUtil::btQuaternionTotQuaternion(mMultibody->getWorldToBaseRot().inverse()).coeffs().transpose() << std::endl;
 		}
 		else
@@ -552,9 +552,10 @@ void MultiDofDemo::RecordSimLog()
 			int multibody_id = i - 1;
 			trans = mMultibody->getLinkCollider(multibody_id)->getWorldTransform();
 			mSimLog << "for link: " << multibody_id << "\n";
-			mSimLog << "\tpos = " << cBulletUtil::btVectorTotVector1(trans.getOrigin()).transpose() << std::endl;;
-			mSimLog << "\torientation = " << cBulletUtil::btQuaternionTotQuaternion(trans.getRotation()).coeffs().transpose() << std::endl;;
-
+			mSimLog << "\tpos = " << cBulletUtil::btVectorTotVector1(trans.getOrigin()).transpose() << std::endl;
+			;
+			mSimLog << "\torientation = " << cBulletUtil::btQuaternionTotQuaternion(trans.getRotation()).coeffs().transpose() << std::endl;
+			;
 		}
 	}
 }

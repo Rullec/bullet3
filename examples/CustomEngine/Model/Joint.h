@@ -64,6 +64,11 @@ protected:
 	EIGEN_VV_tMatrixD mTqq;
 	EIGEN_VV_tMatrixD mWqq;
 	// ======================================
+
+
+	// buffer used in Jacobian computation
+	tMatrixXd local_jac_buf;
+	// tMatrixXd global_jac_buf;
 };
 
 #endif  //ROBOT_JOINT_H

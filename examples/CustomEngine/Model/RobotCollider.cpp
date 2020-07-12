@@ -1,8 +1,8 @@
 #include "RobotCollider.h"
 #include <iostream>
-#include "RobotModel.h"
+#include "RobotModelDynamics.h"
 
-cRobotCollider::cRobotCollider(cRobotModel* model, int link_id, const std::string& name)
+cRobotCollider::cRobotCollider(cRobotModelDynamics* model, int link_id, const std::string& name)
 	: mModel(model), mLinkId(link_id), cCollisionObject(eColObjType::RobotCollder, name)
 {
 	m_checkCollideWith = true;
@@ -78,11 +78,16 @@ bool cRobotCollider::IsStatic() const
 	return false;
 }
 
-void cRobotCollider::PushState()
+void cRobotCollider::PushState(const std::string& tag, bool only_vel_and_force)
 {
-	mModel->PushState();
+	mModel->PushState(tag, only_vel_and_force);
 }
-void cRobotCollider::PopState()
+void cRobotCollider::PopState(const std::string& tag, bool only_vel_and_force)
 {
-	mModel->PopState();
+	mModel->PopState(tag, only_vel_and_force);
+}
+
+void cRobotCollider::ClearForce()
+{
+	mModel->ClearForce();
 }

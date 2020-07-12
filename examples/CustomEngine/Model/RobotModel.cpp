@@ -5,14 +5,16 @@
 #include "Link.h"
 #include "Joint.h"
 #include "Printer.h"
-#include "btBulletDynamicsCommon.h"
-#include "../ExampleBrowser/ID_test/BulletUtil.h"
+
+#include "../ExampleBrowser/ID_test/FileUtil.h"
 // #include "R
-#define DAMPING_COEF 0.01
+// #define DAMPING_COEF 0
 std::map<std::string, int> cRobotModel::joint_type_map;
 std::map<std::string, int> cRobotModel::shape_map;
 
-cRobotModel::cRobotModel(const char* model_file) : root(nullptr), name(""), num_of_freedom(0), end_link(nullptr), com(0, 0, 0), total_mass(0), num_of_valid_joint(0), deep_mimic_motion_size(0), damping_coef(DAMPING_COEF)
+static const std::string coriolis_info = "coriolis_record.log";
+// extern std::string gOutputLogPath;
+cRobotModel::cRobotModel(const char* model_file) : root(nullptr), name(""), num_of_freedom(0), end_link(nullptr), com(0, 0, 0), total_mass(0), num_of_valid_joint(0), deep_mimic_motion_size(0)
 {
 	InitJointTypeMap();
 	InitShapeMap();
@@ -35,7 +37,7 @@ cRobotModel::~cRobotModel()
 	}
 }
 
-cRobotModel::cRobotModel(const char* model_file, int type) : root(nullptr), name(""), num_of_freedom(0), end_link(nullptr), com(0, 0, 0), total_mass(0), num_of_valid_joint(0), deep_mimic_motion_size(0), model_type(-1), damping_coef(DAMPING_COEF)
+cRobotModel::cRobotModel(const char* model_file, double scale, int type) : root(nullptr), name(""), num_of_freedom(0), end_link(nullptr), com(0, 0, 0), total_mass(0), num_of_valid_joint(0), deep_mimic_motion_size(0), model_type(-1)
 {
 	InitJointTypeMap();
 	InitShapeMap();
@@ -50,7 +52,7 @@ cRobotModel::cRobotModel(const char* model_file, int type) : root(nullptr), name
 			LoadAsf(model_file);
 			break;
 		case JSON:
-			LoadJsonModel(model_file);
+			LoadJsonModel(model_file, scale);
 			break;
 		default:
 			break;
@@ -536,7 +538,7 @@ void cRobotModel::AddJoint(std::string joint_name, std::string father_name, std:
 	}
 }
 
-void cRobotModel::AddSphericalFreedoms(BaseObject* joint)
+void cRobotModel::AddSphericalFreedoms(BaseObject* joint, const tVector3d& lower_limit, const tVector3d& upper_limit)
 {
 	for (int freedom_order = 0; freedom_order < 3; ++freedom_order)
 	{
@@ -548,14 +550,14 @@ void cRobotModel::AddSphericalFreedoms(BaseObject* joint)
 		f.axis[freedom_order] = 1;
 
 		f.v = 0;
-		f.lb = -3.14;
-		f.ub = 3.14;
+		f.lb = lower_limit[freedom_order];
+		f.ub = upper_limit[freedom_order];
 
 		joint->AddFreedom(f);
 	}
 }
 
-void cRobotModel::AddRevoluteJointFreedoms(BaseObject* joint)
+void cRobotModel::AddRevoluteJointFreedoms(BaseObject* joint, double lb, double ub)
 {
 	Freedom f;
 	f.id = 0;
@@ -564,8 +566,8 @@ void cRobotModel::AddRevoluteJointFreedoms(BaseObject* joint)
 	f.axis = tVector3d(1, 0, 0);
 
 	f.v = 0;
-	f.lb = -3.14;
-	f.ub = 3.14;
+	f.lb = lb;
+	f.ub = ub;
 
 	joint->AddFreedom(f);
 }
@@ -879,8 +881,13 @@ void cRobotModel::ExportAsf(const char* file_path)
  * \brief					load json model (DeepMimic json file)
  * \param file_path			file path
  */
-void cRobotModel::LoadJsonModel(const char* file_path)
+void cRobotModel::LoadJsonModel(const char* file_path, double model_scale)
 {
+	// std::ofstream fout(coriolis_info);
+	// fout << "";
+	// fout.close();
+
+	// cFileUtil::ClearFile(model_info);
 	Json::Value json_root;
 	Json::CharReaderBuilder builder;
 	std::ifstream fin(file_path, std::ifstream::binary);
@@ -919,9 +926,9 @@ void cRobotModel::LoadJsonModel(const char* file_path)
 		if (param.name == "root_joint") continue;
 		tVector3d local_pos;
 		tVector3d local_rot;
-		local_pos.x() = (*itr)["AttachX"].asDouble();
-		local_pos.y() = (*itr)["AttachY"].asDouble();
-		local_pos.z() = (*itr)["AttachZ"].asDouble();
+		local_pos.x() = (*itr)["AttachX"].asDouble() * model_scale;
+		local_pos.y() = (*itr)["AttachY"].asDouble() * model_scale;
+		local_pos.z() = (*itr)["AttachZ"].asDouble() * model_scale;
 		local_rot.x() = (*itr)["AttachThetaX"].asDouble();
 		local_rot.y() = (*itr)["AttachThetaY"].asDouble();
 		local_rot.z() = (*itr)["AttachThetaZ"].asDouble();
@@ -937,11 +944,19 @@ void cRobotModel::LoadJsonModel(const char* file_path)
 
 		if (joint_type == SPHERICAL_JOINT)
 		{
-			AddSphericalFreedoms(joint);
+			tVector3d lower_limit, upper_limit;
+			for (int i = 0; i < 3; i++)
+			{
+				lower_limit[i] = (*itr)["LimLow" + std::to_string(i)].asDouble();
+				upper_limit[i] = (*itr)["LimHigh" + std::to_string(i)].asDouble();
+			}
+			AddSphericalFreedoms(joint, lower_limit, upper_limit);
 		}
 		else if (joint_type == REVOLUTE_JOINT)
 		{
-			AddRevoluteJointFreedoms(joint);
+			double lower_limit = (*itr)["LimLow0"].asDouble(),
+				   upper_limit = (*itr)["LimHigh0"].asDouble();
+			AddRevoluteJointFreedoms(joint, lower_limit, upper_limit);
 		}
 	}
 
@@ -961,9 +976,9 @@ void cRobotModel::LoadJsonModel(const char* file_path)
 
 		tVector3d local_pos;
 		tVector3f mesh_rot;
-		local_pos.x() = (*itr)["AttachX"].asDouble();
-		local_pos.y() = (*itr)["AttachY"].asDouble();
-		local_pos.z() = (*itr)["AttachZ"].asDouble();
+		local_pos.x() = (*itr)["AttachX"].asDouble() * model_scale;
+		local_pos.y() = (*itr)["AttachY"].asDouble() * model_scale;
+		local_pos.z() = (*itr)["AttachZ"].asDouble() * model_scale;
 		mesh_rot.x() = (*itr)["AttachThetaX"].asFloat();
 		mesh_rot.y() = (*itr)["AttachThetaY"].asFloat();
 		mesh_rot.z() = (*itr)["AttachThetaZ"].asFloat();
@@ -979,9 +994,9 @@ void cRobotModel::LoadJsonModel(const char* file_path)
 			exit(-1);
 		}
 
-		float width = (*itr)["Param0"].asFloat();
-		float length = (*itr)["Param1"].asFloat();
-		float height = (*itr)["Param2"].asFloat();
+		float width = (*itr)["Param0"].asFloat() * model_scale;
+		float length = (*itr)["Param1"].asFloat() * model_scale;
+		float height = (*itr)["Param2"].asFloat() * model_scale;
 		param.mesh_scale = tVector3f(width, length, height);
 
 		param.local_pos = local_pos;
@@ -1035,9 +1050,9 @@ void cRobotModel::LoadJsonModel(const char* file_path)
 		shape_param.top_scale = (*itr)["TopScale"].asDouble();
 		shape_param.bottom_scale = (*itr)["BottomScale"].asDouble();
 		shape_param.shape_type = shape_type;
-		shape_param.width = (*itr)["Param0"].asDouble();
-		shape_param.length = (*itr)["Param2"].asDouble();
-		shape_param.height = (*itr)["Param1"].asDouble();
+		shape_param.width = (*itr)["Param0"].asDouble() * model_scale;
+		shape_param.length = (*itr)["Param2"].asDouble() * model_scale;
+		shape_param.height = (*itr)["Param1"].asDouble() * model_scale;
 		if (base_object == nullptr)
 		{
 			Printer::ScreenLog("RobotModel::LoadJsonModel base object access illegal", name.c_str());
@@ -1154,8 +1169,7 @@ void cRobotModel::InitShapeMap()
  */
 void cRobotModel::Apply(const std::vector<double>& ang, int st, bool compute_gradient)
 {
-	for (int i = 0; i < num_of_freedom; i++)
-		freedoms[i]->v = ang[st + i];
+	for (int i = 0; i < num_of_freedom; i++) freedoms[i]->v = ang[st + i];
 	Update(compute_gradient);
 }
 
@@ -1335,12 +1349,14 @@ void cRobotModel::ComputeJacobiByGivenPointTotalDOFWorldFrame(int link_id, const
 	auto* target_joint = target_link->GetParent();
 
 	tVector3d rt = point_world - target_link->GetWorldPos();
-	tVector3d point = target_link->GetGlobalTransform().block(0, 0, 3, 3).transpose() * rt;
-
-	const tMatrix& m1 = target_link->GetLocalTransform();
-
-	tVector p = m1 * cMathUtil::Expand(point, 1);
+	tVector p = target_link->GetLocalTransform() * cMathUtil::Expand(target_link->GetGlobalTransform().block(0, 0, 3, 3).transpose() * rt, 1);
 	target_joint->ComputeJacobiByGivenPointTotalDOF(j, p);
+
+	// auto* target_link = GetLinkById(link_id);
+	// auto* target_joint = target_link->GetParent();
+	// tVector3d rt = point_world - target_link->GetWorldPos();
+	// tVector3d p = target_link->GetLocalTransform().block(0, 0, 3, 3) * target_link->GetGlobalTransform().block(0, 0, 3, 3).transpose() * rt;
+	// target_joint->ComputeJacobiByGivenPointTotalDOF(j, cMathUtil::Expand(p, 1));
 }
 
 // /**
@@ -1589,6 +1605,7 @@ void cRobotModel::InitModel()
 			num_of_valid_joint++;
 		}
 	}
+	InitDofidToJointMap();
 	InitDeepMimicMotionSize();
 	UpdateMass();
 }
@@ -1613,6 +1630,22 @@ void cRobotModel::InitChildrenChain()
 			temp_stack.push(p->GetChild(i));
 		}
 		if (p->GetNumOfChildren() == 0) end_link = p;
+	}
+}
+
+/**
+ * \brief				init the map from dof id to joint id
+*/
+void cRobotModel::InitDofidToJointMap()
+{
+	dof_joint_map.resize(GetNumOfFreedom(), -1);
+	for (auto& joint : joints)
+	{
+		const auto& cur_joint = joint.second;
+		for (int i = 0; i < cur_joint->GetNumOfFreedom(); i++)
+		{
+			dof_joint_map[cur_joint->GetFreedoms(i)->id] = cur_joint->GetId();
+		}
 	}
 }
 
@@ -1698,6 +1731,7 @@ void cRobotModel::Update(bool compute_gradient)
 		ComputeJw();
 		ComputeJv();
 		ComputeMassMatrix();
+		ComputeCoriolisMatrix(qdot);
 	}
 }
 
@@ -1869,6 +1903,54 @@ int cRobotModel::GetNumOfFreedom() const
 	return num_of_freedom;
 }
 
+/**
+ * \brief			Get the lower & upper bound for each joint
+ * \param lb
+ * \param ub
+*/
+void cRobotModel::GetJointLimit(tVectorXd& lb, tVectorXd& ub) const
+{
+	lb.resize(num_of_freedom);
+	ub.resize(num_of_freedom);
+
+	for (int i = 0; i < num_of_freedom; i++)
+	{
+		const auto& dof = freedoms.find(i)->second;
+		lb[i] = dof->lb;
+		ub[i] = dof->ub;
+	}
+}
+
+/**
+ * \brief			Get the direction for the targeted dof
+*/
+tVector3d cRobotModel::GetFreedomDirectionWorldFrame(int dof_id) const
+{
+	// auto [] = CheckAxis(const tVector3d& axis)->int
+	// {
+	// 	int target = -1;
+	// 	for (int i = 0; i < 3; i++)
+	// 	{
+	// 		if (std::fabs(axis[i] - 1.0) < 1e-10) return i;
+	// 	}
+	// 	return target;
+	// };
+
+	Joint* cur_joint = dynamic_cast<Joint*>(GetJointByDofId(dof_id));
+	const tMatrix3d& joint_orientation = cur_joint->GetGlobalTransform().topLeftCorner<3, 3>();
+	for (int i = 0; i < cur_joint->GetNumOfFreedom(); i++)
+	{
+		Freedom* freedom = cur_joint->GetFreedoms(i);
+		if (freedom->id == dof_id)
+		{
+			return joint_orientation * freedom->axis;
+		}
+	}
+	std::cout << "[error] cRobotModel::GetFreedomDirectionWorldFrame for dof " << dof_id << std::endl;
+	exit(1);
+	return tVector3d::Zero();
+}
+
 void cRobotModel::Travel() const
 {
 	for (auto* p : children_chain)
@@ -1885,6 +1967,11 @@ BaseObject* cRobotModel::GetLinkById(int id) const
 BaseObject* cRobotModel::GetJointById(int id) const
 {
 	return GetBaseObjectById(id, JOINT);
+}
+
+BaseObject* cRobotModel::GetJointByDofId(int dof_id) const
+{
+	return GetJointById(dof_joint_map[dof_id]);
 }
 
 BaseObject* cRobotModel::GetBaseObjectById(int id, int type) const
@@ -1930,20 +2017,29 @@ void cRobotModel::ComputeAngularVelocity(tMatrixXd& omega, tVectorXd& q_dot)
 void cRobotModel::ComputeMassMatrix()
 {
 	mass_matrix.setZero();
-
+	// std::cout << "------begin to calc mass mat------\n";
 	for (auto& link : link_chain)
 	{
 		link->ComputeMassMatrix();
 		const tMatrixXd& mass_cartesian = link->GetMassMatrix();
-		// std::cout << "link mass cartesian = \n"
-		// 		  << mass_cartesian << std::endl;
+		// std::cout << "mass cartesian = \n"
+		//   << mass_cartesian << std::endl;
 		const tMatrixXd& jk = link->GetJK();
 		mass_matrix.noalias() += jk.transpose() * mass_cartesian * jk;
+
+		// std::cout << "J = \n"
+		// 		  << jk << std::endl;
 	}
+	inv_mass_matrix = mass_matrix.inverse();
+	// std::cout << "M = \n"
+	// 		  << mass_matrix << std::endl;
+	// std::cout << "------end to calc mass mat------\n";
 }
 
 void cRobotModel::ComputeCoriolisMatrix(tVectorXd& q_dot)
 {
+	// std::ofstream fout(coriolis_info, std::ios::app);
+	// std::cout << "qdot = " << qdot.transpose() << std::endl;
 	coriolis_matrix.setZero();
 
 	tVector3d p(0, 0, 0);
@@ -1951,6 +2047,10 @@ void cRobotModel::ComputeCoriolisMatrix(tVectorXd& q_dot)
 	w_skew.setZero();
 	for (auto& link : link_chain)
 	{
+		// fout << "---------link " << link->GetName()
+		// 	 << " begin to calc coriolis matrix---------\n";
+		// fout << "q = " << q.transpose() << std::endl;
+		// fout << "qdot = " << qdot.transpose() << std::endl;
 		link->ComputeJKw_dot(q_dot);
 		link->ComputeJKv_dot(q_dot, p);
 		link->ComputeJK_dot();
@@ -1966,16 +2066,28 @@ void cRobotModel::ComputeCoriolisMatrix(tVectorXd& q_dot)
 
 		w_skew.block(3, 3, 3, 3) = omega_skew;
 
-		coriolis_matrix.noalias() += jk.transpose() * mass_cartesian * jk_dot +
-									 jk.transpose() * w_skew * mass_cartesian * jk;
-		// coriolis_matrix.noalias() = jk.transpose() * mass_cartesian * jk_dot;
-		// coriolis_matrix.noalias() += jk.transpose() * w_skew * mass_cartesian * jk;
-	}
-}
+		// fout << "Jv = \n"
+		// 	 << jk.block(0, 0, 3, jk.cols()) << std::endl;
+		// fout << "Jvdot = \n"
+		// 	 << jk_dot.block(0, 0, 3, jk_dot.cols()) << std::endl;
+		// fout << "Jw = \n"
+		// 	 << jk.block(3, 0, 3, jk.cols()) << std::endl;
+		// fout << "Jwdot = \n"
+		// 	 << jk_dot.block(3, 0, 3, jk_dot.cols()) << std::endl;
+		// fout << "w = " << cMathUtil::SkewMatToVector(omega_skew).transpose() << std::endl;
 
-void cRobotModel::ComputeDampingMatrix()
-{
-	damping_matrix = damping_coef * tMatrixXd::Identity(GetNumOfFreedom(), GetNumOfFreedom());
+		// tMatrixXd res1 = jk.transpose() * mass_cartesian * jk_dot +
+		// 				 jk.transpose() * w_skew * mass_cartesian * jk;
+		// tMatrixXd res2 = ;
+		// tMatrixXd diff = res1 - res2;
+		// std::cout << "diff norm = " << diff.norm() << std::endl;
+		coriolis_matrix.noalias() += jk.transpose() * (mass_cartesian * jk_dot + w_skew * mass_cartesian * jk);
+
+		// coriolis_matrix.noalias() += ;
+
+		// fout << "---------link " << link->GetName()
+		// 	 << " end to calc coriolis matrix---------\n";
+	}
 }
 
 void cRobotModel::SetOmega(EIGEN_V_tVector& omega, int st_joint)
@@ -2006,322 +2118,4 @@ void cRobotModel::ComputeDCdqdot(tVectorXd& q_dot, tMatrixXd& dcdqdot)
 
 		dcdqdot += jk.transpose() * mass_cartesian * jk_dot;
 	}
-}
-
-/**
- * \brief					create Multibody colliders in bullet world
- * \param world				the ptr to btWorld
- * */
-extern std::map<int, std::string> col_name;
-void cRobotModel::InitSimVars(btDiscreteDynamicsWorld* world)
-{
-	std::cout << "Init collider\n";
-	multibody_colliders.clear();
-	cRobotCollider* collider = nullptr;
-
-	// 1. get link shape info  and add them into btworld
-	int num_of_links = GetNumOfLinks();
-	for (int i = 0; i < num_of_links; i++)
-	{
-		const auto& link = GetLinkById(i);
-		float mass = link->GetMass();
-		ShapeType shape_type = link->GetShapeType();
-		btCollisionShape* shape = nullptr;
-		const tVector3f& mesh_scale = link->GetMeshScale();
-		std::cout << "for link " << i << " mesh scale = " << mesh_scale.transpose() << std::endl;
-		switch (shape_type)
-		{
-			case ShapeType::SPHERE_SHAPE:
-				shape = new btSphereShape(btScalar(mesh_scale[0]));
-				break;
-			case ShapeType::BOX_SHAPE:
-				shape = new btBoxShape(cBulletUtil::tVectorTobtVector(cMathUtil::Expand(mesh_scale, 0)) / 2);
-				break;
-			default:
-				std::cout << "unsupported type in init sim vars\n";
-				exit(1);
-				break;
-		}
-		// btCollisionShape* shape = new btBoxShape(btVector3(mesh_scale[0], mesh_scale[1], mesh_scale[2]) / 2);
-
-		btVector3 localInertia(0, 0, 0);
-		shape->calculateLocalInertia(mass, localInertia);
-
-		collider = new cRobotCollider(this, i, GetLinkById(i)->GetName() + std::to_string(i));
-		collider->setCollisionShape(shape);
-		collider->setUserIndex(-1);
-		collider->setUserPointer(collider);
-
-		// world->addCollisionObject(collider, 2, 1 + 2);
-		world->addCollisionObject(collider, 1, -1);
-		col_name[collider->getWorldArrayIndex()] = "multibody" + std::to_string(collider->mLinkId);
-		multibody_colliders.push_back(collider);
-	}
-
-	// 2. set up the parent collider
-	for (int i = 0; i < num_of_links; i++)
-	{
-		const BaseObject* parent_joint = GetLinkById(i)->GetParent();
-		int parent_link_id = parent_joint->GetParentId();
-		if (-1 == parent_link_id)
-		{
-			multibody_colliders[i]->mParentCollider = nullptr;
-		}
-		else
-		{
-			multibody_colliders[i]->mParentCollider = multibody_colliders[parent_link_id];
-		}
-		std::cout << "for link " << i << " parent link id = " << parent_link_id << std::endl;
-	}
-
-	// 3. allocate sim vars and Init
-	link_forces.resize(num_of_links, tVector::Zero());
-	link_torques.resize(num_of_links, tVector::Zero());
-	q.resize(GetNumOfFreedom()), q.setZero();
-	qdot.resize(GetNumOfFreedom()), qdot.setZero();
-	max_vel = 100.0;
-	// const double q[] = {
-	// 	-0.0289297, -1.82364, 0.196723, -2.5256, -1.27079, -0.473494, 3.89473, -0.461045, 0.0931059, 1.91737, 2.93732, -0.209514, 0.0629891};
-	// const double qdot[] = {
-	// 	-0.446217  -4.00862   1.62062  -10.2378  -21.9702  -25.5659        50  -5.44128  -4.33548  -16.1202   23.4421    -21.68       -50
-	// }
-	// set base init
-	// {
-	// 	qdot.segment(0, 3) = tVector3d(4, -1, 4);
-	// 	qdot.segment(3, 3) = tVector3d(12, 01, -7);
-	// q.segment(3, 3) = tVector3d(SIMD_PI / 6., 0, 0);
-	// qdot[1] = -10;
-	q[1] = -0.8;
-	// q[3] = SIMD_PI;
-	// if (q.size() >= 10)
-	// {
-	// 	q[9] = 2;
-	// 	qdot[9] = 5;
-	// }
-
-	// }
-	SetPose(q, qdot);
-}
-
-void cRobotModel::TestJacobian()
-{
-	// 1. save old state
-	tVectorXd q_old = q, qdot_old = qdot;
-	int n_dof = GetNumOfFreedom();
-
-	// 2. test jacobian
-	q = tVectorXd::Random(n_dof);
-	qdot = tVectorXd::Random(n_dof);
-	for (int link_id = 0; link_id < GetNumOfLinks(); link_id++)
-	{
-		Apply(q, true);
-		tVector pt_local = cMathUtil::Expand(tVector3d::Random() * 10, 1);
-		tMatrixXd jac_pred, jac_truth;
-		auto link = GetLinkById(link_id);
-		tVector pt_world_old = link->GetGlobalTransform() * pt_local;
-
-		// 1. pred
-
-		ComputeJacobiByGivenPointTotalDOFWorldFrame(link_id, pt_world_old.segment(0, 3), jac_pred);
-		// ComputeJacobiByGivenPointTotalDOFLocalFrame(link_id, pt_local.segment(0, 3), jac_pred);
-
-		// 2. true
-		const double bias = 1e-7;
-		jac_truth.resize(3, n_dof);
-		tVector pt_world_new;
-		for (int dof = 0; dof < n_dof; dof++)
-		{
-			// std::cout << "q size " << q.size() << " dof " << dof << std::endl;
-			q[dof] += bias;
-			Apply(q, true);
-			pt_world_new = link->GetGlobalTransform() * pt_local;
-			jac_truth.block(0, dof, 3, 1) = (pt_world_new - pt_world_old).segment(0, 3) / bias;
-			q[dof] -= bias;
-		}
-		double err = (jac_truth - jac_pred).norm();
-		std::cout << "test jacobian link " << link_id << ", residual = " << err << std::endl;
-
-		if (err > 1e-5)
-		{
-			std::cout << "jac pred = \n"
-					  << jac_pred << std::endl;
-			std::cout << "jac truth = \n"
-					  << jac_truth << std::endl;
-
-			std::cout << "error test jacobian in link " << link_id << std::endl;
-		}
-	}
-	exit(0);
-}
-
-void cRobotModel::SetPose(const tVectorXd& q_, const tVectorXd& qdot_)
-{
-	q = q_;
-	qdot = qdot_;
-	Apply(q, true);
-	ComputeMassMatrix();
-	ComputeCoriolisMatrix(qdot);
-	ComputeDampingMatrix();
-	SyncToBullet();
-}
-
-void cRobotModel::ApplyGravity(const tVector& g)  // apply force
-{
-	for (int i = 0; i < GetNumOfLinks(); i++)
-	{
-		link_forces[i] += GetLinkById(i)->GetMass() * g;
-	}
-}
-
-void cRobotModel::ApplyForce(int link_id, const tVector& force, const tVector& applied_pos)
-{
-	if (link_id < 0 || link_id >= GetNumOfLinks())
-	{
-		std::cout << "ApplyForce: illegal link id " << link_id << std::endl;
-		exit(1);
-	}
-
-	// 1. apply the force directly
-	link_forces[link_id] += force;
-
-	// 2. calculate the torque and apply it
-	auto* link = GetLinkById(link_id);
-	tVector rel_pos = applied_pos - cMathUtil::Expand(link->GetWorldPos(), 1);
-	link_torques[link_id] += rel_pos.cross3(force);
-}
-
-void cRobotModel::ApplyTorque(int link_id, const tVector& torque)
-{
-	if (link_id < 0 || link_id >= GetNumOfLinks())
-	{
-		std::cout << "ApplyTorque: illegal link id " << link_id << std::endl;
-		exit(1);
-	}
-
-	link_torques[link_id] += torque;
-}
-
-void cRobotModel::ClearForces()
-{
-	for (int i = 0; i < GetNumOfLinks(); i++)
-	{
-		link_forces[i].setZero();
-		link_torques[i].setZero();
-	}
-}
-
-// time integrate
-void cRobotModel::UpdateVelocity(float dt)
-{
-	// std::cout <<"----------------update vel-----------------\n";
-	// 1. calculate generalized force
-	int n = GetNumOfFreedom();
-	tVectorXd Q = tVectorXd::Zero(n);
-	for (int i = 0; i < GetNumOfLinks(); i++)
-	{
-		const auto& link = GetLinkById(i);
-		// std::cout <<"link " << i <<" Ibody = \n" << link->GetInertiaTensorBody() << std::endl;
-		Q += link->GetJKv().transpose() * link_forces[i].segment(0, 3);
-		Q += link->GetJKw().transpose() * link_torques[i].segment(0, 3);
-	}
-	// std::cout << "Q = " << Q.transpose() << std::endl;
-	// 2. calculate qddot and new qdot
-	// std::cout << "mass mat = \n"
-	// 		  << mass_matrix << std::endl;
-	// std::cout << "mass mat inv = \n"
-	// 		  << mass_matrix.inverse() << std::endl;
-	// std::cout << "qdot = \n"
-	// 		  << qdot.transpose() << std::endl;
-	// std::cout << "q = \n"
-	// 		  << q.transpose() << std::endl;
-	// std::cout << "coriolis_matrix = \n"
-	// 		  << coriolis_matrix << std::endl;
-
-	tMatrixXd mass_matrix_inv = mass_matrix.inverse();
-	if ((mass_matrix * mass_matrix_inv - tMatrixXd::Identity(n, n)).norm() > 1e-6)
-	{
-		std::cout << "error M * Minv = \n"
-				  << std::endl;
-	}
-
-	tVectorXd residual = (Q - (coriolis_matrix + damping_matrix) * qdot);
-	tVectorXd qddot = mass_matrix_inv * residual;
-
-	// std::cout << "residual = " << residual.transpose() << std::endl;
-	// std::cout << "qddot = " << qddot.transpose() << std::endl;
-	// std::cout <<"qddot - residual = " << ((mass_matrix * qddot) - residual).transpose() << std::endl;
-	// std::cout << "root omega = " << (GetLinkById(0)->GetJKw() * qdot).transpose() << std::endl;
-	qdot += qddot * dt;
-	qdot = qdot.cwiseMax(-max_vel);
-	qdot = qdot.cwiseMin(max_vel);
-	if (qddot.hasNaN())
-	{
-		std::cout << "RobotModel::UpdateVel: qddot hasNan\n";
-		exit(0);
-	}
-	// std::cout << "qdot = " << qdot.transpose() << std::endl;
-	// 3. recalculate the coriolis force
-	ComputeCoriolisMatrix(qdot);
-}
-
-// time integrate
-void cRobotModel::UpdateTransform(float dt)
-{
-	// 1. calculate new q and update links and joints
-	q = q + dt * qdot;
-	Apply(q, true);
-
-	// 2. recalc mats
-	ComputeMassMatrix();
-	ComputeCoriolisMatrix(qdot);
-
-	// 3. write to bullet
-	SyncToBullet();
-	// auto* root_link = GetLinkById(0);
-	// std::cout << "multibody root trans = \n"
-	// 		  << root_link->GetGlobalTransform() << std::endl;
-	// std::cout << "multibody base pos = " << GetLinkById(0)->GetWorldPos().transpose() << std::endl;
-	// std::cout << "multibody q = " << q.transpose() << std::endl;
-	// exit(0);
-}
-
-// only position is saved in bullet
-void cRobotModel::SyncToBullet()
-{
-	btTransform trans;
-	for (int i = 0; i < GetNumOfLinks(); i++)
-	{
-		auto link = GetLinkById(i);
-		trans.setOrigin(btVector3(link->GetWorldPos()[0], link->GetWorldPos()[1], link->GetWorldPos()[2]));
-		trans.setRotation(cBulletUtil::tQuaternionTobtQuaternion(cMathUtil::RotMatToQuaternion(link->GetGlobalTransform())));
-
-		multibody_colliders[i]->setWorldTransform(trans);
-	}
-}
-
-void cRobotModel::PushState()
-{
-	mOldState.q = q;
-	mOldState.qdot = qdot;
-	mOldState.link_forces = link_forces;
-	mOldState.link_torques = link_torques;
-	mOldState.mass_matrix = mass_matrix;
-	mOldState.coriolis_matrix = coriolis_matrix;
-}
-
-void cRobotModel::PopState()
-{
-	q = mOldState.q;
-	qdot = mOldState.qdot;
-	link_forces = mOldState.link_forces;
-	link_torques = mOldState.link_torques;
-	mass_matrix = mOldState.mass_matrix;
-	coriolis_matrix = mOldState.coriolis_matrix;
-	Apply(q, true);
-	ComputeCoriolisMatrix(qdot);
-}
-
-bool cRobotModel::IsMaxVel()
-{
-	return (qdot.cwiseAbs().maxCoeff() - max_vel) < 1;
 }

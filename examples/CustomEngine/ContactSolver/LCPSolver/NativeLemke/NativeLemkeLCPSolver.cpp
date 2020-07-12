@@ -31,19 +31,22 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "LCPSolver.h"
+#include "NativeLemkeLCPSolver.h"
 #include "Lemke.h"
 #include "lcp.h"
 #include "misc.h"
 #include <cstdio>
 #include <iostream>
 
-cLCPSolver::cLCPSolver() {}
-cLCPSolver::~cLCPSolver() {}
+cNativeLemkeLCPSolver::cNativeLemkeLCPSolver() : cLCPSolverBase(eLCPSolverType::NativeLemke)
+{
+}
 
-int cLCPSolver::Solve(const tMatrixXd &_A, const tVectorXd &_b, tVectorXd &_x,
-					  double mu, int numDir, bool bUseODESolver, double *ilo,
-					  double *ihi)
+cNativeLemkeLCPSolver::~cNativeLemkeLCPSolver() {}
+
+int cNativeLemkeLCPSolver::Solve(const tMatrixXd &_A, const tVectorXd &_b, tVectorXd &_x,
+								 double mu, int numDir, bool bUseODESolver, double *ilo,
+								 double *ihi)
 {
 	if (!bUseODESolver)
 	{
@@ -129,9 +132,9 @@ int cLCPSolver::Solve(const tMatrixXd &_A, const tVectorXd &_b, tVectorXd &_x,
 	}
 }
 
-void cLCPSolver::transferToODEFormulation(const tMatrixXd &_A,
-										  const tVectorXd &_b, tMatrixXd &AOut,
-										  tVectorXd &bOut, int numDir)
+void cNativeLemkeLCPSolver::transferToODEFormulation(const tMatrixXd &_A,
+													 const tVectorXd &_b, tMatrixXd &AOut,
+													 tVectorXd &bOut, int numDir)
 {
 	int numContacts =
 		_A.rows() /
@@ -162,8 +165,8 @@ void cLCPSolver::transferToODEFormulation(const tMatrixXd &_A,
 			AIntermediate.col(numContacts + i * numDir + offset).eval();
 	}
 }
-void cLCPSolver::transferSolFromODEFormulation(const tVectorXd &_x,
-											   tVectorXd &xOut, int numDir)
+void cNativeLemkeLCPSolver::transferSolFromODEFormulation(const tVectorXd &_x,
+														  tVectorXd &xOut, int numDir)
 {
 	int numContacts = _x.size() / 3;
 	xOut = tVectorXd::Zero(numContacts * (2 + numDir));
@@ -177,8 +180,8 @@ void cLCPSolver::transferSolFromODEFormulation(const tVectorXd &_x,
 		xOut[numContacts + i * numDir + offset] = _x[numContacts + i * 2 + 1];
 	}
 }
-bool cLCPSolver::checkIfSolution(const tMatrixXd &_A, const tVectorXd &_b,
-								 const tVectorXd &_x)
+bool cNativeLemkeLCPSolver::checkIfSolution(const tMatrixXd &_A, const tVectorXd &_b,
+											const tVectorXd &_x)
 {
 	const double threshold = 1e-4;
 	int n = _x.size();
@@ -192,4 +195,55 @@ bool cLCPSolver::checkIfSolution(const tMatrixXd &_A, const tVectorXd &_b,
 			return false;
 	}
 	return true;
+}
+
+int cNativeLemkeLCPSolver::Solve(int num_of_vars, const tMatrixXd &A, const tVectorXd &b, tVectorXd &x)
+{
+	// Here: never use ODE fomulation, it hasn't been well-tested
+	return Solve(A, b, x, 0.0, 0, false, nullptr, nullptr);
+}
+
+bool cNativeLemkeLCPSolver::ODESolve(const tMatrixXd &_A, const tVectorXd &_b,
+									 tVectorXd &_x)
+{
+	int n = _A.rows();
+	int n_pad = dPAD(n);  // ODE require that, our size must be multiple * 4...
+
+	// 1. expand to 3multple * 4
+	tMatrixXd A_new(n_pad, n_pad);
+	tVectorXd b_new(n_pad);
+	A_new.setZero();
+	b_new.setZero();
+
+	A_new.block(0, 0, n, n) = _A;
+	b_new.segment(0, n) = _b;
+
+	// 2. memset
+	double *A_ptr = new double[n_pad * n_pad], *x_ptr = new double[n_pad],
+		   *b_ptr = new double[n_pad], *lo_ptr = new double[n_pad],
+		   *hi_ptr = new double[n_pad];
+	int *findex_ptr = new int[n_pad];
+
+	for (int i = 0; i < n_pad; i++)
+	{
+		for (int j = 0; j < n_pad; j++)
+		{
+			A_ptr[i * n_pad + j] = A_new(i, j);
+			if (j > i)
+				A_ptr[i * n_pad + j] = 0;
+		}
+		x_ptr[i] = 0;
+		b_ptr[i] = -b_new[i];
+		lo_ptr[i] = 0;
+		hi_ptr[i] = dInfinity;
+		findex_ptr[i] = -1;
+	}
+
+	// 3. solve and get
+	dSolveLCP(n_pad, A_ptr, x_ptr, b_ptr, nullptr, 0, lo_ptr, hi_ptr, nullptr);
+	for (int i = 0; i < n; i++) _x[i] = x_ptr[i];
+	// std::cout << "ode solve done!\n";
+	std::cout <<"A = \n" << _A << std::endl;
+	std::cout <<"b = \n" << _b.transpose() << std::endl;
+	return false;
 }

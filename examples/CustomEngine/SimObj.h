@@ -26,7 +26,7 @@ public:
 	// apply force
 	virtual void ApplyForce(const tVector &force, const tVector &) override final;
 	void ApplyCOMForce(const tVector &force);
-	void ClearForce();
+	virtual void ClearForce() override final;
 
 	virtual void UpdateVelocity(double dt) override;
 	void UpdateTransform(float dt);
@@ -51,8 +51,10 @@ public:
 
 	virtual bool IsStatic() const override;
 	bool isStaticObject() const;
-	virtual void PushState() override;
-	virtual void PopState() override;
+	virtual void PushState(const std::string &tag, bool only_vel_force_record = false) override;
+	virtual void PopState(const std::string &tag, bool only_vel_force_record = false) override;
+
+	// void TestAbsCartesianConvertMat(const tMatrixXd & mat, const tVectorXd & vec);
 
 protected:
 	// btRigidBody *mRigidBody;
@@ -83,8 +85,10 @@ protected:
 	void EvalFuncDeri(double dt, const tVector &AngVelNew, tMatrix &mat);
 	void EvalFuncDeriNumerically(double dt, const tVector &AngVelNew, tMatrix &mat);
 
-	struct
+	struct tStateRecord
 	{
+		EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+		bool OnlyVelocityForceRecord;
 		tVector mTotalForce;
 		tVector mTotalTorque;
 
@@ -101,5 +105,7 @@ protected:
 
 		// other stuff
 		float mDamping;
-	} mOldState;
+	};
+	const int mStackLimit = 10;
+	tEigenArr<std::pair<std::string, tStateRecord *> > mStateStack;
 };

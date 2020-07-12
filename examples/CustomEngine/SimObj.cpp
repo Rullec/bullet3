@@ -10,6 +10,8 @@
 // #define IMPLICIT_EULER_INTEGRATION
 // #define NEWTON_EULER_INTEGRATION
 
+extern int global_frame_id;
+// extern std::string gOutputLogPath;
 // boocl enable_inertia_test = false;
 cSimRigidBody::tParams::tParams()
 {
@@ -51,8 +53,9 @@ void cSimRigidBody::ApplyForce(const tVector& force, const tVector& global_pos)
 	tVector rel_pos = global_pos - GetWorldPos();
 	mTotalForce += force;
 	mTotalTorque += rel_pos.cross3(force);
-	// std::cout << "new total force = " << mTotalForce.transpose() << std::endl;
+	// std::cout << "simobj apply force = " << force.transpose() << std::endl;
 	// std::cout << "new total torque = " << mTotalTorque.transpose() << std::endl;
+	// std::cout << "new total force = " << mTotalForce.transpose() << std::endl;
 }
 
 void cSimRigidBody::ApplyCOMForce(const tVector& force)
@@ -73,7 +76,6 @@ void cSimRigidBody::UpdateVelocity(double dt)
 
 	mTotalForce -= mDamping * mLinVel;
 	mTotalTorque -= mDamping * mAngVel;
-
 	// std::cout << "-------------------------- obj " << mName << " update vel dt = " << dt << std::endl;
 	// std::cout << "old lin vel = " << mLinVel.transpose() << std::endl;
 	// std::cout << "force = " << mTotalForce.transpose() << std::endl;
@@ -104,6 +106,20 @@ void cSimRigidBody::UpdateVelocity(double dt)
 #ifdef _DEBUG_
 	// std::cout << "lin vel = " << mLinVel.transpose() << std::endl;
 #endif
+
+	// if (this->IsStatic() == false)
+	// {
+	// 	std::ofstream fout(gOutputLogPath, std::ios::app);
+	// 	// frameid, pos, rot, ang, vel
+	// 	fout << "----------------frame id " << global_frame_id << "--------------------\n";
+	// 	auto link = this;
+	// 	fout << "world pos = " << link->GetWorldPos().transpose() << std::endl;
+	// 	fout << "world rot = \n"
+	// 		 << link->GetOrientation().coeffs().transpose() << std::endl;
+	// 	fout << "ang vel = " << link->mAngVel.transpose() << std::endl;
+	// 	fout << "lin vel = " << (link->mLinVel).transpose() << std::endl;
+	// 	fout.close();
+	// }
 }
 
 void cSimRigidBody::UpdateTransform(float dt)
@@ -292,31 +308,70 @@ tVector cSimRigidBody::GetAngVel() const
 	return mAngVel;
 }
 
-void cSimRigidBody::PushState()
+void cSimRigidBody::PushState(const std::string& tag, bool only_vel_and_force)
 {
-	mOldState.mAngVel = mAngVel;
-	mOldState.mDamping = mDamping;
-	mOldState.mInertia = mInertia;
-	mOldState.mInvInertia = mInvInertia;
-	mOldState.mInvInertiaLocal = mInvInertiaLocal;
-	mOldState.mInvMass = mInvMass;
-	mOldState.mLinVel = mLinVel;
-	mOldState.mLocalRot = mLocalRot;
-	mOldState.mOrigin = mOrigin;
-	mOldState.mTotalForce = mTotalTorque;
-	mOldState.mTotalTorque = mTotalTorque;
+	if (mStateStack.size() >= mStackLimit)
+	{
+		std::cout << "[error] cSimRigidBody " << mName << " Stack try to push " << tag << " but it is full\n";
+		exit(1);
+	}
+	tStateRecord* state = new tStateRecord();
+
+	state->OnlyVelocityForceRecord = only_vel_and_force;
+	state->mAngVel = mAngVel;
+	state->mLinVel = mLinVel;
+	state->mDamping = mDamping;
+	state->mTotalForce = mTotalForce;
+	state->mTotalTorque = mTotalTorque;
+	if (only_vel_and_force == false)
+	{
+		state->mInertia = mInertia;
+		state->mInvInertia = mInvInertia;
+		state->mInvInertiaLocal = mInvInertiaLocal;
+		state->mInvMass = mInvMass;
+		state->mLocalRot = mLocalRot;
+		state->mOrigin = mOrigin;
+	}
+
+	// std::cout <<"push force = " << mTotalForce.transpose() << std::endl;
+	mStateStack.push_back(std::make_pair(tag, state));
 }
-void cSimRigidBody::PopState()
+void cSimRigidBody::PopState(const std::string& tag, bool only_vel_and_force)
 {
-	mAngVel = mOldState.mAngVel;
-	mDamping = mOldState.mDamping;
-	mInertia = mOldState.mInertia;
-	mInvInertia = mOldState.mInvInertia;
-	mInvInertiaLocal = mOldState.mInvInertiaLocal;
-	mInvMass = mOldState.mInvMass;
-	mLinVel = mOldState.mLinVel;
-	mLocalRot = mOldState.mLocalRot;
-	mOrigin = mOldState.mOrigin;
-	mTotalForce = mOldState.mTotalTorque;
-	mTotalTorque = mOldState.mTotalTorque;
+	if (mStateStack.size() == 0)
+	{
+		std::cout << "[error] RigidBody" << mName << " stack is empty when you try to pop " << tag << std::endl;
+		exit(1);
+	}
+	else if (mStateStack.back().first != tag)
+	{
+		std::cout << "[error] RigidBody " << mName << "stack trying to pop " << mStateStack.back().first << " but the user try to do " << tag << std::endl;
+		exit(1);
+	}
+	auto state = mStateStack.back().second;
+	if (state->OnlyVelocityForceRecord != only_vel_and_force)
+	{
+		std::cout << "[error] RigidBody " << mName << "stack trying to pop vel " << state->OnlyVelocityForceRecord << " but the user try to do " << only_vel_and_force << std::endl;
+		exit(1);
+	}
+
+	mLinVel = state->mLinVel;
+	mDamping = state->mDamping;
+	mAngVel = state->mAngVel;
+	mTotalForce = state->mTotalForce;
+	mTotalTorque = state->mTotalTorque;
+	if (only_vel_and_force == false)
+	{
+		mInertia = state->mInertia;
+		mInvInertia = state->mInvInertia;
+		mInvInertiaLocal = state->mInvInertiaLocal;
+		mInvMass = state->mInvMass;
+
+		mLocalRot = state->mLocalRot;
+		mOrigin = state->mOrigin;
+	}
+
+	// std::cout <<"pop force = " << mTotalForce.transpose() << std::endl;
+	delete state;
+	mStateStack.pop_back();
 }

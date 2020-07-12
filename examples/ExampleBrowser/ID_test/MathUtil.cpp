@@ -392,20 +392,6 @@ tMatrix cMathUtil::VectorToSkewMat(const tVector &vec)
 
 	return res;
 }
-
-tVector cMathUtil::SkewMatToVector(const tMatrix &mat)
-{
-	// verify mat is a skew matrix
-	assert((mat + mat.transpose()).norm() < 1e-10);
-
-	// squeeze a mat to a vector
-	tVector res = tVector::Zero();
-	res[0] = mat(2, 1);
-	res[1] = mat(0, 2);
-	res[2] = mat(1, 0);
-	return res;
-}
-
 // Nx3 friction cone
 // each row is a direction now
 tMatrixXd cMathUtil::ExpandFrictionCone(int num_friction_dirs, const tVector &normal_)
@@ -560,4 +546,32 @@ tMatrix cMathUtil::InverseTransform(const tMatrix &raw_trans)
 	inv_trans.block(0, 0, 3, 3).transposeInPlace();
 	inv_trans.block(0, 3, 3, 1) = -inv_trans.block(0, 0, 3, 3) * raw_trans.block(0, 3, 3, 1);
 	return inv_trans;
+}
+
+double cMathUtil::CalcConditionNumber(const tMatrixXd &mat)
+{
+	Eigen::EigenSolver<tMatrixXd> solver(mat);
+	tVectorXd eigen_values = solver.eigenvalues().real();
+	return eigen_values.maxCoeff() / eigen_values.minCoeff();
+}
+
+/**
+ * \brief		Get the jacobian preconditioner P = diag(A)
+ * 
+*/
+tMatrixXd cMathUtil::JacobPreconditioner(const tMatrixXd &A)
+{
+	if (A.rows() != A.cols())
+	{
+		std::cout << "cMathUtil::JacobPreconditioner: A is not a square matrix " << A.rows() << " " << A.cols() << std::endl;
+		exit(1);
+	}
+	tVectorXd diagonal = A.diagonal();
+	if (diagonal.cwiseAbs().minCoeff() < 1e-10)
+	{
+		std::cout << "cMathUtil::JacobPreconditioner: diagnoal is nearly zero for " << diagonal.transpose() << std::endl;
+		exit(1);
+	}
+
+	return diagonal.cwiseInverse().asDiagonal();
 }

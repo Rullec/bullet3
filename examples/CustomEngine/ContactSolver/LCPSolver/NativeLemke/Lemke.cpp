@@ -94,11 +94,11 @@ namespace lcpsolver {
 		if (_M.rows() != n || _M.cols() != n)
 			cout << "Matrices are not compatible" << endl;
 
-		const double zer_tol = 1e-6;
-		// const double zer_tol = 1e-12;
+		// const double zer_tol = 1e-6;
+		const double zer_tol = 1e-12;
 		const double piv_tol = 1e-20;
 		// const double piv_tol = 0;
-		int maxiter = 1000;
+		int maxiter = 2000;
 		int err = 0;
 
 		if (_q.minCoeff() > 0)

@@ -7,12 +7,12 @@ tMatrix Tools::t1 = tMatrix::Zero();
 tMatrix Tools::t2 = tMatrix::Zero();
 void Tools::AVX4x4v1(const tMatrix &a, const tMatrix &b, tMatrix &r)
 {
-	r = a * b;
+	r.noalias() = a * b;
 }
 
 void Tools::AVX4x4v1_3mat(const tMatrix& a, const tMatrix& b, const tMatrix& c, tMatrix& r)
 {
-	r = a * b * c;	
+	r.noalias() = a * b * c;	
 }
 
 // void Tools::Multiply3x3(tMatrix3d& a, tMatrix3d& b, tMatrix3d& r) {
@@ -609,7 +609,7 @@ void Tools::AVX4x4v1_6mat(const tMatrix& a, const tMatrix& b, const tMatrix& c, 
 
 void Tools::MatMul4x1(const tMatrix& m, const tVector& v, tVector& r)
 {
-	r = m * v;
+	r.noalias() = m * v;
 }
 // void Tools::MatMul4x1(const tMatrix& m, const tVector& v, tVector& r)
 // {

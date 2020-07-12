@@ -176,12 +176,25 @@ void BaseObject::ComputeGlobalTransform()
 
 void BaseObject::ComputeJKw()
 {
+	// std::cout << "-----begin compute jkw-----\n";
 	JK_w.setZero();
+	// std::cout << "global trans = \n"
+	// 		  << global_transform << std::endl;
 	for (int i = 0; i < total_freedoms; ++i)
 	{
 		tMatrix3d w_skesym = mWq[i].topLeftCorner<3, 3>() * global_transform.topLeftCorner<3, 3>().transpose();
 		JK_w.col(dependent_dof_id[i]) = Tools::FromSkewSymmetric(w_skesym);
+		// std::cout << "dof " << i << " mWq \n" << mWq[i] << std::endl;
+		// std::cout << "dof " << i << " global trans = \n"
+		// 		  << global_transform << std::endl;
+		// std::cout << "dof " << i << " w = \n"
+		// 		  << w_skesym << std::endl;
+		// std::cout << "dof " << i << " Jkw = \n"
+		// 		  << JK_w.col(dependent_dof_id[i]).transpose() << std::endl;
 	}
+	// std::cout << "Jkw = \n"
+	// 		  << JK_w << std::endl;
+	// std::cout << "-----end compute jkw-----\n";
 }
 
 void BaseObject::ComputeJKv()

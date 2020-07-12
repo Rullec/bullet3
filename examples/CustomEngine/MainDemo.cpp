@@ -16,17 +16,24 @@
 #include <memory>
 #include <iostream>
 
+int global_frame_id = 0;
+bool gEnablePauseWhenSolveError, gEnableResolveWhenSolveError;
+// std::string gOutputLogPath;
 struct CustomEngineMainDemo : public CommonRigidBodyBase
 {
 	struct tParams
 	{
+		std::string mSimulatorConfigPath;
 		bool mAddObj;
 		bool mAddMultibody;
-		bool mEnableGravity;
-		bool mEnableLCP;
-		double mDamping;
-		int mMultiLinkNum;
+		bool mEnableGround;
+		std::string mMultibodyPath;
 		int mObjLinkNum;
+		std::string mLCPSolverConfigPath;
+		std::string mObjType;
+		bool mEnableObjPerturb;
+		double mDefaultTimestep;
+		int mPauseFrame;
 		tParams(const std::string& path);
 	};
 
@@ -54,16 +61,22 @@ struct CustomEngineMainDemo : public CommonRigidBodyBase
 
 protected:
 	cSimulator* mSimulator;
+	double mTimestep;
 	// btRigidBody* target_rigidbody;
 	// float mTime;
 };
-
+extern bool gPauseSimulation;
 void CustomEngineMainDemo::stepSimulation(float dt)
 {
 	// mTime += dt;
 	// std::cout << "cur time = " << mTime << std::endl;
 	// m_guiHelper;
-	mSimulator->StepSimulation(dt);
+	mSimulator->StepSimulation(static_cast<float>(physics_param->mDefaultTimestep));
+	if (physics_param->mPauseFrame == global_frame_id)
+	{
+		gPauseSimulation = true;
+	}
+	global_frame_id++;
 	// CommonRigidBodyBase::stepSimulation(dt);
 	// if (mTime > 1)
 	// {
@@ -79,29 +92,38 @@ void CustomEngineMainDemo::initPhysics()
 
 	m_guiHelper->setUpAxis(1);
 
-	cSimulator::tParams simulator_params;
-	if (physics_param->mEnableGravity)
-		simulator_params.mGravity = tVector(0, -9.8, 0, 0);
-	else
-		simulator_params.mGravity = tVector(0, 0, 0, 0);
+	// cSimulator::tParams simulator_params;
+	// if (physics_param->mEnableGravity)
+	// 	simulator_params.mGravity = tVector(0, -9.8, 0, 0);
+	// else
+	// 	simulator_params.mGravity = tVector(0, 0, 0, 0);
 
-	simulator_params.damping = physics_param->mDamping;
+	// simulator_params.mb_damping1 = physics_param->mMBDamping1;
+	// simulator_params.mb_damping2 = physics_param->mMBDamping2;
+	// simulator_params.mb_scale = physics_param->mMBScale;
+	// simulator_params.mb_enable_rk4 = physics_param->mEnableRK4MB;
+	// simulator_params.rigid_damping = physics_param->mRigidDamping;
 
-	if (physics_param->mEnableLCP == true)
-		simulator_params.Mode = cSimulator::eContactResponseMode::LCPMode;
-	else
-		simulator_params.Mode = cSimulator::eContactResponseMode::PenaltyMode;
+	// if (physics_param->mEnableLCP == true)
+	// {
+	// 	simulator_params.Mode = cSimulator::eContactResponseMode::LCPMode;
+	// 	simulator_params.mLCPConfigPath = physics_param->mLCPSolverConfigPath;
+	// }
 
-	mSimulator = new cSimulator(simulator_params);
+	// else
+	// 	simulator_params.Mode = cSimulator::eContactResponseMode::PenaltyMode;
+
+	mSimulator = new cSimulator(physics_param->mSimulatorConfigPath);
 	mSimulator->Init();
 	m_dynamicsWorld = mSimulator->GetInternalWorld();
 
 	if (physics_param->mAddObj)
-		mSimulator->AddObj(physics_param->mObjLinkNum);
+		mSimulator->AddObj(physics_param->mObjLinkNum, physics_param->mObjType, physics_param->mEnableObjPerturb);
 	if (physics_param->mAddMultibody)
-		mSimulator->AddMultibody(physics_param->mMultiLinkNum);
+		mSimulator->AddMultibody(physics_param->mMultibodyPath);
 
-	mSimulator->AddGround();
+	if (physics_param->mEnableGround)
+		mSimulator->AddGround();
 
 	// {
 	// 	btBoxShape* groundShape = createBoxShape(btVector3(btScalar(1.), btScalar(1.), btScalar(1.)));
@@ -135,25 +157,24 @@ void CustomEngineMainDemo::renderScene()
 }
 
 #include <fstream>
+#include "../ExampleBrowser/ID_test/JsonUtil.h"
 CustomEngineMainDemo::tParams::tParams(const std::string& path)
 {
 	Json::Value json_root;
-	Json::CharReaderBuilder builder;
-	std::ifstream fin(path, std::ifstream::binary);
-	std::string errs;
-	bool ok = Json::parseFromStream(builder, fin, &json_root, &errs);
-	if (false == ok)
-	{
-		std::cout << "parse json or open file failed: " << path << std::endl;
-		exit(0);
-	}
+	cJsonUtil::LoadJson(path, json_root);
+	mSimulatorConfigPath = cJsonUtil::ParseAsString("simulator_path", json_root);
 	mAddMultibody = json_root["add_multibody"].asBool();
+	mMultibodyPath = json_root["multibody_path"].asString();
 	mAddObj = json_root["add_obj"].asBool();
-	mEnableGravity = json_root["enable_gravity"].asBool();
-	mEnableLCP = json_root["enable_lcp"].asBool();
-	mDamping = json_root["damping"].asDouble();
-	mMultiLinkNum = json_root["multibody_num"].asInt();
+	mEnableGround = json_root["enable_ground"].asBool();
 	mObjLinkNum = json_root["obj_num"].asInt();
+	mObjType = json_root["obj_type"].asString();
+	mEnableObjPerturb = json_root["enable_obj_perturb"].asBool();
+	mDefaultTimestep = json_root["default_timestep"].asDouble();
+	mPauseFrame = json_root["pause_frame"].asInt();
+	gEnablePauseWhenSolveError = json_root["enable_pause_when_solved_wrong"].asBool();
+	gEnableResolveWhenSolveError = json_root["enable_resolve_when_solved_wrong"].asBool();
+	// gOutputLogPath = json_root["output_log_path"].asString();
 }
 
 CommonExampleInterface* CustomMainCreateFunc(CommonExampleOptions& options)

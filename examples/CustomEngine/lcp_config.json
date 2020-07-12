@@ -1,0 +1,23 @@
+{
+    "lcp_solver_type": "btPath",
+    "lcp_solver_type_bak2": "NativeLemke",
+    "lcp_solver_type_bak": "btLemke",
+    "lcp_solver_type_bak1": "btDantzig",
+    "enable_multibody_self_collision": true,
+    "enable_convert_mat_test": false,
+    "enable_lcp_calculation": true,
+    "enable_contact_lcp": true,
+    "enable_frictional_lcp": true,
+    "enable_joint_limit_lcp": true,
+    "use_lcp_result": true,
+    "enable_sequential_impulse_calculation": false,
+    "enable_frictional_sequential_impulse": false,
+    "use_sequential_impulse_result": false,
+    "max_iters_sequential_impulse": 100,
+    "converge_threshold_sequential_impulse": 0.1,
+    "enable_si_lcp_comparision": false,
+    "enable_debug_output": false,
+    "diagonal_eps" : 0.001,
+    "mu": 0.5,
+    "num_of_friction_cone": 4
+}

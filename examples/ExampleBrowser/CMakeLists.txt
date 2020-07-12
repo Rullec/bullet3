@@ -384,28 +384,37 @@ SET(BulletExampleBrowser_SRCS
   ./ID_test/cIDSolver.h
   ./ID_test/cIDSolver_Verify.cpp
   ./ID_test/MathUtil.cpp
+  ./ID_test/JsonUtil.cpp
   ./ID_test/MathUtil.h
   ./ID_test/BulletUtil.h
+  ./ID_test/TimeUtil.cpp
   ../CustomEngine/MainDemo.cpp
   ../CustomEngine/MainDemo.h
   ../CustomEngine/Simulator.cpp
   ../CustomEngine/SimObj.cpp
   ../CustomEngine/ColObjBase.cpp
   ../CustomEngine/ContactSolver/ContactSolver.cpp
+  ../CustomEngine/ContactSolver/ContactSolverTest.cpp
+  ../CustomEngine/ContactSolver/SequentialImpulsePlugin.cpp
   ../CustomEngine/ContactSolver/ConstraintData.cpp
-  ../CustomEngine/ContactSolver/LCPSolver/error.cpp
-  ../CustomEngine/ContactSolver/LCPSolver/fastdot.cpp
-  ../CustomEngine/ContactSolver/LCPSolver/fastldlt.cpp
-  ../CustomEngine/ContactSolver/LCPSolver/fastlsolve.cpp
-  ../CustomEngine/ContactSolver/LCPSolver/fastltsolve.cpp
-  ../CustomEngine/ContactSolver/LCPSolver/lcp.cpp
-  ../CustomEngine/ContactSolver/LCPSolver/LCPSolver.cpp
-  ../CustomEngine/ContactSolver/LCPSolver/Lemke.cpp
-  ../CustomEngine/ContactSolver/LCPSolver/matrix.cpp
-  ../CustomEngine/ContactSolver/LCPSolver/misc.cpp
-  ../CustomEngine/ContactSolver/QPSolver/EigenQP.cpp
-  ../CustomEngine/ContactSolver/MatlabQPSolver/MatlabQPSolver.cpp
-  ../CustomEngine/ContactSolver/MatlabQPSolver/libQUADASSINPROG.cpp
+  ../CustomEngine/ContactSolver/LCPSolver/LCPSolverBase.cpp
+  ../CustomEngine/ContactSolver/LCPSolver/LCPSolverBuilder.hpp
+  ../CustomEngine/ContactSolver/LCPSolver/NativeLemke/error.cpp
+  ../CustomEngine/ContactSolver/LCPSolver/NativeLemke/fastdot.cpp
+  ../CustomEngine/ContactSolver/LCPSolver/NativeLemke/fastldlt.cpp
+  ../CustomEngine/ContactSolver/LCPSolver/NativeLemke/fastlsolve.cpp
+  ../CustomEngine/ContactSolver/LCPSolver/NativeLemke/fastltsolve.cpp
+  ../CustomEngine/ContactSolver/LCPSolver/NativeLemke/lcp.cpp
+  ../CustomEngine/ContactSolver/LCPSolver/NativeLemke/NativeLemkeLCPSolver.cpp
+  ../CustomEngine/ContactSolver/LCPSolver/NativeLemke/Lemke.cpp
+  ../CustomEngine/ContactSolver/LCPSolver/NativeLemke/matrix.cpp
+  ../CustomEngine/ContactSolver/LCPSolver/NativeLemke/misc.cpp
+  ../CustomEngine/ContactSolver/LCPSolver/btLemke/btLemke.cpp
+  ../CustomEngine/ContactSolver/LCPSolver/btDantzig/btDantzig.cpp
+  ../CustomEngine/ContactSolver/LCPSolver/btPath/btPath.cpp
+#   ../CustomEngine/ContactSolver/QPSolver/EigenQP.cpp
+#   ../CustomEngine/ContactSolver/MatlabQPSolver/MatlabQPSolver.cpp
+#   ../CustomEngine/ContactSolver/MatlabQPSolver/libQUADASSINPROG.cpp
 	# ../CustomEngine/ContactSolver/QPSolver/uQuadProg++.cc
 	# ../CustomEngine/ContactSolver/QPSolver/QPSolver.cpp
 	../CustomEngine/Model/BaseObject.cpp
@@ -414,6 +423,7 @@ SET(BulletExampleBrowser_SRCS
 	../CustomEngine/Model/Link.cpp
 	../CustomEngine/Model/Printer.cpp
 	../CustomEngine/Model/RobotModel.cpp
+	../CustomEngine/Model/RobotModelDynamics.cpp
 	../CustomEngine/Model/RootJoint.cpp
 	../CustomEngine/Model/tools.cpp
 	../CustomEngine/Model/Tinyxml/tinystr.cpp
