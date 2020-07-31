@@ -49,7 +49,7 @@ SET_TARGET_PROPERTIES(BulletExampleBrowserLib PROPERTIES SOVERSION ${BULLET_VERS
 IF (BUILD_SHARED_LIBS)
 		IF (WIN32)
                 TARGET_LINK_LIBRARIES(
-                        BulletExampleBrowserLib Bullet3Common BulletSoftBody BulletDynamics BulletCollision BulletInverseDynamicsUtils
+                        BulletExampleBrowserLib Bullet3Common BulletSoftBody BulletDynamics BulletCollision BulletInverseDynamicsUtils BulletGenDynamics
                         BulletInverseDynamics LinearMath OpenGLWindow gwen BussIK
                         ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY}
                 )
@@ -90,7 +90,7 @@ INCLUDE_DIRECTORIES(
 
 
 LINK_LIBRARIES(
-        BulletExampleBrowserLib Bullet3Common BulletSoftBody BulletDynamics BulletCollision BulletInverseDynamicsUtils BulletInverseDynamics LinearMath OpenGLWindow gwen BussIK
+        BulletExampleBrowserLib Bullet3Common BulletSoftBody BulletDynamics BulletCollision BulletInverseDynamicsUtils BulletInverseDynamics BulletGenDynamics LinearMath OpenGLWindow gwen BussIK
 )
 
 
@@ -148,20 +148,20 @@ SET(ExtendedTutorialsSources
 
 
 # add matlab
-if (UNIX)
-    find_package(Matlab REQUIRED)
-    if(Matlab_FOUND)
-        include_directories(${Matlab_INCLUDE_DIRS})
-    endif()
+# if (UNIX)
+#     find_package(Matlab REQUIRED)
+#     if(Matlab_FOUND)
+#         include_directories(${Matlab_INCLUDE_DIRS})
+#     endif()
 
-    # add matlab QP solver
-    find_library(qp_lib
-                NAMES libQUADASSINPROG.so libQUADASSINPROG.dylib
-                PATHS "../CustomEngine/ContactSolver/MatlabQPSolver/"
-    )
+#     # add matlab QP solver
+#     find_library(qp_lib
+#                 NAMES libQUADASSINPROG.so libQUADASSINPROG.dylib
+#                 PATHS "../CustomEngine/ContactSolver/MatlabQPSolver/"
+#     )
 
-    set(matlab_lib ${qp_lib} mwmclmcrrt)
-endif()
+#     set(matlab_lib ${qp_lib} mwmclmcrrt)
+# endif()
 
 
 
@@ -383,54 +383,54 @@ SET(BulletExampleBrowser_SRCS
   ./ID_test/cIDSolver.cpp
   ./ID_test/cIDSolver.h
   ./ID_test/cIDSolver_Verify.cpp
-  ./ID_test/MathUtil.cpp
-  ./ID_test/JsonUtil.cpp
-  ./ID_test/MathUtil.h
-  ./ID_test/BulletUtil.h
-  ./ID_test/TimeUtil.cpp
+#   ./ID_test/MathUtil.cpp
+#   ./ID_test/JsonUtil.cpp
+#   ./ID_test/MathUtil.h
+#   ./ID_test/BulletUtil.h
+#   ./ID_test/TimeUtil.cpp
   ../CustomEngine/MainDemo.cpp
   ../CustomEngine/MainDemo.h
-  ../CustomEngine/Simulator.cpp
-  ../CustomEngine/SimObj.cpp
-  ../CustomEngine/ColObjBase.cpp
-  ../CustomEngine/ContactSolver/ContactSolver.cpp
-  ../CustomEngine/ContactSolver/ContactSolverTest.cpp
-  ../CustomEngine/ContactSolver/SequentialImpulsePlugin.cpp
-  ../CustomEngine/ContactSolver/ConstraintData.cpp
-  ../CustomEngine/ContactSolver/LCPSolver/LCPSolverBase.cpp
-  ../CustomEngine/ContactSolver/LCPSolver/LCPSolverBuilder.hpp
-  ../CustomEngine/ContactSolver/LCPSolver/NativeLemke/error.cpp
-  ../CustomEngine/ContactSolver/LCPSolver/NativeLemke/fastdot.cpp
-  ../CustomEngine/ContactSolver/LCPSolver/NativeLemke/fastldlt.cpp
-  ../CustomEngine/ContactSolver/LCPSolver/NativeLemke/fastlsolve.cpp
-  ../CustomEngine/ContactSolver/LCPSolver/NativeLemke/fastltsolve.cpp
-  ../CustomEngine/ContactSolver/LCPSolver/NativeLemke/lcp.cpp
-  ../CustomEngine/ContactSolver/LCPSolver/NativeLemke/NativeLemkeLCPSolver.cpp
-  ../CustomEngine/ContactSolver/LCPSolver/NativeLemke/Lemke.cpp
-  ../CustomEngine/ContactSolver/LCPSolver/NativeLemke/matrix.cpp
-  ../CustomEngine/ContactSolver/LCPSolver/NativeLemke/misc.cpp
-  ../CustomEngine/ContactSolver/LCPSolver/btLemke/btLemke.cpp
-  ../CustomEngine/ContactSolver/LCPSolver/btDantzig/btDantzig.cpp
-  ../CustomEngine/ContactSolver/LCPSolver/btPath/btPath.cpp
+#   ../CustomEngine/Simulator.cpp
+#   ../CustomEngine/SimObj.cpp
+#   ../CustomEngine/ColObjBase.cpp
+#   ../CustomEngine/ContactSolver/ContactSolver.cpp
+#   ../CustomEngine/ContactSolver/ContactSolverTest.cpp
+#   ../CustomEngine/ContactSolver/SequentialImpulsePlugin.cpp
+#   ../CustomEngine/ContactSolver/ConstraintData.cpp
+#   ../CustomEngine/ContactSolver/LCPSolver/LCPSolverBase.cpp
+#   ../CustomEngine/ContactSolver/LCPSolver/LCPSolverBuilder.hpp
+#   ../CustomEngine/ContactSolver/LCPSolver/NativeLemke/error.cpp
+#   ../CustomEngine/ContactSolver/LCPSolver/NativeLemke/fastdot.cpp
+#   ../CustomEngine/ContactSolver/LCPSolver/NativeLemke/fastldlt.cpp
+#   ../CustomEngine/ContactSolver/LCPSolver/NativeLemke/fastlsolve.cpp
+#   ../CustomEngine/ContactSolver/LCPSolver/NativeLemke/fastltsolve.cpp
+#   ../CustomEngine/ContactSolver/LCPSolver/NativeLemke/lcp.cpp
+#   ../CustomEngine/ContactSolver/LCPSolver/NativeLemke/NativeLemkeLCPSolver.cpp
+#   ../CustomEngine/ContactSolver/LCPSolver/NativeLemke/Lemke.cpp
+#   ../CustomEngine/ContactSolver/LCPSolver/NativeLemke/matrix.cpp
+#   ../CustomEngine/ContactSolver/LCPSolver/NativeLemke/misc.cpp
+#   ../CustomEngine/ContactSolver/LCPSolver/btLemke/btLemke.cpp
+#   ../CustomEngine/ContactSolver/LCPSolver/btDantzig/btDantzig.cpp
+#   ../CustomEngine/ContactSolver/LCPSolver/btPath/btPath.cpp
 #   ../CustomEngine/ContactSolver/QPSolver/EigenQP.cpp
 #   ../CustomEngine/ContactSolver/MatlabQPSolver/MatlabQPSolver.cpp
 #   ../CustomEngine/ContactSolver/MatlabQPSolver/libQUADASSINPROG.cpp
 	# ../CustomEngine/ContactSolver/QPSolver/uQuadProg++.cc
 	# ../CustomEngine/ContactSolver/QPSolver/QPSolver.cpp
-	../CustomEngine/Model/BaseObject.cpp
-	../CustomEngine/Model/EulerAngelRotationMatrix.cpp
-	../CustomEngine/Model/Joint.cpp
-	../CustomEngine/Model/Link.cpp
-	../CustomEngine/Model/Printer.cpp
-	../CustomEngine/Model/RobotModel.cpp
-	../CustomEngine/Model/RobotModelDynamics.cpp
-	../CustomEngine/Model/RootJoint.cpp
-	../CustomEngine/Model/tools.cpp
-	../CustomEngine/Model/Tinyxml/tinystr.cpp
-	../CustomEngine/Model/RobotCollider.cpp
-../CustomEngine/Model/Tinyxml/tinyxml.cpp
-../CustomEngine/Model/Tinyxml/tinyxmlerror.cpp
-../CustomEngine/Model/Tinyxml/tinyxmlparser.cpp
+	# ../CustomEngine/Model/BaseObject.cpp
+	# ../CustomEngine/Model/EulerAngelRotationMatrix.cpp
+	# ../CustomEngine/Model/Joint.cpp
+	# ../CustomEngine/Model/Link.cpp
+	# ../CustomEngine/Model/Printer.cpp
+	# ../CustomEngine/Model/RobotModel.cpp
+	# ../CustomEngine/Model/RobotModelDynamics.cpp
+	# ../CustomEngine/Model/RootJoint.cpp
+	# ../CustomEngine/Model/tools.cpp
+	# ../CustomEngine/Model/Tinyxml/tinystr.cpp
+	# ../CustomEngine/Model/RobotCollider.cpp
+# ../CustomEngine/Model/Tinyxml/tinyxml.cpp
+# ../CustomEngine/Model/Tinyxml/tinyxmlerror.cpp
+# ../CustomEngine/Model/Tinyxml/tinyxmlparser.cpp
 
 
   ../RigidBody/RigidBodySoftContact.cpp
@@ -464,7 +464,7 @@ ADD_EXECUTABLE(App_ExampleBrowser
 		${ExtendedTutorialsSources}
 		${BulletExampleBrowser_SRCS} 
 )
-target_link_libraries(App_ExampleBrowser ${matlab_lib})
+# target_link_libraries(App_ExampleBrowser ${matlab_lib})
 
 FILE( MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/data" )
 

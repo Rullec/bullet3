@@ -1,5 +1,6 @@
 #include "cIDSolver.h"
 #include "BulletDynamics/Featherstone/btMultiBodyLinkCollider.h"
+#include "BulletGenDynamics/btGenUtil/BulletUtil.h"
 #include <iostream>
 #include <fstream>
 #define DEBUG_LOG_VEL

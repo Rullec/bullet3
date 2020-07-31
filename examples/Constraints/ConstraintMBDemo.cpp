@@ -5,7 +5,7 @@
 #include <stdio.h>  //printf debugging
 #include <cmath>
 #include <iostream>
-#include "../ExampleBrowser/ID_test/BulletUtil.h"
+#include "BulletGenDynamics/btGenUtil/BulletUtil.h"
 #include "../CommonInterfaces/CommonRigidBodyBase.h"
 #include "ConstraintMultibody.hpp"
 

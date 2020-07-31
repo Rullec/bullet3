@@ -11,10 +11,11 @@
 #include "../CommonInterfaces/CommonRigidBodyBase.h"
 #include "BulletDynamics/MLCPSolvers/btMLCPSolver.h"
 #include "BulletDynamics/MLCPSolvers/btSolveProjectedGaussSeidel.h"
-#include "Simulator.h"
-#include "json/json.h"
+#include "BulletGenDynamics/btGenWorld.h"
+#include "BulletGenDynamics/btGenUtil/JsonUtil.h"
 #include <memory>
 #include <iostream>
+#include <fstream>
 
 int global_frame_id = 0;
 bool gEnablePauseWhenSolveError, gEnableResolveWhenSolveError;
@@ -60,7 +61,7 @@ struct CustomEngineMainDemo : public CommonRigidBodyBase
 	}
 
 protected:
-	cSimulator* mSimulator;
+	btGeneralizeWorld* mGenWorld;
 	double mTimestep;
 	// btRigidBody* target_rigidbody;
 	// float mTime;
@@ -71,7 +72,7 @@ void CustomEngineMainDemo::stepSimulation(float dt)
 	// mTime += dt;
 	// std::cout << "cur time = " << mTime << std::endl;
 	// m_guiHelper;
-	mSimulator->StepSimulation(static_cast<float>(physics_param->mDefaultTimestep));
+	mGenWorld->StepSimulation(static_cast<float>(physics_param->mDefaultTimestep));
 	if (physics_param->mPauseFrame == global_frame_id)
 	{
 		gPauseSimulation = true;
@@ -113,17 +114,17 @@ void CustomEngineMainDemo::initPhysics()
 	// else
 	// 	simulator_params.Mode = cSimulator::eContactResponseMode::PenaltyMode;
 
-	mSimulator = new cSimulator(physics_param->mSimulatorConfigPath);
-	mSimulator->Init();
-	m_dynamicsWorld = mSimulator->GetInternalWorld();
+	mGenWorld = new btGeneralizeWorld(physics_param->mSimulatorConfigPath);
+	mGenWorld->Init();
+	m_dynamicsWorld = mGenWorld->GetInternalWorld();
 
 	if (physics_param->mAddObj)
-		mSimulator->AddObj(physics_param->mObjLinkNum, physics_param->mObjType, physics_param->mEnableObjPerturb);
+		mGenWorld->AddObj(physics_param->mObjLinkNum, physics_param->mObjType, physics_param->mEnableObjPerturb);
 	if (physics_param->mAddMultibody)
-		mSimulator->AddMultibody(physics_param->mMultibodyPath);
+		mGenWorld->AddMultibody(physics_param->mMultibodyPath);
 
 	if (physics_param->mEnableGround)
-		mSimulator->AddGround();
+		mGenWorld->AddGround();
 
 	// {
 	// 	btBoxShape* groundShape = createBoxShape(btVector3(btScalar(1.), btScalar(1.), btScalar(1.)));
@@ -156,8 +157,6 @@ void CustomEngineMainDemo::renderScene()
 	CommonRigidBodyBase::renderScene();
 }
 
-#include <fstream>
-#include "../ExampleBrowser/ID_test/JsonUtil.h"
 CustomEngineMainDemo::tParams::tParams(const std::string& path)
 {
 	Json::Value json_root;

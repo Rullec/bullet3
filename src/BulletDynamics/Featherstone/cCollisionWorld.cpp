@@ -13,7 +13,7 @@
 #include <iostream>
 #define BULLET_GENERATE_LIB
 #ifndef BULLET_GENERATE_LIB
-#include "../ExampleBrowser/ID_test/BulletUtil.h"
+#include "BulletGenDynamics/btGenUtil/BulletUtil.h"
 #endif
 #define DISABLE_SCREEN_LOG 
 #ifdef BULLET_GENERATE_LIB
@@ -69,7 +69,7 @@ int cCollisionWorld::stepSimulation(btScalar timeStep, int maxSubSteps/* = 1*/, 
 	// һ��timestep
 	internalSingleStepSimulation(timeStep);
 
-	// �����?
+	// �����?
 	clearForces();
 
 #ifndef BT_NO_PROFILE
@@ -104,10 +104,10 @@ void cCollisionWorld::internalSingleStepSimulation(btScalar timeStep)
 	// ����Ԥ���ԽӴ�
 	createPredictiveContacts(timeStep);
 
-	// ��ײ���?
+	// ��ײ���?
 	performDiscreteCollisionDetection();
 
-	// �������?
+	// �������?
 	calculateSimulationIslands();
 
 	// ��ȡ�Ӵ���Ϣ
@@ -115,11 +115,11 @@ void cCollisionWorld::internalSingleStepSimulation(btScalar timeStep)
 
 	// ���Ӵ�������Լ��(����joint limitԼ��): 
 	/*
-		���ģ�������Ǹ�����ײ�㴦�ĳ������������������У�Ҳ�Ѿ����ٶȸ����ˡ�?
+		���ģ�������Ǹ�����ײ�㴦�ĳ������������������У�Ҳ�Ѿ����ٶȸ����ˡ�?
 	*/
 	solveConstraints(getSolverInfo());
 
-	// λ�ƻ��֣������Ѿ���������յ��ٶȣ����Ҹ������ٶȡ����ڿ�ʼ���ǻ���λ�ơ�?
+	// λ�ƻ��֣������Ѿ���������յ��ٶȣ����Ҹ������ٶȡ����ڿ�ʼ���ǻ���λ�ơ�?
 	integrateTransforms(timeStep);
 
 	// ����: �������ײ����й�ϵ����Ҫ��...
@@ -175,7 +175,7 @@ void cCollisionWorld::solveCons1_ConstraintSort(btContactSolverInfo& solverInfo)
 
 		auto num_objs = getCollisionWorld()->getNumCollisionObjects(), manifolds = getCollisionWorld()->getDispatcher()->getNumManifolds();
 
-		// ��仰����ʲôҲû��?
+		// ��仰����ʲôҲû��?
 		m_constraintSolver->prepareSolve(num_objs, manifolds);
 	}
 

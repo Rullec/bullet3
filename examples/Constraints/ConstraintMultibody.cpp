@@ -1,6 +1,6 @@
 #include "ConstraintMultibody.hpp"
 #include <cmath>
-#include "../ExampleBrowser/ID_test/BulletUtil.h"
+#include "BulletGenDynamics/btGenUtil/BulletUtil.h"
 #include <iostream>
 
 /*

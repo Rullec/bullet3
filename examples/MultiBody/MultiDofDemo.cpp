@@ -1,12 +1,11 @@
 // #pragma once
+#include <fstream>
+#include <iostream>
 #include "MultiDofDemo.h"
-#include "../OpenGLWindow/SimpleOpenGL3App.h"
 #include "btBulletDynamicsCommon.h"
-
 #include "BulletDynamics/MLCPSolvers/btDantzigSolver.h"
 #include "BulletDynamics/MLCPSolvers/btLemkeSolver.h"
 #include "BulletDynamics/MLCPSolvers/btSolveProjectedGaussSeidel.h"
-
 #include "BulletDynamics/Featherstone/btMultiBody.h"
 #include "BulletDynamics/Featherstone/btMultiBodyConstraintSolver.h"
 #include "BulletDynamics/Featherstone/btMultiBodyMLCPConstraintSolver.h"
@@ -18,18 +17,13 @@
 #include "BulletDynamics/Featherstone/btMultiBodyPoint2Point.h"
 #include "BulletDynamics/Featherstone/btMultiBodyFixedConstraint.h"
 #include "BulletDynamics/Featherstone/btMultiBodySliderConstraint.h"
-
-#include "../OpenGLWindow/GLInstancingRenderer.h"
 #include "BulletCollision/CollisionShapes/btShapeHull.h"
-
-#include "../CommonInterfaces/CommonMultiBodyBase.h"
-
-#include "ID_test/cIDSolver.h"
 #include "BulletDynamics/Featherstone/cCollisionWorld.h"
-
-#include <fstream>
-#include <iostream>
-
+#include "BulletGenDynamics/btGenUtil/BulletUtil.h"
+#include "../OpenGLWindow/SimpleOpenGL3App.h"
+#include "../OpenGLWindow/GLInstancingRenderer.h"
+#include "../CommonInterfaces/CommonMultiBodyBase.h"
+#include "ID_test/cIDSolver.h"
 // #define OUTPUT_SIMULATION_LOG
 
 class MultiDofDemo : public CommonMultiBodyBase
@@ -105,7 +99,7 @@ MultiDofDemo::~MultiDofDemo()
 
 btVector3 gGravity = btVector3(0, -10, 0);
 
-#include "../ExampleBrowser/ID_test/TimeUtil.hpp"
+#include "BulletGenDynamics/btGenUtil/TimeUtil.hpp"
 void MultiDofDemo::stepSimulation(float deltaTime)
 {
 	cTimeUtil::Begin("stepsim_mb");

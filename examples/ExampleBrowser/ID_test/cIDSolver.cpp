@@ -11,12 +11,12 @@
 #include "BulletDynamics/Featherstone/btMultiBodyPoint2Point.h"
 #include "BulletDynamics/Featherstone/btMultiBodyFixedConstraint.h"
 #include "BulletDynamics/Featherstone/btMultiBodySliderConstraint.h"
-
+#include "BulletDynamics/Featherstone/cCollisionWorld.h"
 #include "BulletDynamics/Featherstone/btMultiBodyDynamicsWorld.h"
+#include "BulletGenDynamics/btGenUtil/BulletUtil.h"
 #include "../Extras/InverseDynamics/btMultiBodyTreeCreator.hpp"
-
 #include "cIDSolver.h"
-#include <BulletDynamics/Featherstone/cCollisionWorld.h>
+
 
 extern btVector3 gGravity;
 
@@ -584,8 +584,8 @@ void cIDSolver::RecordGeneralizedInfo(btInverseDynamicsBullet3::vecx & q, btInve
 			btScalar * bt_joint_pos = mMultibody->getJointPosMultiDof(link_id);
 			btScalar * bt_joint_vel = mMultibody->getJointVelMultiDof(link_id);
 
-			// local to parent frameµÄquaternion
-			// quaternion to rot mat: Õâ¸örot matµÄÁÐ£¬¾ÍÊÇlocal ×ø±êÏµµÄÈý¸öÖá£¬×é³ÉÁÐÏòÁ¿£¬Æ´³ÉÒ»¸ö3x3µÄrot mat
+			// local to parent frameï¿½ï¿½quaternion
+			// quaternion to rot mat: ï¿½ï¿½ï¿½rot matï¿½ï¿½ï¿½Ð£ï¿½ï¿½ï¿½ï¿½ï¿½local ï¿½ï¿½ï¿½ï¿½Ïµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½á£¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ´ï¿½ï¿½Ò»ï¿½ï¿½3x3ï¿½ï¿½rot mat
 			tQuaternion joint_pos_q(bt_joint_pos[3], bt_joint_pos[0], bt_joint_pos[1], bt_joint_pos[2]);
 			tVector joint_pos_euler = cMathUtil::QuaternionToEulerAngles(joint_pos_q, eRotationOrder::ZYX);
 			tVector joint_vel = tVector(bt_joint_vel[0], bt_joint_vel[1], bt_joint_vel[2], 0);
@@ -722,10 +722,10 @@ void cIDSolver::ApplyContactForcesToID()
 			joint_pos_world = local_to_world * cBulletUtil::btVectorTotVector0(-mMultibody->getLink(multibody_id).m_dVector) + link_pos_world;
 		}
 		tVector force_arm_world = cur_force.mPos - joint_pos_world;
-		// 2. ÇóÁ¦
+		// 2. ï¿½ï¿½ï¿½ï¿½
 		tVector contact_force_world = cur_force.mForce;
 		tVector contact_force_local = local_to_world.transpose() * contact_force_world;
-		// 1. ÇóÁ¦¾Ø
+		// 1. ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		tVector contact_torque_world = force_arm_world.cross3(contact_force_world);
 		tVector contact_torque_local = local_to_world.transpose() * contact_torque_world;
 
@@ -747,12 +747,12 @@ void cIDSolver::ApplyExternalForcesToID()
 	{
 		btInverseDynamicsBullet3::vec3 bt_com;
 		btInverseDynamicsBullet3::mat33 bt_rot;
-		mInverseModel->getBodyCoM(ID_link_id, &bt_com);		// world com, µ«ÆäÊµ¿ÉÄÜÊÇJoint pos
+		mInverseModel->getBodyCoM(ID_link_id, &bt_com);		// world com, ï¿½ï¿½ï¿½ï¿½Êµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Joint pos
 		mInverseModel->getBodyTransform(ID_link_id, &bt_rot); // body to world
 		tVector link_pos_world = mLinkPos[mFrameId-1][ID_link_id];
 		tMatrix local_to_world_rot = mLinkRot[mFrameId-1][ID_link_id];
 
-		// ´ÓmultibodyÖÐ»ñÈ¡
+		// ï¿½ï¿½multibodyï¿½Ð»ï¿½È¡
 		tVector force_arm_world = tVector::Zero();
 		if (ID_link_id == 0)
 		{

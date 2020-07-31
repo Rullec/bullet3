@@ -1,8 +1,10 @@
-#pragma once
-
+#ifndef ID_SOLVER_H_
+#define ID_SOLVER_H_
 #include "BulletInverseDynamics/IDConfig.hpp"
-#include <BulletDynamics/Featherstone/btMultiBodyLink.h>
-#include <ID_test/BulletUtil.h>
+#include "BulletInverseDynamics/MultiBodyTree.hpp"
+#include "BulletDynamics/Featherstone/btMultiBodyLink.h"
+#include "BulletGenDynamics/btGenUtil/MathUtil.h"
+#include <map>
 
 #define MAX_FRAME_NUM 10000
 class btMultiBody;
@@ -35,7 +37,7 @@ private:
 	// ID vars
 	btMultiBody* mMultibody;
 	btMultiBodyDynamicsWorld * mWorld;
-	btInverseDynamicsBullet3::MultiBodyTree* mInverseModel;
+	btInverseDynamics::MultiBodyTree* mInverseModel;
 	bool mEnableExternalForce;
 	bool mEnableExternalTorque;
 	bool mEnableAppliedJointTorque;
@@ -86,3 +88,4 @@ private:
 	void VerifyLinkVel();
 	void VerifyLinkOmega();
 };
+#endif
