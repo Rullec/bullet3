@@ -1,15 +1,20 @@
 #pragma once
 #include "RobotModel.h"
 
+class btDynamicsWorld;
 class cRobotModelDynamics : public cRobotModel
 {
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-	cRobotModelDynamics(const char* model_file, double scale, int type);
+	// cRobotModelDynamics(const char* model_file, double scale, int type);
+	cRobotModelDynamics();
+	void Init(const char* model_file, double scale, int type);
 
 	// ----------------------simulation APIs----------------------
-	void InitSimVars(btDiscreteDynamicsWorld* world, bool zero_pose, bool zero_pose_vel);
-	void SetPose(const tVectorXd& q, const tVectorXd& qdot);
+	void InitSimVars(btDynamicsWorld* world, bool zero_pose, bool zero_pose_vel);
+	// void InitSimVars(btDiscreteDynamicsWorld* world, bool zero_pose, bool zero_pose_vel);
+	virtual void SetqAndqdot(const tVectorXd& q, const tVectorXd& qdot);
+	virtual void Setqdot(const tVectorXd& qdot);
 	void SetMassMatEps(double eps);
 	void ApplyGravity(const tVector& g);  // apply force
 	void ApplyForce(int link_id, const tVector& f, const tVector& applied_pos);
@@ -25,13 +30,13 @@ public:
 	void UpdateTransform(double dt);
 	void UpdateRK4(double dt);
 	void SyncToBullet();
-	bool IsMaxVel();
+	bool IsMaxVel() const;
 	void PushState(const std::string& tag, bool only_vel_and_force = false);
 	void PopState(const std::string& tag, bool only_vel_and_force = false);
 	void SetDampingCoeff(double, double);
 	void SetAngleClamp(bool);
 	void SetMaxVel(double);
-	const tMatrixXd& GetDampingMatrix() const { return damping_matrix; }
+	const tMatrixXd& GetDampingMatrix() const { return mDampingMatrix; }
 	void TestJacobian();
 	void TestSecondJacobian();
 	tMatrixXd GetInvMassMatrix();
@@ -39,11 +44,11 @@ public:
 
 protected:
 	// -------------------------simulation status-----------------------
-	std::vector<cRobotCollider*> multibody_colliders;  // used in bullet collision detection for multibody structure
-	tEigenArr<tVector> link_forces, link_torques;      // the external force & torque applied on each link
+	std::vector<cRobotCollider*> mColliders;       // used in bullet collision detection for multibody structure
+	tEigenArr<tVector> mLinkForces, mLinkTorques;  // the external force & torque applied on each link
 	// tEigenArr<tVector> link_vel, link_omega;			// the lin & ang vel with respect to each link (COM) in world frame
-	tVectorXd generalized_force;  // the external generalized force applied on multibody (usually used in joint limit constraint)
-	tMatrixXd damping_matrix;     // damping matrix, has the same shape with mass_mat and coriolis_mat
+	tVectorXd mGenForce;       // the external generalized force applied on multibody (usually used in joint limit constraint)
+	tMatrixXd mDampingMatrix;  // damping matrix, has the same shape with mass_mat and coriolis_mat
 	struct tStateRecord
 	{
 		EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
@@ -60,10 +65,10 @@ protected:
 	tEigenArr<std::pair<std::string, tStateRecord*> > mStateStack;
 
 	// --------------------------configuration---------------------------
-	double damping_coef1, damping_coef2;  // damping coeffs used in Rayleigh damping
-	bool clamp_euler_angle;               // always clamp the euler angle to [-pi, pi]
-	double eps_diagnoal_mass_mat;         // add epsilon on the diagonal of mass matrix, in order to refine it.
-	double max_vel;                       // the max velocity of generalized coordinates
+	double mDampingCoef1, mDampingCoef2;  // damping coeffs used in Rayleigh damping
+	bool mEnableEulerAngleClamp;          // always clamp the euler angle to [-pi, pi]
+	double mEpsDiagnoal;                  // add epsilon on the diagonal of mass matrix, in order to refine it.
+	double mMaxVel;                       // the max velocity of generalized coordinates
 
 	// member methods
 	void UpdateRK4InternalUpdate(tVectorXd& q, tVectorXd& qdot, tVectorXd& Q);

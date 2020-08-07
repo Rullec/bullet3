@@ -63,7 +63,12 @@ SET(BulletGenDynamics_HDRS
 	btGenWorld.h
 )
 
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(JSONCPP jsoncpp)
+link_libraries(${JSONCPP_LIBRARIES})
+
 ADD_LIBRARY(BulletGenDynamics ${BulletGenDynamics_SRCS})
+target_link_libraries(BulletGenDynamics ${JSONCPP_LIBRARIES})
 
 if (BUILD_SHARED_LIBS)
   target_link_libraries(BulletGenDynamics Bullet3Geometry)

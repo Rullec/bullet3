@@ -8,7 +8,7 @@ namespace Json
 {
 
 };
-class cJsonUtil
+class btJsonUtil
 {
 public:
     // static std::string BuildVectorJson(const tVector &vec);

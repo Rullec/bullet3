@@ -277,17 +277,17 @@ void cCollisionWorld::PrintForceInfo(const char * n, bool detailed)
 	btMultiBody * cur_body = m_multiBodies[0];
 	// output root link
 	{
-		std::cout << "link root " << "applied force = " << cBulletUtil::btVectorTotVector0(cur_body->getBaseForce()).transpose() << std::endl;
-		std::cout << "link root " << "applied torque = " << cBulletUtil::btVectorTotVector0(cur_body->getBaseTorque()).transpose() << std::endl;
-		std::cout << "link root " << "con force = " << cBulletUtil::btVectorTotVector0(cur_body->getBaseConstraintedForce()).transpose() << std::endl;
-		std::cout << "link root " << "con torque = " << cBulletUtil::btVectorTotVector0(cur_body->getBaseConstraintedTorque()).transpose() << std::endl;
+		std::cout << "link root " << "applied force = " << btBulletUtil::btVectorTotVector0(cur_body->getBaseForce()).transpose() << std::endl;
+		std::cout << "link root " << "applied torque = " << btBulletUtil::btVectorTotVector0(cur_body->getBaseTorque()).transpose() << std::endl;
+		std::cout << "link root " << "con force = " << btBulletUtil::btVectorTotVector0(cur_body->getBaseConstraintedForce()).transpose() << std::endl;
+		std::cout << "link root " << "con torque = " << btBulletUtil::btVectorTotVector0(cur_body->getBaseConstraintedTorque()).transpose() << std::endl;
 	}
 	for (int i = 0; i < cur_body->getNumLinks(); i++)
 	{
-		std::cout << "link " << i << " con force = " << cBulletUtil::btVectorTotVector0(cur_body->getLink(i).m_appliedConstraintForce).transpose() << std::endl;
-		std::cout << "link " << i << " con torque = " << cBulletUtil::btVectorTotVector0(cur_body->getLink(i).m_appliedConstraintTorque).transpose() << std::endl;
-		std::cout << "link " << i << " applied force = " << cBulletUtil::btVectorTotVector0(cur_body->getLink(i).m_appliedForce).transpose() << std::endl;
-		std::cout << "link " << i << " applied torque = " << cBulletUtil::btVectorTotVector0(cur_body->getLink(i).m_appliedTorque).transpose() << std::endl;
+		std::cout << "link " << i << " con force = " << btBulletUtil::btVectorTotVector0(cur_body->getLink(i).m_appliedConstraintForce).transpose() << std::endl;
+		std::cout << "link " << i << " con torque = " << btBulletUtil::btVectorTotVector0(cur_body->getLink(i).m_appliedConstraintTorque).transpose() << std::endl;
+		std::cout << "link " << i << " applied force = " << btBulletUtil::btVectorTotVector0(cur_body->getLink(i).m_appliedForce).transpose() << std::endl;
+		std::cout << "link " << i << " applied torque = " << btBulletUtil::btVectorTotVector0(cur_body->getLink(i).m_appliedTorque).transpose() << std::endl;
 	}
 #endif // DISABLE_SCREEN_LOG
 
@@ -302,17 +302,17 @@ void cCollisionWorld::PrintForceInfo(const char * n, bool detailed)
 
 	// output root link
 	{
-		mWorldLog << "link root " << "applied force = " << cBulletUtil::btVectorTotVector0(cur_body->getBaseForce()).transpose() << std::endl;
-		mWorldLog << "link root " << "applied torque = " << cBulletUtil::btVectorTotVector0(cur_body->getBaseTorque()).transpose() << std::endl;
-		mWorldLog << "link root " << "con force = " << cBulletUtil::btVectorTotVector0(cur_body->getBaseConstraintedForce()).transpose() << std::endl;
-		mWorldLog << "link root " << "con torque = " << cBulletUtil::btVectorTotVector0(cur_body->getBaseConstraintedTorque()).transpose() << std::endl;
+		mWorldLog << "link root " << "applied force = " << btBulletUtil::btVectorTotVector0(cur_body->getBaseForce()).transpose() << std::endl;
+		mWorldLog << "link root " << "applied torque = " << btBulletUtil::btVectorTotVector0(cur_body->getBaseTorque()).transpose() << std::endl;
+		mWorldLog << "link root " << "con force = " << btBulletUtil::btVectorTotVector0(cur_body->getBaseConstraintedForce()).transpose() << std::endl;
+		mWorldLog << "link root " << "con torque = " << btBulletUtil::btVectorTotVector0(cur_body->getBaseConstraintedTorque()).transpose() << std::endl;
 	}
 	for (int i = 0; i < cur_body->getNumLinks(); i++)
 	{
-		mWorldLog << "link " << i << " applied force = " << cBulletUtil::btVectorTotVector0(cur_body->getLink(i).m_appliedForce).transpose() << std::endl;
-		mWorldLog << "link " << i << " applied torque = " << cBulletUtil::btVectorTotVector0(cur_body->getLink(i).m_appliedTorque).transpose() << std::endl;
-		mWorldLog << "link " << i << " con force = " << cBulletUtil::btVectorTotVector0(cur_body->getLink(i).m_appliedConstraintForce).transpose() << std::endl;
-		mWorldLog << "link " << i << " con torque = " << cBulletUtil::btVectorTotVector0(cur_body->getLink(i).m_appliedConstraintTorque).transpose() << std::endl;
+		mWorldLog << "link " << i << " applied force = " << btBulletUtil::btVectorTotVector0(cur_body->getLink(i).m_appliedForce).transpose() << std::endl;
+		mWorldLog << "link " << i << " applied torque = " << btBulletUtil::btVectorTotVector0(cur_body->getLink(i).m_appliedTorque).transpose() << std::endl;
+		mWorldLog << "link " << i << " con force = " << btBulletUtil::btVectorTotVector0(cur_body->getLink(i).m_appliedConstraintForce).transpose() << std::endl;
+		mWorldLog << "link " << i << " con torque = " << btBulletUtil::btVectorTotVector0(cur_body->getLink(i).m_appliedConstraintTorque).transpose() << std::endl;
 	}
 #endif // ! DISABLE_FILE_LOG
 
@@ -331,8 +331,8 @@ void cCollisionWorld::PrintMotionInfo(const char * n/* = nullptr*/, bool detaile
 
 	if (n) std::cout << "--------------" << n << "--------------" << std::endl;
 	btMultiBody * cur_body = m_multiBodies[0];
-	Eigen::VectorXd delta_v = cBulletUtil::btArrayToEigenArray(cur_body->getDeltaV());
-	Eigen::VectorXd real_buf = cBulletUtil::btArrayToEigenArray(cur_body->getRealBuf());
+	Eigen::VectorXd delta_v = btBulletUtil::btArrayToEigenArray(cur_body->getDeltaV());
+	Eigen::VectorXd real_buf = btBulletUtil::btArrayToEigenArray(cur_body->getRealBuf());
 
 	if (detailed == false)
 	{
@@ -356,8 +356,8 @@ void cCollisionWorld::PrintMotionInfo(const char * n/* = nullptr*/, bool detaile
 	
 	if (n) mWorldLog << "--------------frame " << mCurFrame <<" "<< n << "--------------" << std::endl;
 	btMultiBody * cur_body = m_multiBodies[0];
-	Eigen::VectorXd delta_v = cBulletUtil::btArrayToEigenArray(cur_body->getDeltaV());
-	Eigen::VectorXd real_buf = cBulletUtil::btArrayToEigenArray(cur_body->getRealBuf());
+	Eigen::VectorXd delta_v = btBulletUtil::btArrayToEigenArray(cur_body->getDeltaV());
+	Eigen::VectorXd real_buf = btBulletUtil::btArrayToEigenArray(cur_body->getRealBuf());
 
 	if (detailed == false)
 	{

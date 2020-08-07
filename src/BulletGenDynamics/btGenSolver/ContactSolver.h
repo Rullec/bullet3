@@ -4,7 +4,7 @@
 
 class btDiscreteDynamicsWorld;
 class btPersistentManifold;
-class cSimRigidBody;
+class cRigidBody;
 // class cNativeLemkeLCPSolver;
 // class cQPSolver;
 // class cMatlabQPSolver;

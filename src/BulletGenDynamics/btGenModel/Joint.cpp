@@ -4,9 +4,14 @@
 // #include "BasePoint.h"
 #include "tools.h"
 
-Joint::Joint(BaseObjectParams& param) : BaseObject(param) {}
+// buffer used in jacobian calculation
+static tMatrixXd local_jac_buf;
 
-Joint::Joint(BaseObjectJsonParam& param) : BaseObject(param)
+Joint::Joint(BaseObjectParams& param) : BaseObject(param), mTorqueLim(0), mDiffWeight(0)
+{
+}
+
+Joint::Joint(BaseObjectJsonParam& param) : BaseObject(param), mTorqueLim(0), mDiffWeight(0)
 {
 }
 
@@ -404,11 +409,11 @@ void Joint::ComputeGlobalTransformSecondDerive()
 }
 
 /**
- * \brief					����Ŀ���p, ����������������ɶȵ�jacobian����
- * \param j					�����õ���jacobian����
- * \param p					�������Ŀ���
+ * \brief					calculate the jacobian in given position 
+ * \param j					jacobian buffer output
+ * \param p					local offset of targeted point
  */
-void Joint::ComputeJacobiByGivenPoint(tMatrixXd& j, tVector& p)
+void Joint::ComputeJacobiByGivenPoint(tMatrixXd& j, const tVector& p) const
 {
 	if (j.rows() != 3 || j.cols() != total_freedoms) j.resize(3, total_freedoms);
 
@@ -421,7 +426,7 @@ void Joint::ComputeJacobiByGivenPoint(tMatrixXd& j, tVector& p)
 	}
 }
 
-void Joint::ComputeHessianByGivenPoint(EIGEN_V_MATXD& ms, tVector& p)
+void Joint::ComputeHessianByGivenPoint(EIGEN_V_MATXD& ms, const tVector& p) const
 {
 	ms.resize(3, tMatrixXd::Zero(total_freedoms, total_freedoms));
 	assert(total_freedoms == static_cast<int>(mWqq.size()));
@@ -444,7 +449,7 @@ void Joint::ComputeHessianByGivenPoint(EIGEN_V_MATXD& ms, tVector& p)
  * \param j			the reference jacobian mat, it will be revised in the function
  * \param p			the target point where we want to get the jacobian(Jv), expressed in joint local frame
 */
-void Joint::ComputeJacobiByGivenPointTotalDOF(tMatrixXd& j, tVector p)
+void Joint::ComputeJacobiByGivenPointTotalDOF(tMatrixXd& j, const tVector& p) const
 {
 	// 1. get the dependent Jacobian
 	ComputeJacobiByGivenPoint(local_jac_buf, p);
@@ -599,4 +604,40 @@ void Joint::CleanGradient()
 	{
 		f.clear_grad();
 	}
+}
+
+void Joint::SetJointVel(const tVector3d& vel_)
+{
+	mJointVel = vel_;
+}
+void Joint::SetJointOmega(const tVector3d& omega_)
+{
+	mJointOmega = omega_;
+}
+tVector3d Joint::GetJointVel() const
+{
+	return mJointVel;
+}
+
+tVector3d Joint::GetJointOmega() const
+{
+	return mJointOmega;
+}
+void Joint::SetTorqueLim(double lim)
+{
+	mTorqueLim = lim;
+}
+
+double Joint::GetTorqueLim() const
+{
+	return mTorqueLim;
+}
+
+void Joint::SetDiffWeight(double weight)
+{
+	mDiffWeight = weight;
+}
+double Joint::GetDiffWeight() const
+{
+	return mDiffWeight;
 }

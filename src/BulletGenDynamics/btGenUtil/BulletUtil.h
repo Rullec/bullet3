@@ -5,7 +5,7 @@
 #include "BulletInverseDynamics/IDConfig.hpp"
 #include "../Extras/InverseDynamics/btMultiBodyTreeCreator.hpp"
 
-class cBulletUtil
+class btBulletUtil
 {
 public:
 	static tVector btVectorTotVector0(const btVector3& v)

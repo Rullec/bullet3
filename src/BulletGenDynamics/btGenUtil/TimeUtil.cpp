@@ -5,17 +5,17 @@
 using namespace std;
 using namespace std::chrono;
 
-void cTimeUtil::Begin(const std::string &name)
+void btTimeUtil::Begin(const std::string &name)
 {
     mTimeTable[name] = high_resolution_clock::now();
 }
 
-void cTimeUtil::End(const std::string &name)
+void btTimeUtil::End(const std::string &name)
 {
     time_it = mTimeTable.find(name);
     if (time_it == mTimeTable.end())
     {
-        std::cout << "[error] cTimeUtil::End No static info about " << name
+        std::cout << "[error] btTimeUtil::End No static info about " << name
                   << std::endl;
         exit(1);
     }
@@ -26,7 +26,7 @@ void cTimeUtil::End(const std::string &name)
     mTimeTable.erase(time_it);
 }
 
-std::string cTimeUtil::GetSystemTime()
+std::string btTimeUtil::GetSystemTime()
 {
     // not thread safe
     std::time_t now =
@@ -37,14 +37,14 @@ std::string cTimeUtil::GetSystemTime()
     return s;
 }
 
-void cTimeUtil::BeginLazy(const std::string &name) { cTimeUtil::Begin(name); }
+void btTimeUtil::BeginLazy(const std::string &name) { btTimeUtil::Begin(name); }
 
-void cTimeUtil::EndLazy(const std::string &name)
+void btTimeUtil::EndLazy(const std::string &name)
 {
     time_it = mTimeTable.find(name);
     if (time_it == mTimeTable.end())
     {
-        std::cout << "[error] cTimeUtil::End No static info about " << name
+        std::cout << "[error] btTimeUtil::End No static info about " << name
                   << std::endl;
         exit(1);
     }
@@ -53,7 +53,7 @@ void cTimeUtil::EndLazy(const std::string &name)
         (high_resolution_clock::now() - time_it->second).count() * 1e-6;
 }
 
-void cTimeUtil::ClearLazy(const std::string &name)
+void btTimeUtil::ClearLazy(const std::string &name)
 {
     std::cout << "[log] segment lazy " << name
               << " cost time = " << mLazyTimeTable[name] << " ms\n";

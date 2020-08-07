@@ -1210,7 +1210,7 @@ void btMultiBody::computeAccelerationsArticulatedBodyAlgorithmMultiDof(btScalar 
 
 	// test code, calculate base omega dot by my self
 	{
-		// btMatrix3x3 Ibody = cBulletUtil::AsDiagnoal(m_baseInertia);
+		// btMatrix3x3 Ibody = btBulletUtil::AsDiagnoal(m_baseInertia);
 		// btMatrix3x3 I0 = rot_from_world[0].transpose() * Ibody * rot_from_world[0];
 		// btVector3 omegadot_self = I0.inverse() * (base_omega.cross(I0 * base_omega));
 		// printf("self omega dot = %.6f, %.6f, %.6f\n", omegadot_self.getX(), omegadot_self.getY(), omegadot_self.getZ());

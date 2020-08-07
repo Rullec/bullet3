@@ -40,9 +40,9 @@ public:
 	virtual void ComputeLocalTransformSecondDerive();
 	void ComputeGlobalTransformSecondDerive();
 
-	void ComputeJacobiByGivenPointTotalDOF(tMatrixXd& j, tVector p) override;
-	void ComputeJacobiByGivenPoint(tMatrixXd& j, tVector& p) override;
-	void ComputeHessianByGivenPoint(EIGEN_V_MATXD& ms, tVector& p) override;
+	void ComputeJacobiByGivenPointTotalDOF(tMatrixXd& j, const tVector& p) const override;
+	void ComputeJacobiByGivenPoint(tMatrixXd& j, const tVector& p) const override;
+	void ComputeHessianByGivenPoint(EIGEN_V_MATXD& ms, const tVector& p) const override;
 	void ComputeJKv_dot(tVectorXd& q_dot, tVector3d& p) override;
 	void ComputeJKw_dot(tVectorXd& q_dot) override;
 
@@ -52,6 +52,16 @@ public:
 	tMatrix& GetMWQQ(int i, int j) override;
 
 	const tMatrixXd& GetJKDot() const override;
+
+	void SetTorqueLim(double lim);
+	double GetTorqueLim() const;
+	void SetDiffWeight(double lim);
+	double GetDiffWeight() const;
+	
+	void SetJointVel(const tVector3d& vel_);
+	void SetJointOmega(const tVector3d& omega_);
+	tVector3d GetJointVel() const;
+	tVector3d GetJointOmega() const;
 
 protected:
 	std::vector<Freedom> freedoms;  // self freedom. For revolute it is 1, for spherical it is 3.
@@ -65,10 +75,14 @@ protected:
 	EIGEN_VV_tMatrixD mWqq;
 	// ======================================
 
+	// joint torque limit
+	double mTorqueLim;
 
-	// buffer used in Jacobian computation
-	tMatrixXd local_jac_buf;
-	// tMatrixXd global_jac_buf;
+	// diff weight, used in the calculation of mimic reward
+	double mDiffWeight;
+
+	// the linear velocity and angular velocity of the COM of this joint in world frame
+	tVector3d mJointVel, mJointOmega;
 };
 
 #endif  //ROBOT_JOINT_H

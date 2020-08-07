@@ -314,18 +314,18 @@ int MultiBodyTree::MultiBodyImpl::calculateInverseDynamics(const vecx &q, const 
 			body.m_body_ang_vel.cross(body.m_body_I_body * body.m_body_ang_vel) -
 			body.m_body_moment_user;
 		//{
-		//	std::cout << "[debug] body.m_body_ang_acc = " << cBulletUtil::btIDVectorTotVector0(body.m_body_ang_acc).transpose() << std::endl;
-		//	std::cout << "[debug] body.m_body_mass_com = " << cBulletUtil::btIDVectorTotVector0(body.m_body_mass_com).transpose() << std::endl;
-		//	std::cout << "[debug] body.m_body_acc = " << cBulletUtil::btIDVectorTotVector0(body.m_body_acc).transpose() << std::endl;
-		//	std::cout << "[debug] body.m_body_ang_vel = " << cBulletUtil::btIDVectorTotVector0(body.m_body_ang_vel).transpose() << std::endl;
-		//	std::cout << "[debug] body.m_body_I_body = " << cBulletUtil::btIDMatrixTotMatrix(body.m_body_I_body).transpose() << std::endl;
-		//	std::cout << "[debug] body.m_body_moment_user = " << cBulletUtil::btIDVectorTotVector0(body.m_body_moment_user).transpose() << std::endl;
-		//	std::cout << "[debug] body.m_eom_lhs_rotational = " << cBulletUtil::btIDVectorTotVector0(body.m_eom_lhs_rotational).transpose() << std::endl;
+		//	std::cout << "[debug] body.m_body_ang_acc = " << btBulletUtil::btIDVectorTotVector0(body.m_body_ang_acc).transpose() << std::endl;
+		//	std::cout << "[debug] body.m_body_mass_com = " << btBulletUtil::btIDVectorTotVector0(body.m_body_mass_com).transpose() << std::endl;
+		//	std::cout << "[debug] body.m_body_acc = " << btBulletUtil::btIDVectorTotVector0(body.m_body_acc).transpose() << std::endl;
+		//	std::cout << "[debug] body.m_body_ang_vel = " << btBulletUtil::btIDVectorTotVector0(body.m_body_ang_vel).transpose() << std::endl;
+		//	std::cout << "[debug] body.m_body_I_body = " << btBulletUtil::btIDMatrixTotMatrix(body.m_body_I_body).transpose() << std::endl;
+		//	std::cout << "[debug] body.m_body_moment_user = " << btBulletUtil::btIDVectorTotVector0(body.m_body_moment_user).transpose() << std::endl;
+		//	std::cout << "[debug] body.m_eom_lhs_rotational = " << btBulletUtil::btIDVectorTotVector0(body.m_eom_lhs_rotational).transpose() << std::endl;
 
-		//	std::cout << "[debug] term1 = " << cBulletUtil::btIDVectorTotVector0(body.m_body_I_body * body.m_body_ang_acc).transpose() << std::endl;
-		//	std::cout << "[debug] term2 = " << cBulletUtil::btIDVectorTotVector0(body.m_body_mass_com.cross(body.m_body_acc)).transpose() << std::endl;
-		//	std::cout << "[debug] term3 = " << cBulletUtil::btIDVectorTotVector0(body.m_body_ang_vel.cross(body.m_body_I_body * body.m_body_ang_vel)).transpose() << std::endl;
-		//	std::cout << "[debug] term4 = " << cBulletUtil::btIDVectorTotVector0(body.m_body_moment_user).transpose() << std::endl;
+		//	std::cout << "[debug] term1 = " << btBulletUtil::btIDVectorTotVector0(body.m_body_I_body * body.m_body_ang_acc).transpose() << std::endl;
+		//	std::cout << "[debug] term2 = " << btBulletUtil::btIDVectorTotVector0(body.m_body_mass_com.cross(body.m_body_acc)).transpose() << std::endl;
+		//	std::cout << "[debug] term3 = " << btBulletUtil::btIDVectorTotVector0(body.m_body_ang_vel.cross(body.m_body_I_body * body.m_body_ang_vel)).transpose() << std::endl;
+		//	std::cout << "[debug] term4 = " << btBulletUtil::btIDVectorTotVector0(body.m_body_moment_user).transpose() << std::endl;
 		//}
 		body.m_eom_lhs_translational =
 			body.m_body_ang_acc.cross(body.m_body_mass_com) + body.m_mass * body.m_body_acc +
@@ -433,17 +433,17 @@ int MultiBodyTree::MultiBodyImpl::calculateKinematics(const vecx &q, const vecx 
 		mat33 T;
 		bodyTParentFromAxisAngle(body.m_Jac_JR, q(body.m_q_index), &T);
 		body.m_body_T_parent = T * body.m_body_T_parent_ref;
-		//std::cout << "[debug] revolute jac jr = " << cBulletUtil::btIDVectorTotVector0(body.m_Jac_JR).transpose() << std::endl;
-		//std::cout << "[debug] revolute parent to body = \n" << cBulletUtil::btIDMatrixTotMatrix(body.m_body_T_parent) << std::endl;
+		//std::cout << "[debug] revolute jac jr = " << btBulletUtil::btIDVectorTotVector0(body.m_Jac_JR).transpose() << std::endl;
+		//std::cout << "[debug] revolute parent to body = \n" << btBulletUtil::btIDMatrixTotMatrix(body.m_body_T_parent) << std::endl;
 		if (type >= POSITION_VELOCITY)
 		{
 			body.m_body_ang_vel_rel = body.m_Jac_JR * u(body.m_q_index);
-			//std::cout << "[debug] revolute ang vel in (guess) body frame = \n" << cBulletUtil::btIDVectorTotVector0(body.m_body_ang_vel_rel).transpose() << std::endl;
+			//std::cout << "[debug] revolute ang vel in (guess) body frame = \n" << btBulletUtil::btIDVectorTotVector0(body.m_body_ang_vel_rel).transpose() << std::endl;
 		}
 		if (type >= POSITION_VELOCITY_ACCELERATION)
 		{
 			body.m_body_ang_acc_rel = body.m_Jac_JR * dot_u(body.m_q_index);
-			//std::cout << "[debug] revolute ang accel in (guess) body frame = \n" << cBulletUtil::btIDVectorTotVector0(body.m_body_ang_acc_rel).transpose() << std::endl;
+			//std::cout << "[debug] revolute ang accel in (guess) body frame = \n" << btBulletUtil::btIDVectorTotVector0(body.m_body_ang_acc_rel).transpose() << std::endl;
 		}
 	}
 
@@ -476,13 +476,13 @@ int MultiBodyTree::MultiBodyImpl::calculateKinematics(const vecx &q, const vecx 
 		//std::cout << "[debug] root: euler angle = " << q(body.m_q_index) << " "\
 			<< q(body.m_q_index + 1) << " "\
 			<< q(body.m_q_index + 2) << std::endl;
-		//std::cout << "[debug] root: parent to body mat = \n" << cBulletUtil::btIDMatrixTotMatrix(body.m_body_T_parent) << std::endl;
+		//std::cout << "[debug] root: parent to body mat = \n" << btBulletUtil::btIDMatrixTotMatrix(body.m_body_T_parent) << std::endl;
 
 		// in parent frame
 		body.m_parent_pos_parent_body(0) = q(body.m_q_index + 3);
 		body.m_parent_pos_parent_body(1) = q(body.m_q_index + 4);
 		body.m_parent_pos_parent_body(2) = q(body.m_q_index + 5);
-		//std::cout << "[debug] root: joint pos in parent frame = \n" << cBulletUtil::btIDVectorTotVector0(body.m_parent_pos_parent_body).transpose() << std::endl;
+		//std::cout << "[debug] root: joint pos in parent frame = \n" << btBulletUtil::btIDVectorTotVector0(body.m_parent_pos_parent_body).transpose() << std::endl;
 
 		if (type >= POSITION_VELOCITY)
 		{
@@ -504,18 +504,18 @@ int MultiBodyTree::MultiBodyImpl::calculateKinematics(const vecx &q, const vecx 
 			body.m_body_ang_vel_rel(2) = u(body.m_q_index + 2);
 			
 			// ת����body����ϵ
-			//std::cout << "[debug] root ang vel in world frame = " << cBulletUtil::btVectorTotVector0(body.m_body_ang_vel_rel).transpose() << std::endl;
+			//std::cout << "[debug] root ang vel in world frame = " << btBulletUtil::btVectorTotVector0(body.m_body_ang_vel_rel).transpose() << std::endl;
 			// in parent frame
 			body.m_body_ang_vel_rel = body.m_body_T_parent * body.m_body_ang_vel_rel;
-			//std::cout << "[debug] root ang vel in body frame = " << cBulletUtil::btVectorTotVector0(body.m_body_ang_vel_rel).transpose() << std::endl;
+			//std::cout << "[debug] root ang vel in body frame = " << btBulletUtil::btVectorTotVector0(body.m_body_ang_vel_rel).transpose() << std::endl;
 
 			body.m_parent_vel_rel(0) = u(body.m_q_index + 3);
 			body.m_parent_vel_rel(1) = u(body.m_q_index + 4);
 			body.m_parent_vel_rel(2) = u(body.m_q_index + 5);
-			//std::cout << "[debug] root lin vel in world frame = " << cBulletUtil::btVectorTotVector0(body.m_parent_vel_rel).transpose() << std::endl;
-			//std::cout << "[debug] body to parent rot mat = \n" << cBulletUtil::btIDMatrixTotMatrix(body.m_body_T_parent.transpose()) << std::endl;
+			//std::cout << "[debug] root lin vel in world frame = " << btBulletUtil::btVectorTotVector0(body.m_parent_vel_rel).transpose() << std::endl;
+			//std::cout << "[debug] body to parent rot mat = \n" << btBulletUtil::btIDMatrixTotMatrix(body.m_body_T_parent.transpose()) << std::endl;
 
-			//std::cout << "[debug] root lin vel in root frame = " << cBulletUtil::btVectorTotVector0(body.m_parent_vel_rel).transpose() << std::endl;
+			//std::cout << "[debug] root lin vel in root frame = " << btBulletUtil::btVectorTotVector0(body.m_parent_vel_rel).transpose() << std::endl;
 			
 		}
 		if (type >= POSITION_VELOCITY_ACCELERATION)
@@ -535,17 +535,17 @@ int MultiBodyTree::MultiBodyImpl::calculateKinematics(const vecx &q, const vecx 
 			body.m_body_ang_acc_rel(0) = dot_u(body.m_q_index + 0);
 			body.m_body_ang_acc_rel(1) = dot_u(body.m_q_index + 1);
 			body.m_body_ang_acc_rel(2) = dot_u(body.m_q_index + 2);
-			//std::cout << "[debug] root ang accel in world frame = " << cBulletUtil::btIDVectorTotVector0(body.m_body_ang_acc_rel).transpose() << std::endl;
+			//std::cout << "[debug] root ang accel in world frame = " << btBulletUtil::btIDVectorTotVector0(body.m_body_ang_acc_rel).transpose() << std::endl;
 			body.m_body_ang_acc_rel = body.m_body_T_parent * body.m_body_ang_acc_rel;
-			//std::cout << "[debug] root ang accel in body frame = " << cBulletUtil::btIDVectorTotVector0(body.m_body_ang_acc_rel).transpose() << std::endl;
+			//std::cout << "[debug] root ang accel in body frame = " << btBulletUtil::btIDVectorTotVector0(body.m_body_ang_acc_rel).transpose() << std::endl;
 
 			// accel in parent frame 
 			body.m_parent_acc_rel(0) = dot_u(body.m_q_index + 3);
 			body.m_parent_acc_rel(1) = dot_u(body.m_q_index + 4);
 			body.m_parent_acc_rel(2) = dot_u(body.m_q_index + 5);
-			//std::cout << "[debug] root lin accel world = " << cBulletUtil::btIDVectorTotVector0(body.m_parent_acc_rel).transpose() << std::endl;
+			//std::cout << "[debug] root lin accel world = " << btBulletUtil::btIDVectorTotVector0(body.m_parent_acc_rel).transpose() << std::endl;
 			//body.m_parent_acc_rel = body.m_body_T_parent * body.m_parent_acc_rel;
-			//std::cout << "[debug] root lin accel body = " << cBulletUtil::btIDVectorTotVector0(body.m_parent_acc_rel).transpose() << std::endl;
+			//std::cout << "[debug] root lin accel body = " << btBulletUtil::btIDVectorTotVector0(body.m_parent_acc_rel).transpose() << std::endl;
 		}
 	}
 
@@ -562,26 +562,26 @@ int MultiBodyTree::MultiBodyImpl::calculateKinematics(const vecx &q, const vecx 
 				transformY(q(body.m_q_index + 1)) *
 				transformZ(q(body.m_q_index + 2))).transpose();
 		//std::cout << "[debug] spherical joint eulerangle = " << q(body.m_q_index) << " " << q(body.m_q_index + 1) << " " << q(body.m_q_index + 2) << std::endl;
-		//std::cout << "[debug] spherical rot mat(parent to local) = \n" << cBulletUtil::btIDMatrixTotMatrix(T) << std::endl;
+		//std::cout << "[debug] spherical rot mat(parent to local) = \n" << btBulletUtil::btIDMatrixTotMatrix(T) << std::endl;
 		body.m_body_T_parent = T * body.m_body_T_parent_ref;
-		//std::cout << "[debug] spherical parent to body rot = \n" << cBulletUtil::btIDMatrixTotMatrix(body.m_body_T_parent) << std::endl;
+		//std::cout << "[debug] spherical parent to body rot = \n" << btBulletUtil::btIDMatrixTotMatrix(body.m_body_T_parent) << std::endl;
 
 		//std::cout << "[warn] body.m_parent_pos_parent_body = vec3(btVector3(0.0, -0.37, 0.0));\n" << std::endl;
 
 		// in parent frame
 		//body.m_parent_pos_parent_body = vec3(btVector3(0.0, -0.37, 0.0));
-		//std::cout << "[debug] spherical parent to body vec in parent frame = \n" << cBulletUtil::btIDVectorTotVector0(body.m_parent_pos_parent_body).transpose() << std::endl;
+		//std::cout << "[debug] spherical parent to body vec in parent frame = \n" << btBulletUtil::btIDVectorTotVector0(body.m_parent_pos_parent_body).transpose() << std::endl;
 
 		//// ���ΪɶҪ��ֵΪ0�أ��о���Ӧ�ð���ȥ���ɡ�
 		//body.m_parent_pos_parent_body(0)=0;
 		//body.m_parent_pos_parent_body(1)=0;
 		//body.m_parent_pos_parent_body(2)=0;
-		//std::cout << "[debug] spherical parent to body vec in parent frame = \n" << cBulletUtil::btIDVectorTotVector0(body.m_parent_pos_parent_body).transpose() << std::endl;
+		//std::cout << "[debug] spherical parent to body vec in parent frame = \n" << btBulletUtil::btIDVectorTotVector0(body.m_parent_pos_parent_body).transpose() << std::endl;
 		// ����spherical���ԣ����������ÿ�ζ�����ֵ�����Ե������⡣
 		//vec3 true_pos(btVector3(0.0, -0.37, 0.0));
 		//body.m_parent_pos_parent_body = body.m_body_T_parent * body.m_parent_pos_parent_body;
 		//body.m_parent_pos_parent_body = body.m_body_T_parent * body.m_parent_pos_parent_body;
-		//std::cout << "[debug] spherical parent to body vec in self frame = \n" << cBulletUtil::btIDVectorTotVector0(body.m_parent_pos_parent_body).transpose() << std::endl;
+		//std::cout << "[debug] spherical parent to body vec in self frame = \n" << btBulletUtil::btIDVectorTotVector0(body.m_parent_pos_parent_body).transpose() << std::endl;
 
 		if (type >= POSITION_VELOCITY)
 		{
@@ -591,10 +591,10 @@ int MultiBodyTree::MultiBodyImpl::calculateKinematics(const vecx &q, const vecx 
 			body.m_body_ang_vel_rel(2) = u(body.m_q_index + 2);
 
 			//{
-			//	std::cout << "[debug] ang vel rel in parent frame = \n" << cBulletUtil::btIDVectorTotVector0(body.m_body_ang_vel_rel).transpose() << std::endl;
+			//	std::cout << "[debug] ang vel rel in parent frame = \n" << btBulletUtil::btIDVectorTotVector0(body.m_body_ang_vel_rel).transpose() << std::endl;
 			//	body.m_body_ang_vel_rel = body.m_body_T_parent * body.m_body_ang_vel_rel;
 			//	// convert ang vel relative from parent frame to body-fixed frame
-			//	std::cout << "[debug] ang vel rel in body fixed frame = \n" << cBulletUtil::btIDVectorTotVector0(body.m_body_ang_vel_rel).transpose() << std::endl;
+			//	std::cout << "[debug] ang vel rel in body fixed frame = \n" << btBulletUtil::btIDVectorTotVector0(body.m_body_ang_vel_rel).transpose() << std::endl;
 
 			//	// linear vel: should be 0
 			//	body.m_parent_vel_rel = body.m_body_T_parent * body.m_parent_vel_rel;
@@ -611,10 +611,10 @@ int MultiBodyTree::MultiBodyImpl::calculateKinematics(const vecx &q, const vecx 
 			body.m_body_ang_acc_rel(1) = dot_u(body.m_q_index + 1);
 			body.m_body_ang_acc_rel(2) = dot_u(body.m_q_index + 2);
 
-			//std::cout << "[debug] ang accel rel in parent frame = \n" << cBulletUtil::btIDVectorTotVector0(body.m_body_ang_acc_rel).transpose() << std::endl;
+			//std::cout << "[debug] ang accel rel in parent frame = \n" << btBulletUtil::btIDVectorTotVector0(body.m_body_ang_acc_rel).transpose() << std::endl;
 			//// convert it frame parent frame to body fixed frame
 			//body.m_body_ang_acc_rel = body.m_body_T_parent * body.m_body_ang_acc_rel;
-			//std::cout << "[debug] ang accel rel in body fixed frame = \n" << cBulletUtil::btIDVectorTotVector0(body.m_body_ang_acc_rel).transpose() << std::endl;
+			//std::cout << "[debug] ang accel rel in body fixed frame = \n" << btBulletUtil::btIDVectorTotVector0(body.m_body_ang_acc_rel).transpose() << std::endl;
 			//
 			// linear accel, should be 0, in parent frame
 			body.m_parent_acc_rel = body.m_body_T_parent * body.m_parent_acc_rel;
@@ -635,7 +635,7 @@ int MultiBodyTree::MultiBodyImpl::calculateKinematics(const vecx &q, const vecx 
 		// not required right now, added here for debugging purposes
 		body.m_body_pos = body.m_parent_pos_parent_body;
 		body.m_body_T_world = body.m_body_T_parent;
-		//std::cout << "[debug] root world to body = \n" << cBulletUtil::btIDMatrixTotMatrix(body.m_body_T_world) << std::endl;
+		//std::cout << "[debug] root world to body = \n" << btBulletUtil::btIDMatrixTotMatrix(body.m_body_T_world) << std::endl;
 
 		if (type >= POSITION_VELOCITY)
 		{
@@ -657,12 +657,12 @@ int MultiBodyTree::MultiBodyImpl::calculateKinematics(const vecx &q, const vecx 
 			body.m_body_acc = body.m_body_acc - body.m_body_T_parent * m_world_gravity;
 		}
 
-		//std::cout << "[debug] root joint body pos = " << cBulletUtil::btIDVectorTotVector1(body.m_body_pos).transpose() << std::endl;
-		//std::cout << "[debug] root to world rot mat = " << cBulletUtil::btIDMatrixTotMatrix(body.m_body_T_world) << std::endl;
-		//std::cout << "[debug] root joint ang vel in fixed-body frame = " << cBulletUtil::btIDVectorTotVector1(body.m_body_ang_vel).transpose() << std::endl;
-		//std::cout << "[debug] root joint lin vel in fixed-body frame = " << cBulletUtil::btIDVectorTotVector1(body.m_body_vel).transpose() << std::endl;
-		//std::cout << "[debug] root joint ang accel vel in fixed-body frame = " << cBulletUtil::btIDVectorTotVector1(body.m_body_ang_acc).transpose() << std::endl;
-		//std::cout << "[debug] root joint lin accel vel in fixed-body frame = " << cBulletUtil::btIDVectorTotVector1(body.m_body_acc).transpose() << std::endl;
+		//std::cout << "[debug] root joint body pos = " << btBulletUtil::btIDVectorTotVector1(body.m_body_pos).transpose() << std::endl;
+		//std::cout << "[debug] root to world rot mat = " << btBulletUtil::btIDMatrixTotMatrix(body.m_body_T_world) << std::endl;
+		//std::cout << "[debug] root joint ang vel in fixed-body frame = " << btBulletUtil::btIDVectorTotVector1(body.m_body_ang_vel).transpose() << std::endl;
+		//std::cout << "[debug] root joint lin vel in fixed-body frame = " << btBulletUtil::btIDVectorTotVector1(body.m_body_vel).transpose() << std::endl;
+		//std::cout << "[debug] root joint ang accel vel in fixed-body frame = " << btBulletUtil::btIDVectorTotVector1(body.m_body_ang_acc).transpose() << std::endl;
+		//std::cout << "[debug] root joint lin accel vel in fixed-body frame = " << btBulletUtil::btIDVectorTotVector1(body.m_body_acc).transpose() << std::endl;
 	}
 
 	for (idArrayIdx i = 1; i < m_body_list.size(); i++)
@@ -675,21 +675,21 @@ int MultiBodyTree::MultiBodyImpl::calculateKinematics(const vecx &q, const vecx 
 		body.m_body_pos =
 			body.m_body_T_parent * (parent.m_body_pos + body.m_parent_pos_parent_body);
 		body.m_body_T_world = body.m_body_T_parent * parent.m_body_T_world;
-		//std::cout << "[debug] link spherical " << i << " body pos in body fixed frame = " << cBulletUtil::btIDVectorTotVector1(body.m_body_pos).transpose() << std::endl;
-		//std::cout << "[debug] link spherical " << i << " world to body = \n" << cBulletUtil::btIDMatrixTotMatrix(body.m_body_T_world) << std::endl;
-		//std::cout << "[ID debug] revolute world to body = \n" << cBulletUtil::btIDMatrixTotMatrix(body.m_body_T_world) << std::endl;
+		//std::cout << "[debug] link spherical " << i << " body pos in body fixed frame = " << btBulletUtil::btIDVectorTotVector1(body.m_body_pos).transpose() << std::endl;
+		//std::cout << "[debug] link spherical " << i << " world to body = \n" << btBulletUtil::btIDMatrixTotMatrix(body.m_body_T_world) << std::endl;
+		//std::cout << "[ID debug] revolute world to body = \n" << btBulletUtil::btIDMatrixTotMatrix(body.m_body_T_world) << std::endl;
 
 		if (type >= POSITION_VELOCITY)
 		{
 			// 2.2 update absolute velocities
 			body.m_body_ang_vel =
 				body.m_body_T_parent * parent.m_body_ang_vel + body.m_body_ang_vel_rel;
-			//std::cout << "[debug] body ang vel in body fixed frame = " << cBulletUtil::btIDVectorTotVector0(body.m_body_ang_vel).transpose() << std::endl;
+			//std::cout << "[debug] body ang vel in body fixed frame = " << btBulletUtil::btIDVectorTotVector0(body.m_body_ang_vel).transpose() << std::endl;
 			body.m_body_vel =
 				body.m_body_T_parent *
 				(parent.m_body_vel + parent.m_body_ang_vel.cross(body.m_parent_pos_parent_body) +
 				 body.m_parent_vel_rel);
-			//std::cout << "[debug] body vel in body fixed frame = " << cBulletUtil::btIDVectorTotVector0(body.m_body_vel).transpose() << std::endl;
+			//std::cout << "[debug] body vel in body fixed frame = " << btBulletUtil::btIDVectorTotVector0(body.m_body_vel).transpose() << std::endl;
 		}
 		if (type >= POSITION_VELOCITY_ACCELERATION)
 		{
@@ -702,7 +702,7 @@ int MultiBodyTree::MultiBodyImpl::calculateKinematics(const vecx &q, const vecx 
 				body.m_body_T_parent * parent.m_body_ang_acc -
 				body.m_body_ang_vel_rel.cross(body.m_body_T_parent * parent.m_body_ang_vel) +
 				body.m_body_ang_acc_rel;
-			//std::cout << "[debug] body ang accel in body fixed frame = " << cBulletUtil::btIDVectorTotVector0(body.m_body_ang_acc).transpose() << std::endl;
+			//std::cout << "[debug] body ang accel in body fixed frame = " << btBulletUtil::btIDVectorTotVector0(body.m_body_ang_acc).transpose() << std::endl;
 
 			// ����body acc��Ҳ����body�߼��ٶȵ�ʱ�򣬺ܶ�ֵʹ�õĶ���parent����ϵ�µġ���body��ص���:
 			/*
@@ -710,7 +710,7 @@ int MultiBodyTree::MultiBodyImpl::calculateKinematics(const vecx &q, const vecx 
 				������ϵ��:body.m_parent_pos_parent_body, body.m_parent_vel_rel, body.m_parent_acc_rel
 			
 			*/
-			//std::cout << "[debug] check m_parent_pos_parent_body = " << cBulletUtil::btIDVectorTotVector0(body.m_parent_pos_parent_body).transpose() << std::endl;
+			//std::cout << "[debug] check m_parent_pos_parent_body = " << btBulletUtil::btIDVectorTotVector0(body.m_parent_pos_parent_body).transpose() << std::endl;
 
 			 //raw version: 
 			// m_parent_pos_parent_body: parent frame

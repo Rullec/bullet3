@@ -29,13 +29,14 @@ public:
 	//====================================================
 
 	//===================For Simulation===================
-	void SetLinkVel(const tVector3d & link_vel);
-	void SetLinkOmega(const tVector3d & link_omega);
-	tVector3d GetLinkVel();
-	tVector3d GetLinkOmega();
-	
+	void SetLinkVel(const tVector3d& link_vel);
+	void SetLinkOmega(const tVector3d& link_omega);
+	tVector3d GetLinkVel() const;
+	tVector3d GetLinkOmega() const;
+	double GetLinkMaxLength() const;
+
 protected:
-	tVector3d link_vel, link_omega;	// the lin vel and ang vel w.r.t the COM of this link in world frame
+	tVector3d link_vel, link_omega;  // the lin vel and ang vel w.r.t the COM of this link in world frame
 };
 
 #endif  //ROBOT_LINK_H

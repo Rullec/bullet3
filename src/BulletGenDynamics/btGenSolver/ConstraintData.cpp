@@ -4,7 +4,7 @@
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
 #include <iostream>
 
-extern cSimRigidBody* UpcastRigidBody(const btCollisionObject* col);
+extern cRigidBody* UpcastRigidBody(const btCollisionObject* col);
 extern cRobotCollider* UpcastRobotCollider(const btCollisionObject* col);
 extern cCollisionObject* UpcastColObj(const btCollisionObject* col);
 
@@ -43,7 +43,7 @@ void tJointLimitData::ApplyJointTorque(double val)
 	}
 
 	// std::cout << "[joint limit] add torque " << torque.transpose() << std::endl;
-	multibody->ApplyJointTorque(multibody->GetJointByDofId(dof_id)->GetId(), cMathUtil::Expand(torque, 0));
+	multibody->ApplyJointTorque(multibody->GetJointByDofId(dof_id)->GetId(), btMathUtil::Expand(torque, 0));
 }
 
 void tJointLimitData::ApplyGeneralizedForce(double val)
@@ -82,7 +82,7 @@ void tContactPointData::Setup(int num_frictions)
 
 void tContactPointData::ApplyForceResultVector(const tVectorXd& x0)
 {
-	ApplyForceCartersian(cMathUtil::Expand(mS * x0, 0));
+	ApplyForceCartersian(btMathUtil::Expand(mS * x0, 0));
 }
 
 void tContactPointData::ApplyForceCartersian(const tVector& contact_force)
@@ -134,12 +134,12 @@ int tContactPointData::GetBody1Id()
 
 tVector tContactPointData::GetVelOnBody0()
 {
-	return cMathUtil::Expand(mBodyA->GetVelocityOnPoint(mContactPtOnA), 0);
+	return btMathUtil::Expand(mBodyA->GetVelocityOnPoint(mContactPtOnA), 0);
 }
 
 tVector tContactPointData::GetVelOnBody1()
 {
-	return cMathUtil::Expand(mBodyB->GetVelocityOnPoint(mContactPtOnB), 0);
+	return btMathUtil::Expand(mBodyB->GetVelocityOnPoint(mContactPtOnB), 0);
 }
 
 tVector tContactPointData::GetRelVel()
@@ -168,7 +168,7 @@ void tContactPointData::CalcBodyInfo()
 void tContactPointData::CalcFrictionCone(tMatrixXd& D)
 {
 	D.resize(3, mNumOfFriction), D.setZero();
-	D = cMathUtil::ExpandFrictionCone(mNumOfFriction, mNormalPointToA).transpose().block(0, 0, 3, mNumOfFriction);
+	D = btMathUtil::ExpandFrictionCone(mNumOfFriction, mNormalPointToA).transpose().block(0, 0, 3, mNumOfFriction);
 	// std::cout <<"normal = " << mNormalPointToA.transpose() << std::endl;
 	// std::cout <<"mD = \n" << mD << std::endl;
 }
@@ -358,7 +358,7 @@ T2 AccurateSolve(const T1& mat, const T2& residual, double& min_error)
 
 extern bool gEnablePauseWhenSolveError;
 extern bool gEnableResolveWhenSolveError;
-extern bool gPauseSimulation;
+// extern bool gPauseSimulation;
 void tCollisionObjData::SetupRobotCollider()
 {
 	// std::cout << "----------set up robot collider begin----------\n";
@@ -590,7 +590,7 @@ void tCollisionObjData::SetupRigidBody()
 	int n_my_contact = mContactPts.size();
 	if (n_my_contact == 0) return;
 	tEigenArr<tMatrix> RelPosSkew(n_my_contact);
-	cSimRigidBody* rigidbody = UpcastRigidBody(mBody);
+	cRigidBody* rigidbody = UpcastRigidBody(mBody);
 	tVector angvel = rigidbody->GetAngVel();
 	tVector world_pos = rigidbody->GetWorldPos();
 	tMatrix inertia = rigidbody->GetInertia(),
@@ -603,7 +603,7 @@ void tCollisionObjData::SetupRigidBody()
 		int contact_id = mContactPts[i]->contact_id;
 
 		tVector contact_pt = mIsBody0[i] == true ? data->mContactPtOnA : data->mContactPtOnB;
-		RelPosSkew[i] = cMathUtil::VectorToSkewMat(contact_pt - world_pos);
+		RelPosSkew[i] = btMathUtil::VectorToSkewMat(contact_pt - world_pos);
 		// std::cout << " body " << mBody->GetName() << " contact " << i << " isbody0 = " << mIsBody0[i] << std::endl;
 	}
 
@@ -624,7 +624,7 @@ void tCollisionObjData::SetupRigidBody()
 		// form the residual
 		mConvertCartesianForceToVelocityVec.segment(i_id * 3, 3) =
 			(rigidbody->GetLinVel() - RelPosSkew[i] * angvel +
-			 dt * RelPosSkew[i] * inv_inertia * cMathUtil::VectorToSkewMat(angvel) * inertia * angvel)
+			 dt * RelPosSkew[i] * inv_inertia * btMathUtil::VectorToSkewMat(angvel) * inertia * angvel)
 				.segment(0, 3);
 	}
 }

@@ -183,12 +183,12 @@ void ConstraintMBDemo::stepSimulation(float deltaTime)
 		mRecord.LinearMomentumPost = mMultibody->CalcLinearMomentum();
 		btVector3 lin_diff = (mRecord.LinearMomentumPost - mRecord.LinearMomentumPre) - mRecord.TotalExtForce * deltaTime;
 		btVector3 ang_diff = (mRecord.AngMomentumPost - mRecord.AngMomentumPre);
-		std::cout <<"linear mom diff= " << cBulletUtil::btVectorTotVector0(lin_diff).transpose() << std::endl;
-		std::cout <<"ang mom diff= " << cBulletUtil::btVectorTotVector0(ang_diff).transpose() << std::endl;
-		std::cout <<"ang mom = " << cBulletUtil::btVectorTotVector0(mRecord.AngMomentumPost).transpose() << std::endl;
+		std::cout <<"linear mom diff= " << btBulletUtil::btVectorTotVector0(lin_diff).transpose() << std::endl;
+		std::cout <<"ang mom diff= " << btBulletUtil::btVectorTotVector0(ang_diff).transpose() << std::endl;
+		std::cout <<"ang mom = " << btBulletUtil::btVectorTotVector0(mRecord.AngMomentumPost).transpose() << std::endl;
 	}
-	// std::cout <<"pos = " << cBulletUtil::btVectorTotVector0(mMultibody->GetLinkWorldPos(0)).transpose() << std::endl;
-	// std::cout <<"vel = " << cBulletUtil::btVectorTotVector0(mMultibody->GetLinkWorldVel(0)).transpose() << std::endl;
+	// std::cout <<"pos = " << btBulletUtil::btVectorTotVector0(mMultibody->GetLinkWorldPos(0)).transpose() << std::endl;
+	// std::cout <<"vel = " << btBulletUtil::btVectorTotVector0(mMultibody->GetLinkWorldVel(0)).transpose() << std::endl;
 	
 	
 	mFrame++;

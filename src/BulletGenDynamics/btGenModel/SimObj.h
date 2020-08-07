@@ -1,14 +1,18 @@
+#ifndef BTSIMOBJ_H_
+#define BTSIMOBJ_H_
 #include <memory>
 #include "BulletGenDynamics/btGenUtil/BulletUtil.h"
 #include "btBulletDynamicsCommon.h"
 #include "ColObjBase.h"
 
 // class cSimRigidBody : public std::enable_shared_from_this<cSimRigidBody>
-class cSimRigidBody : public cCollisionObject
+class cRigidBody : public cCollisionObject
 {
 public:
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 	struct tParams
 	{
+		EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 		tParams();
 		// btRigidBody::btRigidBodyConstructionInfo info;
 		// btRigidBody *body;
@@ -20,8 +24,8 @@ public:
 		std::string name;
 		float damping;
 	};
-	cSimRigidBody(const tParams &params);
-	virtual ~cSimRigidBody();
+	cRigidBody(const tParams &params);
+	virtual ~cRigidBody();
 
 	// apply force
 	virtual void ApplyForce(const tVector &force, const tVector &) override final;
@@ -109,3 +113,4 @@ protected:
 	const int mStackLimit = 10;
 	tEigenArr<std::pair<std::string, tStateRecord *> > mStateStack;
 };
+#endif

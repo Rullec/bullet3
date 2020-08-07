@@ -26,7 +26,7 @@ void cIDSolver::VerifyLinearMomentum()
 			new_momentum += mLinkVel[mFrameId][i] * mass;
 			total_mass += mass;
 		}
-		tVector impulse = cBulletUtil::btVectorTotVector0(gGravity) * total_mass;
+		tVector impulse = btBulletUtil::btVectorTotVector0(gGravity) * total_mass;
 		// add external forces
 		for(int i=0; i<mNumLinks; i++) impulse += mExternalForces[i];
 		impulse *= mCurTimestep;
@@ -50,8 +50,8 @@ void cIDSolver::VerifyLinearMomentum()
 		// fout <<"relative error = " << (impulse - momentum_changes).norm() / impulse.norm() * 100 << "%" << std::endl;
 	}
 
-	// base_pos_new = cBulletUtil::btVectorTotVector0(mMultibody->getBasePos());
-	// base_vel = cBulletUtil::btVectorTotVector0(mMultibody->getBaseVel());
+	// base_pos_new = btBulletUtil::btVectorTotVector0(mMultibody->getBasePos());
+	// base_vel = btBulletUtil::btVectorTotVector0(mMultibody->getBaseVel());
 	// tVector base_vel_pred = (base_pos_new - base_pos_old) / mCurTimestep;
 	// std::cout <<"Base vel diff = " << (base_vel - base_vel_pred).transpose() << std::endl;
 	
@@ -125,11 +125,11 @@ void cIDSolver::VerifyLinkVel()
         // set up for base link
         btVector3 base_omega_world = btVector3(mMultibody->getRealBuf()[0], mMultibody->getRealBuf()[1], mMultibody->getRealBuf()[2]),
             base_vel_world = btVector3(mMultibody->getRealBuf()[3], mMultibody->getRealBuf()[4], mMultibody->getRealBuf()[5]);
-        tQuaternion world_to_base = cBulletUtil::btQuaternionTotQuaternion(mMultibody->getWorldToBaseRot());
+        tQuaternion world_to_base = btBulletUtil::btQuaternionTotQuaternion(mMultibody->getWorldToBaseRot());
 
         // the vel and omega of base link represented in base local frame
-        compute_link_omega[0] = cMathUtil::QuatRotVec(world_to_base, cBulletUtil::btVectorTotVector0(base_omega_world));
-        compute_link_vel[0] = cMathUtil::QuatRotVec(world_to_base, cBulletUtil::btVectorTotVector0(base_vel_world));
+        compute_link_omega[0] = btMathUtil::QuatRotVec(world_to_base, btBulletUtil::btVectorTotVector0(base_omega_world));
+        compute_link_vel[0] = btMathUtil::QuatRotVec(world_to_base, btBulletUtil::btVectorTotVector0(base_vel_world));
 
         // std::cout <<"myself joint " << 0 <<" local omega part 1 = " << compute_link_omega[0].transpose()\
             << ", vel = " << compute_link_vel[0].transpose() << std::endl;
@@ -148,15 +148,15 @@ void cIDSolver::VerifyLinkVel()
             int parent_multibody_link_id = mMultibody->getParent(cur_multibody_link_id);
             int parent_ID_link_id = parent_multibody_link_id+1;
             auto & cur_link = mMultibody->getLink(cur_multibody_link_id);
-            tQuaternion parent_to_local = cBulletUtil::btQuaternionTotQuaternion(mMultibody->getParentToLocalRot(cur_multibody_link_id));
+            tQuaternion parent_to_local = btBulletUtil::btQuaternionTotQuaternion(mMultibody->getParentToLocalRot(cur_multibody_link_id));
             tVector parent_omega = compute_link_omega[parent_ID_link_id],
                     parent_vel = compute_link_vel[parent_ID_link_id];       // both these 2 values expressed in parent frame
 
             // std::cout <<"verify 2 " << ID_link_id << std::endl;
             // convert to this local frame and give it to link "idx"
-            compute_link_omega[ID_link_id] = cMathUtil::QuatRotVec(parent_to_local, parent_omega);
-            compute_link_vel[ID_link_id] = cMathUtil::QuatRotVec(parent_to_local, parent_vel) \
-                + cBulletUtil::btVectorTotVector0((-cur_link.m_cachedRVector).cross(cBulletUtil::tVectorTobtVector(compute_link_omega[ID_link_id])));
+            compute_link_omega[ID_link_id] = btMathUtil::QuatRotVec(parent_to_local, parent_omega);
+            compute_link_vel[ID_link_id] = btMathUtil::QuatRotVec(parent_to_local, parent_vel) \
+                + btBulletUtil::btVectorTotVector0((-cur_link.m_cachedRVector).cross(btBulletUtil::tVectorTobtVector(compute_link_omega[ID_link_id])));
 
             // std::cout <<"myself joint " << ID_link_id <<" local omega part1 = " << compute_link_omega[ID_link_id].transpose()\
             << ", vel = " << compute_link_vel[ID_link_id].transpose() << std::endl;
@@ -166,8 +166,8 @@ void cIDSolver::VerifyLinkVel()
             // std::cout <<"verify 3 " << ID_link_id << std::endl;
             for (int dof = 0; dof < cur_link.m_dofCount; ++dof)
             {
-                compute_link_omega[ID_link_id ] += cBulletUtil::btVectorTotVector0(jointVel[dof] * cur_link.getAxisTop(dof));
-                compute_link_vel[ID_link_id] += cBulletUtil::btVectorTotVector0(jointVel[dof] * cur_link.getAxisBottom(dof));
+                compute_link_omega[ID_link_id ] += btBulletUtil::btVectorTotVector0(jointVel[dof] * cur_link.getAxisTop(dof));
+                compute_link_vel[ID_link_id] += btBulletUtil::btVectorTotVector0(jointVel[dof] * cur_link.getAxisBottom(dof));
             }
             // std::cout <<"myself joint " << ID_link_id <<" local omega final = " << compute_link_omega[ID_link_id].transpose()\
             << ", vel = " << compute_link_vel[ID_link_id].transpose() << std::endl;
@@ -180,15 +180,15 @@ void cIDSolver::VerifyLinkVel()
             tQuaternion rot;
             if (0 == ID_link_id)
             {
-                rot = cBulletUtil::btQuaternionTotQuaternion(mMultibody->getWorldToBaseRot().inverse());
+                rot = btBulletUtil::btQuaternionTotQuaternion(mMultibody->getWorldToBaseRot().inverse());
             }
             else
             {
                 int multibody_link_id = ID_link_id - 1;
-                rot = cBulletUtil::btQuaternionTotQuaternion(mMultibody->getLinkCollider(multibody_link_id)->getWorldTransform().getRotation());
+                rot = btBulletUtil::btQuaternionTotQuaternion(mMultibody->getLinkCollider(multibody_link_id)->getWorldTransform().getRotation());
             }
-            compute_link_omega[ID_link_id] = cMathUtil::QuatRotVec(rot, compute_link_omega[ID_link_id]);
-            compute_link_vel[ID_link_id] = cMathUtil::QuatRotVec(rot, compute_link_vel[ID_link_id]);
+            compute_link_omega[ID_link_id] = btMathUtil::QuatRotVec(rot, compute_link_omega[ID_link_id]);
+            compute_link_vel[ID_link_id] = btMathUtil::QuatRotVec(rot, compute_link_vel[ID_link_id]);
 
             double omega_err = (compute_link_omega[ID_link_id] - mLinkOmega[mFrameId][ID_link_id]).norm(),
                 vel_err = (compute_link_vel[ID_link_id] - mLinkVel[mFrameId][ID_link_id]).norm();
@@ -245,8 +245,8 @@ void cIDSolver::VerifyLinkOmega()
         // tQuaternion new_rot = cMathUtil::RotMatToQuaternion(mLinkRot[mFrameId][i]);
         // tQuaternion old_rot = cMathUtil::RotMatToQuaternion(mLinkRot[mFrameId-1][i]);
         // tQuaternion diff_rot = new_rot * old_rot.inverse();
-        tQuaternion diff_rot = cMathUtil::RotMatToQuaternion(mLinkRot[mFrameId][i] * mLinkRot[mFrameId-1][i].transpose());
-        tVector aa_omega = cMathUtil::QuaternionToAxisAngle(diff_rot) / mCurTimestep;
+        tQuaternion diff_rot = btMathUtil::RotMatToQuaternion(mLinkRot[mFrameId][i] * mLinkRot[mFrameId-1][i].transpose());
+        tVector aa_omega = btMathUtil::QuaternionToAxisAngle(diff_rot) / mCurTimestep;
 #ifdef DEBUG_LOG_VEL
         // std::cout <<"link " << i <<" calculated omega = " << aa_omega.transpose() << std::endl;
         // std::cout <<"link " << i <<" true omega = " << mLinkOmega[mFrameId][i].transpose() << std::endl;
@@ -296,11 +296,11 @@ tVector cIDSolver::CalcAngMomentum(int frame_id)
         tMatrix I_body;
         if(i == 0)
         {
-            I_body = cBulletUtil::btVectorTotVector0(mMultibody->getBaseInertia()).asDiagonal();
+            I_body = btBulletUtil::btVectorTotVector0(mMultibody->getBaseInertia()).asDiagonal();
         }
         else
         {
-            I_body = cBulletUtil::btVectorTotVector0(mMultibody->getLinkInertia(i-1)).asDiagonal();
+            I_body = btBulletUtil::btVectorTotVector0(mMultibody->getLinkInertia(i-1)).asDiagonal();
         }
         
         // tVector I0 = R * I_body * R.transpose();

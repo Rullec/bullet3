@@ -3,7 +3,7 @@
 #include "btBulletDynamicsCommon.h"
 #include <memory>
 
-class cSimRigidBody;
+class cRigidBody;
 class cContactSolver;
 class cRobotModelDynamics;
 class tContactForce;
@@ -11,6 +11,7 @@ class tConstraintGeneralizedForce;
 class btGeneralizeWorld
 {
 public:
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 	enum eContactResponseMode
 	{
 		LCPMode,
@@ -33,12 +34,18 @@ public:
 	// };
 
 	// cSimulator(const tParams& params);
-	btGeneralizeWorld(const std::string& config_path);
+	btGeneralizeWorld();
+	// btGeneralizeWorld(const std::string& config_path);
 	~btGeneralizeWorld();
-	void Init();
+	void Init(const std::string& config_path);
 	void AddObj(int n, const std::string& obj_type, bool perturb = false);
+	void AddStaticBody(btCollisionObject* obj, double mass, const std::string& name);
+	void RemoveStaticBody(btCollisionObject* obj);
+	void SetGravity(const tVector& g);
+	tVector GetGravity() const;
 	void AddGround();
 	void AddMultibody(const std::string& path);
+	void AddMultibody(cRobotModelDynamics* model);
 	void RemoveObj(int id);
 	void StepSimulation(double dt);
 	void GetContactInfo();
@@ -54,7 +61,7 @@ protected:
 	btBroadphaseInterface* m_broadphase;
 	btCollisionDispatcher* m_dispatcher;
 	btDefaultCollisionConfiguration* m_collisionConfiguration;
-	std::vector<cSimRigidBody*> mSimObjs;
+	std::vector<cRigidBody*> mSimObjs;
 	cRobotModelDynamics* mMultibody;
 	double mTime;
 	tVector mGravity;
@@ -82,7 +89,7 @@ protected:
 	std::vector<tConstraintGeneralizedForce*> mConstraintGenalizedForce;
 
 	void createRigidBody(double mass, const btTransform& startTransform, btCollisionShape* shape, const std::string& name, const btVector4& color = btVector4(1, 0, 0, 1));
-	void createRigidBodyNew(double mass, const btTransform& startTransform, btCollisionShape* shape, const std::string& name, const btVector4& color = btVector4(1, 0, 0, 1));
+	// void createRigidBodyNew(double mass, const btTransform& startTransform, btCollisionShape* shape, const std::string& name, const btVector4& color = btVector4(1, 0, 0, 1));
 	btBoxShape* createBoxShape(const btVector3& halfExtents);
 
 	// 1. use active force to update the velocity of the world

@@ -1,7 +1,7 @@
 #include "BulletGenDynamics/btGenUtil/MathUtil.h"
 #include "../btGenModel/ColObjBase.h"
 
-class cSimRigidBody;
+class cRigidBody;
 struct cRobotCollider;
 class cRobotModelDynamics;
 #include <map>

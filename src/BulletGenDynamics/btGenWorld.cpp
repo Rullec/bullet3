@@ -8,68 +8,15 @@
 #include <fstream>
 // #define __DEBUG__
 
-extern int global_frame_id;
+int global_frame_id = 0;
 std::map<int, std::string> col_name;
 // const std::string path = "momentum.txt";
 bool enable_bullet_sim = false;
 // const std::string output_path = "multibody_0.rec";
-extern bool gPauseSimulation;
+// extern bool gPauseSimulation;
 // const std::string log_path = "debug_solve_new.txt";
-btGeneralizeWorld::btGeneralizeWorld(const std::string& config_path)
+btGeneralizeWorld::btGeneralizeWorld()
 {
-	Json::Value config_js;
-	cJsonUtil::LoadJson(config_path, config_js);
-	mInternalWorld = nullptr;
-	m_broadphase = nullptr;
-	m_dispatcher = nullptr;
-	m_collisionConfiguration = nullptr;
-	mSimObjs.clear();
-	mMultibody = nullptr;
-	mTime = 0;
-	{
-		bool enable_gravity = cJsonUtil::ParseAsBool("enable_gravity", config_js);
-		if (enable_gravity)
-		{
-			mGravity = tVector(0, -9.8, 0, 0);
-		}
-		else
-		{
-			mGravity.setZero();
-		}
-
-		bool enable_lcp = cJsonUtil::ParseAsBool("enable_lcp", config_js);
-		if (enable_lcp == true)
-			mContactMode = eContactResponseMode::LCPMode;
-		else
-			mContactMode = eContactResponseMode::PenaltyMode;
-		mRigidDamping = cJsonUtil::ParseAsDouble("rigid_damping", config_js);
-
-		mMBDamping1 = cJsonUtil::ParseAsDouble("mb_damping1", config_js);
-		mMBDamping2 = cJsonUtil::ParseAsDouble("mb_damping2", config_js);
-		mMBZeroInitPose = cJsonUtil::ParseAsBool("mb_zero_init_pose", config_js);
-		mMBZeroInitPoseVel = cJsonUtil::ParseAsBool("mb_zero_init_pose_vel", config_js);
-		mMBTestJacobian = cJsonUtil::ParseAsBool("mb_test_jacobian", config_js);
-		mMBEAngleClamp = cJsonUtil::ParseAsBool("mb_angle_clamp", config_js);
-		mMBEnableCollectFrameInfo = cJsonUtil::ParseAsBool("mb_enable_collect_frame_info", config_js);
-		mMBCollectFrameNum = cJsonUtil::ParseAsInt("mb_collect_frame_num", config_js);
-		mEnablePauseWhenMaxVel = cJsonUtil::ParseAsBool("enable_pause_when_max_vel", config_js);
-
-		mMBScale = cJsonUtil::ParseAsDouble("mb_scale", config_js);
-		mMBEnableRk4 = cJsonUtil::ParseAsBool("enable_RK4_for_multibody", config_js);
-		mMBEpsDiagnoalMassMat = cJsonUtil::ParseAsDouble("mb_add_eps_at_diagnoal_mass_mat", config_js);
-		mMBMaxVel = cJsonUtil::ParseAsDouble("mb_max_vel", config_js);
-		mMBUpdateVelWithoutCoriolis = cJsonUtil::ParseAsDouble("mb_update_velocity_without_coriolis", config_js);
-		mEnablePeturb = cJsonUtil::ParseAsDouble("enable_perturb", config_js);
-		mLCPConfigPath = cJsonUtil::ParseAsString("lcp_config_path", config_js);
-	}
-	mLCPContactSolver = nullptr;
-	mManifolds.clear();
-
-	mFrameInfo.clear();
-
-	// std::ofstream fout(log_path);
-	// fout << "";
-	// fout.close();
 }
 btGeneralizeWorld::~btGeneralizeWorld()
 {
@@ -85,8 +32,60 @@ btGeneralizeWorld::~btGeneralizeWorld()
 	delete mLCPContactSolver;
 }
 
-void btGeneralizeWorld::Init()
+void btGeneralizeWorld::Init(const std::string& config_path)
 {
+	{
+		Json::Value config_js;
+		btJsonUtil::LoadJson(config_path, config_js);
+		mInternalWorld = nullptr;
+		m_broadphase = nullptr;
+		m_dispatcher = nullptr;
+		m_collisionConfiguration = nullptr;
+		mSimObjs.clear();
+		mMultibody = nullptr;
+		mTime = 0;
+		{
+			bool enable_gravity = btJsonUtil::ParseAsBool("enable_gravity", config_js);
+			if (enable_gravity)
+			{
+				mGravity = tVector(0, -9.8, 0, 0);
+			}
+			else
+			{
+				mGravity.setZero();
+			}
+
+			bool enable_lcp = btJsonUtil::ParseAsBool("enable_lcp", config_js);
+			if (enable_lcp == true)
+				mContactMode = eContactResponseMode::LCPMode;
+			else
+				mContactMode = eContactResponseMode::PenaltyMode;
+			mRigidDamping = btJsonUtil::ParseAsDouble("rigid_damping", config_js);
+
+			mMBDamping1 = btJsonUtil::ParseAsDouble("mb_damping1", config_js);
+			mMBDamping2 = btJsonUtil::ParseAsDouble("mb_damping2", config_js);
+			mMBZeroInitPose = btJsonUtil::ParseAsBool("mb_zero_init_pose", config_js);
+			mMBZeroInitPoseVel = btJsonUtil::ParseAsBool("mb_zero_init_pose_vel", config_js);
+			mMBTestJacobian = btJsonUtil::ParseAsBool("mb_test_jacobian", config_js);
+			mMBEAngleClamp = btJsonUtil::ParseAsBool("mb_angle_clamp", config_js);
+			mMBEnableCollectFrameInfo = btJsonUtil::ParseAsBool("mb_enable_collect_frame_info", config_js);
+			mMBCollectFrameNum = btJsonUtil::ParseAsInt("mb_collect_frame_num", config_js);
+			mEnablePauseWhenMaxVel = btJsonUtil::ParseAsBool("enable_pause_when_max_vel", config_js);
+
+			mMBScale = btJsonUtil::ParseAsDouble("mb_scale", config_js);
+			mMBEnableRk4 = btJsonUtil::ParseAsBool("enable_RK4_for_multibody", config_js);
+			mMBEpsDiagnoalMassMat = btJsonUtil::ParseAsDouble("mb_add_eps_at_diagnoal_mass_mat", config_js);
+			mMBMaxVel = btJsonUtil::ParseAsDouble("mb_max_vel", config_js);
+			mMBUpdateVelWithoutCoriolis = btJsonUtil::ParseAsDouble("mb_update_velocity_without_coriolis", config_js);
+			mEnablePeturb = btJsonUtil::ParseAsDouble("enable_perturb", config_js);
+			mLCPConfigPath = btJsonUtil::ParseAsString("lcp_config_path", config_js);
+		}
+		mLCPContactSolver = nullptr;
+		mManifolds.clear();
+
+		mFrameInfo.clear();
+	}
+
 	m_collisionConfiguration = new btDefaultCollisionConfiguration();
 	m_dispatcher = new btCollisionDispatcher(m_collisionConfiguration);
 	m_broadphase = new btDbvtBroadphase();
@@ -106,18 +105,24 @@ void btGeneralizeWorld::Init()
 
 void btGeneralizeWorld::AddGround()
 {
-	// btCollisionShape* childShape = new btSphereShape(btScalar(5));
-	// btCompoundShape* colShape = new btCompoundShape();
-	// colShape->addChildShape(btTransform::getIdentity(), childShape);
-	btBoxShape* groundShape = new btBoxShape(btVector3(btScalar(50.), btScalar(50.), btScalar(50.)));
+	{
+		btStaticPlaneShape* plane = new btStaticPlaneShape(btVector3(0, 1, 0), -2);
+		btTransform trans;
+		trans.setIdentity();
+		trans.setOrigin(btVector3(0, 0, 0));
+		createRigidBody(0, trans, plane, "ground");
+	}
+	// {
+	// 	btBoxShape* groundShape = new btBoxShape(btVector3(btScalar(50.), btScalar(50.), btScalar(50.)));
 
-	/// Create Dynamic Objects
-	btTransform startTransform;
-	startTransform.setIdentity();
-	startTransform.setOrigin(btVector3(0, -52, 0));
+	// 	/// Create Dynamic Objects
+	// 	btTransform startTransform;
+	// 	startTransform.setIdentity();
+	// 	startTransform.setOrigin(btVector3(0, -52, 0));
 
-	// startTransform.setRotation(btQuaternion(btVector3(1, 0, 0), SIMD_PI / 6.));
-	createRigidBody(0.f, startTransform, groundShape, "ground");
+	// 	// startTransform.setRotation(btQuaternion(btVector3(1, 0, 0), SIMD_PI / 6.));
+	// 	createRigidBody(0.f, startTransform, groundShape, "ground");
+	// }
 }
 
 void btGeneralizeWorld::AddObj(int n, const std::string& obj_type, bool add_perturb /*=false*/)
@@ -149,7 +154,7 @@ void btGeneralizeWorld::AddObj(int n, const std::string& obj_type, bool add_pert
 	startTransform.setOrigin(btVector3(0, -1, 0));
 	// startTransform.setOrigin(btVector3(0.680375, -1.18218, 0.566198));
 	// tQuaternion qua = tQuaternion(0.800701, 0.372043, 0.28516, -0.373023);
-	// startTransform.setRotation(cBulletUtil::tQuaternionTobtQuaternion(qua));
+	// startTransform.setRotation(btBulletUtil::tQuaternionTobtQuaternion(qua));
 
 	// startTransform.setRotation(btQuaternion(btVector3(1, 1, 0), SIMD_PI / 6.));
 
@@ -169,7 +174,7 @@ void btGeneralizeWorld::AddObj(int n, const std::string& obj_type, bool add_pert
 					btScalar(1 * i),
 					btScalar(-1 + 1.1 * k),
 					btScalar(1 * j)));
-				if (add_perturb) startTransform.setOrigin(startTransform.getOrigin() + cBulletUtil::tVectorTobtVector(tVector::Random() * 0.1));
+				if (add_perturb) startTransform.setOrigin(startTransform.getOrigin() + btBulletUtil::tVectorTobtVector(tVector::Random() * 0.1));
 				createRigidBody(1.f, startTransform, colShape, obj_type + std::to_string(k));
 			}
 		}
@@ -180,6 +185,23 @@ void btGeneralizeWorld::AddObj(int n, const std::string& obj_type, bool add_pert
 	// mSimObjs[0]->set(tVector(0, -0.607168, 0, 0));
 }
 
+void btGeneralizeWorld::AddStaticBody(btCollisionObject* obj, double mass, const std::string& name)
+{
+	createRigidBody(mass, obj->getWorldTransform(), obj->getCollisionShape(), name);
+}
+void btGeneralizeWorld::RemoveStaticBody(btCollisionObject* obj)
+{
+	std::cout << "remove static body hasn't been implemented\n";
+}
+void btGeneralizeWorld::SetGravity(const tVector& g)
+{
+	mGravity = g;
+}
+
+tVector btGeneralizeWorld::GetGravity() const
+{
+	return mGravity;
+}
 // void btGeneralizeWorld::AddMultibody(int num)
 void btGeneralizeWorld::AddMultibody(const std::string& skeleton_name)
 {
@@ -217,7 +239,8 @@ void btGeneralizeWorld::AddMultibody(const std::string& skeleton_name)
 	// 		skeleton_name += "skeleton_sphere.json";
 	// 		break;
 	// }
-	mMultibody = new cRobotModelDynamics(skeleton_name.c_str(), mMBScale, ModelType::JSON);
+	mMultibody = new cRobotModelDynamics();
+	mMultibody->Init(skeleton_name.c_str(), mMBScale, ModelType::JSON);
 	mMultibody->SetComputeSecondDerive(true);
 	mMultibody->SetDampingCoeff(mMBDamping1, mMBDamping2);
 	mMultibody->SetAngleClamp(mMBEAngleClamp);
@@ -232,6 +255,16 @@ void btGeneralizeWorld::AddMultibody(const std::string& skeleton_name)
 	}
 }
 
+void btGeneralizeWorld::AddMultibody(cRobotModelDynamics* model)
+{
+	assert(model != nullptr);
+	if (mMultibody == nullptr) delete mMultibody;
+	mMultibody = model;
+	// mMultibody->SetComputeSecondDerive(true);
+	// mMultibody->SetDampingCoeff(mMBDamping1, mMBDamping2);
+	// mMultibody->SetAngleClamp(mMBEAngleClamp);
+	// mMultibody->SetMaxVel(mMBMaxVel);
+}
 #include "BulletGenDynamics/btGenUtil/TimeUtil.hpp"
 void btGeneralizeWorld::RemoveObj(int id)
 {
@@ -247,7 +280,7 @@ void OutputJacobianTestJson(cRobotModelDynamics*, const std::string& path);
 void OutputDynamicsFTestJson(cRobotModelDynamics*, const std::string& path);
 void btGeneralizeWorld::StepSimulation(double dt)
 {
-	cTimeUtil::Begin("stepsim");
+	btTimeUtil::Begin("stepsim");
 	std::cout << "------------------begin step simulation for frame " << global_frame_id << " time " << mTime << "------------------\n";
 
 	if (enable_bullet_sim)
@@ -256,19 +289,22 @@ void btGeneralizeWorld::StepSimulation(double dt)
 	}
 	else
 	{
+		// std::cout << "[bt] collision object num = " << mInternalWorld->getNumCollisionObjects() << std::endl;
 		ApplyActiveForce(dt);
 
 		CollisionDetect();
 
-		cTimeUtil::Begin("collision_response");
+		// btTimeUtil::Begin("collision_response");
 		CollisionRespose(dt);
-		cTimeUtil::End("collision_response");
+		// btTimeUtil::End("collision_response");
 
 		Update(dt);
 
 		PostUpdate(dt);
 	}
-	cTimeUtil::End("stepsim");
+	// if (mMultibody)
+	// 	std::cout << "q = " << mMultibody->Getq().transpose() << std::endl;
+	btTimeUtil::End("stepsim");
 }
 void btGeneralizeWorld::PostUpdate(double dt)
 {
@@ -295,31 +331,61 @@ btDefaultCollisionConfiguration* btGeneralizeWorld::GetConfiguration()
 {
 	return m_collisionConfiguration;
 }
-
-void btGeneralizeWorld::createRigidBody(double mass, const btTransform& startTransform, btCollisionShape* shape, const std::string& name, const btVector4& color)
+#include "btGenUtil/BulletUtil.h"
+void btGeneralizeWorld::createRigidBody(double mass, const btTransform& startTransform_, btCollisionShape* shape, const std::string& name, const btVector4& color)
 {
+	// judge whether it is statid plane
+	btTransform new_trans = startTransform_;
+	{
+		btStaticPlaneShape* static_plane = dynamic_cast<btStaticPlaneShape*>(shape);
+		if (static_plane != nullptr)
+		{
+			std::cout << "add static plane\n";
+			btVector3 normal = static_plane->getPlaneNormal();
+			btScalar constant = static_plane->getPlaneConstant();
+
+			// recreate a feasible BIG cube
+			mass = 0;
+			double cube_size = 100;
+			shape = createBoxShape(btVector3(cube_size / 2, cube_size / 2, cube_size / 2));
+			tMatrix rot = btMathUtil::DirToRotMat(btBulletUtil::btVectorTotVector0(normal), tVector(0, 1, 0, 0));
+			btVector3 translate = normal * (constant - cube_size / 2);
+			std::cout << "rot = \n"
+					  << rot << std::endl;
+			std::cout << "translate = " << btBulletUtil::btVectorTotVector0(translate).transpose() << std::endl;
+			new_trans.setOrigin(translate);
+			new_trans.setRotation(btBulletUtil::tQuaternionTobtQuaternion(btMathUtil::RotMatToQuaternion(rot)));
+		}
+	}
+
 	btVector3 localInertia(0, 0, 0);
+
+	if (true == std::isinf(mass))
+	{
+		std::cout << "inf mass is set to zero";
+		mass = 0.0;
+	}
 	if (mass != 0.f)
 		shape->calculateLocalInertia(mass, localInertia);
 
-	cSimRigidBody::tParams params;
+	cRigidBody::tParams params;
 	params.col_shape = shape;
 	params.damping = 0;
 	params.mass = mass;
 	params.name = name;
-	params.local_inertia = cBulletUtil::btVectorTotVector0(localInertia);
-	params.origin = cBulletUtil::btVectorTotVector1(startTransform.getOrigin());
-	params.rot = cBulletUtil::btQuaternionTotQuaternion(startTransform.getRotation());
+	params.local_inertia = btBulletUtil::btVectorTotVector0(localInertia);
+	params.origin = btBulletUtil::btVectorTotVector1(new_trans.getOrigin());
+	params.rot = btBulletUtil::btQuaternionTotQuaternion(new_trans.getRotation());
 
-	btCollisionObject* obj = new cSimRigidBody(params);
-	obj->setWorldTransform(startTransform);
-	mSimObjs.push_back(dynamic_cast<cSimRigidBody*>(obj));
-	// {
-	// 	mSimObjs[0]->SetLinVel(tVector(0, -10, 0, 0));
-	// }
+	btCollisionObject* obj = new cRigidBody(params);
+
+	obj->setWorldTransform(new_trans);
+	mSimObjs.push_back(dynamic_cast<cRigidBody*>(obj));
 
 	obj->setCollisionShape(shape);
 	mInternalWorld->addCollisionObject(obj, 1, -1);
+	std::cout << "col flag = " << obj->getCollisionFlags() << std::endl;
+	// exit(1);
 }
 
 #include "BulletGenDynamics/btGenModel/EulerAngelRotationMatrix.h"
@@ -328,8 +394,12 @@ void btGeneralizeWorld::ApplyActiveForce(double dt)
 {
 	// BT_PROFILE("apply_active_force");
 	// add gravity to simobjs and multibody
+	// std::cout << "total obj num = " << mSimObjs.size() << std::endl;
 	for (auto& obj : mSimObjs)
 	{
+		// std::cout << "[bt] is static = " << obj->isStaticObject() << std::endl;
+		// std::cout << "[bt] obj col flag = " << obj->getCollisionFlags() << std::endl;
+		// std::cout << "[bt] obj pos = " << obj->GetWorldPos().transpose() << std::endl;
 		obj->ApplyCOMForce(obj->GetMass() * mGravity);
 		// std::cout << "obj apply " << (obj->GetMass() * mGravity).transpose() << std::endl;
 	}
@@ -337,7 +407,7 @@ void btGeneralizeWorld::ApplyActiveForce(double dt)
 	if (mMultibody)
 	{
 		mMultibody->ApplyGravity(mGravity);
-
+		// std::cout << "mb pos = " << mMultibody->Getq().segment(0, 3).transpose() << std::endl;
 		// std::cout << "q = " << mMultibody->Getq().transpose() << std::endl;
 		// std::cout << "qdot = " << mMultibody->Getqdot().transpose() << std::endl;
 	}
@@ -352,8 +422,8 @@ void btGeneralizeWorld::ApplyActiveForce(double dt)
 				mMultibody->ApplyForce(std::rand() % mMultibody->GetNumOfLinks(), tVector::Random(), tVector::Random());
 				mMultibody->ApplyLinkTorque(i, tVector::Random());
 			}
+			std::cout << "perturb Q = " << mMultibody->GetGeneralizedForce().transpose() << std::endl;
 		}
-		std::cout << "perturb Q = " << mMultibody->GetGeneralizedForce().transpose() << std::endl;
 	}
 }
 
@@ -362,8 +432,9 @@ void btGeneralizeWorld::CollisionDetect()
 {
 	mManifolds.clear();
 	mInternalWorld->performDiscreteCollisionDetection();
-
+	// std::cout << "[bt] dispatcher = " << m_dispatcher << std::endl;
 	int num_of_manifolds = m_dispatcher->getNumManifolds();
+	// std::cout << "[bt] num of mani = " << num_of_manifolds << std::endl;
 	for (int i = 0; i < num_of_manifolds; i++) mManifolds.push_back(m_dispatcher->getManifoldByIndexInternal(i));
 
 #ifdef __DEBUG__
@@ -405,7 +476,7 @@ void btGeneralizeWorld::CollisionRespose(double dt)
 	// tVectorXd qdotold = mMultibody->Getqdot();
 	// tVectorXd qddotold = mMultibody->Getqddot();
 	// 4. collision response
-	cTimeUtil::Begin("LCP total");
+	// btTimeUtil::Begin("LCP total");
 	switch (mContactMode)
 	{
 		case eContactResponseMode::PenaltyMode:
@@ -418,7 +489,7 @@ void btGeneralizeWorld::CollisionRespose(double dt)
 		default:
 			break;
 	}
-	cTimeUtil::End("LCP total");
+	// btTimeUtil::End("LCP total");
 	// tVectorXd qnew = mMultibody->Getq();
 	// tVectorXd qdotnew = mMultibody->Getqdot();
 	// tVectorXd qddotnew = mMultibody->Getqddot();
@@ -456,7 +527,7 @@ void btGeneralizeWorld::CollisionRespose(double dt)
 	// fout.close();
 }
 
-extern cSimRigidBody* UpcastRigidBody(const btCollisionObject* col);
+extern cRigidBody* UpcastRigidBody(const btCollisionObject* col);
 extern cRobotCollider* UpcastRobotCollider(const btCollisionObject* col);
 
 void btGeneralizeWorld::CollisionResposePenalty(double dt)
@@ -467,8 +538,8 @@ void btGeneralizeWorld::CollisionResposePenalty(double dt)
 	{
 		// 1. get the collision pair
 		int num_of_contacts = m->getNumContacts();
-		cSimRigidBody *rigidbody0 = UpcastRigidBody(m->getBody0()),
-					  *rigidbody1 = UpcastRigidBody(m->getBody1());
+		cRigidBody *rigidbody0 = UpcastRigidBody(m->getBody0()),
+				   *rigidbody1 = UpcastRigidBody(m->getBody1());
 		cRobotCollider *mbody0 = nullptr, *mbody1 = nullptr;
 
 		if (rigidbody0 == nullptr) mbody0 = UpcastRobotCollider(m->getBody0()), assert(mbody0 != nullptr);
@@ -479,7 +550,7 @@ void btGeneralizeWorld::CollisionResposePenalty(double dt)
 			// 2. determine the contact normal on body0
 			auto& pt = m->getContactPoint(i);
 
-			tVector normal_on_0 = cBulletUtil::btVectorTotVector0(pt.m_normalWorldOnB);
+			tVector normal_on_0 = btBulletUtil::btVectorTotVector0(pt.m_normalWorldOnB);
 			// std::cout << "body0 name = " << body0->GetName() << std::endl;
 
 			// 3. penetration
@@ -491,16 +562,16 @@ void btGeneralizeWorld::CollisionResposePenalty(double dt)
 			// std::cout << "force on 0 = " << force_on_0.transpose() << std::endl;
 
 			if (rigidbody0)
-				rigidbody0->ApplyForce(force_on_0, cBulletUtil::btVectorTotVector1(pt.m_positionWorldOnA));
+				rigidbody0->ApplyForce(force_on_0, btBulletUtil::btVectorTotVector1(pt.m_positionWorldOnA));
 			else
-				mbody0->mModel->ApplyForce(mbody0->mLinkId, force_on_0, cBulletUtil::btVectorTotVector0(pt.m_positionWorldOnA));
+				mbody0->mModel->ApplyForce(mbody0->mLinkId, force_on_0, btBulletUtil::btVectorTotVector0(pt.m_positionWorldOnA));
 
 			if (rigidbody1)
-				rigidbody1->ApplyForce(-force_on_0, cBulletUtil::btVectorTotVector1(pt.m_positionWorldOnB));
+				rigidbody1->ApplyForce(-force_on_0, btBulletUtil::btVectorTotVector1(pt.m_positionWorldOnB));
 			else
-				mbody1->mModel->ApplyForce(mbody1->mLinkId, -force_on_0, cBulletUtil::btVectorTotVector0(pt.m_positionWorldOnB));
+				mbody1->mModel->ApplyForce(mbody1->mLinkId, -force_on_0, btBulletUtil::btVectorTotVector0(pt.m_positionWorldOnB));
 
-			// body1->ApplyForce(-force_on_0, cBulletUtil::btVectorTotVector1(pt.m_positionWorldOnB) - body1->GetWorldPos());
+			// body1->ApplyForce(-force_on_0, btBulletUtil::btVectorTotVector1(pt.m_positionWorldOnB) - body1->GetWorldPos());
 			// exit(0);
 		}
 	}
@@ -562,7 +633,7 @@ void btGeneralizeWorld::Update(double dt)
 			CollectFrameInfo(dt);
 		if (global_frame_id == mMBCollectFrameNum)
 		{
-			gPauseSimulation = true;
+			// gPauseSimulation = true;
 			WriteFrameInfo("frame_info.txt");
 		}
 	}
@@ -591,7 +662,7 @@ void btGeneralizeWorld::Update(double dt)
 		{
 			std::cout << "[warn] multibody exceed max vel = " << mMultibody->Getqdot().cwiseAbs().maxCoeff()
 					  << std::endl;
-			if (mEnablePauseWhenMaxVel) gPauseSimulation = true;
+			// if (mEnablePauseWhenMaxVel) gPauseSimulation = true;
 			// exit(1);
 		}
 	}
@@ -681,26 +752,26 @@ void btGeneralizeWorld::WriteFrameInfo(const std::string& path)
 	{
 		Json::Value FrameValue;
 		FrameValue["frame_id"] = item.frame_id;
-		FrameValue["q"] = cJsonUtil::BuildVectorJsonValue(item.q);
-		FrameValue["qdot"] = cJsonUtil::BuildVectorJsonValue(item.qdot);
-		FrameValue["qddot"] = cJsonUtil::BuildVectorJsonValue(item.qddot);
-		FrameValue["Q"] = cJsonUtil::BuildVectorJsonValue(item.Q);
-		FrameValue["residual"] = cJsonUtil::BuildVectorJsonValue(item.residual);
+		FrameValue["q"] = btJsonUtil::BuildVectorJsonValue(item.q);
+		FrameValue["qdot"] = btJsonUtil::BuildVectorJsonValue(item.qdot);
+		FrameValue["qddot"] = btJsonUtil::BuildVectorJsonValue(item.qddot);
+		FrameValue["Q"] = btJsonUtil::BuildVectorJsonValue(item.Q);
+		FrameValue["residual"] = btJsonUtil::BuildVectorJsonValue(item.residual);
 		FrameValue["timestep"] = item.timestep;
 
 		for (int i = 0; i < mMultibody->GetNumOfLinks(); i++)
 		{
-			FrameValue["force_array"].append(cJsonUtil::BuildVectorJsonValue(item.force_array[i]));
-			FrameValue["torque_array"].append(cJsonUtil::BuildVectorJsonValue(item.torque_array[i]));
+			FrameValue["force_array"].append(btJsonUtil::BuildVectorJsonValue(item.force_array[i]));
+			FrameValue["torque_array"].append(btJsonUtil::BuildVectorJsonValue(item.torque_array[i]));
 		}
-		FrameValue["mass_mat"] = cJsonUtil::BuildMatrixJsonValue(item.mass_mat);
-		FrameValue["mass_mat_inv"] = cJsonUtil::BuildMatrixJsonValue(item.mass_mat_inv);
-		FrameValue["coriolis_mat"] = cJsonUtil::BuildMatrixJsonValue(item.coriolis_mat);
-		FrameValue["damping_mat"] = cJsonUtil::BuildMatrixJsonValue(item.damping_mat);
+		FrameValue["mass_mat"] = btJsonUtil::BuildMatrixJsonValue(item.mass_mat);
+		FrameValue["mass_mat_inv"] = btJsonUtil::BuildMatrixJsonValue(item.mass_mat_inv);
+		FrameValue["coriolis_mat"] = btJsonUtil::BuildMatrixJsonValue(item.coriolis_mat);
+		FrameValue["damping_mat"] = btJsonUtil::BuildMatrixJsonValue(item.damping_mat);
 		FrameArray.append(FrameValue);
 	}
 	root["frame_array"] = FrameArray;
-	cJsonUtil::WriteJson(path, root, true);
+	btJsonUtil::WriteJson(path, root, true);
 	fout.close();
 }
 
@@ -728,15 +799,15 @@ void OutputJacobianTestJson(cRobotModelDynamics* mb, const std::string& path)
 		local_pos[3] = 1;
 		tVector global_pos = link->GetGlobalTransform() * local_pos;
 
-		link_json["local_pos"] = cJsonUtil::BuildVectorJsonValue(local_pos);
-		link_json["global_pos"] = cJsonUtil::BuildVectorJsonValue(global_pos);
+		link_json["local_pos"] = btJsonUtil::BuildVectorJsonValue(local_pos);
+		link_json["global_pos"] = btJsonUtil::BuildVectorJsonValue(global_pos);
 		mb->ComputeJacobiByGivenPointTotalDOFWorldFrame(i, global_pos.segment(0, 3), jac_buf);
-		link_json["jacobian"] = cJsonUtil::BuildMatrixJsonValue(jac_buf);
-		link_json["world_trans"] = cJsonUtil::BuildMatrixJsonValue(link->GetGlobalTransform());
+		link_json["jacobian"] = btJsonUtil::BuildMatrixJsonValue(jac_buf);
+		link_json["world_trans"] = btJsonUtil::BuildMatrixJsonValue(link->GetGlobalTransform());
 		root["link_" + std::to_string(i)] = link_json;
 	}
 
-	cJsonUtil::WriteJson(path.c_str(), root, true);
+	btJsonUtil::WriteJson(path.c_str(), root, true);
 }
 
 void OutputDynamicsFTestJson(cRobotModelDynamics* mb, const std::string& path)
@@ -765,20 +836,20 @@ void OutputDynamicsFTestJson(cRobotModelDynamics* mb, const std::string& path)
 		tVector global_pos = link->GetGlobalTransform() * local_pos;
 		tVector global_force = tVector::Random();
 
-		link_json["force_local_pos"] = cJsonUtil::BuildVectorJsonValue(local_pos);
-		link_json["force_global_pos"] = cJsonUtil::BuildVectorJsonValue(global_pos);
-		link_json["force_global"] = cJsonUtil::BuildVectorJsonValue(global_force.segment(0, 3));
+		link_json["force_local_pos"] = btJsonUtil::BuildVectorJsonValue(local_pos);
+		link_json["force_global_pos"] = btJsonUtil::BuildVectorJsonValue(global_pos);
+		link_json["force_global"] = btJsonUtil::BuildVectorJsonValue(global_force.segment(0, 3));
 		mb->ApplyForce(i, global_force, global_pos);
 
 		// link_json["jacobian"] = cJsonUtil::BuildMatrixJsonValue(jac_buf);
 		root["link_" + std::to_string(i)] = link_json;
 	}
-	root["generalized_force"] = cJsonUtil::BuildVectorJsonValue(mb->GetGeneralizedForce());
+	root["generalized_force"] = btJsonUtil::BuildVectorJsonValue(mb->GetGeneralizedForce());
 
-	root["mass_mat"] = cJsonUtil::BuildMatrixJsonValue(mb->GetMassMatrix());
-	root["coriolis_mat"] = cJsonUtil::BuildMatrixJsonValue(mb->GetCoriolisMatrix());
+	root["mass_mat"] = btJsonUtil::BuildMatrixJsonValue(mb->GetMassMatrix());
+	root["coriolis_mat"] = btJsonUtil::BuildMatrixJsonValue(mb->GetCoriolisMatrix());
 
 	tVectorXd qddot = mb->GetInvMassMatrix() * (mb->GetGeneralizedForce() - mb->GetCoriolisMatrix() * mb->Getqdot());
-	root["qddot"] = cJsonUtil::BuildVectorJsonValue(qddot);
-	cJsonUtil::WriteJson(path.c_str(), root, true);
+	root["qddot"] = btJsonUtil::BuildVectorJsonValue(qddot);
+	btJsonUtil::WriteJson(path.c_str(), root, true);
 }

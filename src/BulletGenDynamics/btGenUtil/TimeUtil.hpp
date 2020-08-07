@@ -2,7 +2,7 @@
 #include <ctime>
 #include <map>
 #include <string>
-class cTimeUtil
+class btTimeUtil
 {
 public:
     // calculate a continuous segment of time

@@ -90,17 +90,17 @@ int cBulletPathLCPSolver::Solve(int num_of_vars, const tMatrixXd& M, const tVect
 		continue;
 
 	// now we can try to put a new problem in the shared memory
-	cTimeUtil::Begin("form questions");
+	btTimeUtil::Begin("form questions");
 	FormNewQuestion(M, n);
 	std::cout << "M size = " << M.rows() << " " << M.cols() << std::endl;
-	cTimeUtil::End("form questions");
+	btTimeUtil::End("form questions");
 	// std::cout << "set up question for size " << memory->num_of_vars
 	// 		  << std::endl;
-	cTimeUtil::Begin("solving shared memory");
+	btTimeUtil::Begin("solving shared memory");
 	memory->status = NEED_TO_SOLVE;
 	while (memory->status != SOLVE_FINISHED)
 		continue;
-	cTimeUtil::End("solving shared memory");
+	btTimeUtil::End("solving shared memory");
 
 	VerifyAnswer(M, n, x_result);
 	return 0;

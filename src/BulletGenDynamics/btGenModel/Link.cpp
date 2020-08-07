@@ -282,8 +282,16 @@ void Link::InitTerms()
 	jkv_dq.resize(global_freedom, tMatrixXd::Zero(3, global_freedom));
 	jkw_dq.resize(global_freedom, tMatrixXd::Zero(3, global_freedom));
 #else
-	jkv_dq.resize(3, tMatrixXd::Zero(global_freedom, global_freedom));
-	jkw_dq.resize(3, tMatrixXd::Zero(global_freedom, global_freedom));
+	// jkv_dq.resize(3, tMatrixXd::Zero(global_freedom, global_freedom));
+	// jkw_dq.resize(3, tMatrixXd::Zero(global_freedom, global_freedom));
+	jkv_dq.resize(3);
+	jkw_dq.resize(3);
+	for (int i = 0; i < 3; i++)
+	{
+		jkv_dq[i] = tMatrixXd::Zero(global_freedom, global_freedom);
+		jkw_dq[i] = tMatrixXd::Zero(global_freedom, global_freedom);
+	}
+
 #endif
 }
 
@@ -313,11 +321,22 @@ void Link::SetLinkOmega(const tVector3d& link_omega_)
 {
 	this->link_omega = link_omega_;
 }
-tVector3d Link::GetLinkVel()
+tVector3d Link::GetLinkVel() const
 {
 	return link_vel;
 }
-tVector3d Link::GetLinkOmega()
+tVector3d Link::GetLinkOmega() const
 {
 	return link_omega;
+}
+
+/**
+ * \brief					Get the max length of a link's body diagnoal
+ * 		
+*/
+double Link::GetLinkMaxLength() const
+{
+	std::cout << "link get max length exit\n";
+	exit(1);
+	return 0;
 }

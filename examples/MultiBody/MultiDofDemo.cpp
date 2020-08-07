@@ -102,7 +102,7 @@ btVector3 gGravity = btVector3(0, -10, 0);
 #include "BulletGenDynamics/btGenUtil/TimeUtil.hpp"
 void MultiDofDemo::stepSimulation(float deltaTime)
 {
-	cTimeUtil::Begin("stepsim_mb");
+	btTimeUtil::Begin("stepsim_mb");
 	// 3e-3: relative err 2%
 	// 1e-3: relative err 0.2%
 	// 3e-4: relative err 0.02%
@@ -117,12 +117,12 @@ void MultiDofDemo::stepSimulation(float deltaTime)
 	// mIDSolver->PreSim();
 
 	btVector3 omega_pre = mMultibody->getBaseOmega();
-	// std::cout <<"[log] pre sim omega = " << cBulletUtil::btVectorTotVector0(omega_pre).transpose() << std::endl;
+	// std::cout <<"[log] pre sim omega = " << btBulletUtil::btVectorTotVector0(omega_pre).transpose() << std::endl;
 	m_dynamicsWorld->stepSimulation(deltaTime, 0, deltaTime);
-	cTimeUtil::End("stepsim_mb");
+	btTimeUtil::End("stepsim_mb");
 	// btVector3 omega_post = mMultibody->getBaseOmega();
-	// std::cout <<"[log] post sim omega = " << cBulletUtil::btVectorTotVector0(omega_post).transpose() << std::endl;
-	// std::cout <<"[log] omega  dot = " << cBulletUtil::btVectorTotVector0((omega_post - omega_pre)/deltaTime).transpose() << std::endl;
+	// std::cout <<"[log] post sim omega = " << btBulletUtil::btVectorTotVector0(omega_post).transpose() << std::endl;
+	// std::cout <<"[log] omega  dot = " << btBulletUtil::btVectorTotVector0((omega_post - omega_pre)/deltaTime).transpose() << std::endl;
 
 	// mIDSolver->PostSim();
 }
@@ -374,9 +374,9 @@ btMultiBody* MultiDofDemo::createFeatherstoneMultiBody_testMultiDof(btMultiBodyD
 	base_world_trans = pMultiBody->getBaseWorldTransform();
 	world_to_base_rot = pMultiBody->getWorldToBaseRot();
 	base_world_rot = base_world_trans.getRotation();
-	std::cout << "raw world to base rot = " << cBulletUtil::btQuaternionTotQuaternion(baseOriQuat).coeffs().transpose() << std::endl;
-	std::cout << "[log] world_to_base_rot = " << cBulletUtil::btQuaternionTotQuaternion(world_to_base_rot).coeffs().transpose() << std::endl;
-	std::cout << "[log] base_world_rot = " << cBulletUtil::btQuaternionTotQuaternion(base_world_rot).coeffs().transpose() << std::endl;
+	std::cout << "raw world to base rot = " << btBulletUtil::btQuaternionTotQuaternion(baseOriQuat).coeffs().transpose() << std::endl;
+	std::cout << "[log] world_to_base_rot = " << btBulletUtil::btQuaternionTotQuaternion(world_to_base_rot).coeffs().transpose() << std::endl;
+	std::cout << "[log] base_world_rot = " << btBulletUtil::btQuaternionTotQuaternion(base_world_rot).coeffs().transpose() << std::endl;
 
 	//init the links
 	btVector3 hingeJointAxis(1, 0, 0);
@@ -537,18 +537,18 @@ void MultiDofDemo::RecordSimLog()
 		if (i == 0)
 		{
 			mSimLog << "for root link:\n";
-			mSimLog << "\tpos = " << cBulletUtil::btVectorTotVector1(mMultibody->getBasePos()).transpose() << std::endl;
+			mSimLog << "\tpos = " << btBulletUtil::btVectorTotVector1(mMultibody->getBasePos()).transpose() << std::endl;
 			;
-			mSimLog << "\torientation = " << cBulletUtil::btQuaternionTotQuaternion(mMultibody->getWorldToBaseRot().inverse()).coeffs().transpose() << std::endl;
+			mSimLog << "\torientation = " << btBulletUtil::btQuaternionTotQuaternion(mMultibody->getWorldToBaseRot().inverse()).coeffs().transpose() << std::endl;
 		}
 		else
 		{
 			int multibody_id = i - 1;
 			trans = mMultibody->getLinkCollider(multibody_id)->getWorldTransform();
 			mSimLog << "for link: " << multibody_id << "\n";
-			mSimLog << "\tpos = " << cBulletUtil::btVectorTotVector1(trans.getOrigin()).transpose() << std::endl;
+			mSimLog << "\tpos = " << btBulletUtil::btVectorTotVector1(trans.getOrigin()).transpose() << std::endl;
 			;
-			mSimLog << "\torientation = " << cBulletUtil::btQuaternionTotQuaternion(trans.getRotation()).coeffs().transpose() << std::endl;
+			mSimLog << "\torientation = " << btBulletUtil::btQuaternionTotQuaternion(trans.getRotation()).coeffs().transpose() << std::endl;
 			;
 		}
 	}

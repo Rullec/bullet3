@@ -2,7 +2,7 @@
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
 #include <set>
 
-extern cSimRigidBody* UpcastRigidBody(const btCollisionObject* col);
+extern cRigidBody* UpcastRigidBody(const btCollisionObject* col);
 extern cRobotCollider* UpcastRobotCollider(const btCollisionObject* col);
 extern cCollisionObject* UpcastColObj(const btCollisionObject* col);
 
@@ -153,12 +153,12 @@ void cContactSolver::SetupDataForSI()
 		data->mSI_h.setZero();
 
 		// 2. set up two perpendicular directions
-		tMatrixXd FrictionDir4 = cMathUtil::ExpandFrictionCone(4, data->mNormalPointToA);
+		tMatrixXd FrictionDir4 = btMathUtil::ExpandFrictionCone(4, data->mNormalPointToA);
 		// std::cout << FrictionDir4.rows() << " " << FrictionDir4.cols() << std::endl;
 		tVector3d dir1 = FrictionDir4.block(0, 0, 1, 3).transpose(),
 				  dir2 = FrictionDir4.block(1, 0, 1, 3).transpose();
-		data->mSI_tangent_contact_dir[0] = cMathUtil::Expand(dir1, 0);
-		data->mSI_tangent_contact_dir[1] = cMathUtil::Expand(dir2, 0);
+		data->mSI_tangent_contact_dir[0] = btMathUtil::Expand(dir1, 0);
+		data->mSI_tangent_contact_dir[1] = btMathUtil::Expand(dir2, 0);
 
 		// 3. get
 		int body0_id = data->GetBody0Id(),

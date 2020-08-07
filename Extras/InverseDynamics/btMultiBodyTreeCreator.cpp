@@ -67,7 +67,7 @@ int btMultiBodyTreeCreator::createFromBtMultiBody(const btMultiBody *btmb, const
 			link.body_T_parent_ref(2, 2) = transform.getBasis()[2][2];
 			link.body_T_parent_ref = link.body_T_parent_ref.transpose();
 		}
-		//std::cout << "[create ID] root body to parent ref = " << cBulletUtil::btMatrixTotMatrix1(link.body_T_parent_ref) << std::endl;
+		//std::cout << "[create ID] root body to parent ref = " << btBulletUtil::btMatrixTotMatrix1(link.body_T_parent_ref) << std::endl;
 		// random unit vector. value not used for fixed or floating joints.
 		link.body_axis_of_motion(0) = 0;
 		link.body_axis_of_motion(1) = 0;

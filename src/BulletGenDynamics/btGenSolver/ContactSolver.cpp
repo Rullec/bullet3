@@ -14,9 +14,9 @@
 
 // int contact_times = 0;
 extern int global_frame_id;
-cSimRigidBody* UpcastRigidBody(const btCollisionObject* col)
+cRigidBody* UpcastRigidBody(const btCollisionObject* col)
 {
-	return const_cast<cSimRigidBody*>(dynamic_cast<const cSimRigidBody*>(col));
+	return const_cast<cRigidBody*>(dynamic_cast<const cRigidBody*>(col));
 }
 
 cRobotCollider* UpcastRobotCollider(const btCollisionObject* col)
@@ -43,36 +43,36 @@ cContactSolver::cContactSolver(const std::string& config_path, btDiscreteDynamic
 	// fout << "";
 	// fout.close();
 	Json::Value config;
-	cJsonUtil::LoadJson(config_path, config);
+	btJsonUtil::LoadJson(config_path, config);
 
-	mNumFrictionDirs = cJsonUtil::ParseAsInt("num_of_friction_cone", config);
-	mMu = cJsonUtil::ParseAsFloat("mu", config);
+	mNumFrictionDirs = btJsonUtil::ParseAsInt("num_of_friction_cone", config);
+	mMu = btJsonUtil::ParseAsFloat("mu", config);
 	cur_dt = 0;
-	mEnableMultibodySelfCol = cJsonUtil::ParseAsBool("enable_multibody_self_collision", config);
-	mEnableConvertMatTest = cJsonUtil::ParseAsBool("enable_convert_mat_test", config);
+	mEnableMultibodySelfCol = btJsonUtil::ParseAsBool("enable_multibody_self_collision", config);
+	mEnableConvertMatTest = btJsonUtil::ParseAsBool("enable_convert_mat_test", config);
 
 	// lcp related config
-	mEnableLCPCalc = cJsonUtil::ParseAsBool("enable_lcp_calculation", config);
-	mEnableContactLCP = cJsonUtil::ParseAsBool("enable_contact_lcp", config);
+	mEnableLCPCalc = btJsonUtil::ParseAsBool("enable_lcp_calculation", config);
+	mEnableContactLCP = btJsonUtil::ParseAsBool("enable_contact_lcp", config);
 
-	mEnableFrictionalLCP = cJsonUtil::ParseAsBool("enable_frictional_lcp", config);
-	mEnableJointLimitLCP = cJsonUtil::ParseAsBool(
+	mEnableFrictionalLCP = btJsonUtil::ParseAsBool("enable_frictional_lcp", config);
+	mEnableJointLimitLCP = btJsonUtil::ParseAsBool(
 		"enable_joint_limit_lcp", config);
-	mUseLCPResult = cJsonUtil::ParseAsBool("use_lcp_result", config);
+	mUseLCPResult = btJsonUtil::ParseAsBool("use_lcp_result", config);
 
 	// sequential impulse config
-	mEnableSICalc = cJsonUtil::ParseAsBool("enable_sequential_impulse_calculation", config);
-	mEnableFrictionalSI = cJsonUtil::ParseAsBool("enable_frictional_sequential_impulse", config);
-	mUseSIResult = cJsonUtil::ParseAsBool("use_sequential_impulse_result", config);
-	mMaxItersSI = cJsonUtil::ParseAsInt("max_iters_sequential_impulse", config);
-	mConvergeThresholdSI = cJsonUtil::ParseAsDouble("converge_threshold_sequential_impulse", config);
-	mEnableSILCPComparision = cJsonUtil::ParseAsBool("enable_si_lcp_comparision", config);
-	mDiagonalEps = cJsonUtil::ParseAsDouble("diagonal_eps", config);
+	mEnableSICalc = btJsonUtil::ParseAsBool("enable_sequential_impulse_calculation", config);
+	mEnableFrictionalSI = btJsonUtil::ParseAsBool("enable_frictional_sequential_impulse", config);
+	mUseSIResult = btJsonUtil::ParseAsBool("use_sequential_impulse_result", config);
+	mMaxItersSI = btJsonUtil::ParseAsInt("max_iters_sequential_impulse", config);
+	mConvergeThresholdSI = btJsonUtil::ParseAsDouble("converge_threshold_sequential_impulse", config);
+	mEnableSILCPComparision = btJsonUtil::ParseAsBool("enable_si_lcp_comparision", config);
+	mDiagonalEps = btJsonUtil::ParseAsDouble("diagonal_eps", config);
 
 	// other stuff
-	mEnableDebugOutput = cJsonUtil::ParseAsBool("enable_debug_output", config);
+	mEnableDebugOutput = btJsonUtil::ParseAsBool("enable_debug_output", config);
 	mWorld = world;
-	mLCPSolver = BuildLCPSolver(cJsonUtil::ParseAsString("lcp_solver_type", config));
+	mLCPSolver = BuildLCPSolver(btJsonUtil::ParseAsString("lcp_solver_type", config));
 
 	bool err = false;
 	if (mMu < 0.1)
@@ -133,15 +133,15 @@ void cContactSolver::ConstraintProcess(float dt_)
 	// std::cout << "--------contact solver frame " << global_frame_id << " ----------" << std::endl;
 	cur_dt = dt_;
 
-	cTimeUtil::Begin("constraint_setup");
+	// btTimeUtil::Begin("constraint_setup");
 	ConstraintSetup();
-	cTimeUtil::End("constraint_setup");
-	cTimeUtil::Begin("constraint_solve");
+	// btTimeUtil::End("constraint_setup");
+	// btTimeUtil::Begin("constraint_solve");
 	ConstraintSolve();
-	cTimeUtil::End("constraint_solve");
-	cTimeUtil::Begin("constraint_finished");
+	// btTimeUtil::End("constraint_solve");
+	// btTimeUtil::Begin("constraint_finished");
 	ConstraintFinished();
-	cTimeUtil::End("constraint_finished");
+	// btTimeUtil::End("constraint_finished");
 }
 
 std::vector<tContactForce*> cContactSolver::GetContactForces()
@@ -180,9 +180,9 @@ void cContactSolver::ConstraintFinished()
 		// std::cout << "contact x size = " << contact_x.size() << std::endl;
 		// std::cout << "[debug] contact force = " << cMathUtil::Expand(contact_x.segment(i * 3, 3), 0).transpose() << std::endl;
 		// std::cout << "[debug] contact pos = " << data->mContactPtOnA.transpose() << std::endl;
-		ptr = new tContactForce(data->mBodyA, cMathUtil::Expand(contact_x.segment(i * 3, 3), 0), data->mContactPtOnA);
+		ptr = new tContactForce(data->mBodyA, btMathUtil::Expand(contact_x.segment(i * 3, 3), 0), data->mContactPtOnA);
 		contact_force_array.push_back(ptr);
-		ptr = new tContactForce(data->mBodyB, -cMathUtil::Expand(contact_x.segment(i * 3, 3), 0), data->mContactPtOnB);
+		ptr = new tContactForce(data->mBodyB, -btMathUtil::Expand(contact_x.segment(i * 3, 3), 0), data->mContactPtOnB);
 		contact_force_array.push_back(ptr);
 	}
 
@@ -218,6 +218,7 @@ void cContactSolver::ConstraintSetup()
 	{
 		btDispatcher* dispatcher = mWorld->getDispatcher();
 		int n_manifolds = dispatcher->getNumManifolds();
+		// std::cout << "manifold numbers = " << n_manifolds << std::endl;
 		for (int i = 0; i < n_manifolds; i++)
 		{
 			const auto& manifold = dispatcher->getManifoldByIndexInternal(i);
@@ -229,7 +230,7 @@ void cContactSolver::ConstraintSetup()
 	if (mEnableJointLimitLCP) AddJointLimit();
 
 	mNumConstraints = mNumJointLimitConstraints + mNumContactPoints;
-
+	// std::cout << "contact numbers = " << mNumContactPoints << std::endl;
 	// if here is a contact
 	int self_contact_size = 0;
 	for (int i = 0; i < mNumContactPoints; i++)
@@ -362,13 +363,13 @@ void cContactSolver::SolveByLCP()
 	// fout << "M = \n"
 	// 	 << M << std::endl;
 	// fout << "n = " << n.transpose() << std::endl;
-	// cTimeUtil::Begin("MLCPSolver->Solver");
+	// btTimeUtil::Begin("MLCPSolver->Solver");
 	if (mLCPSolver->GetType() == eLCPSolverType::ODEDantzig)
 	{
 		static_cast<cODEDantzigLCPSolver*>(mLCPSolver)->SetInfo(mNumFrictionDirs, this->mMu, mNumContactPoints, mNumJointLimitConstraints);
 	}
 	int ret = mLCPSolver->Solve(x_lcp.size(), M, n, x_lcp);
-	// cTimeUtil::End("MLCPSolver->Solver");
+	// btTimeUtil::End("MLCPSolver->Solver");
 	// fout << "x = " << x_lcp.transpose() << std::endl;
 	// fout.close();
 	// if (global_frame_id == 60) exit(1);
@@ -389,8 +390,8 @@ void cContactSolver::SolveByLCP()
 	// fout << "n = " << n.transpose() << std::endl;
 	// std::cout << "[lcp] x_lcp = " << x_lcp.transpose() << std::endl;
 	// fout.close();
-	cMathUtil::RoundZero(M);
-	cMathUtil::RoundZero(n);
+	btMathUtil::RoundZero(M);
+	btMathUtil::RoundZero(n);
 	if (ret != 0)
 	{
 		std::cout << "solved failed\n";
@@ -424,7 +425,7 @@ void cContactSolver::ConvertLCPResult()
 		tVector contact_force = tVector::Zero();
 		if (mEnableFrictionalLCP)
 		{
-			contact_force = cMathUtil::Expand((data->mS * x_unit), 0);
+			contact_force = btMathUtil::Expand((data->mS * x_unit), 0);
 		}
 		else
 		{
@@ -754,9 +755,9 @@ void cContactSolver::AddManifold(btPersistentManifold* manifold)
 			}
 
 			const auto& pt = manifold->getContactPoint(j);
-			data->mNormalPointToA = cBulletUtil::btVectorTotVector0(pt.m_normalWorldOnB);
-			data->mContactPtOnA = cBulletUtil::btVectorTotVector1(pt.getPositionWorldOnA());
-			data->mContactPtOnB = cBulletUtil::btVectorTotVector1(pt.getPositionWorldOnB());
+			data->mNormalPointToA = btBulletUtil::btVectorTotVector0(pt.m_normalWorldOnB);
+			data->mContactPtOnA = btBulletUtil::btVectorTotVector1(pt.getPositionWorldOnA());
+			data->mContactPtOnB = btBulletUtil::btVectorTotVector1(pt.getPositionWorldOnB());
 			data->distance = pt.getDistance();
 
 			data->Setup(mNumFrictionDirs);
@@ -823,7 +824,7 @@ void cContactSolver::AddJointLimit()
 		// std::cout << "[debug] ub = " << ub.transpose() << std::endl;
 		if ((ub - lb).minCoeff() < 1e-10)
 		{
-			std::cout << "[debug] add joint limit invalid\nub = " << ub.transpose() << "\nlb = " << lb.transpose() << std::endl;
+			std::cout << "[error] add joint limit invalid\nub = " << ub.transpose() << "\nlb = " << lb.transpose() << std::endl;
 			exit(1);
 		}
 

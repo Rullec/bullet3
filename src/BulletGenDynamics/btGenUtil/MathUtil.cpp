@@ -12,7 +12,7 @@ tMatrix xconventionRotation_mimic_dx(double x);
 tMatrix yconventionRotation_mimic_dy(double y);
 tMatrix zconventionRotation_mimic_dz(double z);
 
-tMatrix cMathUtil::RotMat(const tQuaternion &quater_)
+tMatrix btMathUtil::RotMat(const tQuaternion &quater_)
 {
 	// https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation#Quaternion-derived_rotation_matrix
 
@@ -25,7 +25,7 @@ tMatrix cMathUtil::RotMat(const tQuaternion &quater_)
 	return res;
 }
 
-tQuaternion cMathUtil::RotMatToQuaternion(const tMatrix &mat)
+tQuaternion btMathUtil::RotMatToQuaternion(const tMatrix &mat)
 {
 	// http://www.iri.upc.edu/files/scidoc/2068-Accurate-Computation-of-Quaternions-from-Rotation-Matrices.pdf
 	double eta = 0;
@@ -102,23 +102,23 @@ tQuaternion cMathUtil::RotMatToQuaternion(const tMatrix &mat)
 	// shape sign
 
 	int sign[4] = {};
-	sign[0] = cMathUtil::sign(q1);
-	sign[1] = cMathUtil::sign(mat(2, 1) - mat(1, 2));
-	sign[2] = cMathUtil::sign(mat(0, 2) - mat(2, 0));
-	sign[3] = cMathUtil::sign(mat(1, 0) - mat(0, 1));
+	sign[0] = btMathUtil::sign(q1);
+	sign[1] = btMathUtil::sign(mat(2, 1) - mat(1, 2));
+	sign[2] = btMathUtil::sign(mat(0, 2) - mat(2, 0));
+	sign[3] = btMathUtil::sign(mat(1, 0) - mat(0, 1));
 	if (sign[0] < 0)
 		for (int i = 1; i < 4; i++) sign[i] *= -1;
 
 	return tQuaternion(sign[0] * q1, sign[1] * q2, sign[2] * q3, sign[3] * q4);
 }
 
-tVector cMathUtil::QuaternionToCoef(const tQuaternion &quater)
+tVector btMathUtil::QuaternionToCoef(const tQuaternion &quater)
 {
 	// quaternion -> vec = [x, y, z, w]
 	return tVector(quater.x(), quater.y(), quater.z(), quater.w());
 }
 
-tQuaternion cMathUtil::CoefToQuaternion(const tVector &vec)
+tQuaternion btMathUtil::CoefToQuaternion(const tVector &vec)
 {
 	// vec = [x, y, z, w] -> quaternion
 	if (vec[3] > 0)
@@ -127,7 +127,7 @@ tQuaternion cMathUtil::CoefToQuaternion(const tVector &vec)
 		return tQuaternion(-vec[3], -vec[0], -vec[1], -vec[2]);
 }
 
-tQuaternion cMathUtil::AxisAngleToQuaternion(const tVector &angvel)
+tQuaternion btMathUtil::AxisAngleToQuaternion(const tVector &angvel)
 {
 	double theta = angvel.norm();
 	double theta_2 = theta / 2;
@@ -140,7 +140,7 @@ tQuaternion cMathUtil::AxisAngleToQuaternion(const tVector &angvel)
 					   norm_angvel[2] * sin_theta_2);
 }
 
-tVector cMathUtil::QuaternionToAxisAngle(const tQuaternion &quater)
+tVector btMathUtil::QuaternionToAxisAngle(const tQuaternion &quater)
 {
 	/* 	quater = [w, x, y, z]
 			w = cos(theta / 2)
@@ -162,8 +162,8 @@ tVector cMathUtil::QuaternionToAxisAngle(const tQuaternion &quater)
 	return theta * tVector(ax, ay, az, 0);
 }
 
-tVector cMathUtil::CalcAngularVelocity(const tQuaternion &old_rot,
-									   const tQuaternion &new_rot, double timestep)
+tVector btMathUtil::CalcAngularVelocity(const tQuaternion &old_rot,
+										const tQuaternion &new_rot, double timestep)
 {
 	tQuaternion trans = new_rot * old_rot.conjugate();
 	double theta = std::acos(trans.w()) * 2;  // std::acos() output range [0, pi]
@@ -183,23 +183,23 @@ tVector cMathUtil::CalcAngularVelocity(const tQuaternion &old_rot,
 	return vel;
 }
 
-tVector cMathUtil::CalcAngularVelocityFromAxisAngle(const tQuaternion &old_rot, const tQuaternion &new_rot, double timestep)
+tVector btMathUtil::CalcAngularVelocityFromAxisAngle(const tQuaternion &old_rot, const tQuaternion &new_rot, double timestep)
 {
 	std::cout << "cMathUtil::CalcAngularVelocityFromAxisAngle: this func hasn't been well-tested, call another one\n";
 	exit(1);
-	tVector old_aa = cMathUtil::QuaternionToAxisAngle(old_rot),
-			new_aa = cMathUtil::QuaternionToAxisAngle(new_rot);
+	tVector old_aa = btMathUtil::QuaternionToAxisAngle(old_rot),
+			new_aa = btMathUtil::QuaternionToAxisAngle(new_rot);
 	return (new_aa - old_aa) / timestep;
 }
 
-tVector cMathUtil::QuatRotVec(const tQuaternion &quater, const tVector &vec)
+tVector btMathUtil::QuatRotVec(const tQuaternion &quater, const tVector &vec)
 {
 	tVector res = tVector::Zero();
 	res.segment(0, 3) = quater * vec.segment(0, 3);
 	return res;
 }
 
-tVector cMathUtil::QuaternionToEulerAngles(const tQuaternion &q, const eRotationOrder &order)
+tVector btMathUtil::QuaternionToEulerAngles(const tQuaternion &q, const btRotationOrder &order)
 {
 	tVector res = tVector::Zero();
 	double w = q.w(),
@@ -208,13 +208,13 @@ tVector cMathUtil::QuaternionToEulerAngles(const tQuaternion &q, const eRotation
 		   z = q.z();
 
 	// please check the note for details
-	if (order == eRotationOrder::XYZ)
+	if (order == btRotationOrder::bt_XYZ)
 	{
 		res[0] = std::atan2(2 * (w * x + y * z), 1 - 2 * (x * x + y * y));
 		res[1] = std::asin(2 * (w * y - z * x));
 		res[2] = std::atan2(2 * (w * z + x * y), 1 - 2 * (y * y + z * z));
 	}
-	else if (order == eRotationOrder::ZYX)
+	else if (order == btRotationOrder::bt_ZYX)
 	{
 		res[0] = std::atan2(2 * (w * x - y * z), 1 - 2 * (x * x + y * y));
 		res[1] = std::asin(2 * (w * y + z * x));
@@ -228,7 +228,7 @@ tVector cMathUtil::QuaternionToEulerAngles(const tQuaternion &q, const eRotation
 	return res;
 }
 
-tQuaternion cMathUtil::EulerAnglesToQuaternion(const tVector &vec, const eRotationOrder &order)
+tQuaternion btMathUtil::EulerAnglesToQuaternion(const tVector &vec, const btRotationOrder &order)
 {
 	tQuaternion q[3];
 	for (int i = 0; i < 3; i++)
@@ -244,25 +244,25 @@ tQuaternion cMathUtil::EulerAnglesToQuaternion(const tVector &vec, const eRotati
 	}
 
 	tQuaternion res;
-	if (order == eRotationOrder::XYZ)
+	if (order == btRotationOrder::bt_XYZ)
 	{
 		res = q[2] * q[1] * q[0];
 	}
-	else if (order == eRotationOrder::ZYX)
+	else if (order == btRotationOrder::bt_ZYX)
 	{
 		res = q[0] * q[1] * q[2];
 	}
 
-	if (res.w() < 0) res = cMathUtil::MinusQuaternion(res);
+	if (res.w() < 0) res = btMathUtil::MinusQuaternion(res);
 	return res;
 }
 
-tQuaternion cMathUtil::MinusQuaternion(const tQuaternion &quad)
+tQuaternion btMathUtil::MinusQuaternion(const tQuaternion &quad)
 {
 	return tQuaternion(-quad.w(), -quad.x(), -quad.y(), -quad.z());
 }
 
-tMatrix cMathUtil::EulerAnglesToRotMat(const tVector &euler, const eRotationOrder &order)
+tMatrix btMathUtil::EulerAnglesToRotMat(const tVector &euler, const btRotationOrder &order)
 {
 	// input euler angles: the rotation theta from parent to local
 	// output rot mat: a rot mat that can convert a vector FROM LOCAL FRAME TO PARENT FRAME
@@ -270,7 +270,7 @@ tMatrix cMathUtil::EulerAnglesToRotMat(const tVector &euler, const eRotationOrde
 		   y = euler[1],
 		   z = euler[2];
 	tMatrix mat = tMatrix::Identity();
-	if (order == eRotationOrder::XYZ)
+	if (order == btRotationOrder::bt_XYZ)
 	{
 		tMatrix x_mat, y_mat, z_mat;
 		x_mat = xconventionRotation_mimic(x);
@@ -278,7 +278,7 @@ tMatrix cMathUtil::EulerAnglesToRotMat(const tVector &euler, const eRotationOrde
 		z_mat = zconventionRotation_mimic(z);
 		mat = z_mat * y_mat * x_mat;
 	}
-	else if (order == eRotationOrder::ZYX)
+	else if (order == btRotationOrder::bt_ZYX)
 	{
 		tMatrix x_mat, y_mat, z_mat;
 		x_mat = xconventionRotation_mimic(x);
@@ -294,17 +294,17 @@ tMatrix cMathUtil::EulerAnglesToRotMat(const tVector &euler, const eRotationOrde
 	return mat;
 }
 
-tMatrix cMathUtil::EulerAnglesToRotMatDot(const tVector &euler, const eRotationOrder &order)
+tMatrix btMathUtil::EulerAnglesToRotMatDot(const tVector &euler, const btRotationOrder &order)
 {
 	double x = euler[0], y = euler[1], z = euler[2];
 	tMatrix mat = tMatrix::Identity();
-	if (order == eRotationOrder::XYZ)
+	if (order == btRotationOrder::bt_XYZ)
 	{
 		tMatrix Rz = zconventionRotation_mimic(z), Ry = yconventionRotation_mimic(y), Rx = xconventionRotation_mimic(x);
 		tMatrix Rz_dot = zconventionRotation_mimic_dz(z), Ry_dot = yconventionRotation_mimic_dy(y), Rx_dot = xconventionRotation_mimic_dx(x);
 		mat = Rz * Ry * Rx_dot + Rz_dot * Ry * Rx + Rz * Ry_dot * Rx;
 	}
-	else if (order == eRotationOrder::ZYX)
+	else if (order == btRotationOrder::bt_ZYX)
 	{
 		tMatrix Rz = zconventionRotation_mimic(z), Ry = yconventionRotation_mimic(y), Rx = xconventionRotation_mimic(x);
 		tMatrix Rz_dot = zconventionRotation_mimic_dz(z), Ry_dot = yconventionRotation_mimic_dy(y), Rx_dot = xconventionRotation_mimic_dx(x);
@@ -318,7 +318,7 @@ tMatrix cMathUtil::EulerAnglesToRotMatDot(const tVector &euler, const eRotationO
 	return mat;
 }
 
-tVector cMathUtil::AngularVelToqdot(const tVector &omega, const tVector &cur_q, const eRotationOrder &order)
+tVector btMathUtil::AngularVelToqdot(const tVector &omega, const tVector &cur_q, const btRotationOrder &order)
 {
 	// w = Jw * q'
 	// q' = (Jw)^{-1} * omega
@@ -332,7 +332,7 @@ tVector cMathUtil::AngularVelToqdot(const tVector &omega, const tVector &cur_q, 
 			Ry_doty = yconventionRotation_mimic_dy(y),
 			Rz_dotz = zconventionRotation_mimic_dz(z);
 
-	if (order == eRotationOrder::XYZ)
+	if (order == btRotationOrder::bt_XYZ)
 	{
 		tMatrix R = Rz * Ry * Rx;
 		tMatrix dR_dx = Rz * Ry * Rx_dotx,
@@ -341,9 +341,9 @@ tVector cMathUtil::AngularVelToqdot(const tVector &omega, const tVector &cur_q, 
 		tMatrix x_col_mat = dR_dx * R.transpose(),
 				y_col_mat = dR_dy * R.transpose(),
 				z_col_mat = dR_dz * R.transpose();
-		tVector x_col = cMathUtil::SkewMatToVector(x_col_mat);
-		tVector y_col = cMathUtil::SkewMatToVector(y_col_mat);
-		tVector z_col = cMathUtil::SkewMatToVector(z_col_mat);
+		tVector x_col = btMathUtil::SkewMatToVector(x_col_mat);
+		tVector y_col = btMathUtil::SkewMatToVector(y_col_mat);
+		tVector z_col = btMathUtil::SkewMatToVector(z_col_mat);
 		Eigen::Matrix3d Jw = Eigen::Matrix3d::Zero();
 		Jw.block(0, 0, 3, 1) = x_col.segment(0, 3);
 		Jw.block(0, 1, 3, 1) = y_col.segment(0, 3);
@@ -352,7 +352,7 @@ tVector cMathUtil::AngularVelToqdot(const tVector &omega, const tVector &cur_q, 
 		res.segment(0, 3) = Jw.inverse() * omega.segment(0, 3);
 		return res;
 	}
-	else if (order == eRotationOrder::ZYX)
+	else if (order == btRotationOrder::bt_ZYX)
 	{
 		tMatrix R = Rx * Ry * Rz;
 		tMatrix dR_dx = Rx_dotx * Ry * Rz,
@@ -361,9 +361,9 @@ tVector cMathUtil::AngularVelToqdot(const tVector &omega, const tVector &cur_q, 
 		tMatrix x_col_mat = dR_dx * R.transpose(),
 				y_col_mat = dR_dy * R.transpose(),
 				z_col_mat = dR_dz * R.transpose();
-		tVector x_col = cMathUtil::SkewMatToVector(x_col_mat);
-		tVector y_col = cMathUtil::SkewMatToVector(y_col_mat);
-		tVector z_col = cMathUtil::SkewMatToVector(z_col_mat);
+		tVector x_col = btMathUtil::SkewMatToVector(x_col_mat);
+		tVector y_col = btMathUtil::SkewMatToVector(y_col_mat);
+		tVector z_col = btMathUtil::SkewMatToVector(z_col_mat);
 		Eigen::Matrix3d Jw = Eigen::Matrix3d::Zero();
 		Jw.block(0, 0, 3, 1) = x_col.segment(0, 3);
 		Jw.block(0, 1, 3, 1) = y_col.segment(0, 3);
@@ -379,7 +379,7 @@ tVector cMathUtil::AngularVelToqdot(const tVector &omega, const tVector &cur_q, 
 	}
 }
 
-tMatrix cMathUtil::VectorToSkewMat(const tVector &vec)
+tMatrix btMathUtil::VectorToSkewMat(const tVector &vec)
 {
 	tMatrix res = tMatrix::Zero();
 	double a = vec[0], b = vec[1], c = vec[2];
@@ -394,7 +394,7 @@ tMatrix cMathUtil::VectorToSkewMat(const tVector &vec)
 }
 // Nx3 friction cone
 // each row is a direction now
-tMatrixXd cMathUtil::ExpandFrictionCone(int num_friction_dirs, const tVector &normal_)
+tMatrixXd btMathUtil::ExpandFrictionCone(int num_friction_dirs, const tVector &normal_)
 {
 	// 1. check the input
 	tVector normal = normal_;
@@ -419,7 +419,7 @@ tMatrixXd cMathUtil::ExpandFrictionCone(int num_friction_dirs, const tVector &no
 	tVector Y_normal = tVector(0, 1, 0, 0);
 	tVector axis = Y_normal.cross3(normal).normalized();
 	double theta = std::acos(Y_normal.dot(normal));  // [0, pi]
-	D = cMathUtil::RotMat(cMathUtil::AxisAngleToQuaternion(axis * theta)) * D;
+	D = btMathUtil::RotMat(btMathUtil::AxisAngleToQuaternion(axis * theta)) * D;
 	D.transposeInPlace();
 	// each row is a direction now
 	return D;
@@ -518,29 +518,15 @@ tMatrix xconventionRotation_mimic_dx(double x)
 	return output;
 }
 
-tMatrix cMathUtil::DirToRotMat(const tVector &dir, const tVector &up)
+tMatrix btMathUtil::DirToRotMat(const tVector &dir, const tVector &up)
 {
-	tVector x = up.cross3(dir);
-	double x_norm = x.norm();
-	if (x_norm == 0)
-	{
-		x_norm = 1;
-		x = (dir.dot(up) >= 0) ? tVector(1, 0, 0, 0) : tVector(-1, 0, 0, 0);
-	}
-	x /= x_norm;
-
-	tVector y = dir.cross3(x).normalized();
-	tVector z = dir;
-
-	tMatrix mat = tMatrix::Identity();
-
-	mat.block(0, 0, 3, 1) = x.segment(0, 3);
-	mat.block(0, 1, 3, 1) = y.segment(0, 3);
-	mat.block(0, 2, 3, 1) = z.segment(0, 3);
-	return mat;
+	tVector Y_normal = up;
+	tVector axis = Y_normal.cross3(dir).normalized();
+	double theta = std::acos(Y_normal.dot(dir));  // [0, pi]
+	return btMathUtil::RotMat(btMathUtil::AxisAngleToQuaternion(axis * theta));
 }
 
-tMatrix cMathUtil::InverseTransform(const tMatrix &raw_trans)
+tMatrix btMathUtil::InverseTransform(const tMatrix &raw_trans)
 {
 	tMatrix inv_trans = tMatrix::Identity();
 	inv_trans.block(0, 0, 3, 3).transposeInPlace();
@@ -548,7 +534,7 @@ tMatrix cMathUtil::InverseTransform(const tMatrix &raw_trans)
 	return inv_trans;
 }
 
-double cMathUtil::CalcConditionNumber(const tMatrixXd &mat)
+double btMathUtil::CalcConditionNumber(const tMatrixXd &mat)
 {
 	Eigen::EigenSolver<tMatrixXd> solver(mat);
 	tVectorXd eigen_values = solver.eigenvalues().real();
@@ -559,7 +545,7 @@ double cMathUtil::CalcConditionNumber(const tMatrixXd &mat)
  * \brief		Get the jacobian preconditioner P = diag(A)
  * 
 */
-tMatrixXd cMathUtil::JacobPreconditioner(const tMatrixXd &A)
+tMatrixXd btMathUtil::JacobPreconditioner(const tMatrixXd &A)
 {
 	if (A.rows() != A.cols())
 	{

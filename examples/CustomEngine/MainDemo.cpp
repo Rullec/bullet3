@@ -17,7 +17,7 @@
 #include <iostream>
 #include <fstream>
 
-int global_frame_id = 0;
+extern int global_frame_id;
 bool gEnablePauseWhenSolveError, gEnableResolveWhenSolveError;
 // std::string gOutputLogPath;
 struct CustomEngineMainDemo : public CommonRigidBodyBase
@@ -114,8 +114,8 @@ void CustomEngineMainDemo::initPhysics()
 	// else
 	// 	simulator_params.Mode = cSimulator::eContactResponseMode::PenaltyMode;
 
-	mGenWorld = new btGeneralizeWorld(physics_param->mSimulatorConfigPath);
-	mGenWorld->Init();
+	mGenWorld = new btGeneralizeWorld();
+	mGenWorld->Init(physics_param->mSimulatorConfigPath);
 	m_dynamicsWorld = mGenWorld->GetInternalWorld();
 
 	if (physics_param->mAddObj)
@@ -160,8 +160,8 @@ void CustomEngineMainDemo::renderScene()
 CustomEngineMainDemo::tParams::tParams(const std::string& path)
 {
 	Json::Value json_root;
-	cJsonUtil::LoadJson(path, json_root);
-	mSimulatorConfigPath = cJsonUtil::ParseAsString("simulator_path", json_root);
+	btJsonUtil::LoadJson(path, json_root);
+	mSimulatorConfigPath = btJsonUtil::ParseAsString("simulator_path", json_root);
 	mAddMultibody = json_root["add_multibody"].asBool();
 	mMultibodyPath = json_root["multibody_path"].asString();
 	mAddObj = json_root["add_obj"].asBool();

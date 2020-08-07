@@ -186,13 +186,13 @@ void cIDSolver::PreSim()
 	RecordMultibodyInfo(mLinkRot[mFrameId], mLinkPos[mFrameId], mLinkVel[mFrameId], mLinkOmega[mFrameId]);
 
 	// check link vel
-	// std::cout << cBulletUtil::btVectorTotVector0(mMultibody->getLinkCollider(0)->getInterpolationAngularVelocity());
-	// base_pos_old = cBulletUtil::btVectorTotVector0(mMultibody->getBasePos());
+	// std::cout << btBulletUtil::btVectorTotVector0(mMultibody->getLinkCollider(0)->getInterpolationAngularVelocity());
+	// base_pos_old = btBulletUtil::btVectorTotVector0(mMultibody->getBasePos());
 	// btVector3 * omega = new btVector3[mNumLinks],
 	// 		* vel = new btVector3[mNumLinks];
-	// cBulletUtil::btVectorTotVector0(mMultibody->getBaseVel());
+	// btBulletUtil::btVectorTotVector0(mMultibody->getBaseVel());
 	// mMultibody->compTreeLinkVelocities(vel, omega);
-	// std::cout << cBulletUtil::btVectorTotVector0(vel[0]).transpose() << std::endl;
+	// std::cout << btBulletUtil::btVectorTotVector0(vel[0]).transpose() << std::endl;
 }
 
 void cIDSolver::PostSim()
@@ -240,10 +240,10 @@ void cIDSolver::PostSim()
 				{
 					// check tool func
 					tQuaternion quad = tQuaternion::UnitRandom();
-					if (quad.w() < 0) quad = cMathUtil::MinusQuaternion(quad);
+					if (quad.w() < 0) quad = btMathUtil::MinusQuaternion(quad);
 
-					tVector euler = cMathUtil::QuaternionToEulerAngles(quad, eRotationOrder::ZYX);
-					tQuaternion new_quad = cMathUtil::EulerAnglesToQuaternion(euler, eRotationOrder::ZYX);
+					tVector euler = btMathUtil::QuaternionToEulerAngles(quad, btRotationOrder::bt_ZYX);
+					tQuaternion new_quad = btMathUtil::EulerAnglesToQuaternion(euler, btRotationOrder::bt_ZYX);
 					tVector diff = (quad.coeffs() - new_quad.coeffs());
 					
 					if (diff.norm() > threshold)
@@ -315,7 +315,7 @@ void cIDSolver::AddJointForces()
 		{
 			// all joint pos, joint vel are local, not global
 			double val = (0 - mMultibody->getJointPos(i)) * kp[0] + (0 - mMultibody->getJointVel(i)) * kd[0];
-			tVector local_torque = cBulletUtil::btVectorTotVector0(mMultibody->getLink(i).getAxisTop(0) * val);
+			tVector local_torque = btBulletUtil::btVectorTotVector0(mMultibody->getLink(i).getAxisTop(0) * val);
 			if (local_torque.norm() > torque_limit)
 			{
 				//std::cout << "[warn] joint " << i << " exceed torque lim = " << torque_limit << std::endl;
@@ -339,7 +339,7 @@ void cIDSolver::AddJointForces()
 
 			// set up joint pos, from quaternion to euler angles
 			tQuaternion cur_rot(joint_pos_bt[3], joint_pos_bt[0], joint_pos_bt[1], joint_pos_bt[2]);
-			joint_pos = cMathUtil::QuaternionToEulerAngles(cur_rot, eRotationOrder::ZYX);
+			joint_pos = btMathUtil::QuaternionToEulerAngles(cur_rot, btRotationOrder::bt_ZYX);
 
 			// set up joint vel
 			for (int dof_id = 0; dof_id < 3; dof_id++)
@@ -395,13 +395,13 @@ void cIDSolver::AddExternalForces()
 			{
 				// add for root
 				external_force = tVector::Random() * 10;
-				mMultibody->addBaseForce(cBulletUtil::tVectorTobtVector(external_force));
+				mMultibody->addBaseForce(btBulletUtil::tVectorTobtVector(external_force));
 			}
 			else
 			{
 				external_force = tVector::Random() * 10;
 				// add external force in world frame
-				mMultibody->addLinkForce(multibody_link_id, cBulletUtil::tVectorTobtVector(external_force));
+				mMultibody->addLinkForce(multibody_link_id, btBulletUtil::tVectorTobtVector(external_force));
 			}
 			external_force[3] = 0;
 			mExternalForces[ID_link_id] = external_force;
@@ -412,14 +412,14 @@ void cIDSolver::AddExternalForces()
 	// add random torque
 	btVector3 torque = btVector3(5, -3, 10) * 10;
 	mMultibody->addBaseTorque(torque);
-	std::cout <<"base torque = " << cBulletUtil::btVectorTotVector0(mMultibody->getBaseTorque()).transpose() << std::endl;
-	mExternalTorques[0] = cBulletUtil::btVectorTotVector0(torque);
+	std::cout <<"base torque = " << btBulletUtil::btVectorTotVector0(mMultibody->getBaseTorque()).transpose() << std::endl;
+	mExternalTorques[0] = btBulletUtil::btVectorTotVector0(torque);
 
 	// add torque for joint 1
 	// btVector3 torque = btVector3(2, 2, 2);
 	// btScalar q[3] = {2, 2, 2};
 	// mMultibody->addJointTorqueMultiDof(0, q);
-	// mExternalTorques[0] = cBulletUtil::btVectorTotVector0(torque);
+	// mExternalTorques[0] = btBulletUtil::btVectorTotVector0(torque);
 
 	if (true == mEnableExternalTorque)
 	{
@@ -430,12 +430,12 @@ void cIDSolver::AddExternalForces()
 			if (0 == ID_link_id)
 			{
 				external_torque = tVector::Random() * 10;
-				mMultibody->addBaseTorque(cBulletUtil::tVectorTobtVector(external_torque));
+				mMultibody->addBaseTorque(btBulletUtil::tVectorTobtVector(external_torque));
 			}
 			else
 			{
 				external_torque = tVector::Random() * 10;
-				mMultibody->addLinkTorque(multibody_link_id, cBulletUtil::tVectorTobtVector(external_torque));
+				mMultibody->addLinkTorque(multibody_link_id, btBulletUtil::tVectorTobtVector(external_torque));
 			}
 			external_torque[3] = 0;
 			mExternalTorques[ID_link_id] = external_torque;
@@ -463,10 +463,10 @@ void cIDSolver::GetContactForces()
 			const btManifoldPoint & pt = manifold->getContactPoint(j);
 			btScalar linear_friction_force1 = pt.m_appliedImpulseLateral1 / mCurTimestep;
 			btScalar linear_friction_force2 = pt.m_appliedImpulseLateral2 / mCurTimestep;
-			tVector lateral_friction_dir1 = cBulletUtil::btVectorTotVector0(pt.m_lateralFrictionDir1),
-				lateral_friction_dir2 = cBulletUtil::btVectorTotVector0(pt.m_lateralFrictionDir2);
+			tVector lateral_friction_dir1 = btBulletUtil::btVectorTotVector0(pt.m_lateralFrictionDir1),
+				lateral_friction_dir2 = btBulletUtil::btVectorTotVector0(pt.m_lateralFrictionDir2);
 			double impulse = pt.m_appliedImpulse;
-			tVector normal = cBulletUtil::btVectorTotVector0(pt.m_normalWorldOnB);
+			tVector normal = btBulletUtil::btVectorTotVector0(pt.m_normalWorldOnB);
 			tVector force0 = impulse / mCurTimestep * normal;
 			tVector friction = linear_friction_force1 * lateral_friction_dir1 + linear_friction_force2 * lateral_friction_dir2;
 			tVector pos, force;
@@ -474,14 +474,14 @@ void cIDSolver::GetContactForces()
 			if (mWorldId2InverseId.end() != mWorldId2InverseId.find(body0_id))
 			{
 				contact_info.mId = mWorldId2InverseId[body0_id];
-				pos = cBulletUtil::btVectorTotVector1(pt.getPositionWorldOnA());
+				pos = btBulletUtil::btVectorTotVector1(pt.getPositionWorldOnA());
 				force = (force0 + friction);
 
 			}
 			else if (mWorldId2InverseId.end() != mWorldId2InverseId.find(body1_id))
 			{
 				contact_info.mId = mWorldId2InverseId[body1_id];
-				pos = cBulletUtil::btVectorTotVector1(pt.getPositionWorldOnB());
+				pos = btBulletUtil::btVectorTotVector1(pt.getPositionWorldOnB());
 				force = -(force0 + friction);
 			}
 			else
@@ -509,19 +509,19 @@ void cIDSolver::RecordMultibodyInfo(std::vector<tMatrix>& local_to_world_rot, st
 		// set up rot & pos
 		if (0 == ID_link_id)
 		{
-			local_to_world_rot[0] = cMathUtil::RotMat(cBulletUtil::btQuaternionTotQuaternion(mMultibody->getWorldToBaseRot().inverse()));
-			link_pos_world[0] = cBulletUtil::btVectorTotVector1(mMultibody->getBasePos());
-			link_vel_world[0] = cBulletUtil::btVectorTotVector0(mMultibody->getBaseVel());
-			link_omega_world[0]= cBulletUtil::btVectorTotVector0(mMultibody->getBaseOmega());
+			local_to_world_rot[0] = btMathUtil::RotMat(btBulletUtil::btQuaternionTotQuaternion(mMultibody->getWorldToBaseRot().inverse()));
+			link_pos_world[0] = btBulletUtil::btVectorTotVector1(mMultibody->getBasePos());
+			link_vel_world[0] = btBulletUtil::btVectorTotVector0(mMultibody->getBaseVel());
+			link_omega_world[0]= btBulletUtil::btVectorTotVector0(mMultibody->getBaseOmega());
 		}
 		else
 		{
 			int multibody_link_id = ID_link_id - 1;
 			auto & cur_trans = mMultibody->getLinkCollider(multibody_link_id)->getWorldTransform();
-			local_to_world_rot[ID_link_id] = cBulletUtil::btMatrixTotMatrix1(cur_trans.getBasis());
-			link_pos_world[ID_link_id] = cBulletUtil::btVectorTotVector1(cur_trans.getOrigin());
-			link_vel_world[ID_link_id] = cBulletUtil::btVectorTotVector0(quatRotate(cur_trans.getRotation(), vel_buffer[ID_link_id]));
-			link_omega_world[ID_link_id] = cBulletUtil::btVectorTotVector0(quatRotate(cur_trans.getRotation(), omega_buffer[ID_link_id]));
+			local_to_world_rot[ID_link_id] = btBulletUtil::btMatrixTotMatrix1(cur_trans.getBasis());
+			link_pos_world[ID_link_id] = btBulletUtil::btVectorTotVector1(cur_trans.getOrigin());
+			link_vel_world[ID_link_id] = btBulletUtil::btVectorTotVector0(quatRotate(cur_trans.getRotation(), vel_buffer[ID_link_id]));
+			link_omega_world[ID_link_id] = btBulletUtil::btVectorTotVector0(quatRotate(cur_trans.getRotation(), omega_buffer[ID_link_id]));
 		}
 	}
 	// std::cout <<"end info \n";
@@ -547,18 +547,18 @@ void cIDSolver::RecordGeneralizedInfo(btInverseDynamicsBullet3::vecx & q, btInve
 	if (mFloatingBase == true)
 	{
 		// q = [rot, pos], rot = euler angle in XYZ rot
-		tQuaternion world_to_base = cBulletUtil::btQuaternionTotQuaternion(mMultibody->getWorldToBaseRot());
-		tVector euler_angle_rot = cMathUtil::QuaternionToEulerAngles(world_to_base, eRotationOrder::XYZ);
+		tQuaternion world_to_base = btBulletUtil::btQuaternionTotQuaternion(mMultibody->getWorldToBaseRot());
+		tVector euler_angle_rot = btMathUtil::QuaternionToEulerAngles(world_to_base, btRotationOrder::bt_XYZ);
 		//std::cout << "[debug] RecordGenInfo: world to base mat = \n" << world_to_base.toRotationMatrix() << std::endl;
 		//std::cout << "[debug] RecordGenInfo: world to base euler angle = \n" << euler_angle_rot.transpose() << std::endl;
 
 		for (int i = 0; i < 3; i++) q(i) = euler_angle_rot[i];
-		tVector pos = cBulletUtil::btIDVectorTotVector0(mMultibody->getBasePos());
+		tVector pos = btBulletUtil::btIDVectorTotVector0(mMultibody->getBasePos());
 		for (int i = 3; i < 6; i++)q(i) = pos[i - 3];
 
 		// q_dot = [w, v]
-		tVector omega = cBulletUtil::btVectorTotVector0(mMultibody->getBaseOmega());
-		tVector vel = cBulletUtil::btVectorTotVector0(mMultibody->getBaseVel());
+		tVector omega = btBulletUtil::btVectorTotVector0(mMultibody->getBaseOmega());
+		tVector vel = btBulletUtil::btVectorTotVector0(mMultibody->getBaseVel());
 		for (int i = 0; i < 3; i++)q_dot(i) = omega[i];
 		for (int i = 3; i < 6; i++)q_dot(i) = vel[i - 3];
 	}
@@ -587,7 +587,7 @@ void cIDSolver::RecordGeneralizedInfo(btInverseDynamicsBullet3::vecx & q, btInve
 			// local to parent frame��quaternion
 			// quaternion to rot mat: ���rot mat���У�����local ����ϵ�������ᣬ�����������ƴ��һ��3x3��rot mat
 			tQuaternion joint_pos_q(bt_joint_pos[3], bt_joint_pos[0], bt_joint_pos[1], bt_joint_pos[2]);
-			tVector joint_pos_euler = cMathUtil::QuaternionToEulerAngles(joint_pos_q, eRotationOrder::ZYX);
+			tVector joint_pos_euler = btMathUtil::QuaternionToEulerAngles(joint_pos_q, btRotationOrder::bt_ZYX);
 			tVector joint_vel = tVector(bt_joint_vel[0], bt_joint_vel[1], bt_joint_vel[2], 0);
 
 			for (int i = 0; i < 3; i++)
@@ -624,9 +624,9 @@ void cIDSolver::SolveID()
 
 	// solve ID
 	mInverseModel->calculateInverseDynamics(
-		cBulletUtil::EigenArrayTobtIDArray(mBuffer_q[mFrameId - 1]),
-		cBulletUtil::EigenArrayTobtIDArray(mBuffer_u[mFrameId - 1]),
-		cBulletUtil::EigenArrayTobtIDArray(mBuffer_u_dot[mFrameId - 1]),
+		btBulletUtil::EigenArrayTobtIDArray(mBuffer_q[mFrameId - 1]),
+		btBulletUtil::EigenArrayTobtIDArray(mBuffer_u[mFrameId - 1]),
+		btBulletUtil::EigenArrayTobtIDArray(mBuffer_u_dot[mFrameId - 1]),
 		&solve_joint_force_bt);
 
 	// output diff
@@ -634,7 +634,7 @@ void cIDSolver::SolveID()
 		double threshold = 1e-8;
 		double sum_error = 0;
 		std::cout << "[log] solve joint torque diff = ";
-		Eigen::VectorXd solved_joint_force = cBulletUtil::btIDArrayToEigenArray(solve_joint_force_bt);
+		Eigen::VectorXd solved_joint_force = btBulletUtil::btIDArrayToEigenArray(solve_joint_force_bt);
 		std::vector<double> true_joint_force(0);
 		double err = 0;
 		// output torque
@@ -719,7 +719,7 @@ void cIDSolver::ApplyContactForcesToID()
 		}
 		else
 		{
-			joint_pos_world = local_to_world * cBulletUtil::btVectorTotVector0(-mMultibody->getLink(multibody_id).m_dVector) + link_pos_world;
+			joint_pos_world = local_to_world * btBulletUtil::btVectorTotVector0(-mMultibody->getLink(multibody_id).m_dVector) + link_pos_world;
 		}
 		tVector force_arm_world = cur_force.mPos - joint_pos_world;
 		// 2. ����
@@ -732,12 +732,12 @@ void cIDSolver::ApplyContactForcesToID()
 		//std::cout << "[debug] ApplyContactForcesToID: for link " << ID_link_id << ", contact force = " << contact_force_world.transpose() << ", force arm = " << force_arm_world.transpose() << std::endl;
 		//std::cout << "\tfinal add force = " << contact_force_local.transpose() << ", final add torque = " << contact_torque_local.transpose() << std::endl;
 
-		mInverseModel->addUserForce(ID_link_id, cBulletUtil::tVectorTobtVector(contact_force_local));
-		mInverseModel->addUserMoment(ID_link_id, cBulletUtil::tVectorTobtVector(contact_torque_local));
+		mInverseModel->addUserForce(ID_link_id, btBulletUtil::tVectorTobtVector(contact_force_local));
+		mInverseModel->addUserMoment(ID_link_id, btBulletUtil::tVectorTobtVector(contact_torque_local));
 		base_force += contact_force_world;
 	}
 	//std::cout << "[debug] cIDSolver::ApplyContactForces: base constrained force world = " << base_force.transpose() << std::endl;
-	//std::cout << "[debug] simulation base constrained force world = " << cBulletUtil::btVectorTotVector0(static_cast<cCollisionWorld *> (mWorld)->base_cons_force).transpose() << std::endl;
+	//std::cout << "[debug] simulation base constrained force world = " << btBulletUtil::btVectorTotVector0(static_cast<cCollisionWorld *> (mWorld)->base_cons_force).transpose() << std::endl;
 }
 
 void cIDSolver::ApplyExternalForcesToID()
@@ -764,7 +764,7 @@ void cIDSolver::ApplyExternalForcesToID()
 			int multibody_id = ID_link_id - 1;
 			tVector joint_pos_world;
 			auto & link = mMultibody->getLink(multibody_id);
-			joint_pos_world = link_pos_world + local_to_world_rot * cBulletUtil::btVectorTotVector0(-link.m_dVector);
+			joint_pos_world = link_pos_world + local_to_world_rot * btBulletUtil::btVectorTotVector0(-link.m_dVector);
 			force_arm_world = link_pos_world - joint_pos_world;
 		}
 
@@ -778,14 +778,14 @@ void cIDSolver::ApplyExternalForcesToID()
 		tVector force_torque_local = local_to_world_rot.transpose() * force_torque_world;
 
 
-		mInverseModel->addUserForce(ID_link_id, cBulletUtil::tVectorTobtVector(force_local));
-		mInverseModel->addUserMoment(ID_link_id, cBulletUtil::tVectorTobtVector(force_torque_local));
-		mInverseModel->addUserMoment(ID_link_id, cBulletUtil::tVectorTobtVector(torque_local));
+		mInverseModel->addUserForce(ID_link_id, btBulletUtil::tVectorTobtVector(force_local));
+		mInverseModel->addUserMoment(ID_link_id, btBulletUtil::tVectorTobtVector(force_torque_local));
+		mInverseModel->addUserMoment(ID_link_id, btBulletUtil::tVectorTobtVector(torque_local));
 
 		//if (ID_link_id == 0) continue;
 		//std::cout << "for link " << ID_link_id << std::endl;
 		//std::cout << "local to world rot ID = \n" << local_to_world_rot << std::endl;
-		//std::cout << "local to world rot multi = \n" << cBulletUtil::btMatrixTotMatrix1(mMultibody->getLinkCollider(ID_link_id - 1)->getWorldTransform().getBasis()) << std::endl;;
+		//std::cout << "local to world rot multi = \n" << btBulletUtil::btMatrixTotMatrix1(mMultibody->getLinkCollider(ID_link_id - 1)->getWorldTransform().getBasis()) << std::endl;;
 		//std::cout << "user force world = " << force_world.transpose() << std::endl;
 		//std::cout << "user force local = " << force_local.transpose() << std::endl;
 		//std::cout << "user force torque world = " << force_torque_world.transpose() << std::endl;
@@ -817,10 +817,10 @@ tVectorXd cIDSolver::CalculateGeneralizedVel(const tVectorXd & q_before, const t
 				// calculate angular velocity, then put it into q_dot
 				tVector euler_angle_before = tVector(q_before[0], q_before[1], q_before[2], 0),
 					euler_angle_after = tVector(q_after[0], q_after[1], q_after[2], 0);
-				tQuaternion quater_before = cMathUtil::EulerAnglesToQuaternion(euler_angle_before, eRotationOrder::XYZ).inverse(),
-					quater_after = cMathUtil::EulerAnglesToQuaternion(euler_angle_after, eRotationOrder::XYZ).inverse();
+				tQuaternion quater_before = btMathUtil::EulerAnglesToQuaternion(euler_angle_before, btRotationOrder::bt_XYZ).inverse(),
+					quater_after = btMathUtil::EulerAnglesToQuaternion(euler_angle_after, btRotationOrder::bt_XYZ).inverse();
 
-				tVector omega_after = cMathUtil::CalcAngularVelocity(quater_before, quater_after, mCurTimestep);
+				tVector omega_after = btMathUtil::CalcAngularVelocity(quater_before, quater_after, mCurTimestep);
 				q_dot.segment(0, 3) = omega_after.segment(0, 3);
 				q_dot.segment(3, 3) = vel_after.segment(0, 3);
 				dof_offset += 6;
@@ -840,12 +840,12 @@ tVectorXd cIDSolver::CalculateGeneralizedVel(const tVectorXd & q_before, const t
 				euler_angle_before.segment(0, 3) = q_before.segment(dof_offset, 3);
 				euler_angle_after.segment(0, 3) = q_after.segment(dof_offset, 3);
 				
-				tQuaternion quater_before = cMathUtil::EulerAnglesToQuaternion(euler_angle_before, eRotationOrder::ZYX),
-				quater_after = cMathUtil::EulerAnglesToQuaternion(euler_angle_after, eRotationOrder::ZYX);
+				tQuaternion quater_before = btMathUtil::EulerAnglesToQuaternion(euler_angle_before, btRotationOrder::bt_ZYX),
+				quater_after = btMathUtil::EulerAnglesToQuaternion(euler_angle_after, btRotationOrder::bt_ZYX);
 
 				// convert the ang vel from parent frame to local frame, then write in
-				tVector ang_vel_parent = cMathUtil::CalcAngularVelocity(quater_before, quater_after, mCurTimestep);
-				tVector ang_vel_local = cMathUtil::RotMat(quater_before).transpose() * ang_vel_parent;
+				tVector ang_vel_parent = btMathUtil::CalcAngularVelocity(quater_before, quater_after, mCurTimestep);
+				tVector ang_vel_local = btMathUtil::RotMat(quater_before).transpose() * ang_vel_parent;
 				q_dot.segment(dof_offset, 3) = ang_vel_local.segment(0, 3);
 				dof_offset += 3;
 				break;

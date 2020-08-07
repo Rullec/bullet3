@@ -173,19 +173,19 @@ btVector3 cConstraintMultibody::CalcAngMomentum()
     {
         auto cur_link = GetLink(i);
         rot_i = cur_link->getWorldTransform().getBasis();
-        // std::cout <<"link " << i <<" rot mat = \n" << cBulletUtil::btMatrixTotMatrix0(rot_i) << std::endl;
+        // std::cout <<"link " << i <<" rot mat = \n" << btBulletUtil::btMatrixTotMatrix0(rot_i) << std::endl;
         omega = GetLinkWorldOmega(i);
         btVector3 part1 = btVector3(0, 0, 0);
         // btVector3 part1 = (GetLinkWorldPos(i) - COM).cross(GetLinkWorldVel(i)) * GetLinkMass(i);
         btVector3 part2;
-        inertia = cBulletUtil::AsDiagnoal(mLinkLst[i]->getLocalInertia());
-        // tVector inertia_vec = cBulletUtil::btVectorTotVector0();
+        inertia = btBulletUtil::AsDiagnoal(mLinkLst[i]->getLocalInertia());
+        // tVector inertia_vec = btBulletUtil::btVectorTotVector0();
         // std::cout <<"link " << i <<" inertia vec = " << inertia_vec.transpose() << std::endl;
         part2 = rot_i * inertia * rot_i.transpose() * omega;
         // total_ang_mom +=  + rot_i.scaled(mLinkLst[i]->getLocalInertia()) * rot_i.transpose() * omega;
-        std::cout <<"raw omega = " << cBulletUtil::btVectorTotVector0(omega).transpose() << std::endl;
-        // std::cout <<"new 1 omega = " << cBulletUtil::btVectorTotVector0(rot_i * omega).transpose() << std::endl;
-        // std::cout <<"new 2 omega = " << cBulletUtil::btVectorTotVector0(rot_i.transpose() * omega).transpose() << std::endl;
+        std::cout <<"raw omega = " << btBulletUtil::btVectorTotVector0(omega).transpose() << std::endl;
+        // std::cout <<"new 1 omega = " << btBulletUtil::btVectorTotVector0(rot_i * omega).transpose() << std::endl;
+        // std::cout <<"new 2 omega = " << btBulletUtil::btVectorTotVector0(rot_i.transpose() * omega).transpose() << std::endl;
         total_ang_mom += part1 + part2;
     }
 

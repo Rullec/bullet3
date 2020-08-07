@@ -70,7 +70,7 @@ tVector cRobotCollider::GetVelocityOnPoint(const tVector& pt)
 {
 	tMatrixXd jac;
 	mModel->ComputeJacobiByGivenPointTotalDOFWorldFrame(mLinkId, pt.segment(0, 3), jac);
-	return cMathUtil::Expand(jac * mModel->Getqdot(), 0);
+	return btMathUtil::Expand(jac * mModel->Getqdot(), 0);
 }
 
 bool cRobotCollider::IsStatic() const

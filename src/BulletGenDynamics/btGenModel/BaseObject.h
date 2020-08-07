@@ -62,6 +62,7 @@ const std::string joint_type_keys[TOTAL_JOINT_TYPE] = {
 	"fixed"};
 struct BaseObjectParams
 {
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 	std::string name;
 	Mesh* mesh;
 	tVector3d local_pos;
@@ -73,6 +74,7 @@ struct BaseObjectParams
 
 struct BaseObjectJsonParam
 {
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 	int id;
 	int parent_id;
 	std::string name;
@@ -89,6 +91,7 @@ struct BaseObjectJsonParam
 
 struct BaseObjectShapeParam
 {
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 	int shape_type;
 	double top_scale;
 	double bottom_scale;
@@ -199,9 +202,9 @@ public:
 	virtual const tMatrix& GetMWQQ(int i, int j) = 0;        // \frac{\partial^2 R} {\partial q_i, \partial q_i} dim=(4, 4), !! only works for joint
 	//=====================================================
 
-	virtual void ComputeJacobiByGivenPoint(tMatrixXd& j, tVector& p){};
-	virtual void ComputeJacobiByGivenPointTotalDOF(tMatrixXd& j, tVector p){};
-	virtual void ComputeHessianByGivenPoint(EIGEN_V_MATXD& j, tVector& p){};
+	virtual void ComputeJacobiByGivenPoint(tMatrixXd& j, const tVector& p) const {};
+	virtual void ComputeJacobiByGivenPointTotalDOF(tMatrixXd& j, const tVector& p) const {};
+	virtual void ComputeHessianByGivenPoint(EIGEN_V_MATXD& j, const tVector& p) const {};
 	virtual void ComputeLocalTransform();
 	virtual void ComputeGlobalTransform();
 	virtual void ComputeJKw();

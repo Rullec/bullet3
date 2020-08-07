@@ -14,6 +14,7 @@ enum eColObjType
 class cCollisionObject : virtual public btCollisionObject
 {
 public:
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 	cCollisionObject(eColObjType type, const std::string &name);
 	eColObjType GetType();
 	const std::string &GetName();

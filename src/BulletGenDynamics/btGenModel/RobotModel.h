@@ -28,11 +28,12 @@ class cRobotModel
 {
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-	cRobotModel(const char* model_file);
+	// cRobotModel(const char* model_file);
+	cRobotModel();
 	~cRobotModel();
 
-	cRobotModel(const char* model_file, double scale, int type);
-
+	// cRobotModel(const char* model_file, double scale, int type);
+	virtual void Init(const char* model_file, double scale, int type);
 	const std::string& GetName() const;
 
 	BaseObject* GetRoot() const;
@@ -85,7 +86,7 @@ public:
 	tVector3d GetCoMPosition() const { return com; };
 	tVector3d GetObjectPos(std::string name, int type);
 	void GetObjectGradient(std::string name, int type, tMatrixXd jac);
-	int GetNumOfLinks() { return static_cast<int>(link_chain.size()); }
+	int GetNumOfLinks() const { return static_cast<int>(link_chain.size()); }
 	int GetNumOfJoint() const { return static_cast<int>(joints.size()); }
 	int GetNumOfValidJoint() const { return num_of_valid_joint; }
 	int GetDeepMimicMotionSize() const { return deep_mimic_motion_size; };
@@ -113,8 +114,8 @@ public:
 	BaseObject* GetEndLink() { return end_link; }
 
 	void SetComputeSecondDerive(bool flag);
-	const tVectorXd& Getqdot() const { return qdot; }
-	const tVectorXd& Getq() const { return q; }
+	const tVectorXd& Getqdot() const { return mqdot; }
+	const tVectorXd& Getq() const { return mq; }
 
 protected:
 	// compute methods is prohibited to be called outside of the class
@@ -214,7 +215,7 @@ protected:
 	std::vector<BaseObject*> ee;
 
 	// sim vars
-	tVectorXd q, qdot;
+	tVectorXd mq, mqdot;
 };
 
 #endif  //ROBOT_ROBOTMODEL_H

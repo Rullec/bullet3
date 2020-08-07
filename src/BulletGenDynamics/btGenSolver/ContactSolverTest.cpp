@@ -2,7 +2,7 @@
 #include "BulletGenDynamics/btGenModel/RobotCollider.h"
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
 
-extern cSimRigidBody* UpcastRigidBody(const btCollisionObject* col);
+extern cRigidBody* UpcastRigidBody(const btCollisionObject* col);
 extern cRobotCollider* UpcastRobotCollider(const btCollisionObject* col);
 extern cCollisionObject* UpcastColObj(const btCollisionObject* col);
 #define EPS (1e-7)
@@ -26,8 +26,8 @@ void cContactSolver::TestCartesianForceToCartesianVel()
 	tEigenArr<tVectorXd> contact_point_cartesian_vel(n_group);
 	for (int i = 0; i < n_group; i++)
 	{
-		cMathUtil::RoundZero(mColGroupData[i]->mConvertCartesianForceToVelocityMat);
-		cMathUtil::RoundZero(mColGroupData[i]->mConvertCartesianForceToVelocityVec);
+		btMathUtil::RoundZero(mColGroupData[i]->mConvertCartesianForceToVelocityMat);
+		btMathUtil::RoundZero(mColGroupData[i]->mConvertCartesianForceToVelocityVec);
 		// std::cout << "for body " << mColGroupData[i]->mBody->GetName() << " ";
 		// std::cout << "convert mat = \n"
 		// 		  << mColGroupData[i]->mConvertCartesianForceToVelocityMat << std::endl;
@@ -45,7 +45,7 @@ void cContactSolver::TestCartesianForceToCartesianVel()
 	for (int i = 0; i < mNumContactPoints; i++)
 	{
 		auto& data = mContactConstraintData[i];
-		data->ApplyForceCartersian(cMathUtil::Expand(x_lcp.segment(3 * i, 3), 0));
+		data->ApplyForceCartersian(btMathUtil::Expand(x_lcp.segment(3 * i, 3), 0));
 	}
 	// std::cout << "only contact force Q = " << mMultibodyArray[0]->GetGeneralizedForce().transpose() << std::endl;
 
@@ -68,11 +68,11 @@ void cContactSolver::TestCartesianForceToCartesianVel()
 
 		tVector body0_true_vel = data->GetVelOnBody0();
 		int body0_group = map_colobjid_to_groupid[data->GetBody0Id()];
-		tVector body0_pred_vel = cMathUtil::Expand(contact_point_cartesian_vel[body0_group].segment(3 * i, 3), 0);
+		tVector body0_pred_vel = btMathUtil::Expand(contact_point_cartesian_vel[body0_group].segment(3 * i, 3), 0);
 
 		tVector body1_true_vel = data->GetVelOnBody1();
 		int body1_group = map_colobjid_to_groupid[data->GetBody1Id()];
-		tVector body1_pred_vel = cMathUtil::Expand(contact_point_cartesian_vel[body1_group].segment(3 * i, 3), 0);
+		tVector body1_pred_vel = btMathUtil::Expand(contact_point_cartesian_vel[body1_group].segment(3 * i, 3), 0);
 
 		double body0_diff = (body0_true_vel - body0_pred_vel).cwiseAbs().maxCoeff(),
 			   body1_diff = (body1_true_vel - body1_pred_vel).cwiseAbs().maxCoeff();
@@ -174,7 +174,7 @@ void cContactSolver::TestCartesianForceToCartesianRelVel(const tMatrixXd& conver
 	for (int i = 0; i < mNumContactPoints; i++)
 	{
 		auto& data = mContactConstraintData[i];
-		data->ApplyForceCartersian(cMathUtil::Expand(x_lcp.segment(3 * i, 3), 0));
+		data->ApplyForceCartersian(btMathUtil::Expand(x_lcp.segment(3 * i, 3), 0));
 		if (data->mIsSelfCollision) n_self_collision++;
 	}
 
@@ -193,7 +193,7 @@ void cContactSolver::TestCartesianForceToCartesianRelVel(const tMatrixXd& conver
 	{
 		auto& data = mContactConstraintData[i];
 		tVector true_relvel = data->GetVelOnBody0() - data->GetVelOnBody1();
-		tVector pred_relvel = cMathUtil::Expand(rel_vel_pred.segment(i * 3, 3), 0);
+		tVector pred_relvel = btMathUtil::Expand(rel_vel_pred.segment(i * 3, 3), 0);
 		double diff = (true_relvel - pred_relvel).cwiseAbs().maxCoeff();
 		if (diff > EPS)
 		{
@@ -270,7 +270,7 @@ void cContactSolver::TestCartesianForceToNormalAndTangetRelVel(const tMatrixXd& 
 	for (int i = 0; i < mNumContactPoints; i++)
 	{
 		auto& data = mContactConstraintData[i];
-		data->ApplyForceCartersian(cMathUtil::Expand(x_lcp.segment(3 * i, 3), 0));
+		data->ApplyForceCartersian(btMathUtil::Expand(x_lcp.segment(3 * i, 3), 0));
 	}
 
 	for (int i = 0; i < mNumJointLimitConstraints; i++)
@@ -397,7 +397,7 @@ void cContactSolver::TestCartesianForceToNormalAndTangetResultBasedRelVel(const 
 		{
 			applied_force.segment(3 * i, 3) = data->mNormalPointToA.segment(0, 3) * x_lcp.segment(single_size * i, single_size);
 		}
-		data->ApplyForceCartersian(cMathUtil::Expand(applied_force.segment(3 * i, 3), 0));
+		data->ApplyForceCartersian(btMathUtil::Expand(applied_force.segment(3 * i, 3), 0));
 	}
 
 	// apply joint torque
