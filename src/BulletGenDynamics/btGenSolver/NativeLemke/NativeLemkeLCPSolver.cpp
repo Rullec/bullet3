@@ -48,7 +48,7 @@ int cNativeLemkeLCPSolver::Solve(const tMatrixXd &_A, const tVectorXd &_b, tVect
 								 double mu, int numDir, bool bUseODESolver, double *ilo,
 								 double *ihi)
 {
-	lcpsolver::Lemke(_A, _b, _x);
+	return lcpsolver::Lemke(_A, _b, _x);
 }
 
 void cNativeLemkeLCPSolver::transferToODEFormulation(const tMatrixXd &_A,

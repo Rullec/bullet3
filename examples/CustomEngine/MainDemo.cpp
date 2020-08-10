@@ -28,6 +28,7 @@ struct CustomEngineMainDemo : public CommonRigidBodyBase
 		bool mAddObj;
 		bool mAddMultibody;
 		bool mEnableGround;
+		double mGroundHeight;
 		std::string mMultibodyPath;
 		int mObjLinkNum;
 		std::string mLCPSolverConfigPath;
@@ -124,7 +125,7 @@ void CustomEngineMainDemo::initPhysics()
 		mGenWorld->AddMultibody(physics_param->mMultibodyPath);
 
 	if (physics_param->mEnableGround)
-		mGenWorld->AddGround();
+		mGenWorld->AddGround(physics_param->mGroundHeight);
 
 	// {
 	// 	btBoxShape* groundShape = createBoxShape(btVector3(btScalar(1.), btScalar(1.), btScalar(1.)));
@@ -166,6 +167,7 @@ CustomEngineMainDemo::tParams::tParams(const std::string& path)
 	mMultibodyPath = json_root["multibody_path"].asString();
 	mAddObj = json_root["add_obj"].asBool();
 	mEnableGround = json_root["enable_ground"].asBool();
+	mGroundHeight = btJsonUtil::ParseAsDouble("ground_height", json_root);
 	mObjLinkNum = json_root["obj_num"].asInt();
 	mObjType = json_root["obj_type"].asString();
 	mEnableObjPerturb = json_root["enable_obj_perturb"].asBool();

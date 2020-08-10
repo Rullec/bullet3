@@ -3,11 +3,12 @@
 #include "btBulletDynamicsCommon.h"
 #include <memory>
 
-class cRigidBody;
-class cContactSolver;
+class btGenRigidBody;
+class btGenContactSolver;
 class cRobotModelDynamics;
-class tContactForce;
-class tConstraintGeneralizedForce;
+class btGenContactForce;
+class btGenConstraintGeneralizedForce;
+class btGenPDController;
 class btGeneralizeWorld
 {
 public:
@@ -43,13 +44,13 @@ public:
 	void RemoveStaticBody(btCollisionObject* obj);
 	void SetGravity(const tVector& g);
 	tVector GetGravity() const;
-	void AddGround();
+	void AddGround(double height);
 	void AddMultibody(const std::string& path);
 	void AddMultibody(cRobotModelDynamics* model);
 	void RemoveObj(int id);
 	void StepSimulation(double dt);
-	void GetContactInfo();
-
+	std::vector<btGenContactForce*> GetContactInfo() const;
+	void Reset();
 	// get & set method
 	btDiscreteDynamicsWorld* GetInternalWorld();
 	btBroadphaseInterface* GetBroadphase();
@@ -61,9 +62,11 @@ protected:
 	btBroadphaseInterface* m_broadphase;
 	btCollisionDispatcher* m_dispatcher;
 	btDefaultCollisionConfiguration* m_collisionConfiguration;
-	std::vector<cRigidBody*> mSimObjs;
+	std::vector<btGenRigidBody*> mSimObjs;
 	cRobotModelDynamics* mMultibody;
+	btGenPDController* mPDController;
 	double mTime;
+	int mFrameId;
 	tVector mGravity;
 	double mRigidDamping;
 	double mMBDamping1;
@@ -73,8 +76,11 @@ protected:
 	bool mMBEnableRk4;
 	double mMBEpsDiagnoalMassMat;
 	double mMBMaxVel;
-	bool mMBUpdateVelWithoutCoriolis;
+	// bool mMBUpdateVelWithoutCoriolis;
 	bool mEnablePeturb;
+	bool mEnablePDControl;
+	std::string mPDControllerPath;
+
 	bool mMBEAngleClamp;
 	bool mMBTestJacobian;
 	bool mMBEnableCollectFrameInfo;
@@ -82,11 +88,11 @@ protected:
 	int mMBCollectFrameNum;
 	double mMBScale;
 	eContactResponseMode mContactMode;
-	cContactSolver* mLCPContactSolver;
+	btGenContactSolver* mLCPContactSolver;
 	std::string mLCPConfigPath;
 	std::vector<btPersistentManifold*> mManifolds;
-	std::vector<tContactForce*> mContactForces;
-	std::vector<tConstraintGeneralizedForce*> mConstraintGenalizedForce;
+	std::vector<btGenContactForce*> mContactForces;
+	std::vector<btGenConstraintGeneralizedForce*> mConstraintGenalizedForce;
 
 	void createRigidBody(double mass, const btTransform& startTransform, btCollisionShape* shape, const std::string& name, const btVector4& color = btVector4(1, 0, 0, 1));
 	// void createRigidBodyNew(double mass, const btTransform& startTransform, btCollisionShape* shape, const std::string& name, const btVector4& color = btVector4(1, 0, 0, 1));

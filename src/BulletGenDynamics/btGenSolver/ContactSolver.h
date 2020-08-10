@@ -4,26 +4,27 @@
 
 class btDiscreteDynamicsWorld;
 class btPersistentManifold;
-class cRigidBody;
+class btGenRigidBody;
 // class cNativeLemkeLCPSolver;
 // class cQPSolver;
 // class cMatlabQPSolver;
 class cLCPSolverBase;
-struct cRobotCollider;
-struct tCollisionObjData;
+struct btGenRobotCollider;
+struct btGenCollisionObjData;
 class cRobotModelDynamics;
-struct tContactForce
+struct btGenContactForce
 {
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-	tContactForce(cCollisionObject* mObj,
-				  const tVector& mForce, const tVector& mWorldPos);
-	cCollisionObject* mObj;
+	btGenContactForce(btGenCollisionObject* mObj,
+				  const tVector& mForce, const tVector& mWorldPos, bool);
+	btGenCollisionObject* mObj;
 	tVector mForce, mWorldPos;  // position in world and force in world frame
+	bool mIsSelfCollision;
 };
-struct tConstraintGeneralizedForce
+struct btGenConstraintGeneralizedForce
 {
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-	tConstraintGeneralizedForce(cRobotModelDynamics* _model, int _dof_id, double _val) : model(_model), dof_id(_dof_id), value(_val)
+	btGenConstraintGeneralizedForce(cRobotModelDynamics* _model, int _dof_id, double _val) : model(_model), dof_id(_dof_id), value(_val)
 	{
 	}
 
@@ -32,18 +33,18 @@ struct tConstraintGeneralizedForce
 	double value;
 };
 
-class cContactSolver
+class btGenContactSolver
 {
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-	cContactSolver(const std::string& config_path, btDiscreteDynamicsWorld* world);
-	virtual ~cContactSolver();
+	btGenContactSolver(const std::string& config_path, btDiscreteDynamicsWorld* world);
+	virtual ~btGenContactSolver();
 
 	void ConstraintProcess(float dt);
 	bool GetEnableConvertMatTest() { return mEnableConvertMatTest; }
-	std::vector<tContactForce*> GetContactForces();
-	std::vector<tConstraintGeneralizedForce*> GetConstraintGeneralizedForces();
+	std::vector<btGenContactForce*> GetContactForces();
+	std::vector<btGenConstraintGeneralizedForce*> GetConstraintGeneralizedForces();
 
 protected:
 	int mNumFrictionDirs;
@@ -74,9 +75,9 @@ protected:
 	cLCPSolverBase* mLCPSolver;
 
 	std::vector<int> map_colobjid_to_groupid;
-	std::vector<tCollisionObjData*> mColGroupData;
-	std::vector<tContactPointData*> mContactConstraintData;
-	std::vector<tJointLimitData*> mJointLimitConstraintData;
+	std::vector<btGenCollisionObjData*> mColGroupData;
+	std::vector<btGenContactPointData*> mContactConstraintData;
+	std::vector<btGenJointLimitData*> mJointLimitConstraintData;
 	std::vector<cRobotModelDynamics*> mMultibodyArray;
 	int mNumContactPoints;
 	int mNumConstraints;
@@ -107,8 +108,8 @@ protected:
 	tVectorXd x_si;
 
 	// contact forces buffer
-	std::vector<tContactForce*> contact_force_array;
-	std::vector<tConstraintGeneralizedForce*> contact_torque_array;
+	std::vector<btGenContactForce*> contact_force_array;
+	std::vector<btGenConstraintGeneralizedForce*> contact_torque_array;
 
 	void ConstraintSetup();
 	void ConstraintSolve();
@@ -144,5 +145,5 @@ protected:
 	void TestCartesianForceToNormalAndTangetRelVel(const tMatrixXd& normal_mat, const tVectorXd& normal_vec, const tMatrixXd& tan_mat, const tVectorXd& tan_vec);
 	void TestCartesianForceToNormalAndTangetResultBasedRelVel(const tMatrixXd& normal_mat, const tVectorXd& normal_vec, const tMatrixXd& tan_mat, const tVectorXd& tan_vec);
 	void TestSICartesianConvertMatAndVec();
-	bool IsMultibodyAndVelMax(cCollisionObject* body);
+	bool IsMultibodyAndVelMax(btGenCollisionObject* body);
 };

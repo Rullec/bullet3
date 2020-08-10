@@ -34,9 +34,12 @@ public:
 	tVector3d GetLinkVel() const;
 	tVector3d GetLinkOmega() const;
 	double GetLinkMaxLength() const;
+	int GetColGroup() const;
+	void SetColGroup(int);
 
 protected:
 	tVector3d link_vel, link_omega;  // the lin vel and ang vel w.r.t the COM of this link in world frame
+	int col_group;
 };
 
 #endif  //ROBOT_LINK_H

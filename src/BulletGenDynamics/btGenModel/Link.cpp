@@ -7,6 +7,7 @@ Link::Link(BaseObjectParams& param) : BaseObject(param)
 {
 	link_omega.setZero();
 	link_vel.setZero();
+	col_group = 1;
 }
 
 Link::Link(BaseObjectJsonParam& param) : BaseObject(param)
@@ -14,6 +15,7 @@ Link::Link(BaseObjectJsonParam& param) : BaseObject(param)
 	ComputeIbody();
 	link_omega.setZero();
 	link_vel.setZero();
+	col_group = 1;
 }
 
 void Link::Tell()
@@ -339,4 +341,23 @@ double Link::GetLinkMaxLength() const
 	std::cout << "link get max length exit\n";
 	exit(1);
 	return 0;
+}
+
+/**
+ * \brief					Get the collision group
+ * 			collision group 0: disable collision within the multibody
+ * 			colision group 1: enable collision within the multibody
+*/
+int Link::GetColGroup() const
+{
+	return col_group;
+}
+void Link::SetColGroup(int flag)
+{
+	col_group = flag;
+	if (col_group != 0 && col_group != 1)
+	{
+		std::cout << "[error] Invalid link colgroup " << col_group << std::endl;
+		exit(1);
+	}
 }

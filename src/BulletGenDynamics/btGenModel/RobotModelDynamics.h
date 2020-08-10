@@ -22,7 +22,7 @@ public:
 	void ApplyLinkTorque(int link_id, const tVector& torque);
 	void ApplyJointTorque(int joint_id, const tVector& torque);
 	tVectorXd GetGeneralizedForce();
-	cRobotCollider* GetLinkCollider(int link_id);
+	btGenRobotCollider* GetLinkCollider(int link_id);
 	void ClearForce();
 	tVectorXd Getqddot();
 	void UpdateVelocity(double dt, bool verbose = false);
@@ -30,7 +30,10 @@ public:
 	void UpdateTransform(double dt);
 	void UpdateRK4(double dt);
 	void SyncToBullet();
-	bool IsMaxVel() const;
+	bool IsGeneralizedMaxVel(double max_vel = 100.0) const;
+	double GetMaxVelThreshold() const;
+	bool IsCartesianMaxVel(double max_vel = 100.0) const;
+	double GetMaxVel() const;
 	void PushState(const std::string& tag, bool only_vel_and_force = false);
 	void PopState(const std::string& tag, bool only_vel_and_force = false);
 	void SetDampingCoeff(double, double);
@@ -44,7 +47,7 @@ public:
 
 protected:
 	// -------------------------simulation status-----------------------
-	std::vector<cRobotCollider*> mColliders;       // used in bullet collision detection for multibody structure
+	std::vector<btGenRobotCollider*> mColliders;   // used in bullet collision detection for multibody structure
 	tEigenArr<tVector> mLinkForces, mLinkTorques;  // the external force & torque applied on each link
 	// tEigenArr<tVector> link_vel, link_omega;			// the lin & ang vel with respect to each link (COM) in world frame
 	tVectorXd mGenForce;       // the external generalized force applied on multibody (usually used in joint limit constraint)

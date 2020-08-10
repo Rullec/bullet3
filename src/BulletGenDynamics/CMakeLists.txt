@@ -51,9 +51,14 @@ SET(
 	btGenUtil/MathUtil.cpp
 	btGenUtil/TimeUtil.cpp
 )
+SET(
+	BulletGenPDControler_SRCS
+	btGenController/btGenPDController.cpp
+)
 
 SET(BulletGenDynamics_SRCS
 	btGenWorld.cpp
+	${BulletGenPDControler_SRCS}
 	${BulletGenSolver_SRCS}
 	${BulletGenModel_SRCS}
 	${BulletGenUtil_SRCS}

@@ -13,7 +13,7 @@
 extern int global_frame_id;
 // extern std::string gOutputLogPath;
 // boocl enable_inertia_test = false;
-cRigidBody::tParams::tParams()
+btGenRigidBody::tParams::tParams()
 {
 	// body = nullptr;
 	col_shape = nullptr;
@@ -21,7 +21,7 @@ cRigidBody::tParams::tParams()
 	name = "rigidbody_name";
 }
 
-cRigidBody::cRigidBody(const tParams& params) : cCollisionObject(eColObjType::Rigidbody, params.name)
+btGenRigidBody::btGenRigidBody(const tParams& params) : btGenCollisionObject(eColObjType::Rigidbody, params.name)
 {
 	mTotalForce.setZero();
 	mTotalTorque.setZero();
@@ -38,7 +38,7 @@ cRigidBody::cRigidBody(const tParams& params) : cCollisionObject(eColObjType::Ri
 	m_collisionFlags &= (~btCollisionObject::CF_STATIC_OBJECT);
 }
 
-cRigidBody::~cRigidBody()
+btGenRigidBody::~btGenRigidBody()
 {
 	// cCollisionObject::~cCollisionObject();
 }
@@ -46,7 +46,7 @@ cRigidBody::~cRigidBody()
  * \brief
  * \param   global_pos: applied position in global frame
  * */
-void cRigidBody::ApplyForce(const tVector& force, const tVector& global_pos)
+void btGenRigidBody::ApplyForce(const tVector& force, const tVector& global_pos)
 {
 	if (IsStatic()) return;
 
@@ -58,19 +58,19 @@ void cRigidBody::ApplyForce(const tVector& force, const tVector& global_pos)
 	// std::cout << "new total force = " << mTotalForce.transpose() << std::endl;
 }
 
-void cRigidBody::ApplyCOMForce(const tVector& force)
+void btGenRigidBody::ApplyCOMForce(const tVector& force)
 {
 	if (IsStatic()) return;
 	ApplyForce(force, GetWorldPos());
 }
 
-void cRigidBody::ClearForce()
+void btGenRigidBody::ClearForce()
 {
 	mTotalForce.setZero();
 	mTotalTorque.setZero();
 }
 
-void cRigidBody::UpdateVelocity(double dt)
+void btGenRigidBody::UpdateVelocity(double dt)
 {
 	if (IsStatic()) return;
 
@@ -122,7 +122,7 @@ void cRigidBody::UpdateVelocity(double dt)
 	// }
 }
 
-void cRigidBody::UpdateTransform(float dt)
+void btGenRigidBody::UpdateTransform(float dt)
 {
 	if (IsStatic()) return;
 	mOrigin = mOrigin + mLinVel * dt;
@@ -130,7 +130,7 @@ void cRigidBody::UpdateTransform(float dt)
 	UpdateInertia();
 }
 
-void cRigidBody::UpdateInertia()
+void btGenRigidBody::UpdateInertia()
 {
 	mInvInertia.setZero();
 	mInertia.setZero();
@@ -138,7 +138,7 @@ void cRigidBody::UpdateInertia()
 	mInertia.block(0, 0, 3, 3) = mLocalRot.toRotationMatrix() * mInvInertiaLocal.segment(0, 3).cwiseInverse().asDiagonal() * mLocalRot.toRotationMatrix().transpose();
 }
 
-void cRigidBody::WriteTransAndVelToBullet()
+void btGenRigidBody::WriteTransAndVelToBullet()
 {
 	// 1. 0 order info
 	btTransform trans;
@@ -165,20 +165,20 @@ void cRigidBody::WriteTransAndVelToBullet()
 // 	mAngVel = btBulletUtil::btVectorTotVector0(btRigidBody::getAngularVelocity());
 // }
 
-bool cRigidBody::isStaticObject() const
+bool btGenRigidBody::isStaticObject() const
 {
 	// return btCollisionObject::isStaticObject();
 	return (std::isnan(mInvMass) == true);
 }
 
-bool cRigidBody::IsStatic() const
+bool btGenRigidBody::IsStatic() const
 {
 	bool is_static = isStaticObject();
 	// std::cout << "rigidbody col flag = " << m_collisionFlags << ", static = " << is_static << " invmass = " << mInvMass << std::endl;
 	return is_static;
 }
 
-tVector cRigidBody::GetTotalTorque() const
+tVector btGenRigidBody::GetTotalTorque() const
 {
 	return mTotalTorque;
 }
@@ -187,7 +187,7 @@ tVector cRigidBody::GetTotalTorque() const
  * \brief			Get the velocity of a global point
  * \param pt		the position in world frame
 */
-tVector cRigidBody::GetVelocityOnPoint(const tVector& pt)
+tVector btGenRigidBody::GetVelocityOnPoint(const tVector& pt)
 {
 	return mLinVel + mAngVel.cross3(pt - GetWorldPos());
 }
@@ -196,45 +196,45 @@ tVector cRigidBody::GetVelocityOnPoint(const tVector& pt)
 // {
 // 	return static_cast<>mRigidBody;
 // }
-float cRigidBody::GetMass() const
+float btGenRigidBody::GetMass() const
 {
 	return 1.0 / mInvMass;
 }
-float cRigidBody::GetInvMass() const
+float btGenRigidBody::GetInvMass() const
 {
 	return mInvMass;
 }
-tVector cRigidBody::GetWorldPos() const
+tVector btGenRigidBody::GetWorldPos() const
 {
 	return mOrigin;
 }
 
-tQuaternion cRigidBody::GetOrientation() const
+tQuaternion btGenRigidBody::GetOrientation() const
 {
 	return mLocalRot;
 }
 
-void cRigidBody::SetLinVel(const tVector& v)
+void btGenRigidBody::SetLinVel(const tVector& v)
 {
 	mLinVel = v;
 	mLinVel[3] = 0;
 	WriteTransAndVelToBullet();
 }
 
-void cRigidBody::SetAngVel(const tVector& v)
+void btGenRigidBody::SetAngVel(const tVector& v)
 {
 	mAngVel = v;
 	mAngVel[3] = 0;
 	WriteTransAndVelToBullet();
 }
 
-void cRigidBody::UpdateMomentum(tVector& lin, tVector& ang)
+void btGenRigidBody::UpdateMomentum(tVector& lin, tVector& ang)
 {
 	lin = GetMass() * mLinVel;
 	ang = mInertia * mAngVel;
 }
 
-void cRigidBody::NewtonIters(double dt)
+void btGenRigidBody::NewtonIters(double dt)
 {
 	int max_step = 10;
 	tVector w0 = mAngVel;
@@ -257,14 +257,14 @@ void cRigidBody::NewtonIters(double dt)
 	mAngVel = w0;
 }
 
-void cRigidBody::EvalFunc(double dt, const tVector& AngVelNew, tVector& func_value)
+void btGenRigidBody::EvalFunc(double dt, const tVector& AngVelNew, tVector& func_value)
 {
 	func_value.noalias() =
 		mInertia * (AngVelNew - mAngVel) +
 		AngVelNew.cross3(mInertia * AngVelNew) * dt - mTotalTorque * dt;
 }
 
-void cRigidBody::EvalFuncDeri(double dt, const tVector& AngVelNew, tMatrix& mat)
+void btGenRigidBody::EvalFuncDeri(double dt, const tVector& AngVelNew, tMatrix& mat)
 {
 	mat.noalias() =
 		mInertia +
@@ -272,7 +272,7 @@ void cRigidBody::EvalFuncDeri(double dt, const tVector& AngVelNew, tMatrix& mat)
 			  btMathUtil::VectorToSkewMat(mInertia * AngVelNew));
 }
 
-void cRigidBody::EvalFuncDeriNumerically(double dt, const tVector& AngVelNew, tMatrix& mat)
+void btGenRigidBody::EvalFuncDeriNumerically(double dt, const tVector& AngVelNew, tMatrix& mat)
 {
 	tVector x = AngVelNew;
 	double threshold = 1e-5;
@@ -288,27 +288,27 @@ void cRigidBody::EvalFuncDeriNumerically(double dt, const tVector& AngVelNew, tM
 	}
 }
 
-tMatrix cRigidBody::GetInvInertia() const
+tMatrix btGenRigidBody::GetInvInertia() const
 {
 	return mInvInertia;
 }
 
-tMatrix cRigidBody::GetInertia() const
+tMatrix btGenRigidBody::GetInertia() const
 {
 	return mInertia;
 }
 
-tVector cRigidBody::GetLinVel() const
+tVector btGenRigidBody::GetLinVel() const
 {
 	return mLinVel;
 }
 
-tVector cRigidBody::GetAngVel() const
+tVector btGenRigidBody::GetAngVel() const
 {
 	return mAngVel;
 }
 
-void cRigidBody::PushState(const std::string& tag, bool only_vel_and_force)
+void btGenRigidBody::PushState(const std::string& tag, bool only_vel_and_force)
 {
 	if (mStateStack.size() >= mStackLimit)
 	{
@@ -336,7 +336,7 @@ void cRigidBody::PushState(const std::string& tag, bool only_vel_and_force)
 	// std::cout <<"push force = " << mTotalForce.transpose() << std::endl;
 	mStateStack.push_back(std::make_pair(tag, state));
 }
-void cRigidBody::PopState(const std::string& tag, bool only_vel_and_force)
+void btGenRigidBody::PopState(const std::string& tag, bool only_vel_and_force)
 {
 	if (mStateStack.size() == 0)
 	{

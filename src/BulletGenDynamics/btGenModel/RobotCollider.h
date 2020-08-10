@@ -5,14 +5,14 @@
 
 class cRobotModelDynamics;
 // this class is typically used to avoid the collision between parent link and its child.
-struct cRobotCollider : public cCollisionObject
+struct btGenRobotCollider : public btGenCollisionObject
 {
 public:
-	cRobotCollider(cRobotModelDynamics* model, int link_id, const std::string& name);
-	virtual ~cRobotCollider();
+	btGenRobotCollider(cRobotModelDynamics* model, int link_id, const std::string& name, int col_group);
+	virtual ~btGenRobotCollider();
 
-	static cRobotCollider* upcast(btCollisionObject* colObj);
-	static const cRobotCollider* upcast(const btCollisionObject* colObj);
+	static btGenRobotCollider* upcast(btCollisionObject* colObj);
+	static const btGenRobotCollider* upcast(const btCollisionObject* colObj);
 
 	virtual bool checkCollideWithOverride(const btCollisionObject* co) const override;
 
@@ -25,6 +25,7 @@ public:
 	virtual void PopState(const std::string& tag, bool only_vel_and_force = false) override final;
 
 	cRobotModelDynamics* mModel;
-	cRobotCollider* mParentCollider;
+	btGenRobotCollider* mParentCollider;
 	int mLinkId;
+	int mColGroup;
 };

@@ -2,11 +2,11 @@
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
 #include <set>
 
-extern cRigidBody* UpcastRigidBody(const btCollisionObject* col);
-extern cRobotCollider* UpcastRobotCollider(const btCollisionObject* col);
-extern cCollisionObject* UpcastColObj(const btCollisionObject* col);
+extern btGenRigidBody* UpcastRigidBody(const btCollisionObject* col);
+extern btGenRobotCollider* UpcastRobotCollider(const btCollisionObject* col);
+extern btGenCollisionObject* UpcastColObj(const btCollisionObject* col);
 
-void cContactSolver::SolveBySI()
+void btGenContactSolver::SolveBySI()
 {
 	if (mContactConstraintData.size() == 0) return;
 	PushState("before_SI");
@@ -65,7 +65,7 @@ void cContactSolver::SolveBySI()
 	}
 }
 
-double cContactSolver::InternalIterationSI()
+double btGenContactSolver::InternalIterationSI()
 {
 	// 1. iterate on each contact point
 	double total_normal_changed = 0;
@@ -138,7 +138,7 @@ double cContactSolver::InternalIterationSI()
 	return total_normal_changed + total_tangent_changed;
 }
 
-void cContactSolver::SetupDataForSI()
+void btGenContactSolver::SetupDataForSI()
 {
 	// std::cout << "-----------setup data for SI begin----------\n";
 	for (auto& data : mContactConstraintData)
@@ -186,7 +186,7 @@ void cContactSolver::SetupDataForSI()
 	// exit(1);
 }
 
-void cContactSolver::UpdateDataForSI()
+void btGenContactSolver::UpdateDataForSI()
 {
 	for (auto& data : mContactConstraintData)
 	{
@@ -202,7 +202,7 @@ void cContactSolver::UpdateDataForSI()
 	}
 }
 
-void cContactSolver::TestSICartesianConvertMatAndVec()
+void btGenContactSolver::TestSICartesianConvertMatAndVec()
 {
 	for (auto& data : mContactConstraintData)
 	{
@@ -232,7 +232,7 @@ void cContactSolver::TestSICartesianConvertMatAndVec()
 	}
 }
 
-void cContactSolver::ClearAllConstraintForce()
+void btGenContactSolver::ClearAllConstraintForce()
 {
 	for (auto& i : mColGroupData) i->mBody->ClearForce();
 }
@@ -240,10 +240,10 @@ void cContactSolver::ClearAllConstraintForce()
 /**
  * \brief		judge wheter this body is a multibody structure and whether it is working in a max vel (aka velocity )
 */
-bool cContactSolver::IsMultibodyAndVelMax(cCollisionObject* body)
+bool btGenContactSolver::IsMultibodyAndVelMax(btGenCollisionObject* body)
 {
 	if (body->GetType() == eColObjType::RobotCollder &&
-		true == UpcastRobotCollider(body)->mModel->IsMaxVel())
+		true == UpcastRobotCollider(body)->mModel->IsGeneralizedMaxVel())
 	{
 		std::cout << "[verify nt rel vel] bodyB now qdot is up to max_vel, so it's trivial to verify failed(caused by clamp)\n";
 		std::cout << "qdot = " << UpcastRobotCollider(body)->mModel->Getqdot().transpose() << std::endl;
@@ -253,7 +253,7 @@ bool cContactSolver::IsMultibodyAndVelMax(cCollisionObject* body)
 		return false;
 }
 
-void cContactSolver::CompareSILCPResult()
+void btGenContactSolver::CompareSILCPResult()
 {
 	for (int i = 0; i < mContactConstraintData.size(); i++)
 	{

@@ -991,12 +991,14 @@ void cRobotModel::LoadJsonModel(const char* file_path, double model_scale)
 
 		tVector3d local_pos;
 		tVector3f mesh_rot;
+		int col_group;
 		local_pos.x() = (*itr)["AttachX"].asDouble() * model_scale;
 		local_pos.y() = (*itr)["AttachY"].asDouble() * model_scale;
 		local_pos.z() = (*itr)["AttachZ"].asDouble() * model_scale;
 		mesh_rot.x() = (*itr)["AttachThetaX"].asFloat();
 		mesh_rot.y() = (*itr)["AttachThetaY"].asFloat();
 		mesh_rot.z() = (*itr)["AttachThetaZ"].asFloat();
+		col_group = (*itr)["ColGroup"].asInt();
 		std::string shape = (*itr)["Shape"].asString();
 		auto shape_itr = shape_map.find(shape);
 		if (shape_itr != shape_map.end())
@@ -1029,6 +1031,7 @@ void cRobotModel::LoadJsonModel(const char* file_path, double model_scale)
 			continue;
 		}
 		BaseObject* link = new Link(param);
+		static_cast<Link*>(link)->SetColGroup(col_group);
 		links.insert({link->GetName(), link});
 		link_id_map.insert({param.id, link});
 	}

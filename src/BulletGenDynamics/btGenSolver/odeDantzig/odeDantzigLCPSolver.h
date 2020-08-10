@@ -7,7 +7,7 @@ public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 	cODEDantzigLCPSolver();
 	~cODEDantzigLCPSolver();
-	void SetInfo(int num_of_friciton_dir, double mu, int num_of_contact, int num_of_joint_limis);
+	void SetInfo(int num_of_friciton_dir, double mu, int num_of_contact, int num_of_joint_limis, bool enable_lcp);
 
 	virtual int Solve(int num_of_vars, const tMatrixXd& A, const tVectorXd& b, tVectorXd& x);
 
@@ -18,8 +18,11 @@ protected:
 	void transfer_sol_from_rtql8(const tVectorXd& x_rtql8, tVectorXd& x_self);
 	void VerifySolution(const tMatrixXd& A, const tVectorXd& b, const tVectorXd& x);
 	int GetSizeOfSolution();
+	int GetSizeOfSolutionFriction();
+	int GetSizeOfSolutionNonFriction();
 
 	int mNumOfFrictionDir;
+	bool mEnableFrictionLCP;
 	double mu;
 	int mNumOfContact;
 	int mNumOfJointLimits;

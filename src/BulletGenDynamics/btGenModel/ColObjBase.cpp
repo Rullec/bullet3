@@ -1,17 +1,17 @@
 #include "ColObjBase.h"
 
-cCollisionObject::cCollisionObject(eColObjType type, const std::string& name)
+btGenCollisionObject::btGenCollisionObject(eColObjType type, const std::string& name)
 {
 	mType = type;
 	mName = name;
 }
 
-eColObjType cCollisionObject::GetType()
+eColObjType btGenCollisionObject::GetType()
 {
 	return mType;
 }
 
-const std::string& cCollisionObject::GetName()
+const std::string& btGenCollisionObject::GetName()
 {
 	return mName;
 }

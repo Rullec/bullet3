@@ -4,12 +4,12 @@
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
 #include <iostream>
 
-extern cRigidBody* UpcastRigidBody(const btCollisionObject* col);
-extern cRobotCollider* UpcastRobotCollider(const btCollisionObject* col);
-extern cCollisionObject* UpcastColObj(const btCollisionObject* col);
+extern btGenRigidBody* UpcastRigidBody(const btCollisionObject* col);
+extern btGenRobotCollider* UpcastRobotCollider(const btCollisionObject* col);
+extern btGenCollisionObject* UpcastColObj(const btCollisionObject* col);
 
-tJointLimitData::tJointLimitData(int constraint_id_, cRobotModelDynamics* multibody_,
-								 int dof_id_, bool is_upper_bound_)
+btGenJointLimitData::btGenJointLimitData(int constraint_id_, cRobotModelDynamics* multibody_,
+										 int dof_id_, bool is_upper_bound_)
 {
 	this->constraint_id = constraint_id_;
 	multibody = multibody_;
@@ -20,7 +20,7 @@ tJointLimitData::tJointLimitData(int constraint_id_, cRobotModelDynamics* multib
 	// if (is_upper_bound) joint_direction *= -1;
 }
 
-tContactPointData::tContactPointData(int c_id, double dt_)
+btGenContactPointData::btGenContactPointData(int c_id, double dt_)
 {
 	contact_id = c_id;
 	dt = dt_;
@@ -29,7 +29,7 @@ tContactPointData::tContactPointData(int c_id, double dt_)
 	mIsSelfCollision = false;
 }
 
-void tJointLimitData::ApplyJointTorque(double val)
+void btGenJointLimitData::ApplyJointTorque(double val)
 {
 	tVector3d torque = joint_direction * val;
 
@@ -46,7 +46,7 @@ void tJointLimitData::ApplyJointTorque(double val)
 	multibody->ApplyJointTorque(multibody->GetJointByDofId(dof_id)->GetId(), btMathUtil::Expand(torque, 0));
 }
 
-void tJointLimitData::ApplyGeneralizedForce(double val)
+void btGenJointLimitData::ApplyGeneralizedForce(double val)
 {
 	if (is_upper_bound) val *= -1;
 	multibody->ApplyGeneralizedForce(dof_id, val);
@@ -56,7 +56,7 @@ void tJointLimitData::ApplyGeneralizedForce(double val)
  * \brief			calculate the final convert matrix H and vector h
  * 
 */
-void tContactPointData::Setup(int num_frictions)
+void btGenContactPointData::Setup(int num_frictions)
 {
 	mNumOfFriction = num_frictions;
 
@@ -80,12 +80,12 @@ void tContactPointData::Setup(int num_frictions)
 	// std::cout << "mht shape = " << mht.rows() << " " << mht.cols() << std::endl;
 }
 
-void tContactPointData::ApplyForceResultVector(const tVectorXd& x0)
+void btGenContactPointData::ApplyForceResultVector(const tVectorXd& x0)
 {
 	ApplyForceCartersian(btMathUtil::Expand(mS * x0, 0));
 }
 
-void tContactPointData::ApplyForceCartersian(const tVector& contact_force)
+void btGenContactPointData::ApplyForceCartersian(const tVector& contact_force)
 {
 	// std::cout <<"body A apply " << contact_force.transpose() << " on " << mContactPtOnA.transpose() << std::endl;
 	// std::cout <<"body B apply " << -contact_force.transpose() << " on " << mContactPtOnB.transpose() << std::endl;
@@ -93,7 +93,7 @@ void tContactPointData::ApplyForceCartersian(const tVector& contact_force)
 	mBodyB->ApplyForce(-contact_force, mContactPtOnB);
 }
 
-bool tContactPointData::CheckOverlap(tContactPointData* other_data)
+bool btGenContactPointData::CheckOverlap(btGenContactPointData* other_data)
 {
 	// bool overlap = false;
 	// for (int i = 0; i < 2; i++)
@@ -110,7 +110,7 @@ bool tContactPointData::CheckOverlap(tContactPointData* other_data)
 		   (other_data->mBodyId1 == mBodyId1);
 }
 
-tMatrixXd tContactPointData::GetConvertMatS(int world_col_id)
+tMatrixXd btGenContactPointData::GetConvertMatS(int world_col_id)
 {
 	if (world_col_id == mBodyId0)
 		return mS;
@@ -123,26 +123,26 @@ tMatrixXd tContactPointData::GetConvertMatS(int world_col_id)
 	}
 }
 
-int tContactPointData::GetBody0Id()
+int btGenContactPointData::GetBody0Id()
 {
 	return mBodyId0;
 }
-int tContactPointData::GetBody1Id()
+int btGenContactPointData::GetBody1Id()
 {
 	return mBodyId1;
 }
 
-tVector tContactPointData::GetVelOnBody0()
+tVector btGenContactPointData::GetVelOnBody0()
 {
 	return btMathUtil::Expand(mBodyA->GetVelocityOnPoint(mContactPtOnA), 0);
 }
 
-tVector tContactPointData::GetVelOnBody1()
+tVector btGenContactPointData::GetVelOnBody1()
 {
 	return btMathUtil::Expand(mBodyB->GetVelocityOnPoint(mContactPtOnB), 0);
 }
 
-tVector tContactPointData::GetRelVel()
+tVector btGenContactPointData::GetRelVel()
 {
 	tVector body0_vel = GetVelOnBody0(),
 			body1_vel = GetVelOnBody1();
@@ -151,13 +151,13 @@ tVector tContactPointData::GetRelVel()
 	// std::cout << "Get rel vel, vel1 = " << body1_vel.transpose() << std::endl;
 	return body0_vel - body1_vel;
 }
-void tContactPointData::UpdateVel(double dt)
+void btGenContactPointData::UpdateVel(double dt)
 {
 	mBodyA->UpdateVelocity(dt);
 	mBodyB->UpdateVelocity(dt);
 }
 
-void tContactPointData::CalcBodyInfo()
+void btGenContactPointData::CalcBodyInfo()
 {
 	// change type
 	mBodyId0 = mBodyA->getWorldArrayIndex();
@@ -165,7 +165,7 @@ void tContactPointData::CalcBodyInfo()
 }
 
 // D is 3 x N. each col vector is a friction direction
-void tContactPointData::CalcFrictionCone(tMatrixXd& D)
+void btGenContactPointData::CalcFrictionCone(tMatrixXd& D)
 {
 	D.resize(3, mNumOfFriction), D.setZero();
 	D = btMathUtil::ExpandFrictionCone(mNumOfFriction, mNormalPointToA).transpose().block(0, 0, 3, mNumOfFriction);
@@ -174,7 +174,7 @@ void tContactPointData::CalcFrictionCone(tMatrixXd& D)
 }
 
 // mat S can convert a result vector x_0 (shape N+2) to a force in cartesian space f_0 3x1
-void tContactPointData::CalcConvertMat(tMatrixXd& S)
+void btGenContactPointData::CalcConvertMat(tMatrixXd& S)
 {
 	int x_single_size = mNumOfFriction + 2;  // (f_n + f_\parallel + \lambda).shape = NumOfFriction + 2
 	S.resize(3, x_single_size), S.setZero();
@@ -185,13 +185,13 @@ void tContactPointData::CalcConvertMat(tMatrixXd& S)
 
 //---------------------------------------------------------------------------
 
-tCollisionObjData::tCollisionObjData(cCollisionObject* obj)
+btGenCollisionObjData::btGenCollisionObjData(btGenCollisionObject* obj)
 {
 	mBody = obj;
 	Clear();
 }
 
-void tCollisionObjData::Clear()
+void btGenCollisionObjData::Clear()
 {
 	mJointLimits.clear();
 	mContactPts.clear();
@@ -204,14 +204,14 @@ void tCollisionObjData::Clear()
 	map_world_contact_id_to_local_contact_id.clear();
 }
 
-void tCollisionObjData::AddContactPoint(tContactPointData* data, bool isbody0)
+void btGenCollisionObjData::AddContactPoint(btGenContactPointData* data, bool isbody0)
 {
 	// std::cout << "contact " << data->contact_id << " add for body " << mBody->GetName() <<" isbody0 = " << isbody0 << std::endl;
 	mContactPts.push_back(data);
 	mIsBody0.push_back(isbody0);
 }
 
-void tCollisionObjData::AddJointLimitConstraint(tJointLimitData* data)
+void btGenCollisionObjData::AddJointLimitConstraint(btGenJointLimitData* data)
 {
 	mJointLimits.push_back(data);
 }
@@ -225,7 +225,7 @@ void tCollisionObjData::AddJointLimitConstraint(tJointLimitData* data)
 */
 #include <fstream>
 // extern std::string gOutputLogPath;
-void tCollisionObjData::Setup(int n_total_contact, int n_total_joint_limits)
+void btGenCollisionObjData::Setup(int n_total_contact, int n_total_joint_limits)
 {
 	num_total_contacts = n_total_contact;
 	num_total_joint_limits = n_total_joint_limits;
@@ -359,7 +359,7 @@ T2 AccurateSolve(const T1& mat, const T2& residual, double& min_error)
 extern bool gEnablePauseWhenSolveError;
 extern bool gEnableResolveWhenSolveError;
 // extern bool gPauseSimulation;
-void tCollisionObjData::SetupRobotCollider()
+void btGenCollisionObjData::SetupRobotCollider()
 {
 	// std::cout << "----------set up robot collider begin----------\n";
 	// 1. calculate some essential statistics
@@ -367,7 +367,7 @@ void tCollisionObjData::SetupRobotCollider()
 	int num_constraints = num_local_contacts + num_joint_constraint;
 	if (num_constraints == 0) return;
 
-	cRobotCollider* collider = UpcastRobotCollider(mBody);
+	btGenRobotCollider* collider = UpcastRobotCollider(mBody);
 	cRobotModelDynamics* model = collider->mModel;
 	int n_dof = model->GetNumOfFreedom();
 	double dt = 0;
@@ -392,7 +392,9 @@ void tCollisionObjData::SetupRobotCollider()
 	damping_mat = model->GetDampingMatrix();
 	const tMatrixXd I = tMatrixXd::Identity(n_dof, n_dof);
 
-	tMatrixXd residual_part = (I - dt * inv_M * (coriolis_mat + damping_mat)) * model->Getqdot();  // used as the last part of residual as shown below
+	// tMatrixXd residual_part = (I - dt * inv_M * (coriolis_mat + damping_mat)) * model->Getqdot();  // used as the last part of residual as shown below
+	tMatrixXd residual_part = (I - dt * inv_M * (coriolis_mat + damping_mat)) * model->Getqdot() +
+							  dt * inv_M * model->GetGeneralizedForce();
 
 	// 2. begin to form the ultimate velocity convert mat, handle the contact point part
 	tMatrixXd Jac_partA;
@@ -402,8 +404,8 @@ void tCollisionObjData::SetupRobotCollider()
 	for (int i_cons_id = 0; i_cons_id < num_constraints; i_cons_id++)
 	{
 		// 2.1 init the data and i global id
-		tContactPointData* i_contact_point_data = nullptr;
-		tJointLimitData* i_joint_limit_data = nullptr;
+		btGenContactPointData* i_contact_point_data = nullptr;
+		btGenJointLimitData* i_joint_limit_data = nullptr;
 		int i_global_id = -1;
 
 		// fetch the data by contact point id
@@ -461,8 +463,8 @@ void tCollisionObjData::SetupRobotCollider()
 		for (int j_cons_id = 0; j_cons_id < num_constraints; j_cons_id++)
 		{
 			// int j_global_id = mContactPts[j_local_id]->contact_id;
-			tContactPointData* j_contact_point_data = nullptr;
-			tJointLimitData* j_joint_limit_data = nullptr;
+			btGenContactPointData* j_contact_point_data = nullptr;
+			btGenJointLimitData* j_joint_limit_data = nullptr;
 			int j_global_id = -1;
 
 			// fetch the data by contact point id
@@ -521,16 +523,16 @@ void tCollisionObjData::SetupRobotCollider()
 	// std::cout << "----------set up robot collider end----------\n";
 }
 
-void tCollisionObjData::GetContactJacobianArrayRobotCollider(tEigenArr<tMatrixXd>& nonself_contact_point_jac, tEigenArr<tMatrixXd>& self_contact_point_jac0_minus_jac1)
+void btGenCollisionObjData::GetContactJacobianArrayRobotCollider(tEigenArr<tMatrixXd>& nonself_contact_point_jac, tEigenArr<tMatrixXd>& self_contact_point_jac0_minus_jac1)
 {
-	cRobotCollider* collider = UpcastRobotCollider(mBody);
+	btGenRobotCollider* collider = UpcastRobotCollider(mBody);
 	cRobotModelDynamics* model = collider->mModel;
 	int n_dof = model->GetNumOfFreedom();
 	tMatrixXd Jac0_buf(3, n_dof), Jac1_buf(3, n_dof);
 	for (int i_local_id = 0; i_local_id < num_local_contacts; i_local_id++)
 	{
 		// std::cout << "robot collider begin to set up contact " << i << std::endl;
-		tContactPointData* data = mContactPts[i_local_id];
+		btGenContactPointData* data = mContactPts[i_local_id];
 		int contact_id = data->contact_id;
 		// std::cout <<"contact id = " << contact_id << std::endl;
 		if (data->mIsSelfCollision == false)
@@ -566,7 +568,7 @@ void tCollisionObjData::GetContactJacobianArrayRobotCollider(tEigenArr<tMatrixXd
 	}
 }
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
-void tCollisionObjData::GetJointLimitJaocibanArrayRobotCollider(tEigenArr<tMatrixXd>& generalized_convert_list)
+void btGenCollisionObjData::GetJointLimitJaocibanArrayRobotCollider(tEigenArr<tMatrixXd>& generalized_convert_list)
 {
 	for (int i = 0; i < num_joint_constraint; i++)
 	{
@@ -584,13 +586,13 @@ void tCollisionObjData::GetJointLimitJaocibanArrayRobotCollider(tEigenArr<tMatri
 		}
 	}
 }
-void tCollisionObjData::SetupRigidBody()
+void btGenCollisionObjData::SetupRigidBody()
 {
 	// 1. create buffer
 	int n_my_contact = mContactPts.size();
 	if (n_my_contact == 0) return;
 	tEigenArr<tMatrix> RelPosSkew(n_my_contact);
-	cRigidBody* rigidbody = UpcastRigidBody(mBody);
+	btGenRigidBody* rigidbody = UpcastRigidBody(mBody);
 	tVector angvel = rigidbody->GetAngVel();
 	tVector world_pos = rigidbody->GetWorldPos();
 	tMatrix inertia = rigidbody->GetInertia(),
@@ -599,7 +601,7 @@ void tCollisionObjData::SetupRigidBody()
 	double invmass = rigidbody->GetInvMass();
 	for (int i = 0; i < n_my_contact; i++)
 	{
-		tContactPointData* data = mContactPts[i];
+		btGenContactPointData* data = mContactPts[i];
 		int contact_id = mContactPts[i]->contact_id;
 
 		tVector contact_pt = mIsBody0[i] == true ? data->mContactPtOnA : data->mContactPtOnB;
@@ -629,7 +631,7 @@ void tCollisionObjData::SetupRigidBody()
 	}
 }
 
-void tCollisionObjData::SetupRobotColliderVars()
+void btGenCollisionObjData::SetupRobotColliderVars()
 {
 	// num of world contacts
 	// num of local contacts

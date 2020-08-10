@@ -1,0 +1,6 @@
+{
+    "enable_stable_pd" : false,
+    "torque_lim" : 200,
+    "kp" : 20,
+    "kd" : 1
+}

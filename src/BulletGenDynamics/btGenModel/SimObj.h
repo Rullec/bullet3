@@ -6,7 +6,7 @@
 #include "ColObjBase.h"
 
 // class cSimRigidBody : public std::enable_shared_from_this<cSimRigidBody>
-class cRigidBody : public cCollisionObject
+class btGenRigidBody : public btGenCollisionObject
 {
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
@@ -24,8 +24,8 @@ public:
 		std::string name;
 		float damping;
 	};
-	cRigidBody(const tParams &params);
-	virtual ~cRigidBody();
+	btGenRigidBody(const tParams &params);
+	virtual ~btGenRigidBody();
 
 	// apply force
 	virtual void ApplyForce(const tVector &force, const tVector &) override final;

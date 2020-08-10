@@ -4,7 +4,6 @@
 #include "misc.h"
 #include <iostream>
 #include <cstdio>
-
 // void ExchangeIdx(tMatrixXd& mat, int i, int j)
 // {
 // 	// std::cout << "raw mat size = " << mat.rows() << " " << mat.cols() << std::endl;
@@ -62,9 +61,10 @@ cODEDantzigLCPSolver::~cODEDantzigLCPSolver()
 {
 }
 
-void cODEDantzigLCPSolver::SetInfo(int num_of_friciton_dir, double mu_, int num_of_contact, int num_of_joint_limis)
+void cODEDantzigLCPSolver::SetInfo(int num_of_friciton_dir, double mu_, int num_of_contact, int num_of_joint_limis, bool enable_friction)
 {
 	mNumOfFrictionDir = num_of_friciton_dir;
+	mEnableFrictionLCP = enable_friction;
 	mu = mu_;
 	mNumOfContact = num_of_contact;
 	mNumOfJointLimits = num_of_joint_limis;
@@ -172,7 +172,8 @@ int cODEDantzigLCPSolver::Solve(int num_of_vars, const tMatrixXd& M, const tVect
 			xODE[i] = x[i];
 		}
 
-		tVectorXd x_rtql8(GetSizeOfSolution());
+		// rtql8 must have non-friciton (expanded) size
+		tVectorXd x_rtql8(GetSizeOfSolutionFriction());
 		transfer_sol_from_ode_to_rtql8(xODE, x_rtql8, mNumOfFrictionDir, mNumOfContact);
 		transfer_sol_from_rtql8(x_rtql8, solution);
 		//		checkIfSolution(reducedA, reducedb, _x);
@@ -194,7 +195,19 @@ int cODEDantzigLCPSolver::Solve(int num_of_vars, const tMatrixXd& M, const tVect
 
 int cODEDantzigLCPSolver::GetSizeOfSolution()
 {
+	if (mEnableFrictionLCP == true)
+		return GetSizeOfSolutionFriction();
+	else
+		return GetSizeOfSolutionNonFriction();
+}
+
+int cODEDantzigLCPSolver::GetSizeOfSolutionFriction()
+{
 	return mNumOfContact * (mNumOfFrictionDir + 2) + mNumOfJointLimits;
+}
+int cODEDantzigLCPSolver::GetSizeOfSolutionNonFriction()
+{
+	return mNumOfContact + mNumOfJointLimits;
 }
 
 void cODEDantzigLCPSolver::transfer_question_from_rtql8_to_ode(const tMatrixXd& _A, const tVectorXd& _b, tMatrixXd& _AOut, tVectorXd& _bOut, int _numDir, int _numContacts)
@@ -247,6 +260,15 @@ void cODEDantzigLCPSolver::transfer_sol_from_ode_to_rtql8(const tVectorXd& _x, t
 		_xOut[_numContacts * (2 + _numDir) + i] = _x[_numContacts * 3 + i];
 }
 
+/**
+ * \brief			Given the constraint id in OUR formulation ,return the constraint id in RTQL8 formulation
+ * 
+ * 		The formulation between our engine and RTQL8 is different.
+ * 		We put the constraint belonged to the same contact point in the nearby place.
+ * 		But rtql8 extract all normal LCP constraint in the beginnig of Matrix, then tangent, then multipler, then other constraints (such as joint limit)
+ * 
+ * 		This function try to offer a convertion between them
+*/
 int GetNewId(int old_id, int num_of_contact, int num_friction)
 {
 	int single_size = 2 + num_friction;
@@ -285,6 +307,9 @@ int GetNewId(int old_id, int num_of_contact, int num_friction)
 	}
 };
 
+/**
+ * \brief				Reverse version of GetNewId
+*/
 int GetOldId(int new_id, int num_of_contact, int num_friction)
 {
 	int single_size = 2 + num_friction;
@@ -318,13 +343,59 @@ int GetOldId(int new_id, int num_of_contact, int num_friction)
 	else
 	{
 		// lambda
-
 		int old_id = (new_id - tangent_last_id) * single_size + single_size - 1;
 		// std::cout << "new id = " << old_id << ", is tangent contact, to " << old_id << std::endl;
 		// ;
 		return old_id;
 	}
 };
+
+/**
+ * \brief				Given the old id in our formulation in non friction LCP case(compact), return the new id in rtql8 formulation 
+ * 
+ * 				In non-frictional case, the contact constraint has no frictional and multplier entry. And we can not use GetOldId or GetNewId directly anymore
+ * 				This function tries to convert non-frictional LCP id to frictional LCP id, then to the rtql8 formulation
+ * 
+ * 				The procedure from non-friction case to frictional case is called "Expanding"
+*/
+int GetNewIdWhenExpanding(int old_non_friction_id, int num_of_contacts, int num_of_friction_quasi)
+{
+	int old_friction_id = -1;
+	if (old_non_friction_id < num_of_contacts)
+	{
+		old_friction_id = (num_of_friction_quasi + 2) * old_non_friction_id;
+	}
+	else
+	{
+		old_friction_id = (num_of_friction_quasi + 2) * num_of_contacts + old_non_friction_id - num_of_contacts;
+	}
+
+	return GetNewId(old_friction_id, num_of_contacts, num_of_friction_quasi);
+}
+
+/**
+ * \brief					The reverse function of "GetNewIdWhenExpanding"
+*/
+int GetOldIdWhenExpanding(int new_ode_id, int num_of_contacts, int num_of_friction_quasi)
+{
+	int old_friction_id = GetOldId(new_ode_id, num_of_contacts, num_of_friction_quasi);
+	int final_contact_id = num_of_contacts * (2 + num_of_friction_quasi);
+	int old_non_frictionl_id = -1;
+	if (old_friction_id > final_contact_id)
+	{
+		old_non_frictionl_id = old_friction_id - final_contact_id + num_of_contacts;
+	}
+	else
+	{
+		assert(old_friction_id % (num_of_friction_quasi + 2) == 0);
+		old_non_frictionl_id = old_friction_id / (num_of_friction_quasi + 2);
+	}
+	return old_non_frictionl_id;
+}
+
+/**
+ * \brief				Convert the fromulation from OURs to rtql8
+*/
 // TODO: optimize this part
 void cODEDantzigLCPSolver::transfer_question_to_rtql8(const tMatrixXd& A, const tVectorXd& b, tMatrixXd& A_rtql8, tVectorXd& b_rtql8)
 {
@@ -336,26 +407,60 @@ void cODEDantzigLCPSolver::transfer_question_to_rtql8(const tMatrixXd& A, const 
 		exit(1);
 	}
 
-	A_rtql8 = A;
-	b_rtql8 = b;
-
-	// input old our id, output rtql8 id
-	int* new_id_array = new int[size];
-	for (int i = 0; i < size; i++)
+	// if LCP is enabled, simply do movement between constraints
+	if (mEnableFrictionLCP)
 	{
-		new_id_array[i] = GetNewId(i, mNumOfContact, mNumOfFrictionDir);
-	}
+		A_rtql8 = A;
+		b_rtql8 = b;
 
-	for (int row = 0; row < size; row++)
-	{
-		int new_row = new_id_array[row];
-		for (int col = 0; col < size; col++)
+		// input old our id, output rtql8 id
+		int* new_id_array = new int[size];
+		for (int i = 0; i < size; i++)
 		{
-			int new_col = new_id_array[col];
-			A_rtql8(new_row, new_col) = A(row, col);
+			new_id_array[i] = GetNewId(i, mNumOfContact, mNumOfFrictionDir);
 		}
-		b_rtql8[new_row] = b[row];
+
+		for (int row = 0; row < size; row++)
+		{
+			int new_row = new_id_array[row];
+			for (int col = 0; col < size; col++)
+			{
+				int new_col = new_id_array[col];
+				A_rtql8(new_row, new_col) = A(row, col);
+			}
+			b_rtql8[new_row] = b[row];
+		}
+		delete new_id_array;
 	}
+	else
+	{
+		// if here is no frictional LCP, we still need to offer a quasi-friciton LCP problem in order to fit the formulation of ODE
+		// all other tangent, multiplier entry are ZERO.
+		int quasi_size = GetSizeOfSolutionFriction();
+		A_rtql8.resize(quasi_size, quasi_size);
+		A_rtql8.setZero();
+		b_rtql8.resize(quasi_size);
+		b_rtql8.setZero();
+
+		int now_compact_size = A.rows();
+		int* new_id_array = new int[now_compact_size];
+		for (int old_compact_id = 0; old_compact_id < now_compact_size; old_compact_id++)
+		{
+			new_id_array[old_compact_id] = GetNewIdWhenExpanding(old_compact_id, mNumOfContact, mNumOfFrictionDir);
+		}
+		for (int row_id = 0; row_id < now_compact_size; row_id++)
+		{
+			int new_row_id = new_id_array[row_id];
+			for (int col_id = 0; col_id < now_compact_size; col_id++)
+			{
+				int new_col_id = new_id_array[col_id];
+				A_rtql8(new_row_id, new_col_id) = A(row_id, col_id);
+			}
+			b_rtql8[new_row_id] = b[row_id];
+		}
+		delete new_id_array;
+	}
+
 	// std::cout << "A rtql8 = \n"
 	// 		  << A_rtql8 << std::endl;
 	// std::cout << "b rtql8 = \n"
@@ -367,17 +472,28 @@ void cODEDantzigLCPSolver::transfer_question_to_rtql8(const tMatrixXd& A, const 
 void cODEDantzigLCPSolver::transfer_sol_from_rtql8(const tVectorXd& x_rtql8, tVectorXd& x_self)
 {
 	// rearrange the layout from ours to rtql8's
-	int size = GetSizeOfSolution();
+	int size = GetSizeOfSolutionFriction();
 	if (x_rtql8.rows() != size)
 	{
 		std::cout << "[error] x_rtql8 size " << x_rtql8.rows() << " != " << size << std::endl;
 		exit(1);
 	}
 
-	x_self.noalias() = x_rtql8;
-	for (int id = 0; id < size; id++)
+	if (mEnableFrictionLCP == true)
 	{
-		x_self[GetOldId(id, mNumOfContact, mNumOfFrictionDir)] = x_rtql8[id];
+		x_self.noalias() = x_rtql8;
+		for (int id = 0; id < size; id++)
+		{
+			x_self[GetOldId(id, mNumOfContact, mNumOfFrictionDir)] = x_rtql8[id];
+		}
+	}
+	else
+	{
+		x_self.resize(GetSizeOfSolutionNonFriction());
+		for (int old_id = 0; old_id < x_self.size(); old_id++)
+		{
+			x_self[old_id] = x_rtql8[GetNewIdWhenExpanding(old_id, mNumOfContact, mNumOfFrictionDir)];
+		}
 	}
 }
 

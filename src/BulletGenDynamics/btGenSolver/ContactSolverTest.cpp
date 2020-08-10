@@ -2,11 +2,11 @@
 #include "BulletGenDynamics/btGenModel/RobotCollider.h"
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
 
-extern cRigidBody* UpcastRigidBody(const btCollisionObject* col);
-extern cRobotCollider* UpcastRobotCollider(const btCollisionObject* col);
-extern cCollisionObject* UpcastColObj(const btCollisionObject* col);
-#define EPS (1e-7)
-void cContactSolver::TestCartesianForceToCartesianVel()
+extern btGenRigidBody* UpcastRigidBody(const btCollisionObject* col);
+extern btGenRobotCollider* UpcastRobotCollider(const btCollisionObject* col);
+extern btGenCollisionObject* UpcastColObj(const btCollisionObject* col);
+#define EPS (1e-6)
+void btGenContactSolver::TestCartesianForceToCartesianVel()
 {
 	// std::cout << "----------------------------begin to test---------------------------\n";
 	PushState("TestCartesianForceToCartesianVel");
@@ -93,7 +93,7 @@ void cContactSolver::TestCartesianForceToCartesianVel()
 			if (body0_diff > EPS)
 			{
 				if (data->mBodyA->GetType() == eColObjType::RobotCollder &&
-					true == UpcastRobotCollider(data->mBodyA)->mModel->IsMaxVel())
+					true == UpcastRobotCollider(data->mBodyA)->mModel->IsGeneralizedMaxVel())
 				{
 					err = false;
 					std::cout << "[veirfy abs vel] bodyA now qdot is up to max_vel, so it's trivial to verify failed(caused by clamp)\n";
@@ -103,7 +103,7 @@ void cContactSolver::TestCartesianForceToCartesianVel()
 			if (body1_diff > EPS)
 			{
 				if (data->mBodyB->GetType() == eColObjType::RobotCollder &&
-					true == UpcastRobotCollider(data->mBodyB)->mModel->IsMaxVel())
+					true == UpcastRobotCollider(data->mBodyB)->mModel->IsGeneralizedMaxVel())
 				{
 					err = false;
 					std::cout << "[veirfy abs vel] bodyB now qdot is up to max_vel, so it's trivial to verify failed(caused by clamp)\n";
@@ -133,7 +133,7 @@ void cContactSolver::TestCartesianForceToCartesianVel()
 			std::cout << "diff = " << diff << std::endl;
 			err = true;
 
-			if (true == data->multibody->IsMaxVel())
+			if (true == data->multibody->IsGeneralizedMaxVel())
 			{
 				err = false;
 				std::cout << "[veirfy q] mb now qdot is up to max_vel, so it's trivial to verify failed(caused by clamp)\n";
@@ -151,7 +151,7 @@ void cContactSolver::TestCartesianForceToCartesianVel()
 	PopState("TestCartesianForceToCartesianVel");
 }
 
-void cContactSolver::TestCartesianForceToCartesianRelVel(const tMatrixXd& convert_mat, const tVectorXd& convert_vec)
+void btGenContactSolver::TestCartesianForceToCartesianRelVel(const tMatrixXd& convert_mat, const tVectorXd& convert_vec)
 {
 	int constraint_length = mNumJointLimitConstraints + mNumContactPoints * 3;
 	if (0 == constraint_length) return;
@@ -234,7 +234,7 @@ void cContactSolver::TestCartesianForceToCartesianRelVel(const tMatrixXd& conver
 			std::cout << "pred vel " << qdot_pred << std::endl;
 			std::cout << "true vel " << qdot_true << std::endl;
 			std::cout << "diff = " << diff << std::endl;
-			if (data->multibody->IsMaxVel() == true)
+			if (data->multibody->IsGeneralizedMaxVel() == true)
 			{
 				err = false;
 			}
@@ -244,7 +244,7 @@ void cContactSolver::TestCartesianForceToCartesianRelVel(const tMatrixXd& conver
 	PopState("TestCartesianForceToCartesianRelVel");
 }
 
-void cContactSolver::TestCartesianForceToNormalAndTangetRelVel(const tMatrixXd& normal_mat, const tVectorXd& normal_vec, const tMatrixXd& tan_mat, const tVectorXd& tan_vec)
+void btGenContactSolver::TestCartesianForceToNormalAndTangetRelVel(const tMatrixXd& normal_mat, const tVectorXd& normal_vec, const tMatrixXd& tan_mat, const tVectorXd& tan_vec)
 {
 	int final_shape = mNumContactPoints * 3 + mNumJointLimitConstraints;
 	if (0 == final_shape) return;
@@ -348,7 +348,7 @@ void cContactSolver::TestCartesianForceToNormalAndTangetRelVel(const tMatrixXd& 
 		}
 		if (err == true)
 		{
-			if (data->multibody->IsMaxVel())
+			if (data->multibody->IsGeneralizedMaxVel())
 				err = false;
 			else
 				exit(1);
@@ -360,7 +360,7 @@ void cContactSolver::TestCartesianForceToNormalAndTangetRelVel(const tMatrixXd& 
 	// exit(0);
 }
 
-void cContactSolver::TestCartesianForceToNormalAndTangetResultBasedRelVel(const tMatrixXd& normal_mat, const tVectorXd& normal_vec, const tMatrixXd& tan_mat, const tVectorXd& tan_vec)
+void btGenContactSolver::TestCartesianForceToNormalAndTangetResultBasedRelVel(const tMatrixXd& normal_mat, const tVectorXd& normal_vec, const tMatrixXd& tan_mat, const tVectorXd& tan_vec)
 {
 	if (0 == mNumConstraints) return;
 	PushState("TestCartesianForceToNormalAndTangetResultBasedRelVel");
@@ -485,14 +485,13 @@ void cContactSolver::TestCartesianForceToNormalAndTangetResultBasedRelVel(const 
 		bool err = false;
 		if (diff > EPS)
 		{
-			err = true;
-			std::cout << "[error] convert x into generalized force, for contact " << i << "---------------\n";
-			std::cout << "qdot pred = " << qdot_pred << std::endl;
-			std::cout << "qdot true = " << qdot_true << std::endl;
-			std::cout << "diff = " << diff << std::endl;
-			if (data->multibody->IsMaxVel())
+			if (false == data->multibody->IsGeneralizedMaxVel())
 			{
-				err = false;
+				std::cout << "[error] convert x into generalized force, for contact " << i << "---------------\n";
+				std::cout << "qdot pred = " << qdot_pred << std::endl;
+				std::cout << "qdot true = " << qdot_true << std::endl;
+				std::cout << "diff = " << diff << std::endl;
+				err = true;
 			}
 		}
 		if (err) exit(1);

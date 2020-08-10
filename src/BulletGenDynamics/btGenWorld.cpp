@@ -4,6 +4,9 @@
 #include "btGenModel/RobotModelDynamics.h"
 #include "btGenUtil/MathUtil.h"
 #include "btGenUtil/JsonUtil.h"
+#include "BulletGenDynamics/btGenUtil/TimeUtil.hpp"
+#include "BulletGenDynamics/btGenModel/EulerAngelRotationMatrix.h"
+#include "BulletGenDynamics/btGenController/btGenPDController.h"
 #include <iostream>
 #include <fstream>
 // #define __DEBUG__
@@ -17,7 +20,10 @@ bool enable_bullet_sim = false;
 // const std::string log_path = "debug_solve_new.txt";
 btGeneralizeWorld::btGeneralizeWorld()
 {
+	mPDController = nullptr;
+	mFrameId = 0;
 }
+
 btGeneralizeWorld::~btGeneralizeWorld()
 {
 	std::cout << "Begin simulator deconstrutor\n";
@@ -76,8 +82,10 @@ void btGeneralizeWorld::Init(const std::string& config_path)
 			mMBEnableRk4 = btJsonUtil::ParseAsBool("enable_RK4_for_multibody", config_js);
 			mMBEpsDiagnoalMassMat = btJsonUtil::ParseAsDouble("mb_add_eps_at_diagnoal_mass_mat", config_js);
 			mMBMaxVel = btJsonUtil::ParseAsDouble("mb_max_vel", config_js);
-			mMBUpdateVelWithoutCoriolis = btJsonUtil::ParseAsDouble("mb_update_velocity_without_coriolis", config_js);
+			// mMBUpdateVelWithoutCoriolis = btJsonUtil::ParseAsDouble("mb_update_velocity_without_coriolis", config_js);
 			mEnablePeturb = btJsonUtil::ParseAsDouble("enable_perturb", config_js);
+			mEnablePDControl = btJsonUtil::ParseAsBool("enable_pd_control", config_js);
+			mPDControllerPath = btJsonUtil::ParseAsString("controller_path", config_js);
 			mLCPConfigPath = btJsonUtil::ParseAsString("lcp_config_path", config_js);
 		}
 		mLCPContactSolver = nullptr;
@@ -99,14 +107,19 @@ void btGeneralizeWorld::Init(const std::string& config_path)
 
 	if (mContactMode == LCPMode)
 	{
-		mLCPContactSolver = new cContactSolver(mLCPConfigPath, mInternalWorld);
+		mLCPContactSolver = new btGenContactSolver(mLCPConfigPath, mInternalWorld);
+	}
+
+	if (mEnablePDControl)
+	{
+		mPDController = new btGenPDController(mPDControllerPath);
 	}
 }
 
-void btGeneralizeWorld::AddGround()
+void btGeneralizeWorld::AddGround(double height)
 {
 	{
-		btStaticPlaneShape* plane = new btStaticPlaneShape(btVector3(0, 1, 0), -2);
+		btStaticPlaneShape* plane = new btStaticPlaneShape(btVector3(0, 1, 0), height);
 		btTransform trans;
 		trans.setIdentity();
 		trans.setOrigin(btVector3(0, 0, 0));
@@ -253,6 +266,12 @@ void btGeneralizeWorld::AddMultibody(const std::string& skeleton_name)
 		mMultibody->TestSecondJacobian();
 		exit(0);
 	}
+	if (mEnablePDControl)
+	{
+		assert(mPDController != nullptr);
+		mPDController->Init(mMultibody);
+		// std::cout << "[debug] mPDController inited succ\n";
+	}
 }
 
 void btGeneralizeWorld::AddMultibody(cRobotModelDynamics* model)
@@ -265,7 +284,7 @@ void btGeneralizeWorld::AddMultibody(cRobotModelDynamics* model)
 	// mMultibody->SetAngleClamp(mMBEAngleClamp);
 	// mMultibody->SetMaxVel(mMBMaxVel);
 }
-#include "BulletGenDynamics/btGenUtil/TimeUtil.hpp"
+
 void btGeneralizeWorld::RemoveObj(int id)
 {
 	std::cout << "begin remove obj " << id << std::endl;
@@ -280,20 +299,28 @@ void OutputJacobianTestJson(cRobotModelDynamics*, const std::string& path);
 void OutputDynamicsFTestJson(cRobotModelDynamics*, const std::string& path);
 void btGeneralizeWorld::StepSimulation(double dt)
 {
-	btTimeUtil::Begin("stepsim");
-	std::cout << "------------------begin step simulation for frame " << global_frame_id << " time " << mTime << "------------------\n";
-
+	// btTimeUtil::Begin("stepsim");
+	// std::cout << "------------------begin step simulation for frame " << mFrameId << " time " << mTime << "------------------\n";
+	// std::cout << "[bt] col obj num = " << mInternalWorld->getNumCollisionObjects() << std::endl;
+	// std::cout << "[bt update] q0 = " << mMultibody->Getq().transpose() << std::endl;
 	if (enable_bullet_sim)
 	{
 		mInternalWorld->stepSimulation(dt);
 	}
 	else
 	{
+		// clear old forces
+		ClearForce();
+		// std::cout << "[bt] step simulation for frame " << global_frame_id << std::endl;
+		// std::cout << "[bt] cur q = " << mMultibody->Getq().transpose() << std::endl;
+		// std::cout << "[bt] cur qdot = " << mMultibody->Getqdot().transpose() << std::endl;
+		// std::cout << "[bt] cur Q = " << mMultibody->GetGeneralizedForce().transpose() << std::endl;
+		// std::cout << "[bt update] q1 = " << mMultibody->Getq().transpose() << std::endl;
 		// std::cout << "[bt] collision object num = " << mInternalWorld->getNumCollisionObjects() << std::endl;
 		ApplyActiveForce(dt);
-
+		// std::cout << "[after] active force, Q = " << mMultibody->GetGeneralizedForce().transpose() << std::endl;
 		CollisionDetect();
-
+		// std::cout << "[bt update] q2 = " << mMultibody->Getq().transpose() << std::endl;
 		// btTimeUtil::Begin("collision_response");
 		CollisionRespose(dt);
 		// btTimeUtil::End("collision_response");
@@ -302,16 +329,20 @@ void btGeneralizeWorld::StepSimulation(double dt)
 
 		PostUpdate(dt);
 	}
+
+	mFrameId++;
+	global_frame_id = mFrameId;
 	// if (mMultibody)
 	// 	std::cout << "q = " << mMultibody->Getq().transpose() << std::endl;
-	btTimeUtil::End("stepsim");
+	// btTimeUtil::End("stepsim");
 }
 void btGeneralizeWorld::PostUpdate(double dt)
 {
 	mTime += dt;
 }
-void btGeneralizeWorld::GetContactInfo()
+std::vector<btGenContactForce*> btGeneralizeWorld::GetContactInfo() const
 {
+	return mContactForces;
 }
 
 btDiscreteDynamicsWorld* btGeneralizeWorld::GetInternalWorld()
@@ -340,7 +371,7 @@ void btGeneralizeWorld::createRigidBody(double mass, const btTransform& startTra
 		btStaticPlaneShape* static_plane = dynamic_cast<btStaticPlaneShape*>(shape);
 		if (static_plane != nullptr)
 		{
-			std::cout << "add static plane\n";
+			// std::cout << "add static plane\n";
 			btVector3 normal = static_plane->getPlaneNormal();
 			btScalar constant = static_plane->getPlaneConstant();
 
@@ -350,9 +381,9 @@ void btGeneralizeWorld::createRigidBody(double mass, const btTransform& startTra
 			shape = createBoxShape(btVector3(cube_size / 2, cube_size / 2, cube_size / 2));
 			tMatrix rot = btMathUtil::DirToRotMat(btBulletUtil::btVectorTotVector0(normal), tVector(0, 1, 0, 0));
 			btVector3 translate = normal * (constant - cube_size / 2);
-			std::cout << "rot = \n"
-					  << rot << std::endl;
-			std::cout << "translate = " << btBulletUtil::btVectorTotVector0(translate).transpose() << std::endl;
+			// std::cout << "rot = \n"
+			// 		  << rot << std::endl;
+			// std::cout << "translate = " << btBulletUtil::btVectorTotVector0(translate).transpose() << std::endl;
 			new_trans.setOrigin(translate);
 			new_trans.setRotation(btBulletUtil::tQuaternionTobtQuaternion(btMathUtil::RotMatToQuaternion(rot)));
 		}
@@ -368,7 +399,7 @@ void btGeneralizeWorld::createRigidBody(double mass, const btTransform& startTra
 	if (mass != 0.f)
 		shape->calculateLocalInertia(mass, localInertia);
 
-	cRigidBody::tParams params;
+	btGenRigidBody::tParams params;
 	params.col_shape = shape;
 	params.damping = 0;
 	params.mass = mass;
@@ -377,18 +408,18 @@ void btGeneralizeWorld::createRigidBody(double mass, const btTransform& startTra
 	params.origin = btBulletUtil::btVectorTotVector1(new_trans.getOrigin());
 	params.rot = btBulletUtil::btQuaternionTotQuaternion(new_trans.getRotation());
 
-	btCollisionObject* obj = new cRigidBody(params);
+	btCollisionObject* obj = new btGenRigidBody(params);
 
 	obj->setWorldTransform(new_trans);
-	mSimObjs.push_back(dynamic_cast<cRigidBody*>(obj));
+	mSimObjs.push_back(dynamic_cast<btGenRigidBody*>(obj));
 
 	obj->setCollisionShape(shape);
+	obj->setUserPointer(nullptr);
 	mInternalWorld->addCollisionObject(obj, 1, -1);
-	std::cout << "col flag = " << obj->getCollisionFlags() << std::endl;
+	// std::cout << "col flag = " << obj->getCollisionFlags() << std::endl;
 	// exit(1);
 }
 
-#include "BulletGenDynamics/btGenModel/EulerAngelRotationMatrix.h"
 // 1. Apply active force, update the velocity, write into bullet
 void btGeneralizeWorld::ApplyActiveForce(double dt)
 {
@@ -407,6 +438,14 @@ void btGeneralizeWorld::ApplyActiveForce(double dt)
 	if (mMultibody)
 	{
 		mMultibody->ApplyGravity(mGravity);
+		if (mEnablePDControl)
+		{
+			std::cout << "prohibited\n";
+			exit(1);
+			mPDController->SetPDTargetq(tVectorXd::Zero(mMultibody->GetNumOfFreedom()));
+			mPDController->SetPDTargetqdot(tVectorXd::Zero(mMultibody->GetNumOfFreedom()));
+			mPDController->ApplyGeneralizedTau(dt);
+		}
 		// std::cout << "mb pos = " << mMultibody->Getq().segment(0, 3).transpose() << std::endl;
 		// std::cout << "q = " << mMultibody->Getq().transpose() << std::endl;
 		// std::cout << "qdot = " << mMultibody->Getqdot().transpose() << std::endl;
@@ -434,7 +473,7 @@ void btGeneralizeWorld::CollisionDetect()
 	mInternalWorld->performDiscreteCollisionDetection();
 	// std::cout << "[bt] dispatcher = " << m_dispatcher << std::endl;
 	int num_of_manifolds = m_dispatcher->getNumManifolds();
-	// std::cout << "[bt] num of mani = " << num_of_manifolds << std::endl;
+	// std::cout << "[bt] num of manifolds = " << num_of_manifolds << std::endl;
 	for (int i = 0; i < num_of_manifolds; i++) mManifolds.push_back(m_dispatcher->getManifoldByIndexInternal(i));
 
 #ifdef __DEBUG__
@@ -456,17 +495,17 @@ void btGeneralizeWorld::CollisionRespose(double dt)
 	// PushStatePreCollision();
 
 	// update velocity by active force now
-	if (false == mMBUpdateVelWithoutCoriolis)
-	{
-		UpdateVelocityInternal(dt);
-	}
-	else
-	{
-		UpdateVelocityInternalWithoutCoriolis(dt);
-	}
+	// if (false == mMBUpdateVelWithoutCoriolis)
+	// {
+	// 	UpdateVelocityInternal(dt);
+	// }
+	// else
+	// {
+	// 	UpdateVelocityInternalWithoutCoriolis(dt);
+	// }
 
-	// because "UpdateVelocity" is needed in the LCP test function as well, so we need to clear active force here as well
-	ClearForce();
+	// // because "UpdateVelocity" is needed in the LCP test function as well, so we need to clear active force here as well
+	// ClearForce();
 
 	// std::cout << "[before lcp] q = " << mMultibody->Getq().transpose() << std::endl;
 
@@ -504,7 +543,7 @@ void btGeneralizeWorld::CollisionRespose(double dt)
 	// PopStatePostColliison();
 
 	// apply these contact forces
-	// std::cout << "[before add contact force] Q = " << mMultibody->GetGeneralizedForce().transpose() << std::endl;
+	// std::cout << "[bt] num of contact forces = " << mContactForces.size() << std::endl;
 	for (auto& f : mContactForces)
 	{
 		// std::cout << "add contact f = " << f->mForce.transpose() << std::endl;
@@ -518,7 +557,7 @@ void btGeneralizeWorld::CollisionRespose(double dt)
 		// t->model->ApplyJointTorque(t->joint_id, t->joint_torque);
 		t->model->ApplyGeneralizedForce(t->dof_id, t->value);
 	}
-	// std::cout << "[after add contact force] Q = " << mMultibody->GetGeneralizedForce().transpose() << std::endl;
+	// std::cout << "[bt] after constraint, Q = " << mMultibody->GetGeneralizedForce().transpose() << std::endl;
 	// std::ofstream fout(log_path, std::ios::app);
 	// fout << "------frame " << global_frame_id << "------\n";
 	// fout << "q = " << mMultibody->Getq().transpose() << std::endl;
@@ -527,8 +566,8 @@ void btGeneralizeWorld::CollisionRespose(double dt)
 	// fout.close();
 }
 
-extern cRigidBody* UpcastRigidBody(const btCollisionObject* col);
-extern cRobotCollider* UpcastRobotCollider(const btCollisionObject* col);
+extern btGenRigidBody* UpcastRigidBody(const btCollisionObject* col);
+extern btGenRobotCollider* UpcastRobotCollider(const btCollisionObject* col);
 
 void btGeneralizeWorld::CollisionResposePenalty(double dt)
 {
@@ -538,9 +577,9 @@ void btGeneralizeWorld::CollisionResposePenalty(double dt)
 	{
 		// 1. get the collision pair
 		int num_of_contacts = m->getNumContacts();
-		cRigidBody *rigidbody0 = UpcastRigidBody(m->getBody0()),
-				   *rigidbody1 = UpcastRigidBody(m->getBody1());
-		cRobotCollider *mbody0 = nullptr, *mbody1 = nullptr;
+		btGenRigidBody *rigidbody0 = UpcastRigidBody(m->getBody0()),
+					   *rigidbody1 = UpcastRigidBody(m->getBody1());
+		btGenRobotCollider *mbody0 = nullptr, *mbody1 = nullptr;
 
 		if (rigidbody0 == nullptr) mbody0 = UpcastRobotCollider(m->getBody0()), assert(mbody0 != nullptr);
 		if (rigidbody1 == nullptr) mbody1 = UpcastRobotCollider(m->getBody1()), assert(mbody1 != nullptr);
@@ -579,6 +618,9 @@ void btGeneralizeWorld::CollisionResposePenalty(double dt)
 	UpdateVelocityInternal(dt);
 }
 
+/**
+ * \brief					Compute constraint forces by LCP formulaes
+*/
 void btGeneralizeWorld::CollisionResposeLCP(double dt)
 {
 	mLCPContactSolver->ConstraintProcess(dt);
@@ -629,9 +671,9 @@ void btGeneralizeWorld::Update(double dt)
 	// all forces has been recorded now
 	if (mMBEnableCollectFrameInfo)
 	{
-		if (global_frame_id < mMBCollectFrameNum)
+		if (mFrameId < mMBCollectFrameNum)
 			CollectFrameInfo(dt);
-		if (global_frame_id == mMBCollectFrameNum)
+		if (mFrameId == mMBCollectFrameNum)
 		{
 			// gPauseSimulation = true;
 			WriteFrameInfo("frame_info.txt");
@@ -655,10 +697,14 @@ void btGeneralizeWorld::Update(double dt)
 		}
 		else
 		{
+			// std::cout << "[bt] old q = " << mMultibody->Getq().transpose() << std::endl;
+			// std::cout << "[bt] old qdot = " << mMultibody->Getqdot().transpose() << std::endl;
 			mMultibody->UpdateVelocity(dt, true);
 			mMultibody->UpdateTransform(dt);
+			// std::cout << "[bt] new q = " << mMultibody->Getq().transpose() << std::endl;
+			// std::cout << "[bt] new qdot = " << mMultibody->Getqdot().transpose() << std::endl;
 		}
-		if (mMultibody->IsMaxVel())
+		if (mMultibody->IsGeneralizedMaxVel())
 		{
 			std::cout << "[warn] multibody exceed max vel = " << mMultibody->Getqdot().cwiseAbs().maxCoeff()
 					  << std::endl;
@@ -666,7 +712,6 @@ void btGeneralizeWorld::Update(double dt)
 			// exit(1);
 		}
 	}
-	ClearForce();
 }
 
 void btGeneralizeWorld::ClearForce()
@@ -723,7 +768,7 @@ void btGeneralizeWorld::CollectFrameInfo(double dt)
 	tFrameInfo info;
 	info.force_array.clear();
 	info.torque_array.clear();
-	info.frame_id = global_frame_id;
+	info.frame_id = mFrameId;
 	info.timestep = dt;
 	mMultibody->GetEffectInfo(info.force_array, info.torque_array);
 	info.q = mMultibody->Getq();
@@ -852,4 +897,28 @@ void OutputDynamicsFTestJson(cRobotModelDynamics* mb, const std::string& path)
 	tVectorXd qddot = mb->GetInvMassMatrix() * (mb->GetGeneralizedForce() - mb->GetCoriolisMatrix() * mb->Getqdot());
 	root["qddot"] = btJsonUtil::BuildVectorJsonValue(qddot);
 	btJsonUtil::WriteJson(path.c_str(), root, true);
+}
+
+/**
+ * \brief			Used in order to clear the whold world after each episode (DeepMimic)
+*/
+void btGeneralizeWorld::Reset()
+{
+	mTime = 0;
+	mFrameId = 0;
+
+	global_frame_id = mFrameId;
+	mMultibody->ClearForce();
+	mContactForces.clear();
+
+	m_broadphase->resetPool(m_dispatcher);
+
+	btOverlappingPairCache* pair_cache =
+		m_broadphase->getOverlappingPairCache();
+	btBroadphasePairArray& pair_array = pair_cache->getOverlappingPairArray();
+	for (int i = 0; i < pair_array.size(); ++i)
+	{
+		pair_cache->cleanOverlappingPair(pair_array[i], m_dispatcher);
+	}
+	mMultibody->SyncToBullet();
 }

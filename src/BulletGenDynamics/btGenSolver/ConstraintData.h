@@ -1,14 +1,14 @@
 #include "BulletGenDynamics/btGenUtil/MathUtil.h"
 #include "../btGenModel/ColObjBase.h"
 
-class cRigidBody;
-struct cRobotCollider;
+class btGenRigidBody;
+struct btGenRobotCollider;
 class cRobotModelDynamics;
 #include <map>
-struct tJointLimitData
+struct btGenJointLimitData
 {
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-	tJointLimitData(int constraint_id, cRobotModelDynamics* multibody,
+	btGenJointLimitData(int constraint_id, cRobotModelDynamics* multibody,
 					int dof_id, bool is_upper_bound);
 
 	void ApplyGeneralizedForce(double val);
@@ -21,13 +21,13 @@ struct tJointLimitData
 	tVector3d joint_direction;
 };
 
-struct tContactPointData
+struct btGenContactPointData
 {
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-	tContactPointData(int c_id, double dt);
+	btGenContactPointData(int c_id, double dt);
 	int contact_id;
 	double dt;  // timestep
-	cCollisionObject *mBodyA, *mBodyB;
+	btGenCollisionObject *mBodyA, *mBodyB;
 	eColObjType mTypeA, mTypeB;
 	tVector mNormalPointToA;
 	tVector mContactPtOnA, mContactPtOnB;
@@ -53,7 +53,7 @@ struct tContactPointData
 	void ApplyForceResultVector(const tVectorXd& x0);
 	void ApplyForceCartersian(const tVector& force);
 
-	bool CheckOverlap(tContactPointData* other_data);
+	bool CheckOverlap(btGenContactPointData* other_data);
 	tMatrixXd GetJacobian(int world_col_id);
 	tMatrixXd GetConvertMatS(int world_col_id);
 	int GetBody0Id();
@@ -71,16 +71,16 @@ protected:
 };
 
 // each collision object will has a data structure
-struct tCollisionObjData
+struct btGenCollisionObjData
 {
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-	tCollisionObjData(cCollisionObject*);
-	void AddContactPoint(tContactPointData*, bool isbody0);
-	void AddJointLimitConstraint(tJointLimitData*);
+	btGenCollisionObjData(btGenCollisionObject*);
+	void AddContactPoint(btGenContactPointData*, bool isbody0);
+	void AddJointLimitConstraint(btGenJointLimitData*);
 	void Clear();
 	void Setup(int n_total_contacts, int n_total_jointlimits);
 
-	cCollisionObject* mBody;
+	btGenCollisionObject* mBody;
 	tMatrixXd mConvertCartesianForceToVelocityMat;
 	tVectorXd mConvertCartesianForceToVelocityVec;
 
@@ -88,8 +88,8 @@ struct tCollisionObjData
 	tVectorXd mSI_ConvertCartesianForceToVelocityVec;
 
 protected:
-	std::vector<tJointLimitData*> mJointLimits;
-	std::vector<tContactPointData*> mContactPts;
+	std::vector<btGenJointLimitData*> mJointLimits;
+	std::vector<btGenContactPointData*> mContactPts;
 	std::vector<bool> mIsBody0;
 	int num_total_contacts;
 	int num_total_joint_limits;

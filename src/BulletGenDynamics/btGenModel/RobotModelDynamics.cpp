@@ -44,13 +44,13 @@ void cRobotModelDynamics::InitSimVars(btDynamicsWorld* world, bool zero_pose, bo
 {
 	// std::cout << "Init collider\n";
 	mColliders.clear();
-	cRobotCollider* collider = nullptr;
+	btGenRobotCollider* collider = nullptr;
 
 	// 1. get link shape info  and add them into btworld
 	int num_of_links = GetNumOfLinks();
 	for (int i = 0; i < num_of_links; i++)
 	{
-		const auto& link = GetLinkById(i);
+		const auto& link = static_cast<Link*>(GetLinkById(i));
 		double mass = link->GetMass();
 		ShapeType shape_type = link->GetShapeType();
 		btCollisionShape* shape = nullptr;
@@ -73,8 +73,7 @@ void cRobotModelDynamics::InitSimVars(btDynamicsWorld* world, bool zero_pose, bo
 
 		btVector3 localInertia(0, 0, 0);
 		shape->calculateLocalInertia(mass, localInertia);
-
-		collider = new cRobotCollider(this, i, GetLinkById(i)->GetName() + std::to_string(i));
+		collider = new btGenRobotCollider(this, i, link->GetName() + std::to_string(i), link->GetColGroup());
 		collider->setCollisionShape(shape);
 		collider->setUserIndex(-1);
 		collider->setUserPointer(collider);
@@ -109,26 +108,12 @@ void cRobotModelDynamics::InitSimVars(btDynamicsWorld* world, bool zero_pose, bo
 
 	mGenForce.resize(GetNumOfFreedom());
 	mGenForce.setZero();
-	// const double q[] = {
-	// 	-0.0289297, -1.82364, 0.196723, -2.5256, -1.27079, -0.473494, 3.89473, -0.461045, 0.0931059, 1.91737, 2.93732, -0.209514, 0.0629891};
-	// const double qdot[] = {
-	// 	-0.446217  -4.00862   1.62062  -10.2378  -21.9702  -25.5659        50  -5.44128  -4.33548  -16.1202   23.4421    -21.68       -50
-	// }
-	// set base init
-	// {
-	// 	qdot.segment(0, 3) = tVector3d(4, -1, 4);
-	// 	qdot.segment(3, 3) = tVector3d(12, 01, -7);
-	// q.segment(3, 3) = tVector3d(SIMD_PI / 6., 0, 0);
-	// qdot[1] = -10;
-
-	// q << 0.680375, -1.18218, 0.566198, 0.59947, 0.824512, -0.603272;
-	// qdot << 0, -0.607199, 0, 2.59866, 1.22131, 1.63052;
 	if (zero_pose == true)
 		mq.setZero();
 	else
 	{
 		mq.setRandom();
-		// q << 0.692907, -1.89453, 1.00441, 2.60635, 0.0663348, 1.52721, 1.47363, -0.742139, -1.52918, -3.96639, 1.54574, -3.05681;
+		mq << 0, 0.731739, 0, -0.00923806, 0.00404841, -0.0158973, 0.00393218, -0.000550536, 0.0242146, -0.0203724, 0.00480097, 0.0162168, 0.0483918, 0.160422, 0.161319, -0.1538, -0.237927, 1.14723, 0.0496013, 0.378687, 0.255071, 0.0983833, -0.00732098, 0.0186146, -0.0670642, 0.00367054, -0.0453877, 0.0384286, -0.132081, -0.142928, 0.016994, -0.0282118, -1.04024, 0.0629762, -0.519355, -0.235883, -0.217534, 0.00993077, 0.0963519, 0.409568, -0.184706, -0.000613517, -0.0310102, -0.495427, 0.041099, 0.0970096, 1.10988, 0.0632895, 0.0862053, 0.00373487;
 	}
 
 	if (zero_pose_vel == true)
@@ -136,12 +121,9 @@ void cRobotModelDynamics::InitSimVars(btDynamicsWorld* world, bool zero_pose, bo
 	else
 	{
 		mqdot.setRandom();
-		// qdot << 0.313725, -0.386997, -0.205985, 1.10284, -3.63833, 2.3115, 6.90362, -1.59941, -4.80563, -34.178, 0.49514, -34.3533;
-		// qdot << -0.000843372, -2.79265, -0.128726, 12.5693, 0.0125792, -0.0564807, -16.9428, 0.0461597, -0.0708239, 8.18329, -6.70682, 0.0330331, -0.00263514, -16.986, 0.0207209, -0.14805, 8.19547, -6.57637, -0.238355, -0.231526;
+		mqdot << 0.00897929, 0.111747, 0.333127, 0.0977395, 0.0206109, 0.0321892, -0.00467273, 0.00303357, -0.157421, -0.015657, -0.0258738, -0.0949263, -0.0435527, -0.183103, -0.148917, 0.148314, 0.24104, -0.0273323, 0.263392, 2.04305, -0.0640535, 0.0886264, 0.0535889, -0.187365, 0.0390726, -0.0500458, 0.345574, 0.0695623, -0.235409, 0.0251409, -0.581854, 0.966481, -0.41495, -0.0028827, 0.184436, 0.0660373, 0.228428, -0.0231492, -0.0412674, -0.675653, -0.0614846, -0.15255, -0.0482463, -0.0216697, 0.0095504, -0.191753, -1.25285, -0.693689, 0.481192, 0.136336;
 	}
 
-	// q << 1.15553, -1.88728, 1.27404, 1.55231, 1.10814, 0.000647896, 0.0180331, 0.00719906, -0.416765, 0.142436, -0.00265726, -0.290101, 0.101719, 0.100274, -0.306586, -1.36788, 0.0796965, 0.716776, 1.0514, -1.02883, 1.04332, -0.304633, 0.0190385, 0.240296, 0.139491, -0.115072, 0.112997, -0.990685, -0.0549583, -0.526088, 0.298854, 0.567608, -1.04001, -0.0234368, 0.0394043, 0.356135, -0.0214564, -0.258604, -1.5753, 1.61385, 0.0285423, -1.02547, 0.505478, -0.0890805, 1.57299, -1.57115, -0.124728, 0.0458547, 0.0520501, -0.204938;
-	// q[6] = -0.1;
 	cRobotModelDynamics::SetqAndqdot(mq, mqdot);
 
 	tVectorXd lower, upper;
@@ -472,7 +454,7 @@ tVectorXd cRobotModelDynamics::GetGeneralizedForce()
 	return Q;
 }
 
-cRobotCollider* cRobotModelDynamics::GetLinkCollider(int link_id)
+btGenRobotCollider* cRobotModelDynamics::GetLinkCollider(int link_id)
 {
 	if (link_id < 0 || link_id >= mColliders.size())
 	{
@@ -744,11 +726,34 @@ void cRobotModelDynamics::PopState(const std::string& tag, bool only_vel_and_for
 	mStateStack.pop_back();
 }
 
-bool cRobotModelDynamics::IsMaxVel() const
+bool cRobotModelDynamics::IsGeneralizedMaxVel(double max_vel /*= 100*/) const
 {
-	return std::fabs((mqdot.cwiseAbs().maxCoeff() - mMaxVel)) < 1;
+	return std::fabs((mqdot.cwiseAbs().maxCoeff() - max_vel)) < 1e-10;
 }
 
+double cRobotModelDynamics::GetMaxVelThreshold() const
+{
+	return mMaxVel;
+}
+
+bool cRobotModelDynamics::IsCartesianMaxVel(double max_vel /*= 100*/) const
+{
+	for (int i = 0; i < GetNumOfLinks(); i++)
+	{
+		auto link = static_cast<Link*>(GetLinkById(i));
+		if (link->GetLinkVel().cwiseAbs().maxCoeff() > max_vel ||
+			link->GetLinkOmega().cwiseAbs().maxCoeff() > max_vel)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+double cRobotModelDynamics::GetMaxVel() const
+{
+	return mMaxVel;
+}
 void cRobotModelDynamics::SetDampingCoeff(double damp1, double damp2)
 {
 	mDampingCoef1 = damp1;
