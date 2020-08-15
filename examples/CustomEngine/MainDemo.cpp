@@ -73,6 +73,7 @@ void CustomEngineMainDemo::stepSimulation(float dt)
 	// mTime += dt;
 	// std::cout << "cur time = " << mTime << std::endl;
 	// m_guiHelper;
+	mGenWorld->ClearForce();
 	mGenWorld->StepSimulation(static_cast<float>(physics_param->mDefaultTimestep));
 	if (physics_param->mPauseFrame == global_frame_id)
 	{

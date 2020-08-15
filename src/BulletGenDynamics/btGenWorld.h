@@ -47,6 +47,8 @@ public:
 	void AddGround(double height);
 	void AddMultibody(const std::string& path);
 	void AddMultibody(cRobotModelDynamics* model);
+	void ApplyTestActiveForce(double dt);
+	void ClearForce();
 	void RemoveObj(int id);
 	void StepSimulation(double dt);
 	std::vector<btGenContactForce*> GetContactInfo() const;
@@ -98,22 +100,19 @@ protected:
 	// void createRigidBodyNew(double mass, const btTransform& startTransform, btCollisionShape* shape, const std::string& name, const btVector4& color = btVector4(1, 0, 0, 1));
 	btBoxShape* createBoxShape(const btVector3& halfExtents);
 
-	// 1. use active force to update the velocity of the world
-	void ApplyActiveForce(double dt);
+	// 1. add gravity
+	void ApplyGravity();
 
 	// 2. collision detect
 	void CollisionDetect();
 
 	// 3. collision respose
-	void CollisionRespose(double dt);
-	void CollisionResposePenalty(double dt);
-	void CollisionResposeLCP(double dt);
+	void CollisionResponse(double dt);
+	void CollisionResponsePenalty(double dt);
+	void CollisionResponseLCP(double dt);
 	void CollisionResposeSI(double dt);
 	void PushStatePreCollision();
 	void PopStatePostColliison();
-
-	// 4. Clear active forces
-	void ClearForce();
 
 	void Update(double dt);
 	// void UpdateTransform(double dt);

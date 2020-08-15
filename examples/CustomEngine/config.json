@@ -13,6 +13,7 @@
     "multibody_path_bak5": "/home/xudong/Projects/DeepMimic/data/0424/characters/skeleton_042302_revised_legs.json",
     "multibody_path_bak0": "/home/xudong/Projects/DeepMimic/data/0424/characters/skeleton_042302_revised_no_head.json",
     "multibody_path": "/home/xudong/Projects/DeepMimic/data/0805/characters/skeleton_080501.json",
+    "multibody_path_bak3": "/home/xudong/Projects/DeepMimic/data/0805/characters/skeleton_cube.json",
     "multibody_path_bak": "/home/xudong/Projects/DeepMimic/data/0424/characters/skeleton_042302_revised.json",
     "obj_num": 10,
     "obj_type": "ball",

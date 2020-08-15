@@ -8,7 +8,7 @@ btGenRobotCollider::btGenRobotCollider(cRobotModelDynamics* model, int link_id, 
 	m_checkCollideWith = true;
 	m_collisionFlags &= (~btCollisionObject::CF_STATIC_OBJECT);
 	m_internalType = CO_COLLISION_OBJECT;
-	std::cout << "[debug] link " << link_id << "col group = " << mColGroup << std::endl;
+	// std::cout << "[debug] link " << link_id << " col group = " << mColGroup << std::endl;
 }
 
 btGenRobotCollider::~btGenRobotCollider()

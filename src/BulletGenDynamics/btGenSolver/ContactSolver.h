@@ -16,7 +16,7 @@ struct btGenContactForce
 {
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 	btGenContactForce(btGenCollisionObject* mObj,
-				  const tVector& mForce, const tVector& mWorldPos, bool);
+					  const tVector& mForce, const tVector& mWorldPos, bool);
 	btGenCollisionObject* mObj;
 	tVector mForce, mWorldPos;  // position in world and force in world frame
 	bool mIsSelfCollision;
@@ -116,6 +116,7 @@ protected:
 	void SolveByLCP();
 	void SolveBySI();
 	void ConvertLCPResult();
+	void VerifySolution();
 	double InternalIterationSI();
 	void SetupDataForSI();
 	void UpdateDataForSI();

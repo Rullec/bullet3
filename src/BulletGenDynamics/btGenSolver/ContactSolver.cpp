@@ -374,6 +374,8 @@ void btGenContactSolver::SolveByLCP()
 	int ret = mLCPSolver->Solve(x_lcp.size(), M, n, x_lcp);
 	// btTimeUtil::End("MLCPSolver->Solver");
 	// fout << "x = " << x_lcp.transpose() << std::endl;
+	// std::cout << "x_lcp = " << x_lcp.transpose() << std::endl;
+	// std::cout << "M*x+n = " << (M * x_lcp + n).transpose() << std::endl;
 	// fout.close();
 	// if (global_frame_id == 60) exit(1);
 	// std::cout << "[lcp] x_lcp = " << x_lcp.transpose() << std::endl;
@@ -393,8 +395,6 @@ void btGenContactSolver::SolveByLCP()
 	// fout << "n = " << n.transpose() << std::endl;
 	// std::cout << "[lcp] x_lcp = " << x_lcp.transpose() << std::endl;
 	// fout.close();
-	btMathUtil::RoundZero(M);
-	btMathUtil::RoundZero(n);
 	if (ret != 0)
 	{
 		std::cout << "solved failed\n";
@@ -402,6 +402,9 @@ void btGenContactSolver::SolveByLCP()
 
 	// Convert LCP result vector to cartesian forces
 	ConvertLCPResult();
+
+	// check whether our guess is true？
+	VerifySolution();
 }
 
 /**
@@ -415,6 +418,8 @@ void btGenContactSolver::ConvertLCPResult()
 
 	f_lcp.resize(mNumContactPoints * 3 + mNumJointLimitConstraints);
 	double total_contact_force_norm = 0;
+
+	// 1. extract all contact force
 	for (int i = 0; i < mNumContactPoints; i++)
 	{
 		if (0 == i && mEnableDebugOutput)
@@ -424,7 +429,6 @@ void btGenContactSolver::ConvertLCPResult()
 		}
 		auto& data = mContactConstraintData[i];
 		tVectorXd x_unit = x_lcp.segment(i * single_contact_size, single_contact_size);
-
 		tVector contact_force = tVector::Zero();
 		if (mEnableFrictionalLCP)
 		{
@@ -434,12 +438,14 @@ void btGenContactSolver::ConvertLCPResult()
 		{
 			contact_force = data->mNormalPointToA * x_unit[0];
 		}
-
+		// std::cout << "[debug] contact " << i << " result vector = " << x_unit.transpose() << std::endl;
+		// std::cout << "[debug] contact " << i << " cartesian force = " << contact_force.transpose() << std::endl;
 		f_lcp.segment(i * 3, 3) = contact_force.segment(0, 3);
 		if (mEnableDebugOutput) std::cout << "[lcp] contact " << i << " force = " << contact_force.transpose() << std::endl;
 		total_contact_force_norm += contact_force.norm();
 	}
 
+	// 2. extract all constraint (joint limit) constraint force
 	for (int i = 0; i < mNumJointLimitConstraints; i++)
 	{
 		auto& data = mJointLimitConstraintData[i];
@@ -801,6 +807,15 @@ void btGenContactSolver::AddJointLimit()
 	}
 }
 
+/**
+ * \brief				calculate another type of convert matrix
+ * 
+ * 			Result vector is literally the solution vector, or the solution. 
+ * 			It consisits of:
+ * 				1. the "mNumFrictions+2" decomposed contact force, 
+ * 				2. and the constraint force of joint limit
+ * 			This function tries to calculate the convert matrix from the result vector to the decomposed relative velocity next frame.
+*/
 void btGenContactSolver::CalcResultVectorBasedConvertMat()
 {
 	int single_size = 1;
@@ -872,6 +887,9 @@ void btGenContactSolver::CalcResultVectorBasedConvertMat()
 		tangent_vel_convert_result_based_vec = tangent_vel_convert_vec;
 }
 
+/**
+ * \brief			Push & pop the state into stacks
+*/
 void btGenContactSolver::PushState(const std::string& tag)
 {
 	for (auto& i : mColGroupData)
@@ -927,4 +945,80 @@ void btGenContactSolver::UpdateVelocity(float dt)
 				break;
 		}
 	}
+}
+
+/**
+ * \brief				given a target vector and an array of vector directions, find the most nearest one
+*/
+tVector FindMostNearDirection(const tMatrixXd& mat, const tVector& target)
+{
+	int num_of_dir = mat.cols();
+	if (mat.rows() != 3)
+	{
+		std::cout << "mat rows != 3\n";
+		exit(1);
+	}
+
+	double max_product_dot = -std::numeric_limits<double>::max();
+	tVector near_dir = tVector::Zero();
+	for (int i = 0; i < num_of_dir; i++)
+	{
+		tVectorXd dir = mat.col(i);
+		dir.normalize();
+		double dot = dir.dot(target.segment(0, 3));
+		// std::cout << i << " dir " << dir.transpose() << ", target = " << target.transpose() << ", dot = " << dot << std::endl;
+		if (dot > max_product_dot)
+		{
+			max_product_dot = dot;
+			near_dir.segment(0, 3) = dir;
+		}
+	}
+	// std::cout << "the nearest dir of " << target.transpose() << " is " << near_dir.transpose() << std::endl;
+	return near_dir;
+}
+void btGenContactSolver::VerifySolution()
+{
+	if (mEnableFrictionalLCP == false) return;
+	if (mNumContactPoints == 0) return;
+	PushState("verify");
+	assert(mContactConstraintData.size() == mNumContactPoints);
+	// 1. apply all constraint force, then update velocity
+	for (int i = 0; i < mContactConstraintData.size(); i++)
+	{
+		auto& data = mContactConstraintData[i];
+		tVector3d contact_force = f_lcp.segment(i * 3, 3);
+		data->ApplyForceCartersian(btMathUtil::Expand(contact_force, 0));
+	}
+
+	for (int i = 0; i < mJointLimitConstraintData.size(); i++)
+	{
+		auto& data = mJointLimitConstraintData[i];
+		data->ApplyGeneralizedForce(f_lcp[mNumContactPoints * 3 + i]);
+	}
+	UpdateVelocity(cur_dt);
+
+	// 2. find the nearest direction for current velocity
+	for (int i = 0; i < mNumContactPoints; i++)
+	{
+		auto& data = mContactConstraintData[i];
+		tVector rel_vel = data->GetRelVel();
+		tMatrixXd directions = data->mS.block(0, 1, 3, mNumFrictionDirs);
+		tVector vel_dir = FindMostNearDirection(directions, rel_vel);
+		tVector force = btMathUtil::Expand(f_lcp.segment(i * 3, 3), 0);
+		tVector oppo_force = -force;
+		oppo_force[1] = 0;
+		tVector oppo_force_dir = FindMostNearDirection(directions, oppo_force);
+		// std::cout << "contact " << i << " force = " << force.transpose() << std::endl;
+		// std::cout << "contact " << i << " rel_vel = " << rel_vel.transpose() << std::endl;
+		// std::cout << "contact " << i << " vel dir = " << vel_dir.transpose() << ", oppo force dir " << oppo_force_dir.transpose() << std::endl;
+		// if ((vel_dir - oppo_force_dir).norm() > 1e-10 && rel_vel.norm() > 1e-4 && oppo_force.norm() > 1e-4)
+		// {
+		// 	std::cout << "[error] ";
+		// }
+		// std::cout << "contact " << i << "\nrel vel = " << rel_vel.transpose() << "\nrel vel dir = "
+		// 		  << vel_dir.transpose() << "\noppo force = " << oppo_force.transpose() << "\noppo forde dir = " << oppo_force_dir.transpose() << std::endl;
+	}
+
+	PopState("verify");
+	// exit(1);
 }

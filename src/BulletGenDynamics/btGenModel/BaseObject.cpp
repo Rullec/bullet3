@@ -131,8 +131,8 @@ void BaseObject::ComputeIbody()
 	}
 	else if (shape_type == ShapeType::SPHERE_SHAPE)
 	{
-		double radius = mesh_scale(0);
-		Ibody = tMatrix3d::Identity() * 2.0 / 3 * mass * pow(radius, 2);
+		double radius = mesh_scale(0) / 2;
+		Ibody = tMatrix3d::Identity() * 2.0 / 5 * mass * pow(radius, 2);
 	}
 	else
 	{

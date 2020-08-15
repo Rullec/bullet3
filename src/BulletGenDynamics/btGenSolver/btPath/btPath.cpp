@@ -92,7 +92,7 @@ int cBulletPathLCPSolver::Solve(int num_of_vars, const tMatrixXd& M, const tVect
 	// now we can try to put a new problem in the shared memory
 	btTimeUtil::Begin("form questions");
 	FormNewQuestion(M, n);
-	std::cout << "M size = " << M.rows() << " " << M.cols() << std::endl;
+	// std::cout << "M size = " << M.rows() << " " << M.cols() << std::endl;
 	btTimeUtil::End("form questions");
 	// std::cout << "set up question for size " << memory->num_of_vars
 	// 		  << std::endl;
@@ -160,21 +160,31 @@ void VerifyAnswer(const tMatrixXd& A, const tVectorXd& b, tVectorXd& x)
 	tVectorXd perp = res.cwiseProduct(x);
 	if (perp.cwiseAbs().maxCoeff() > eps || x.minCoeff() < -eps ||
 		res.minCoeff() < -eps)
+	// std::cout << "--------------------------------\n";
+	// if (true)
 	{
 		std::cout << "[PATH] verify failed\n";
-		// std::cout << "[PATH] x = " << x.transpose() << std::endl;
+		btMathUtil::RoundZero(x, 1e-8);
+		btMathUtil::RoundZero(res, 1e-8);
+		std::cout << "[PATH] x = " << x.transpose() << std::endl;
 
-		std::cout << "[PATH] x abs max = " << x.cwiseAbs().maxCoeff() << std::endl;
-		std::cout << "[PATH] x min = " << x.minCoeff() << std::endl;
-		// std::cout << "[PATH] residual = " << res.transpose() << std::endl;
-		std::cout << "[PATH] residual min = " << res.minCoeff() << std::endl;
+		// std::cout << "[PATH] x abs max = " << x.cwiseAbs().maxCoeff() << std::endl;
+		// std::cout << "[PATH] x min = " << x.minCoeff() << std::endl;
+		std::cout << "[PATH] residual = " << res.transpose() << std::endl;
+		// std::cout << "[PATH] residual min = " << res.minCoeff() << std::endl;
 		std::cout << "[PATH] perp max = " << perp.cwiseAbs().maxCoeff() << std::endl;
+		// btMathUtil::RoundZero(A.array());
+		// btMathUtil::RoundZero(b.array());
 		if (A.rows() <= 6)
 		{
+			tMatrixXd Abak = A;
+			tVectorXd bbak = b;
+			btMathUtil::RoundZero(Abak);
+			btMathUtil::RoundZero(bbak);
 			std::cout << "[PATH] M = \n"
-					  << A << std::endl;
+					  << Abak << std::endl;
 			std::cout << "[PATH] n = \n"
-					  << b.transpose() << std::endl;
+					  << bbak.transpose() << std::endl;
 		}
 	}
 	else

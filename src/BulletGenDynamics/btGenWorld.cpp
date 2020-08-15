@@ -309,24 +309,10 @@ void btGeneralizeWorld::StepSimulation(double dt)
 	}
 	else
 	{
-		// clear old forces
-		ClearForce();
-		// std::cout << "[bt] step simulation for frame " << global_frame_id << std::endl;
-		// std::cout << "[bt] cur q = " << mMultibody->Getq().transpose() << std::endl;
-		// std::cout << "[bt] cur qdot = " << mMultibody->Getqdot().transpose() << std::endl;
-		// std::cout << "[bt] cur Q = " << mMultibody->GetGeneralizedForce().transpose() << std::endl;
-		// std::cout << "[bt update] q1 = " << mMultibody->Getq().transpose() << std::endl;
-		// std::cout << "[bt] collision object num = " << mInternalWorld->getNumCollisionObjects() << std::endl;
-		ApplyActiveForce(dt);
-		// std::cout << "[after] active force, Q = " << mMultibody->GetGeneralizedForce().transpose() << std::endl;
+		ApplyGravity();
 		CollisionDetect();
-		// std::cout << "[bt update] q2 = " << mMultibody->Getq().transpose() << std::endl;
-		// btTimeUtil::Begin("collision_response");
-		CollisionRespose(dt);
-		// btTimeUtil::End("collision_response");
-
+		CollisionResponse(dt);
 		Update(dt);
-
 		PostUpdate(dt);
 	}
 
@@ -421,23 +407,13 @@ void btGeneralizeWorld::createRigidBody(double mass, const btTransform& startTra
 }
 
 // 1. Apply active force, update the velocity, write into bullet
-void btGeneralizeWorld::ApplyActiveForce(double dt)
+void btGeneralizeWorld::ApplyTestActiveForce(double dt)
 {
 	// BT_PROFILE("apply_active_force");
 	// add gravity to simobjs and multibody
 	// std::cout << "total obj num = " << mSimObjs.size() << std::endl;
-	for (auto& obj : mSimObjs)
-	{
-		// std::cout << "[bt] is static = " << obj->isStaticObject() << std::endl;
-		// std::cout << "[bt] obj col flag = " << obj->getCollisionFlags() << std::endl;
-		// std::cout << "[bt] obj pos = " << obj->GetWorldPos().transpose() << std::endl;
-		obj->ApplyCOMForce(obj->GetMass() * mGravity);
-		// std::cout << "obj apply " << (obj->GetMass() * mGravity).transpose() << std::endl;
-	}
 
 	if (mMultibody)
-	{
-		mMultibody->ApplyGravity(mGravity);
 		if (mEnablePDControl)
 		{
 			std::cout << "prohibited\n";
@@ -446,10 +422,9 @@ void btGeneralizeWorld::ApplyActiveForce(double dt)
 			mPDController->SetPDTargetqdot(tVectorXd::Zero(mMultibody->GetNumOfFreedom()));
 			mPDController->ApplyGeneralizedTau(dt);
 		}
-		// std::cout << "mb pos = " << mMultibody->Getq().segment(0, 3).transpose() << std::endl;
-		// std::cout << "q = " << mMultibody->Getq().transpose() << std::endl;
-		// std::cout << "qdot = " << mMultibody->Getqdot().transpose() << std::endl;
-	}
+	// std::cout << "mb pos = " << mMultibody->Getq().segment(0, 3).transpose() << std::endl;
+	// std::cout << "[apply] q = " << mMultibody->Getq().transpose() << std::endl;
+	// std::cout << "qdot = " << mMultibody->Getqdot().transpose() << std::endl;
 
 	if (mEnablePeturb)
 	{
@@ -463,6 +438,19 @@ void btGeneralizeWorld::ApplyActiveForce(double dt)
 			}
 			std::cout << "perturb Q = " << mMultibody->GetGeneralizedForce().transpose() << std::endl;
 		}
+	}
+}
+
+/**
+ * \brief					Apply gravity
+*/
+void btGeneralizeWorld::ApplyGravity()
+{
+	for (auto& obj : mSimObjs) obj->ApplyCOMForce(obj->GetMass() * mGravity);
+
+	if (mMultibody)
+	{
+		mMultibody->ApplyGravity(mGravity);
 	}
 }
 
@@ -482,7 +470,7 @@ void btGeneralizeWorld::CollisionDetect()
 }
 
 // 3. collision respose, calculate the contact force, update the velocity again
-void btGeneralizeWorld::CollisionRespose(double dt)
+void btGeneralizeWorld::CollisionResponse(double dt)
 {
 	// no collision, return
 	// if (mManifolds.size() == 0) return;
@@ -519,10 +507,10 @@ void btGeneralizeWorld::CollisionRespose(double dt)
 	switch (mContactMode)
 	{
 		case eContactResponseMode::PenaltyMode:
-			CollisionResposePenalty(dt);
+			CollisionResponsePenalty(dt);
 			break;
 		case eContactResponseMode::LCPMode:
-			CollisionResposeLCP(dt);
+			CollisionResponseLCP(dt);
 		case eContactResponseMode::SequentialImpulseMode:
 
 		default:
@@ -557,6 +545,14 @@ void btGeneralizeWorld::CollisionRespose(double dt)
 		// t->model->ApplyJointTorque(t->joint_id, t->joint_torque);
 		t->model->ApplyGeneralizedForce(t->dof_id, t->value);
 	}
+	// std::cout << "[btGenWorld] frame " << global_frame_id << " q = " << mMultibody->Getq().transpose() << std::endl;
+	// std::cout << "[btGenWorld] frame " << global_frame_id << " qdot = " << mMultibody->Getqdot().transpose() << std::endl;
+	// std::cout << "[btGenWorld] frame " << global_frame_id << " qddot = " << mMultibody->Getqddot().transpose() << std::endl;
+	// std::cout << "[btGenWorld] frame " << global_frame_id << " M = \n"
+	// 		  << mMultibody->GetMassMatrix() << std::endl;
+	// std::cout << "[btGenWorld] frame " << global_frame_id << " C = \n"
+	// 		  << mMultibody->GetCoriolisMatrix() << std::endl;
+
 	// std::cout << "[bt] after constraint, Q = " << mMultibody->GetGeneralizedForce().transpose() << std::endl;
 	// std::ofstream fout(log_path, std::ios::app);
 	// fout << "------frame " << global_frame_id << "------\n";
@@ -569,7 +565,7 @@ void btGeneralizeWorld::CollisionRespose(double dt)
 extern btGenRigidBody* UpcastRigidBody(const btCollisionObject* col);
 extern btGenRobotCollider* UpcastRobotCollider(const btCollisionObject* col);
 
-void btGeneralizeWorld::CollisionResposePenalty(double dt)
+void btGeneralizeWorld::CollisionResponsePenalty(double dt)
 {
 	const double k = 2000;
 	const double penetraction_threshold = 1e-3;
@@ -621,11 +617,29 @@ void btGeneralizeWorld::CollisionResposePenalty(double dt)
 /**
  * \brief					Compute constraint forces by LCP formulaes
 */
-void btGeneralizeWorld::CollisionResposeLCP(double dt)
+void btGeneralizeWorld::CollisionResponseLCP(double dt)
 {
 	mLCPContactSolver->ConstraintProcess(dt);
 	mContactForces = mLCPContactSolver->GetContactForces();
 	mConstraintGenalizedForce = mLCPContactSolver->GetConstraintGeneralizedForces();
+	// std::cout << "[btGenworld] frame " << global_frame_id << std::endl;
+	// for (int i = 0; i < mContactForces.size(); i++)
+	// {
+	// 	auto obj = mContactForces[i]->mObj;
+	// 	auto multibody_collider = UpcastRobotCollider(obj);
+	// 	if (multibody_collider != nullptr)
+	// 	{
+	// 		std::cout << "[btGenworld] contact " << i << " force = " << mContactForces[i]->mForce.transpose() << std::endl;
+	// 		std::cout << "[btGenworld] contact " << i << " pos = " << mContactForces[i]->mWorldPos.transpose() << std::endl;
+	// 		tMatrixXd jac;
+
+	// 		mMultibody->ComputeJacobiByGivenPointTotalDOFWorldFrame(multibody_collider->mLinkId, mContactForces[i]->mWorldPos.segment(0, 3), jac);
+	// 		std::cout << "[btGenworld] contact " << i << " jac = \n"
+	// 				  << jac << std::endl;
+	// 		std::cout << "[btGenworld] contact " << i << " Q = "
+	// 				  << (jac.transpose() * mContactForces[i]->mForce.segment(0, 3)).transpose() << std::endl;
+	// 	}
+	// }
 	// if (mContactTorques.size()) std::cout << "[sim] get constraint torque 0 = " << mContactTorques[0]->joint_torque.transpose() << std::endl;
 	// exit(0);
 }
