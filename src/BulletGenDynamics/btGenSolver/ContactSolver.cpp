@@ -6,6 +6,7 @@
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
 #include "BulletGenDynamics/btGenUtil/JsonUtil.h"
 #include "BulletGenDynamics/btGenSolver/LCPSolverBuilder.hpp"
+#include "BulletGenDynamics/btGenController/btGenContactAwareAdviser.h"
 #include "btBulletDynamicsCommon.h"
 #include <iostream>
 #include <set>
@@ -121,6 +122,7 @@ btGenContactSolver::btGenContactSolver(const std::string& config_path, btDiscret
 
 btGenContactSolver::~btGenContactSolver()
 {
+	if (mLCPSolver) delete mLCPSolver;
 	DeleteColObjData();
 }
 
@@ -155,6 +157,8 @@ std::vector<btGenConstraintGeneralizedForce*> btGenContactSolver::GetConstraintG
 }
 void btGenContactSolver::ConstraintFinished()
 {
+	for (auto& x : contact_force_array) delete x;
+	for (auto& x : contact_torque_array) delete x;
 	contact_force_array.clear();
 	contact_torque_array.clear();
 
@@ -198,6 +202,63 @@ void btGenContactSolver::ConstraintFinished()
 		{
 			std::cout << "[lcp] joint limit " << ptr->dof_id << " constraint generalized force " << ptr->value << std::endl;
 		}
+	}
+
+	// restore the active force when contact-aware LCP is enabled
+	if (mMultibodyArray.size() && mMultibodyArray[0]->GetEnableContactAwareAdviser() == true)
+	{
+		// std::cout << "[log] restore active force by contact-aware LCP is enabled\n";
+		auto model = mMultibodyArray[0];
+		auto adviser = model->GetContactAwareAdviser();
+		// tMatrixXd E = adviser->GetE();
+		// tMatrixXd Dinv = adviser->GetD().inverse();
+		// tVectorXd b = adviser->Getb();
+		int num_of_freedom = model->GetNumOfFreedom();
+		tVectorXd Q = tVectorXd::Zero(num_of_freedom);
+		for (auto& force : contact_force_array)
+		{
+			if (eColObjType::RobotCollder == force->mObj->GetType())
+			{
+				auto collider = static_cast<btGenRobotCollider*>(force->mObj);
+				int link_id = collider->mLinkId;
+				if (model != collider->mModel)
+				{
+					std::cout << "[error] restore active force model inconsistent\n";
+					exit(1);
+				}
+
+				// get the jacobian
+				tMatrixXd jac;
+				model->ComputeJacobiByGivenPointTotalDOFWorldFrame(link_id, force->mWorldPos.segment(0, 3), jac);
+				tVectorXd Q_single = jac.transpose() * force->mForce.segment(0, 3);
+				// std::cout << "Q_single = " << Q_single.transpose() << std::endl;
+				Q += Q_single;
+			}
+		}
+		// if (contact_torque_array.size())
+		// {
+		// 	std::cout << "[error] should not have constraint torque joint limit now\n";
+		// 	exit(1);
+		// }
+		tVectorXd control_force_underactuated = adviser->CalcControlForce(Q);
+		for (int dof = 6; dof < num_of_freedom; dof++)
+		{
+			contact_torque_array.push_back(new btGenConstraintGeneralizedForce(model, dof, control_force_underactuated[dof - 6]));
+		}
+		// tVectorXd tau = E * Q + Dinv * b;
+		// std::cout << "[solved] active tau = " << tau.transpose() << std::endl;
+		// // std::cout << "now Dinvb = " << (Dinv * b).transpose() << std::endl;
+		// for (int dof = 6; dof < num_of_freedom; dof++)
+		// {
+		// 	model->ApplyGeneralizedForce(dof, tau[dof - 6]);
+		// }
+		// if (contact_force_array.size())
+		// {
+		// 	std::cout << "contact force exist, exit now for debug purpose\n";
+
+		// 	exit(1);
+		// }
+		// exit(1);
 	}
 	// std::cout << "[log] contact force num = " << contact_force_array.size() << std::endl;
 	// std::cout << "[log] contact torque num = " << contact_torque_array.size() << std::endl;
@@ -372,6 +433,8 @@ void btGenContactSolver::SolveByLCP()
 		static_cast<cODEDantzigLCPSolver*>(mLCPSolver)->SetInfo(mNumFrictionDirs, this->mMu, mNumContactPoints, mNumJointLimitConstraints, mEnableFrictionalLCP);
 	}
 	int ret = mLCPSolver->Solve(x_lcp.size(), M, n, x_lcp);
+	// std::cout << "[lcp] M norm = " << M.norm() << std::endl;
+	// std::cout << "[lcp] n norm = " << n.norm() << std::endl;
 	// btTimeUtil::End("MLCPSolver->Solver");
 	// fout << "x = " << x_lcp.transpose() << std::endl;
 	// std::cout << "x_lcp = " << x_lcp.transpose() << std::endl;
@@ -404,7 +467,7 @@ void btGenContactSolver::SolveByLCP()
 	ConvertLCPResult();
 
 	// check whether our guess is true？
-	VerifySolution();
+	// VerifySolution();
 }
 
 /**
@@ -688,37 +751,15 @@ void btGenContactSolver::AddManifold(btPersistentManifold* manifold)
 	// for each contact point
 	for (int j = 0; j < n_contacts; j++)
 	{
-		data = new btGenContactPointData(mContactConstraintData.size(), cur_dt);
+		data = new btGenContactPointData(mContactConstraintData.size());
 		// std::cout << manifold->getContactProcessingThreshold() << std::endl;
 		// std::cout << manifold->getContactBreakingThreshold() << std::endl;
 		// 1. prepare contact point data
 		{
-			data->dt = this->cur_dt;
-			data->mBodyA = UpcastColObj(manifold->getBody0());
-			data->mBodyB = UpcastColObj(manifold->getBody1());
-			data->mTypeA = data->mBodyA->GetType();
-			data->mTypeB = data->mBodyB->GetType();
-
-			if (data->mBodyA == nullptr || data->mBodyB == nullptr)
-			{
-				std::cout << "illegal body type!\n";
-				exit(1);
-			}
-
-			const auto& pt = manifold->getContactPoint(j);
-			data->mNormalPointToA = btBulletUtil::btVectorTotVector0(pt.m_normalWorldOnB);
-			data->mContactPtOnA = btBulletUtil::btVectorTotVector1(pt.getPositionWorldOnA());
-			data->mContactPtOnB = btBulletUtil::btVectorTotVector1(pt.getPositionWorldOnB());
-			data->distance = pt.getDistance();
-
+			data->Init(cur_dt, manifold, j);
 			data->Setup(mNumFrictionDirs);
 			data->mbody0GroupId = map_colobjid_to_groupid[data->GetBody0Id()];
 			data->mbody1GroupId = map_colobjid_to_groupid[data->GetBody1Id()];
-			// set self collision flag
-			if (data->mbody1GroupId == data->mbody0GroupId)
-			{
-				data->mIsSelfCollision = true;
-			}
 			// std::cout << "data0 vel = " << data->GetVelOnBody0().transpose() << std::endl;
 			// std::cout << "data1 vel = " << data->GetVelOnBody1().transpose() << std::endl;
 		}
@@ -978,6 +1019,7 @@ tVector FindMostNearDirection(const tMatrixXd& mat, const tVector& target)
 }
 void btGenContactSolver::VerifySolution()
 {
+	std::cout << "[warn] verify solutions iscalled! it may slow down the simulation\n";
 	if (mEnableFrictionalLCP == false) return;
 	if (mNumContactPoints == 0) return;
 	PushState("verify");

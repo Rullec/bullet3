@@ -51,9 +51,18 @@ SET(
 	btGenUtil/MathUtil.cpp
 	btGenUtil/TimeUtil.cpp
 )
+
 SET(
 	BulletGenPDControler_SRCS
-	btGenController/btGenPDController.cpp
+	./btGenController/btGenContactAwareAdviser.cpp
+	./btGenController/btGenFeature.cpp
+	./btGenController/btGenPDController.cpp
+	./btGenController/FBFOptimizer/btGenFBFConstraint.cpp
+	./btGenController/FBFOptimizer/btGenFBFEnergyTerm.cpp
+	./btGenController/FBFOptimizer/btGenFrameByFrameOptimizer.cpp
+	./btGenController/QPSolver/QuadProgQPSolver.cpp
+	./btGenController/QPSolver/eiquadprog.hpp
+	./btGenController/btTraj.cpp
 )
 
 SET(BulletGenDynamics_SRCS

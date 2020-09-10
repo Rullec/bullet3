@@ -9,7 +9,7 @@ struct btGenJointLimitData
 {
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 	btGenJointLimitData(int constraint_id, cRobotModelDynamics* multibody,
-					int dof_id, bool is_upper_bound);
+						int dof_id, bool is_upper_bound);
 
 	void ApplyGeneralizedForce(double val);
 	void ApplyJointTorque(double val);
@@ -21,10 +21,12 @@ struct btGenJointLimitData
 	tVector3d joint_direction;
 };
 
+class btPersistentManifold;
 struct btGenContactPointData
 {
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-	btGenContactPointData(int c_id, double dt);
+	btGenContactPointData(int c_id);
+	void Init(double dt, btPersistentManifold* manifold, int contact_id_in_manifold);
 	int contact_id;
 	double dt;  // timestep
 	btGenCollisionObject *mBodyA, *mBodyB;
@@ -99,7 +101,8 @@ protected:
 	void SetupRobotColliderVars();
 	void GetContactJacobianArrayRobotCollider(tEigenArr<tMatrixXd>& nonself_contact_jac_list, tEigenArr<tMatrixXd>& selfcontact_jac_list);
 	void GetJointLimitJaocibanArrayRobotCollider(tEigenArr<tMatrixXd>& jac_list);
-
+	tVectorXd CalcRobotColliderResidual(double dt) const;
+	tMatrixXd CalcRobotColliderJacPartBPrefix(double dt) const;
 	// buffer for multibody
 	tMatrixXd M, inv_M, coriolis_mat, damping_mat;
 

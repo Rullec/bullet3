@@ -90,17 +90,17 @@ int cBulletPathLCPSolver::Solve(int num_of_vars, const tMatrixXd& M, const tVect
 		continue;
 
 	// now we can try to put a new problem in the shared memory
-	btTimeUtil::Begin("form questions");
+	// btTimeUtil::Begin("form questions");
 	FormNewQuestion(M, n);
 	// std::cout << "M size = " << M.rows() << " " << M.cols() << std::endl;
-	btTimeUtil::End("form questions");
+	// btTimeUtil::End("form questions");
 	// std::cout << "set up question for size " << memory->num_of_vars
 	// 		  << std::endl;
-	btTimeUtil::Begin("solving shared memory");
+	// btTimeUtil::Begin("solving shared memory");
 	memory->status = NEED_TO_SOLVE;
 	while (memory->status != SOLVE_FINISHED)
 		continue;
-	btTimeUtil::End("solving shared memory");
+	// btTimeUtil::End("solving shared memory");
 
 	VerifyAnswer(M, n, x_result);
 	return 0;
@@ -163,16 +163,16 @@ void VerifyAnswer(const tMatrixXd& A, const tVectorXd& b, tVectorXd& x)
 	// std::cout << "--------------------------------\n";
 	// if (true)
 	{
-		std::cout << "[PATH] verify failed\n";
+		std::cout << "[PATH] verify failed, perp max = " << perp.cwiseAbs().maxCoeff() << std::endl;
 		btMathUtil::RoundZero(x, 1e-8);
 		btMathUtil::RoundZero(res, 1e-8);
-		std::cout << "[PATH] x = " << x.transpose() << std::endl;
+		// std::cout << "[PATH] x = " << x.transpose() << std::endl;
 
-		// std::cout << "[PATH] x abs max = " << x.cwiseAbs().maxCoeff() << std::endl;
-		// std::cout << "[PATH] x min = " << x.minCoeff() << std::endl;
-		std::cout << "[PATH] residual = " << res.transpose() << std::endl;
-		// std::cout << "[PATH] residual min = " << res.minCoeff() << std::endl;
-		std::cout << "[PATH] perp max = " << perp.cwiseAbs().maxCoeff() << std::endl;
+		// // std::cout << "[PATH] x abs max = " << x.cwiseAbs().maxCoeff() << std::endl;
+		// // std::cout << "[PATH] x min = " << x.minCoeff() << std::endl;
+		// std::cout << "[PATH] residual = " << res.transpose() << std::endl;
+		// // std::cout << "[PATH] residual min = " << res.minCoeff() << std::endl;
+		// std::cout << "[PATH] perp max = " << perp.cwiseAbs().maxCoeff() << std::endl;
 		// btMathUtil::RoundZero(A.array());
 		// btMathUtil::RoundZero(b.array());
 		if (A.rows() <= 6)
@@ -188,6 +188,7 @@ void VerifyAnswer(const tMatrixXd& A, const tVectorXd& b, tVectorXd& x)
 		}
 	}
 	else
-		std::cout << "[PATH] LCP solved correct for size " << memory->num_of_vars
-				  << std::endl;
+	{
+		// std::cout << "[PATH] LCP solved correct for size " << memory->num_of_vars
+	}
 }

@@ -6,7 +6,7 @@ class cODEDantzigLCPSolver : public cLCPSolverBase
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 	cODEDantzigLCPSolver();
-	~cODEDantzigLCPSolver();
+	virtual ~cODEDantzigLCPSolver();
 	void SetInfo(int num_of_friciton_dir, double mu, int num_of_contact, int num_of_joint_limis, bool enable_lcp);
 
 	virtual int Solve(int num_of_vars, const tMatrixXd& A, const tVectorXd& b, tVectorXd& x);

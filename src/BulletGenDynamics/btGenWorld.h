@@ -8,7 +8,9 @@ class btGenContactSolver;
 class cRobotModelDynamics;
 class btGenContactForce;
 class btGenConstraintGeneralizedForce;
-class btGenPDController;
+// class btGenPDController;
+class btGenContactAwareAdviser;
+class btTraj;
 class btGeneralizeWorld
 {
 public:
@@ -47,11 +49,14 @@ public:
 	void AddGround(double height);
 	void AddMultibody(const std::string& path);
 	void AddMultibody(cRobotModelDynamics* model);
+	cRobotModelDynamics* GetMultibody();
 	void ApplyTestActiveForce(double dt);
 	void ClearForce();
 	void RemoveObj(int id);
 	void StepSimulation(double dt);
-	std::vector<btGenContactForce*> GetContactInfo() const;
+	std::vector<btGenContactForce*> GetContactForces() const;
+	std::vector<btPersistentManifold*> GetContactManifolds() const;
+
 	void Reset();
 	// get & set method
 	btDiscreteDynamicsWorld* GetInternalWorld();
@@ -66,7 +71,8 @@ protected:
 	btDefaultCollisionConfiguration* m_collisionConfiguration;
 	std::vector<btGenRigidBody*> mSimObjs;
 	cRobotModelDynamics* mMultibody;
-	btGenPDController* mPDController;
+	btTraj* mGuideTraj;
+	// btGenPDController* mPDController;
 	double mTime;
 	int mFrameId;
 	tVector mGravity;
@@ -75,33 +81,44 @@ protected:
 	double mMBDamping2;
 	bool mMBZeroInitPose;
 	bool mMBZeroInitPoseVel;
-	bool mMBEnableRk4;
+	// bool mMBEnableRk4;
 	double mMBEpsDiagnoalMassMat;
 	double mMBMaxVel;
+	bool mMBEnableContactAwareLCP;
+	bool mMBEnableGuideAction;
+	std::string mGuidedActionTrajFile;
+	std::string mContactAwareConfig;
+	// double mMBContactAwareW;
+	// double mMBContactAwareWm;
+	// std::string mContactAwareGuideTraj;
 	// bool mMBUpdateVelWithoutCoriolis;
 	bool mEnablePeturb;
-	bool mEnablePDControl;
-	std::string mPDControllerPath;
+	// bool mEnablePDControl;
+	// std::string mPDControllerPath;
 
-	bool mMBEAngleClamp;
-	bool mMBTestJacobian;
+	// bool mMBEAngleClamp;
+	// bool mMBTestJacobian;
 	bool mMBEnableCollectFrameInfo;
 	bool mEnablePauseWhenMaxVel;
 	int mMBCollectFrameNum;
 	double mMBScale;
 	eContactResponseMode mContactMode;
 	btGenContactSolver* mLCPContactSolver;
+	btGenContactAwareAdviser* mControlAdviser;
 	std::string mLCPConfigPath;
 	std::vector<btPersistentManifold*> mManifolds;
 	std::vector<btGenContactForce*> mContactForces;
 	std::vector<btGenConstraintGeneralizedForce*> mConstraintGenalizedForce;
-
+	std::vector<btCollisionShape*> mCollisionShapeArray;
 	void createRigidBody(double mass, const btTransform& startTransform, btCollisionShape* shape, const std::string& name, const btVector4& color = btVector4(1, 0, 0, 1));
 	// void createRigidBodyNew(double mass, const btTransform& startTransform, btCollisionShape* shape, const std::string& name, const btVector4& color = btVector4(1, 0, 0, 1));
 	btBoxShape* createBoxShape(const btVector3& halfExtents);
 
 	// 1. add gravity
 	void ApplyGravity();
+
+	// 1.1 update the contact aware LCP adviser
+	void UpdateAdviser(double dt);
 
 	// 2. collision detect
 	void CollisionDetect();
@@ -135,4 +152,7 @@ protected:
 	tEigenArr<tFrameInfo> mFrameInfo;
 	void CollectFrameInfo(double dt);
 	void WriteFrameInfo(const std::string& path);
+	void InitGuideTraj();
+	void ApplyGuideAction();
+	void CheckGuideTraj();
 };

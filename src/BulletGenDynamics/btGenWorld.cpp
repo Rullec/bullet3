@@ -1,12 +1,14 @@
 #include "btGenWorld.h"
 #include "btGenModel/SimObj.h"
 #include "btGenSolver/ContactSolver.h"
+#include "btGenController/btGenContactAwareAdviser.h"
 #include "btGenModel/RobotModelDynamics.h"
 #include "btGenUtil/MathUtil.h"
 #include "btGenUtil/JsonUtil.h"
 #include "BulletGenDynamics/btGenUtil/TimeUtil.hpp"
 #include "BulletGenDynamics/btGenModel/EulerAngelRotationMatrix.h"
 #include "BulletGenDynamics/btGenController/btGenPDController.h"
+#include "BulletGenDynamics/btGenController/btTraj.h"
 #include <iostream>
 #include <fstream>
 // #define __DEBUG__
@@ -20,22 +22,52 @@ bool enable_bullet_sim = false;
 // const std::string log_path = "debug_solve_new.txt";
 btGeneralizeWorld::btGeneralizeWorld()
 {
-	mPDController = nullptr;
+	// mPDController = nullpt
+	mCollisionShapeArray.clear();
+	mInternalWorld = nullptr;
+	m_broadphase = nullptr;
+	m_dispatcher = nullptr;
+	m_collisionConfiguration = nullptr;
+	mSimObjs.clear();
+	mMultibody = nullptr;
+
+	mGuideTraj = nullptr;
 	mFrameId = 0;
 }
 
 btGeneralizeWorld::~btGeneralizeWorld()
 {
-	std::cout << "Begin simulator deconstrutor\n";
+	// std::cout << "Begin simulator deconstrutor\n";
 	if (mInternalWorld)
-		for (int i = 0; i < mSimObjs.size(); i++) RemoveObj(i);
+	{
+		// 1. remove rigid objs
+		for (int i = 0; i < mSimObjs.size(); i++)
+		{
+			mInternalWorld->removeCollisionObject(mSimObjs[i]);
+			delete mSimObjs[i];
+		}
+		mSimObjs.clear();
+
+		// 2. remove collider
+		if (mMultibody)
+		{
+			mMultibody->GetLinkCollider(0);
+			delete mMultibody;
+		}
+
+		// 3. remove the world
+		delete mInternalWorld;
+	}
 
 	delete m_broadphase;
 	delete m_dispatcher;
 	delete m_collisionConfiguration;
-	for (auto& m : mManifolds) delete m;
-	delete mMultibody;
+	mManifolds.clear();
+	for (auto& x : mCollisionShapeArray) delete x;
+	mCollisionShapeArray.clear();
+
 	delete mLCPContactSolver;
+	delete mGuideTraj;
 }
 
 void btGeneralizeWorld::Init(const std::string& config_path)
@@ -72,22 +104,39 @@ void btGeneralizeWorld::Init(const std::string& config_path)
 			mMBDamping2 = btJsonUtil::ParseAsDouble("mb_damping2", config_js);
 			mMBZeroInitPose = btJsonUtil::ParseAsBool("mb_zero_init_pose", config_js);
 			mMBZeroInitPoseVel = btJsonUtil::ParseAsBool("mb_zero_init_pose_vel", config_js);
-			mMBTestJacobian = btJsonUtil::ParseAsBool("mb_test_jacobian", config_js);
-			mMBEAngleClamp = btJsonUtil::ParseAsBool("mb_angle_clamp", config_js);
+			// mMBTestJacobian = btJsonUtil::ParseAsBool("mb_test_jacobian", config_js);
+			// mMBEAngleClamp = btJsonUtil::ParseAsBool("mb_angle_clamp", config_js);
 			mMBEnableCollectFrameInfo = btJsonUtil::ParseAsBool("mb_enable_collect_frame_info", config_js);
 			mMBCollectFrameNum = btJsonUtil::ParseAsInt("mb_collect_frame_num", config_js);
 			mEnablePauseWhenMaxVel = btJsonUtil::ParseAsBool("enable_pause_when_max_vel", config_js);
 
 			mMBScale = btJsonUtil::ParseAsDouble("mb_scale", config_js);
-			mMBEnableRk4 = btJsonUtil::ParseAsBool("enable_RK4_for_multibody", config_js);
+			// mMBEnableRk4 = btJsonUtil::ParseAsBool("enable_RK4_for_multibody", config_js);
 			mMBEpsDiagnoalMassMat = btJsonUtil::ParseAsDouble("mb_add_eps_at_diagnoal_mass_mat", config_js);
 			mMBMaxVel = btJsonUtil::ParseAsDouble("mb_max_vel", config_js);
+			mMBEnableContactAwareLCP = btJsonUtil::ParseAsBool("mb_enable_contact_aware_lcp", config_js);
+			mMBEnableGuideAction = btJsonUtil::ParseAsBool("mb_enable_guide_action", config_js);
+			mGuidedActionTrajFile = btJsonUtil::ParseAsString("guided_action_traj_file", config_js);
+			if (mMBEnableGuideAction && mMBEnableContactAwareLCP)
+			{
+				std::cout << "[error] the guided action & contact aware LCP cannot be opened simutaneously.\n";
+				exit(1);
+			}
+			if (mMBEnableContactAwareLCP)
+			{
+				mContactAwareConfig = btJsonUtil::ParseAsString("contact_aware_lcp_config", config_js);
+			}
+			// mMBContactAwareW = btJsonUtil::ParseAsDouble("mb_contact_aware_lcp_W", config_js);
+			// mMBContactAwareWm = btJsonUtil::ParseAsDouble("mb_contact_aware_lcp_Wm", config_js);
+			// mContactAwareGuideTraj = btJsonUtil::ParseAsString("contact_aware_guide_traj", config_js);
+
 			// mMBUpdateVelWithoutCoriolis = btJsonUtil::ParseAsDouble("mb_update_velocity_without_coriolis", config_js);
 			mEnablePeturb = btJsonUtil::ParseAsDouble("enable_perturb", config_js);
-			mEnablePDControl = btJsonUtil::ParseAsBool("enable_pd_control", config_js);
-			mPDControllerPath = btJsonUtil::ParseAsString("controller_path", config_js);
+			// mEnablePDControl = btJsonUtil::ParseAsBool("enable_pd_control", config_js);
+			// mPDControllerPath = btJsonUtil::ParseAsString("controller_path", config_js);
 			mLCPConfigPath = btJsonUtil::ParseAsString("lcp_config_path", config_js);
 		}
+
 		mLCPContactSolver = nullptr;
 		mManifolds.clear();
 
@@ -110,9 +159,14 @@ void btGeneralizeWorld::Init(const std::string& config_path)
 		mLCPContactSolver = new btGenContactSolver(mLCPConfigPath, mInternalWorld);
 	}
 
-	if (mEnablePDControl)
+	// if (mEnablePDControl)
+	// {
+	// 	mPDController = new btGenPDController(mPDControllerPath);
+	// }
+
+	if (mMBEnableContactAwareLCP)
 	{
-		mPDController = new btGenPDController(mPDControllerPath);
+		mControlAdviser = new btGenContactAwareAdviser(this, mContactAwareConfig);
 	}
 }
 
@@ -120,6 +174,7 @@ void btGeneralizeWorld::AddGround(double height)
 {
 	{
 		btStaticPlaneShape* plane = new btStaticPlaneShape(btVector3(0, 1, 0), height);
+		mCollisionShapeArray.push_back(plane);
 		btTransform trans;
 		trans.setIdentity();
 		trans.setOrigin(btVector3(0, 0, 0));
@@ -146,14 +201,17 @@ void btGeneralizeWorld::AddObj(int n, const std::string& obj_type, bool add_pert
 		colShape = new btSphereShape(btScalar(0.5));
 		btCompoundShape* compunde = new btCompoundShape();
 		compunde->addChildShape(btTransform::getIdentity(), colShape);
+		mCollisionShapeArray.push_back(compunde);
 	}
 	else if (obj_type == "cube")
 	{
 		colShape = new btBoxShape(btVector3(0.5, 0.5, 0.5));
+		mCollisionShapeArray.push_back(colShape);
 	}
 	else if (obj_type == "stick")
 	{
 		colShape = new btBoxShape(btVector3(0.001, 0.1, 2));
+		mCollisionShapeArray.push_back(colShape);
 	}
 	else
 	{
@@ -256,22 +314,33 @@ void btGeneralizeWorld::AddMultibody(const std::string& skeleton_name)
 	mMultibody->Init(skeleton_name.c_str(), mMBScale, ModelType::JSON);
 	mMultibody->SetComputeSecondDerive(true);
 	mMultibody->SetDampingCoeff(mMBDamping1, mMBDamping2);
-	mMultibody->SetAngleClamp(mMBEAngleClamp);
+	// mMultibody->SetAngleClamp(mMBEAngleClamp);
 	mMultibody->SetMaxVel(mMBMaxVel);
 
-	mMultibody->InitSimVars(mInternalWorld, mMBZeroInitPose, mMBZeroInitPoseVel);
-	if (mMBTestJacobian)
+	mMultibody->InitSimVars(mInternalWorld, mMBZeroInitPose, mMBZeroInitPoseVel, true);
+
+	if (mMBEnableContactAwareLCP)
 	{
-		mMultibody->TestJacobian();
-		mMultibody->TestSecondJacobian();
-		exit(0);
+		mControlAdviser->Init(mMultibody);
 	}
-	if (mEnablePDControl)
+
+	if (mMBEnableGuideAction == true)
 	{
-		assert(mPDController != nullptr);
-		mPDController->Init(mMultibody);
-		// std::cout << "[debug] mPDController inited succ\n";
+		InitGuideTraj();
 	}
+
+	// if (mMBTestJacobian)
+	// {
+	// 	mMultibody->TestJacobian();
+	// 	mMultibody->TestSecondJacobian();
+	// 	exit(0);
+	// }
+	// if (mEnablePDControl)
+	// {
+	// 	assert(mPDController != nullptr);
+	// 	mPDController->Init(mMultibody);
+	// 	// std::cout << "[debug] mPDController inited succ\n";
+	// }
 }
 
 void btGeneralizeWorld::AddMultibody(cRobotModelDynamics* model)
@@ -285,10 +354,15 @@ void btGeneralizeWorld::AddMultibody(cRobotModelDynamics* model)
 	// mMultibody->SetMaxVel(mMBMaxVel);
 }
 
+cRobotModelDynamics* btGeneralizeWorld::GetMultibody()
+{
+	return mMultibody;
+}
 void btGeneralizeWorld::RemoveObj(int id)
 {
 	std::cout << "begin remove obj " << id << std::endl;
-	mInternalWorld->removeCollisionObject(mSimObjs[id]);
+	// mInternalWorld->removeCollisionObject(mSimObjs[id]);
+	delete mSimObjs[id];
 	mSimObjs.erase(mSimObjs.begin() + id);
 }
 
@@ -303,6 +377,7 @@ void btGeneralizeWorld::StepSimulation(double dt)
 	// std::cout << "------------------begin step simulation for frame " << mFrameId << " time " << mTime << "------------------\n";
 	// std::cout << "[bt] col obj num = " << mInternalWorld->getNumCollisionObjects() << std::endl;
 	// std::cout << "[bt update] q0 = " << mMultibody->Getq().transpose() << std::endl;
+	// btTimeUtil::Begin("step");
 	if (enable_bullet_sim)
 	{
 		mInternalWorld->stepSimulation(dt);
@@ -311,13 +386,18 @@ void btGeneralizeWorld::StepSimulation(double dt)
 	{
 		ApplyGravity();
 		CollisionDetect();
+		UpdateAdviser(dt);
+		ApplyGuideAction();
 		CollisionResponse(dt);
+		CheckGuideTraj();
+
 		Update(dt);
 		PostUpdate(dt);
 	}
 
 	mFrameId++;
 	global_frame_id = mFrameId;
+	// btTimeUtil::End("step");
 	// if (mMultibody)
 	// 	std::cout << "q = " << mMultibody->Getq().transpose() << std::endl;
 	// btTimeUtil::End("stepsim");
@@ -326,9 +406,14 @@ void btGeneralizeWorld::PostUpdate(double dt)
 {
 	mTime += dt;
 }
-std::vector<btGenContactForce*> btGeneralizeWorld::GetContactInfo() const
+std::vector<btGenContactForce*> btGeneralizeWorld::GetContactForces() const
 {
 	return mContactForces;
+}
+
+std::vector<btPersistentManifold*> btGeneralizeWorld::GetContactManifolds() const
+{
+	return mManifolds;
 }
 
 btDiscreteDynamicsWorld* btGeneralizeWorld::GetInternalWorld()
@@ -413,15 +498,15 @@ void btGeneralizeWorld::ApplyTestActiveForce(double dt)
 	// add gravity to simobjs and multibody
 	// std::cout << "total obj num = " << mSimObjs.size() << std::endl;
 
-	if (mMultibody)
-		if (mEnablePDControl)
-		{
-			std::cout << "prohibited\n";
-			exit(1);
-			mPDController->SetPDTargetq(tVectorXd::Zero(mMultibody->GetNumOfFreedom()));
-			mPDController->SetPDTargetqdot(tVectorXd::Zero(mMultibody->GetNumOfFreedom()));
-			mPDController->ApplyGeneralizedTau(dt);
-		}
+	// if (mMultibody)
+	// 	if (mEnablePDControl)
+	// 	{
+	// 		std::cout << "prohibited\n";
+	// 		exit(1);
+	// 		mPDController->SetPDTargetq(tVectorXd::Zero(mMultibody->GetNumOfFreedom()));
+	// 		mPDController->SetPDTargetqdot(tVectorXd::Zero(mMultibody->GetNumOfFreedom()));
+	// 		mPDController->ApplyGeneralizedTau(dt);
+	// 	}
 	// std::cout << "mb pos = " << mMultibody->Getq().segment(0, 3).transpose() << std::endl;
 	// std::cout << "[apply] q = " << mMultibody->Getq().transpose() << std::endl;
 	// std::cout << "qdot = " << mMultibody->Getqdot().transpose() << std::endl;
@@ -451,6 +536,18 @@ void btGeneralizeWorld::ApplyGravity()
 	if (mMultibody)
 	{
 		mMultibody->ApplyGravity(mGravity);
+	}
+}
+
+/**
+ * \brief				Update the contact-aware LCP adviser
+ *
+*/
+void btGeneralizeWorld::UpdateAdviser(double dt)
+{
+	if (mMBEnableContactAwareLCP)
+	{
+		mControlAdviser->Update(dt);
 	}
 }
 
@@ -619,9 +716,45 @@ void btGeneralizeWorld::CollisionResponsePenalty(double dt)
 */
 void btGeneralizeWorld::CollisionResponseLCP(double dt)
 {
+	// mMultibody->PushState("second");
 	mLCPContactSolver->ConstraintProcess(dt);
 	mContactForces = mLCPContactSolver->GetContactForces();
 	mConstraintGenalizedForce = mLCPContactSolver->GetConstraintGeneralizedForces();
+	// mMultibody->PopState("second");
+	// now the first contact-aware LCP has been solved, we get the control force and contact force
+	// but it is not consistent with the normal LCP, so we needs to apply this control force, and then solve this LCP again
+	// to get a "normal" contact force, then record, then
+	// if (mMBEnableContactAwareLCP == true)
+	// {
+	// 	// std::cout << "begin to solve LCP for the second time\n";
+	// 	// mMultibody->SetEnableContactAwareAdviser(false);
+
+	// 	// for (auto& x : mContactForces)
+	// 	// {
+	// 	// 	if (x->mObj->GetType() == eColObjType::RobotCollder)
+	// 	// 	{
+	// 	// 		std::cout << "[old] contact force = " << x->mForce.transpose() << std::endl;
+	// 	// 	}
+	// 	// }
+	// 	// apply active control force
+	// 	// mMultibody->PushState("second");
+	// 	// for (auto& t : mConstraintGenalizedForce)
+	// 	// {
+	// 	// 	t->model->ApplyGeneralizedForce(t->dof_id, t->value);
+	// 	// }
+	// 	// mLCPContactSolver->ConstraintProcess(dt);
+	// 	// mMultibody->PopState("second");
+	// 	// mContactForces = mLCPContactSolver->GetContactForces();
+	// 	// for (auto& x : mContactForces)
+	// 	// {
+	// 	// 	if (x->mObj->GetType() == eColObjType::RobotCollder)
+	// 	// 	{
+	// 	// 		std::cout << "[new] contact force = " << x->mForce.transpose() << std::endl;
+	// 	// 	}
+	// 	// }
+	// 	// mMultibody->SetEnableContactAwareAdviser(true);
+	// }
+
 	// std::cout << "[btGenworld] frame " << global_frame_id << std::endl;
 	// for (int i = 0; i < mContactForces.size(); i++)
 	// {
@@ -705,19 +838,50 @@ void btGeneralizeWorld::Update(double dt)
 	// for multibody
 	if (mMultibody)
 	{
-		if (mMBEnableRk4)
+		// if (mMBEnableRk4)
+		// {
+		// 	mMultibody->UpdateRK4(dt);
+		// }
+		// else
+		// {
+		// 	// std::cout << "[bt] old q = " << mMultibody->Getq().transpose() << std::endl;
+		// 	// std::cout << "[bt] old qdot = " << mMultibody->Getqdot().transpose() << std::endl;
+
+		// 	// std::cout << "[bt] new q = " << mMultibody->Getq().transpose() << std::endl;
+		// 	// std::cout << "[bt] new qdot = " << mMultibody->Getqdot().transpose() << std::endl;
+		// }
+		// std::cout << "[preupdate] q = " << mMultibody->Getq().transpose() << std::endl;
+		// std::cout << "[preupdate] qdot = " << mMultibody->Getqdot().transpose() << std::endl;
+		// std::cout << "[preupdate] gen force = " << mMultibody->GetGeneralizedForce().transpose() << std::endl;
+		// std::cout << "[preupdate] qddot = " << mMultibody->Getqddot().transpose() << std::endl;
+		// std::cout << "[preupdate] M = " << mMultibody->GetMassMatrix() << std::endl;
+		// std::cout << "[preupdate] C = " << mMultibody->GetCoriolisMatrix() << std::endl;
+		// {
+		// 	std::cout << "two time update\n";
+		// 	if (mMBEnableContactAwareLCP == false)
+		// 	{
+		// 		mMultibody->UpdateVelocity(dt);
+		// 	}
+		// 	else
+		// 	{
+		// 		mMultibody->GetContactAwareAdviser()->UpdateMultibodyVelocityDebug(dt);
+		// 	}
+		// 	mMultibody->UpdateTransform(dt);
+		// }
+
 		{
-			mMultibody->UpdateRK4(dt);
+			// std::cout << "one time update\n";
+			if (mMBEnableContactAwareLCP == false)
+			{
+				mMultibody->UpdateVelocityAndTransform(dt);
+			}
+			else
+			{
+				mMultibody->GetContactAwareAdviser()->UpdateMultibodyVelocityAndTransformDebug(dt);
+			}
+			// mMultibody->UpdateTransform(dt);
 		}
-		else
-		{
-			// std::cout << "[bt] old q = " << mMultibody->Getq().transpose() << std::endl;
-			// std::cout << "[bt] old qdot = " << mMultibody->Getqdot().transpose() << std::endl;
-			mMultibody->UpdateVelocity(dt, true);
-			mMultibody->UpdateTransform(dt);
-			// std::cout << "[bt] new q = " << mMultibody->Getq().transpose() << std::endl;
-			// std::cout << "[bt] new qdot = " << mMultibody->Getqdot().transpose() << std::endl;
-		}
+
 		if (mMultibody->IsGeneralizedMaxVel())
 		{
 			std::cout << "[warn] multibody exceed max vel = " << mMultibody->Getqdot().cwiseAbs().maxCoeff()
@@ -744,6 +908,7 @@ void btGeneralizeWorld::ClearForce()
 btBoxShape* btGeneralizeWorld::createBoxShape(const btVector3& halfExtents)
 {
 	btBoxShape* box = new btBoxShape(halfExtents);
+	mCollisionShapeArray.push_back(box);
 	return box;
 }
 
@@ -935,4 +1100,80 @@ void btGeneralizeWorld::Reset()
 		pair_cache->cleanOverlappingPair(pair_array[i], m_dispatcher);
 	}
 	mMultibody->SyncToBullet();
+}
+
+/**
+ * \brief			Initialize the guide trajectory from target file
+*/
+void btGeneralizeWorld::InitGuideTraj()
+{
+	if (mMBEnableGuideAction == true)
+	{
+		// const int max_frame = 100;
+		mGuideTraj = new btTraj();
+
+		mGuideTraj->LoadTraj(mGuidedActionTrajFile, mMultibody);
+
+		mFrameId = 1;
+		mMultibody->SetqAndqdot(mGuideTraj->mq[mFrameId], mGuideTraj->mqdot[mFrameId]);
+		// std::cout << "init guide traj done for " << mGuidedActionTrajFile << std::endl;
+		// exit(1);
+	}
+}
+
+/**
+ * \brief			Apply active action
+*/
+void btGeneralizeWorld::ApplyGuideAction()
+{
+	if (mMBEnableGuideAction == true)
+	{
+		if (mFrameId >= mGuideTraj->mNumOfFrames - 1)
+		{
+			std::cout << "guided traj exceed, exit\n";
+			exit(1);
+		}
+		tVectorXd force = mGuideTraj->mActiveForce[mFrameId];
+		std::cout << "cur frame id " << mFrameId << " active force = " << force.transpose() << std::endl;
+		tVectorXd ref_q = mGuideTraj->mq[mFrameId],
+				  now_q = this->mMultibody->Getq();
+		tVectorXd ref_qdot = mGuideTraj->mqdot[mFrameId],
+				  now_qdot = mMultibody->Getqdot();
+		tVectorXd q_diff = ref_q - now_q;
+		tVectorXd qdot_diff = ref_qdot - now_qdot;
+		std::cout << "q diff norm = " << q_diff.norm() << std::endl;
+		std::cout << "qdot diff norm = " << qdot_diff.norm() << std::endl;
+		if (q_diff.norm() < 1e-8 && qdot_diff.norm() < 1e-6)
+		{
+			std::cout << "set q and qdot from the ref motion\n";
+			mMultibody->SetqAndqdot(ref_q, ref_qdot);
+		}
+		for (int dof = 0; dof < mMultibody->GetNumOfFreedom(); dof++)
+		{
+			mMultibody->ApplyGeneralizedForce(dof, force[dof]);
+		}
+	}
+}
+
+void btGeneralizeWorld::CheckGuideTraj()
+{
+	if (mMBEnableGuideAction == true)
+	{
+		for (auto& x : mContactForces)
+		{
+			if (x->mObj->GetType() == eColObjType::RobotCollder)
+			{
+				std::cout << "[cur] link " << dynamic_cast<btGenRobotCollider*>(x->mObj)->mLinkId << " force = " << x->mForce.transpose() << " pos = " << x->mWorldPos.transpose() << std::endl;
+			}
+		}
+
+		for (int id = 0; id < mGuideTraj->mContactForce[mFrameId].size(); id++)
+		{
+			auto x = mGuideTraj->mContactForce[mFrameId][id];
+			if (x->mObj->GetType() == eColObjType::RobotCollder)
+			{
+				std::cout << "[ref] link " << dynamic_cast<btGenRobotCollider*>(x->mObj)->mLinkId << " force = " << x->mForce.transpose() << " pos = " << x->mWorldPos.transpose() << std::endl;
+			}
+		}
+	}
 }

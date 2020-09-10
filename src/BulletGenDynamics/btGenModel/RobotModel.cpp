@@ -35,7 +35,7 @@ cRobotModel::~cRobotModel()
 	}
 }
 
-cRobotModel::cRobotModel() : root(nullptr), name(""), num_of_freedom(0), end_link(nullptr), com(0, 0, 0), total_mass(0), num_of_valid_joint(0), deep_mimic_motion_size(0), model_type(-1)
+cRobotModel::cRobotModel() : root(nullptr), name(""), num_of_freedom(0), end_link(nullptr), com(0, 0, 0), total_mass(0), num_of_valid_joint(0), deep_mimic_motion_size(0), model_type(-1), scale(1)
 {
 }
 void cRobotModel::Init(const char* model_file, double scale, int type)
@@ -44,6 +44,7 @@ void cRobotModel::Init(const char* model_file, double scale, int type)
 	InitShapeMap();
 	LoadBaseMesh();
 
+	char_file = std::string(model_file);
 	switch (type)
 	{
 		case ROM:
@@ -889,6 +890,7 @@ void cRobotModel::LoadJsonModel(const char* file_path, double model_scale)
 	// fout.close();
 
 	// cFileUtil::ClearFile(model_info);
+	scale = model_scale;
 	Json::Value json_root;
 	Json::CharReaderBuilder builder;
 	std::ifstream fin(file_path, std::ifstream::binary);
@@ -2138,4 +2140,14 @@ void cRobotModel::ComputeDCdqdot(tVectorXd& q_dot, tMatrixXd& dcdqdot)
 
 		dcdqdot += jk.transpose() * mass_cartesian * jk_dot;
 	}
+}
+
+std::string cRobotModel::GetCharFile() const
+{
+	return char_file;
+}
+
+double cRobotModel::GetScale() const
+{
+	return scale;
 }

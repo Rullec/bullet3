@@ -28,6 +28,7 @@ ENDIF(WIN32)
 ADD_LIBRARY(BulletExampleBrowserLib
 	OpenGLExampleBrowser.cpp
 	OpenGLGuiHelper.cpp
+	CustomGLGuiHelper.cpp
 	GL_ShapeDrawer.cpp
 	CollisionShape2TriangleMesh.cpp
 	CollisionShape2TriangleMesh.h
@@ -42,7 +43,7 @@ ADD_LIBRARY(BulletExampleBrowserLib
 	${GwenGUISupport_SRCS}
 	${GwenGUISupport_HDRS}
 )
-target_link_libraries(BulletExampleBrowserLib jsoncpp)
+target_link_libraries(BulletExampleBrowserLib jsoncpp BulletGenDynamics)
 
 SET_TARGET_PROPERTIES(BulletExampleBrowserLib PROPERTIES VERSION ${BULLET_VERSION})
 SET_TARGET_PROPERTIES(BulletExampleBrowserLib PROPERTIES SOVERSION ${BULLET_VERSION})

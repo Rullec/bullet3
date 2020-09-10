@@ -3,11 +3,17 @@
 if [ -e CMakeCache.txt ]; then
   rm CMakeCache.txt
 fi
+
+# MODE="RELEASE"
+# MODE="DEBUG"
+# if [ "${MODE}" = "RELEASE" ]; then
+##################### We must build two times ###################
+# echo "Build bullet in release mode"
 mkdir -p build_cmake
 cd build_cmake
-# double
-# cmake -DBUILD_PYBULLET=ON -DBUILD_PYBULLET_NUMPY=OFF -DUSE_DOUBLE_PRECISION=ON -DBT_USE_EGL=ON -DCMAKE_BUILD_TYPE=Debug .. || exit 1
 cmake -DBUILD_PYBULLET=ON -DBUILD_PYBULLET_NUMPY=OFF -DUSE_DOUBLE_PRECISION=ON -DBT_USE_EGL=ON -DCMAKE_BUILD_TYPE=Release .. || exit 1
+# cmake -DBUILD_PYBULLET=ON -DBUILD_PYBULLET_NUMPY=OFF -DUSE_DOUBLE_PRECISION=ON -DBT_USE_EGL=ON -DCMAKE_BUILD_TYPE=debug .. || exit 1
+
 # float
 # cmake -DBUILD_PYBULLET=ON -DBUILD_PYBULLET_NUMPY=ON -DUSE_DOUBLE_PRECISION=OFF -DBT_USE_EGL=ON -DCMAKE_BUILD_TYPE=Release .. || exit 1
 

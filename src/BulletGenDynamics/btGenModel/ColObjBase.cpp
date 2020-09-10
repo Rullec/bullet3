@@ -6,6 +6,10 @@ btGenCollisionObject::btGenCollisionObject(eColObjType type, const std::string& 
 	mName = name;
 }
 
+btGenCollisionObject::~btGenCollisionObject()
+{
+	// delete m_collisionShape;
+}
 eColObjType btGenCollisionObject::GetType()
 {
 	return mType;

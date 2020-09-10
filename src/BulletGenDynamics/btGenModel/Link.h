@@ -36,6 +36,7 @@ public:
 	double GetLinkMaxLength() const;
 	int GetColGroup() const;
 	void SetColGroup(int);
+	tMatrixXd GetTotalDofdJKv_dq(int target_dof_id) const;
 
 protected:
 	tVector3d link_vel, link_omega;  // the lin vel and ang vel w.r.t the COM of this link in world frame

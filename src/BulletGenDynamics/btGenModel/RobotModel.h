@@ -41,6 +41,10 @@ public:
 	BaseObject* GetLink(std::string name) const;
 
 	int GetNumOfFreedom() const;
+	void Apply(const std::vector<double>& ang, int st, bool compute_gradient = false);
+	void Apply(const std::vector<double>& ang, tVector3d cycle_step, int st, bool compute_gradient = false);
+	void Apply(const tVectorXd& ang, bool compute_gradient = false);
+
 	void GetJointLimit(tVectorXd& lb, tVectorXd& up) const;
 	tVector3d GetFreedomDirectionWorldFrame(int dof_id) const;
 
@@ -117,6 +121,9 @@ public:
 	const tVectorXd& Getqdot() const { return mqdot; }
 	const tVectorXd& Getq() const { return mq; }
 
+	std::string GetCharFile() const;
+	double GetScale() const;
+
 protected:
 	// compute methods is prohibited to be called outside of the class
 	void ComputeMassMatrix();
@@ -149,10 +156,6 @@ protected:
 
 	void AddLink(std::string link_name, tVector3d& local_pos, tVector3d& local_rotation,
 				 const char* mesh_path, tVector3f& mesh_rotation, tVector3f& mesh_scale, double mass);
-
-	void Apply(const std::vector<double>& ang, int st, bool compute_gradient = false);
-	void Apply(const std::vector<double>& ang, tVector3d cycle_step, int st, bool compute_gradient = false);
-	void Apply(const tVectorXd& ang, bool compute_gradient = false);
 
 	void AddRootJoint(const char* root_name = "root");
 	void AddRootLink(const char* root_name = "root");
@@ -216,6 +219,8 @@ protected:
 
 	// sim vars
 	tVectorXd mq, mqdot;
+	std::string char_file;
+	double scale;
 };
 
 #endif  //ROBOT_ROBOTMODEL_H

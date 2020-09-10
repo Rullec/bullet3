@@ -40,17 +40,12 @@ struct CustomEngineMainDemo : public CommonRigidBodyBase
 	};
 
 	struct tParams* physics_param;
-	CustomEngineMainDemo(struct GUIHelperInterface* helper)
-		: CommonRigidBodyBase(helper)
-	{
-		// mTime = 0;
-		physics_param = nullptr;
-	}
-	virtual ~CustomEngineMainDemo()
-	{
-	}
+	CustomEngineMainDemo(struct GUIHelperInterface* helper);
+	virtual ~CustomEngineMainDemo();
+
 	virtual void stepSimulation(float deltaTime) override final;
-	virtual void initPhysics();
+	virtual void initPhysics() override;
+	virtual void exitPhysics() override;
 	virtual void renderScene();
 	void resetCamera()
 	{
@@ -68,11 +63,16 @@ protected:
 	// float mTime;
 };
 extern bool gPauseSimulation;
+#include "valgrind/callgrind.h"
 void CustomEngineMainDemo::stepSimulation(float dt)
 {
 	// mTime += dt;
 	// std::cout << "cur time = " << mTime << std::endl;
 	// m_guiHelper;
+	// dt = 1.0 / 600;
+	// std::cout << "dt = " << dt << std::endl;
+	// exit(1);
+	CALLGRIND_START_INSTRUMENTATION;
 	mGenWorld->ClearForce();
 	mGenWorld->StepSimulation(static_cast<float>(physics_param->mDefaultTimestep));
 	if (physics_param->mPauseFrame == global_frame_id)
@@ -80,6 +80,7 @@ void CustomEngineMainDemo::stepSimulation(float dt)
 		gPauseSimulation = true;
 	}
 	global_frame_id++;
+	CALLGRIND_STOP_INSTRUMENTATION;
 	// CommonRigidBodyBase::stepSimulation(dt);
 	// if (mTime > 1)
 	// {
@@ -87,8 +88,13 @@ void CustomEngineMainDemo::stepSimulation(float dt)
 	// 	m_collisionShapes.pop_back();
 	// }
 	// std::cout <<"collision shapes = " << m_collisionShapes.size() << std::endl;
+	m_guiHelper->autogenerateGraphicsObjects(m_dynamicsWorld);
 }
 
+void CustomEngineMainDemo::exitPhysics()
+{
+	CALLGRIND_DUMP_STATS;
+}
 void CustomEngineMainDemo::initPhysics()
 {
 	physics_param = new tParams("./examples/CustomEngine/config.json");
@@ -182,4 +188,17 @@ CustomEngineMainDemo::tParams::tParams(const std::string& path)
 CommonExampleInterface* CustomMainCreateFunc(CommonExampleOptions& options)
 {
 	return new CustomEngineMainDemo(options.m_guiHelper);
+}
+
+CustomEngineMainDemo::~CustomEngineMainDemo()
+{
+	if (physics_param) delete physics_param;
+	if (mGenWorld) delete mGenWorld;
+}
+
+CustomEngineMainDemo::CustomEngineMainDemo(struct GUIHelperInterface* helper) : CommonRigidBodyBase(helper)
+{
+	// mTime = 0;
+	physics_param = nullptr;
+	mGenWorld = nullptr;
 }

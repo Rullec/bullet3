@@ -87,6 +87,11 @@ bool btJsonUtil::LoadJson(const std::string &path, Json::Value &value)
 	// cFileUtil::AddLock(path);
 	// std::cout <<"parsing " << path << " begin \n";
 	std::ifstream fin(path);
+	if (path.size() == 0)
+	{
+		std::cout << "[error] cJsonUtil::LoadJson filepath is empty\n";
+		return false;
+	}
 	if (fin.fail() == true)
 	{
 		std::cout << "[error] cJsonUtil::LoadJson file " << path
@@ -111,7 +116,7 @@ bool btJsonUtil::LoadJson(const std::string &path, Json::Value &value)
 }
 
 bool btJsonUtil::WriteJson(const std::string &path, Json::Value &value,
-						  bool indent /* = true*/)
+						   bool indent /* = true*/)
 {
 	// cFileUtil::AddLock(path);
 	Json::StreamWriterBuilder builder;
@@ -133,7 +138,7 @@ bool btJsonUtil::WriteJson(const std::string &path, Json::Value &value,
 #define JSONUTIL_ASSERT_NULL(root, data) (root.isMember(data))
 
 int btJsonUtil::ParseAsInt(const std::string &data_field_name,
-						  const Json::Value &root)
+						   const Json::Value &root)
 {
 	if (false == JSONUTIL_ASSERT_NULL(root, data_field_name))
 	{
@@ -144,7 +149,7 @@ int btJsonUtil::ParseAsInt(const std::string &data_field_name,
 }
 
 std::string btJsonUtil::ParseAsString(const std::string &data_field_name,
-									 const Json::Value &root)
+									  const Json::Value &root)
 {
 	if (false == JSONUTIL_ASSERT_NULL(root, data_field_name))
 	{
@@ -155,7 +160,7 @@ std::string btJsonUtil::ParseAsString(const std::string &data_field_name,
 }
 
 double btJsonUtil::ParseAsDouble(const std::string &data_field_name,
-								const Json::Value &root)
+								 const Json::Value &root)
 {
 	if (false == JSONUTIL_ASSERT_NULL(root, data_field_name))
 	{
@@ -166,7 +171,7 @@ double btJsonUtil::ParseAsDouble(const std::string &data_field_name,
 }
 
 float btJsonUtil::ParseAsFloat(const std::string &data_field_name,
-							  const Json::Value &root)
+							   const Json::Value &root)
 {
 	if (false == JSONUTIL_ASSERT_NULL(root, data_field_name))
 	{
@@ -177,7 +182,7 @@ float btJsonUtil::ParseAsFloat(const std::string &data_field_name,
 }
 
 bool btJsonUtil::ParseAsBool(const std::string &data_field_name,
-							const Json::Value &root)
+							 const Json::Value &root)
 {
 	if (false == JSONUTIL_ASSERT_NULL(root, data_field_name))
 	{
@@ -188,7 +193,7 @@ bool btJsonUtil::ParseAsBool(const std::string &data_field_name,
 }
 
 Json::Value btJsonUtil::ParseAsValue(const std::string &data_field_name,
-									const Json::Value &root)
+									 const Json::Value &root)
 {
 	if (false == JSONUTIL_ASSERT_NULL(root, data_field_name))
 	{
@@ -216,4 +221,24 @@ Json::Value btJsonUtil::BuildMatrixJsonValue(const tMatrixXd &mat)
 		root.append(BuildVectorJsonValue(mat.row(i)));
 	}
 	return root;
+}
+
+bool btJsonUtil::ReadVectorJson(const Json::Value &root,
+								Eigen::VectorXd &out_vec)
+{
+	bool succ = false;
+	int num_vals = root.size();
+
+	if (root.isArray())
+	{
+		out_vec.resize(num_vals);
+		for (int i = 0; i < num_vals; ++i)
+		{
+			Json::Value json_elem = root.get(i, 0);
+			out_vec[i] = json_elem.asDouble();
+		}
+		succ = true;
+	}
+
+	return succ;
 }

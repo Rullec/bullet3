@@ -4,7 +4,6 @@
 #include "BulletGenDynamics/btGenUtil/MathUtil.h"
 #include <string>
 
-
 enum eColObjType
 {
 	RobotCollder,
@@ -16,6 +15,7 @@ class btGenCollisionObject : public btCollisionObject
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 	btGenCollisionObject(eColObjType type, const std::string &name);
+	~btGenCollisionObject();
 	eColObjType GetType();
 	const std::string &GetName();
 

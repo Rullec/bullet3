@@ -11,7 +11,7 @@
 #include "../OpenGLWindow/ShapeData.h"
 
 #include "../OpenGLWindow/SimpleCamera.h"
-
+// #include <iostream>
 #define BT_LINE_BATCH_SIZE 512
 
 struct MyDebugVec3
@@ -255,7 +255,6 @@ void OpenGLGuiHelper::createRigidBodyGraphicsObject(btRigidBody* body, const btV
 	createCollisionObjectGraphicsObject(body, color);
 }
 
-
 class MyTriangleCollector2 : public btTriangleCallback
 {
 public:
@@ -442,11 +441,10 @@ void OpenGLGuiHelper::createCollisionShapeGraphicsObject(btCollisionShape* colli
 	{
 	}
 
-
 	if (collisionShape->getShapeType() == TERRAIN_SHAPE_PROXYTYPE)
 	{
 		const btHeightfieldTerrainShape* heightField = static_cast<const btHeightfieldTerrainShape*>(collisionShape);
-		MyTriangleCollector2  col;
+		MyTriangleCollector2 col;
 		col.m_pVerticesOut = &gfxVertices;
 		col.m_pIndicesOut = &indices;
 		btVector3 aabbMin, aabbMax;
@@ -463,7 +461,6 @@ void OpenGLGuiHelper::createCollisionShapeGraphicsObject(btCollisionShape* colli
 		}
 		return;
 	}
-
 
 	if (collisionShape->getShapeType() == SOFTBODY_SHAPE_PROXYTYPE)
 	{
@@ -1312,7 +1309,8 @@ void OpenGLGuiHelper::copyCameraImageData(const float viewMatrix[16], const floa
 
 struct MyConvertPointerSizeT
 {
-	union {
+	union
+	{
 		const void* m_ptr;
 		size_t m_int;
 	};
@@ -1324,7 +1322,6 @@ bool shapePointerCompareFunc(const btCollisionObject* colA, const btCollisionObj
 	b.m_ptr = colB->getCollisionShape();
 	return (a.m_int < b.m_int);
 }
-
 void OpenGLGuiHelper::autogenerateGraphicsObjects(btDiscreteDynamicsWorld* rbWorld)
 {
 	//sort the collision objects based on collision shape, the gfx library requires instances that re-use a shape to be added after eachother

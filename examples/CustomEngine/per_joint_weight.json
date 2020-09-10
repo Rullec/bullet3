@@ -1,0 +1,19 @@
+{
+    "root": 6.0,
+    "Spine1": 1.0,
+    "vneck": 1.0,
+    "RightArm": 1.0,
+    "RightForeArm": 1.0,
+    "RightHand": 1.0,
+    "Neck": 1.0,
+    "Head": 1.0,
+    "LeftArm": 1.0,
+    "LeftForeArm": 1.0,
+    "LeftHand": 1.0,
+    "RightLeg": 1.0,
+    "RightFoot": 1.0,
+    "RFootTongue": 1.0,
+    "LeftLeg": 1.0,
+    "LeftFoot": 1.0,
+    "LFootTongue": 1.0
+}

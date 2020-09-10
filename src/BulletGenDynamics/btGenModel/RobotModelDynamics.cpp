@@ -10,13 +10,48 @@ extern bool gEnablePauseWhenSolveError;
 extern bool gEnableResolveWhenSolveError;
 
 // std::string path = "debug_trans_bt.txt";
-cRobotModelDynamics::cRobotModelDynamics() : mDampingCoef1(0), mDampingCoef2(0), mEpsDiagnoal(0), mEnableEulerAngleClamp(true)
+cRobotModelDynamics::cRobotModelDynamics()
 {
+	// mBtWorld = nullptr;
+	mColliders.clear();
+	// mColShapes.clear();
+	mLinkTorques.clear();
+	mLinkForces.clear();
+	mGenForce.resize(0);
+	mDampingMatrix.resize(0, 0);
+	mStateStack.clear();
+	mAdviser = nullptr;
+
+	mEnableCollision = true;
+	mDampingCoef1 = 0;
+	mDampingCoef2 = 0;
+	mEpsDiagnoal = 0;
+	mEnableEulerAngleClamp = true;
+	mMaxVel = 100.0;
+	mEnableContactAwareAdviser = false;
 	// std::ofstream fout(path);
 	// fout << "";
 	// fout.close();
 }
 
+cRobotModelDynamics::~cRobotModelDynamics()
+{
+	// for (auto& x : mColShapes)
+	// {
+	// 	delete x;
+	// }
+	// mColShapes.clear();
+	for (auto& x : mColliders)
+	{
+		if (x->getCollisionShape() != nullptr)
+		{
+			delete x->getCollisionShape();
+			x->setCollisionShape(nullptr);
+		}
+		delete x;
+	}
+	mColliders.clear();
+}
 void cRobotModelDynamics::Init(const char* model_file, double scale, int type)
 {
 	cRobotModel::Init(model_file, scale, type);
@@ -40,9 +75,11 @@ void cRobotModelDynamics::ComputeMassMatrix()
  * */
 extern std::map<int, std::string> col_name;
 #include "BulletGenDynamics/btGenModel/Joint.h"
-void cRobotModelDynamics::InitSimVars(btDynamicsWorld* world, bool zero_pose, bool zero_pose_vel)
+void cRobotModelDynamics::InitSimVars(btDynamicsWorld* world, bool zero_pose, bool zero_pose_vel, bool enable_collision)
 {
+	// mBtWorld = world;
 	// std::cout << "Init collider\n";
+	mEnableCollision = enable_collision;
 	mColliders.clear();
 	btGenRobotCollider* collider = nullptr;
 
@@ -70,6 +107,7 @@ void cRobotModelDynamics::InitSimVars(btDynamicsWorld* world, bool zero_pose, bo
 				exit(1);
 				break;
 		}
+		// mColShapes.push_back(shape);
 		// btCollisionShape* shape = new btBoxShape(btVector3(mesh_scale[0], mesh_scale[1], mesh_scale[2]) / 2);
 
 		btVector3 localInertia(0, 0, 0);
@@ -81,7 +119,15 @@ void cRobotModelDynamics::InitSimVars(btDynamicsWorld* world, bool zero_pose, bo
 		collider->setUserPointer(collider);
 
 		// world->addCollisionObject(collider, 2, 1 + 2);
-		world->addCollisionObject(collider, 1, -1);
+		if (enable_collision == true)
+		{
+			world->addCollisionObject(collider, 1, -1);
+		}
+		else
+		{
+			world->addCollisionObject(collider, 0, 0);
+		}
+
 		col_name[collider->getWorldArrayIndex()] = "multibody" + std::to_string(collider->mLinkId);
 		mColliders.push_back(collider);
 	}
@@ -375,6 +421,27 @@ void cRobotModelDynamics::ApplyGravity(const tVector& g)  // apply force
 	// std::cout << "after apply gravity, force num = " << link_force_id_lst.size() << std::endl;
 }
 
+/**
+ * \brief					given the gravity accel, calcualte the generalized gravity 
+ * \param g					gravity accel
+*/
+tVectorXd cRobotModelDynamics::CalcGenGravity(const tVector& g) const
+{
+	tVectorXd Q_gravity = tVectorXd::Zero(num_of_freedom);
+	for (int link_id = 0; link_id < GetNumOfLinks(); link_id++)
+	{
+		auto link = GetLinkById(link_id);
+		const tMatrixXd& jvT = link->GetJKv().transpose();
+		tVector3d mg = link->GetMass() * g.segment(0, 3);
+		// std::cout << "jvt = " << jvT << std::endl;
+		// std::cout << "mg = " << mg.transpose() << std::endl;
+		// std::cout << "Q size " << Q_gravity.size() << std::endl;
+		// std::cout << "jvt size " << jvT.rows() << std::endl;
+		Q_gravity += jvT * mg;
+	}
+	return Q_gravity;
+}
+
 void cRobotModelDynamics::ApplyForce(int link_id, const tVector& force, const tVector& applied_pos)
 {
 	if (link_id < 0 || link_id >= GetNumOfLinks())
@@ -597,7 +664,7 @@ void cRobotModelDynamics::UpdateVelocity(double dt, bool verbose /* = false*/)
 	}
 	if (verbose)
 	{
-		// std::cout << "[model] qddot = " << qddot.transpose() << std::endl;
+		std::cout << "[model] qddot = " << qddot.transpose() << std::endl;
 		// std::cout << "[model] Q = " << Q.transpose() << std::endl;
 	}
 	mqdot += qddot * dt;
@@ -609,6 +676,48 @@ void cRobotModelDynamics::UpdateVelocity(double dt, bool verbose /* = false*/)
 	// std::cout << "----------------update vel end-----------------\n";
 }
 
+void cRobotModelDynamics::UpdateVelocityAndTransform(double dt)
+{
+	int n = GetNumOfFreedom();
+	tVectorXd Q = GetGeneralizedForce();
+
+	// std::cout << "Q = " << Q.transpose() << std::endl;
+	// 2. calculate qddot and new qdot
+	// tMatrixXd mass_matrix_inv = (mass_matrix + 1e-5 * tMatrixXd::Identity(mass_matrix.rows(), mass_matrix.cols())).inverse();
+	// tVectorXd residual = (Q - (coriolis_matrix + damping_matrix) * qdot);
+	tVectorXd qddot = Getqddot();
+
+	if (qddot.hasNaN())
+	{
+		std::cout << "RobotModel::UpdateVel: qddot hasNan\n";
+		exit(0);
+	}
+	mqdot += qddot * dt;
+	mqdot = mqdot.cwiseMax(-mMaxVel);
+	mqdot = mqdot.cwiseMin(mMaxVel);
+
+	// update transform
+	mq = mq + dt * mqdot;
+
+	if (mEnableEulerAngleClamp)
+	{
+		for (int i = 3; i < mq.size(); i++)
+		{
+			while (mq[i] < -M_PI) mq[i] += 2 * M_PI;
+			while (mq[i] > M_PI) mq[i] -= 2 * M_PI;
+		}
+	}
+	Apply(mq, true);
+
+	// 2. recalc mats
+	ComputeMassMatrix();
+	ComputeCoriolisMatrix(mqdot);
+	ComputeDampingMatrix();
+	UpdateCartesianVelocity();
+
+	// 3. write to bullet
+	SyncToBullet();
+}
 // time integrate
 void cRobotModelDynamics::UpdateTransform(double dt)
 {
@@ -622,7 +731,7 @@ void cRobotModelDynamics::UpdateTransform(double dt)
 
 	if (mEnableEulerAngleClamp)
 	{
-		for (int i = 0; i < mq.size(); i++)
+		for (int i = 3; i < mq.size(); i++)
 		{
 			while (mq[i] < -M_PI) mq[i] += 2 * M_PI;
 			while (mq[i] > M_PI) mq[i] -= 2 * M_PI;
@@ -764,105 +873,105 @@ void cRobotModelDynamics::SetDampingCoeff(double damp1, double damp2)
 	// exit(1);
 }
 
-void cRobotModelDynamics::SetAngleClamp(bool val)
-{
-	this->mEnableEulerAngleClamp = val;
-}
+// void cRobotModelDynamics::SetAngleClamp(bool val)
+// {
+// 	this->mEnableEulerAngleClamp = val;
+// }
 
 void cRobotModelDynamics::SetMaxVel(double val)
 {
 	mMaxVel = val;
 }
 
-/**
- * \brief			Update generalized velocity by RK4
-*/
-void cRobotModelDynamics::UpdateRK4(double dt)
-{
-	// std::cout <<"update rk4";
-	// exit(1);
-	tVectorXd k1(num_of_freedom * 2), k2(num_of_freedom * 2), k3(num_of_freedom * 2), k4(num_of_freedom * 2);
-	tVectorXd y_dot = mqdot, y = mq;
-	tVectorXd Q;
-	tVectorXd qddot;
-	// k1: we need to recalculate M, recalculate Q, recalculate C by given
-	{
-		UpdateRK4InternalUpdate(y, y_dot, Q);
-		qddot = mass_matrix.inverse() * (Q - coriolis_matrix * y_dot);
+// /**
+//  * \brief			Update generalized velocity by RK4
+// */
+// void cRobotModelDynamics::UpdateRK4(double dt)
+// {
+// 	// std::cout <<"update rk4";
+// 	// exit(1);
+// 	tVectorXd k1(num_of_freedom * 2), k2(num_of_freedom * 2), k3(num_of_freedom * 2), k4(num_of_freedom * 2);
+// 	tVectorXd y_dot = mqdot, y = mq;
+// 	tVectorXd Q;
+// 	tVectorXd qddot;
+// 	// k1: we need to recalculate M, recalculate Q, recalculate C by given
+// 	{
+// 		UpdateRK4InternalUpdate(y, y_dot, Q);
+// 		qddot = mass_matrix.inverse() * (Q - coriolis_matrix * y_dot);
 
-		k1.segment(0, num_of_freedom) = y_dot + dt * qddot;
-		k1.segment(num_of_freedom, num_of_freedom) = qddot;
+// 		k1.segment(0, num_of_freedom) = y_dot + dt * qddot;
+// 		k1.segment(num_of_freedom, num_of_freedom) = qddot;
 
-		k1 *= dt;
-	}
+// 		k1 *= dt;
+// 	}
 
-	{
-		y += 0.5 * k1.segment(0, num_of_freedom);
-		y_dot += 0.5 * k1.segment(num_of_freedom, num_of_freedom);
-		UpdateRK4InternalUpdate(y, y_dot, Q);
+// 	{
+// 		y += 0.5 * k1.segment(0, num_of_freedom);
+// 		y_dot += 0.5 * k1.segment(num_of_freedom, num_of_freedom);
+// 		UpdateRK4InternalUpdate(y, y_dot, Q);
 
-		qddot = mass_matrix.inverse() * (Q - coriolis_matrix * y_dot);
+// 		qddot = mass_matrix.inverse() * (Q - coriolis_matrix * y_dot);
 
-		k2.segment(0, num_of_freedom) = y_dot + dt * qddot;
-		k2.segment(num_of_freedom, num_of_freedom) = qddot;
+// 		k2.segment(0, num_of_freedom) = y_dot + dt * qddot;
+// 		k2.segment(num_of_freedom, num_of_freedom) = qddot;
 
-		k2 *= dt;
-	}
+// 		k2 *= dt;
+// 	}
 
-	{
-		y += 0.5 * k2.segment(0, num_of_freedom);
-		y_dot += 0.5 * k2.segment(num_of_freedom, num_of_freedom);
-		UpdateRK4InternalUpdate(y, y_dot, Q);
-		qddot = mass_matrix.inverse() * (Q - coriolis_matrix * y_dot);
+// 	{
+// 		y += 0.5 * k2.segment(0, num_of_freedom);
+// 		y_dot += 0.5 * k2.segment(num_of_freedom, num_of_freedom);
+// 		UpdateRK4InternalUpdate(y, y_dot, Q);
+// 		qddot = mass_matrix.inverse() * (Q - coriolis_matrix * y_dot);
 
-		k3.segment(0, num_of_freedom) = y_dot + dt * qddot;
-		k3.segment(num_of_freedom, num_of_freedom) = qddot;
+// 		k3.segment(0, num_of_freedom) = y_dot + dt * qddot;
+// 		k3.segment(num_of_freedom, num_of_freedom) = qddot;
 
-		k3 *= dt;
-	}
+// 		k3 *= dt;
+// 	}
 
-	{
-		y += k3.segment(0, num_of_freedom);
-		y_dot += k3.segment(num_of_freedom, num_of_freedom);
-		UpdateRK4InternalUpdate(y, y_dot, Q);
+// 	{
+// 		y += k3.segment(0, num_of_freedom);
+// 		y_dot += k3.segment(num_of_freedom, num_of_freedom);
+// 		UpdateRK4InternalUpdate(y, y_dot, Q);
 
-		qddot = mass_matrix.inverse() * (Q - coriolis_matrix * y_dot);
+// 		qddot = mass_matrix.inverse() * (Q - coriolis_matrix * y_dot);
 
-		k4.segment(0, num_of_freedom) = y_dot + dt * qddot;
-		k4.segment(num_of_freedom, num_of_freedom) = qddot;
-		k4 *= dt;
-	}
+// 		k4.segment(0, num_of_freedom) = y_dot + dt * qddot;
+// 		k4.segment(num_of_freedom, num_of_freedom) = qddot;
+// 		k4 *= dt;
+// 	}
 
-	mq = mq + (k1.segment(0, num_of_freedom) + 2 * k2.segment(0, num_of_freedom) + 2 * k3.segment(0, num_of_freedom) + k4.segment(0, num_of_freedom)) / 6;
+// 	mq = mq + (k1.segment(0, num_of_freedom) + 2 * k2.segment(0, num_of_freedom) + 2 * k3.segment(0, num_of_freedom) + k4.segment(0, num_of_freedom)) / 6;
 
-	mqdot = mqdot + (k1.segment(num_of_freedom, num_of_freedom) + 2 * k2.segment(num_of_freedom, num_of_freedom) + 2 * k3.segment(num_of_freedom, num_of_freedom) + k4.segment(num_of_freedom, num_of_freedom)) / 6;
+// 	mqdot = mqdot + (k1.segment(num_of_freedom, num_of_freedom) + 2 * k2.segment(num_of_freedom, num_of_freedom) + 2 * k3.segment(num_of_freedom, num_of_freedom) + k4.segment(num_of_freedom, num_of_freedom)) / 6;
 
-	mqdot = mqdot.cwiseMax(-mMaxVel);
-	mqdot = mqdot.cwiseMin(mMaxVel);
+// 	mqdot = mqdot.cwiseMax(-mMaxVel);
+// 	mqdot = mqdot.cwiseMin(mMaxVel);
 
-	// apply and clear all forces
-	UpdateRK4InternalUpdate(mq, mqdot, Q);
-	UpdateCartesianVelocity();
-	ClearForce();
-	SyncToBullet();
-}
+// 	// apply and clear all forces
+// 	UpdateRK4InternalUpdate(mq, mqdot, Q);
+// 	UpdateCartesianVelocity();
+// 	ClearForce();
+// 	SyncToBullet();
+// }
 
-void cRobotModelDynamics::UpdateRK4InternalUpdate(tVectorXd& q, tVectorXd& qdot, tVectorXd& Q)
-{
-	Apply(q, true);
-	ComputeMassMatrix();
-	ComputeCoriolisMatrix(qdot);
-	Q.resize(num_of_freedom);
-	Q.setZero();
+// void cRobotModelDynamics::UpdateRK4InternalUpdate(tVectorXd& q, tVectorXd& qdot, tVectorXd& Q)
+// {
+// 	Apply(q, true);
+// 	ComputeMassMatrix();
+// 	ComputeCoriolisMatrix(qdot);
+// 	Q.resize(num_of_freedom);
+// 	Q.setZero();
 
-	int n = GetNumOfFreedom();
-	for (int i = 0; i < GetNumOfLinks(); i++)
-	{
-		const auto& link = GetLinkById(i);
-		Q += link->GetJKv().transpose() * mLinkForces[i].segment(0, 3);
-		Q += link->GetJKw().transpose() * mLinkTorques[i].segment(0, 3);
-	}
-}
+// 	int n = GetNumOfFreedom();
+// 	for (int i = 0; i < GetNumOfLinks(); i++)
+// 	{
+// 		const auto& link = GetLinkById(i);
+// 		Q += link->GetJKv().transpose() * mLinkForces[i].segment(0, 3);
+// 		Q += link->GetJKw().transpose() * mLinkTorques[i].segment(0, 3);
+// 	}
+// }
 
 void cRobotModelDynamics::GetEffectInfo(tEigenArr<tVector>& force_array, tEigenArr<tVector>& torque_array)
 {
@@ -999,4 +1108,36 @@ void cRobotModelDynamics::TestRotationChar()
 		}
 	}
 	exit(1);
+}
+
+/**
+ * \brief					Contact aware adviser, used in "contact-aware nonlienar dynamics controller".
+ * 		This pointer will be used when the LCP constraints are handled in ConstraintData.cpp
+*/
+void cRobotModelDynamics::SetContactAwareAdviser(btGenContactAwareAdviser* ptr)
+{
+	mAdviser = ptr;
+}
+
+btGenContactAwareAdviser* cRobotModelDynamics::GetContactAwareAdviser() const
+{
+	return mAdviser;
+}
+
+/***
+ * \brief					Check whether the contact aware adviser are enabled
+*/
+bool cRobotModelDynamics::GetEnableContactAwareAdviser() const
+{
+	return mEnableContactAwareAdviser;
+}
+
+void cRobotModelDynamics::SetEnableContactAwareAdviser(bool val)
+{
+	mEnableContactAwareAdviser = val;
+}
+
+bool cRobotModelDynamics::GetCollisionEnabled() const
+{
+	return mEnableCollision;
 }

@@ -430,7 +430,7 @@ void cODEDantzigLCPSolver::transfer_question_to_rtql8(const tMatrixXd& A, const 
 			}
 			b_rtql8[new_row] = b[row];
 		}
-		delete new_id_array;
+		delete[] new_id_array;
 	}
 	else
 	{
@@ -458,7 +458,7 @@ void cODEDantzigLCPSolver::transfer_question_to_rtql8(const tMatrixXd& A, const 
 			}
 			b_rtql8[new_row_id] = b[row_id];
 		}
-		delete new_id_array;
+		delete[] new_id_array;
 	}
 
 	// std::cout << "A rtql8 = \n"

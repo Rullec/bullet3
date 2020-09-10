@@ -15,6 +15,10 @@ void Tools::AVX4x4v1_3mat(const tMatrix& a, const tMatrix& b, const tMatrix& c, 
 	r.noalias() = a * b * c;
 }
 
+// static void AVX3x3v5(mat3 &a, mat3 &b, mat3 &r)
+// {
+	
+// }
 // void Tools::Multiply3x3(tMatrix3d& a, tMatrix3d& b, tMatrix3d& r) {
 // 	//// brute force
 // 	//for (int i = 0; i < 3; ++i) {

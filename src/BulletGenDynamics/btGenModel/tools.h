@@ -211,7 +211,7 @@ public:
 	// static void SSE3x3v1(tMatrix3d& a, tMatrix3d& b, tMatrix3d& r);
 	// static void SSE3x3v2(tMatrix3d& a, tMatrix3d& b, tMatrix3d& r);
 
-	// static void AVX3x3v1(tMatrix3d& a, tMatrix3d& b, tMatrix3d& r);
+	static void AVX3x3v1(tMatrix3d& a, tMatrix3d& b, tMatrix3d& r);
 	// static void AVX3x3v2(tMatrix3d& a, tMatrix3d& b, tMatrix3d& r);
 	// static void AVX3x3v3(tMatrix3d& a, tMatrix3d& b, tMatrix3d& r);
 	// static void AVX3x3v4(tMatrix3d& a, tMatrix3d& b, tMatrix3d& r);

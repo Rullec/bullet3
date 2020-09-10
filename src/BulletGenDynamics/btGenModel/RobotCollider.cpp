@@ -13,6 +13,11 @@ btGenRobotCollider::btGenRobotCollider(cRobotModelDynamics* model, int link_id, 
 
 btGenRobotCollider::~btGenRobotCollider()
 {
+	// if (nullptr != getBroadphaseHandle())
+	// {
+	// 	std::cout << "begin to release " << getBroadphaseHandle() << std::endl;
+	// 	delete getBroadphaseHandle();
+	// }
 }
 
 btGenRobotCollider* btGenRobotCollider::upcast(btCollisionObject* colObj)

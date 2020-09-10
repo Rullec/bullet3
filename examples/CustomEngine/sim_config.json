@@ -13,12 +13,15 @@
     "mb_collect_frame_num": 50,
     "mb_add_eps_at_diagnoal_mass_mat": 0,
     "mb_calc_generalized_force_only_by_jv": false,
-    "mb_angle_clamp" : false,
-    "mb_max_vel" : 100,
-    "mb_update_velocity_without_coriolis": true,
-    "enable_perturb" : false,
+    "mb_angle_clamp": false,
+    "mb_max_vel": 100,
+    "mb_enable_contact_aware_lcp": false,
+    "contact_aware_lcp_config": "./examples/CustomEngine/contact_aware_adviser_config.json",
+    "enable_perturb": false,
     "enable_pd_control": false,
     "controller_path": "./examples/CustomEngine/pd_config.json",
     "enable_pause_when_max_vel": false,
-    "lcp_config_path": "./examples/CustomEngine/lcp_config.json"
+    "lcp_config_path": "./examples/CustomEngine/lcp_config.json",
+    "mb_enable_guide_action": false,
+    "guided_action_traj_file": "./tmp/new_trajs/new_traj_full.json"
 }

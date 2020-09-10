@@ -170,7 +170,10 @@ void Link::ComputeDJkwdq()
 
 	tMatrix3d local_trans_multiple_global_trans_T = local_transform.topLeftCorner<3, 3>() *
 													global_transform.topLeftCorner<3, 3>().transpose();
+	tEigenArr<tMatrix3d> mWq3x3_T(total_freedoms);
+	for (int i = 0; i < total_freedoms; ++i) mWq3x3_T[i].noalias() = mWq[i].topLeftCorner<3, 3>().transpose();
 	// i - row number
+	// std::cout << "link " << this->GetId() << " total dof = " << total_freedoms << std::endl;
 	for (int i = 0; i < total_freedoms; ++i)
 	{
 		int global_id_i = dependent_dof_id[i];
@@ -197,12 +200,12 @@ void Link::ComputeDJkwdq()
 				dJ[0]_i/dq_j = d ( [dR/dqi * R^T]^{-1}[0] ) dq_j
 							= gij
 			*/
-			m.noalias() = parent_joint->GetMWQQ(i, j).topLeftCorner<3, 3>() * local_trans_multiple_global_trans_T;
-			;
+			m.noalias() = parent_joint->GetMWQQ(i, j).topLeftCorner<3, 3>() * local_trans_multiple_global_trans_T;  // 7.93
 			// m.noalias() = parent_joint->GetMWQQ(i, j).topLeftCorner<3, 3>() *
 			// 			  local_transform.topLeftCorner<3, 3>();
 
-			mij.noalias() = mWq_i_topleft * mWq[j].topLeftCorner<3, 3>().transpose();
+			// mij.noalias() = mWq_i_topleft * mWq[j].topLeftCorner<3, 3>().transpose();  // 8.17
+			mij.noalias() = mWq_i_topleft * mWq3x3_T[j];  // 8.17
 			gij.noalias() = m + mij;
 			// tVector3d g = Tools::FromSkewSymmetric(gij);
 			// if (g.norm() > 1e-10)
@@ -290,8 +293,8 @@ void Link::InitTerms()
 	jkw_dq.resize(3);
 	for (int i = 0; i < 3; i++)
 	{
-		jkv_dq[i] = tMatrixXd::Zero(global_freedom, global_freedom);
-		jkw_dq[i] = tMatrixXd::Zero(global_freedom, global_freedom);
+		jkv_dq[i].noalias() = tMatrixXd::Zero(global_freedom, global_freedom);
+		jkw_dq[i].noalias() = tMatrixXd::Zero(global_freedom, global_freedom);
 	}
 
 #endif
@@ -360,4 +363,51 @@ void Link::SetColGroup(int flag)
 		std::cout << "[error] Invalid link colgroup " << col_group << std::endl;
 		exit(1);
 	}
+}
+
+/**
+ * \brief					this function tries to calculate :
+ * 
+ * 			\frac{dJkv}{dq_{target_dof_id}} \in R^{3 \times n}
+ * 
+ * 			Jkv \in R^{3 \times n}
+ * 			target_dof_id \in [0, n-1]
+*/
+tMatrixXd Link::GetTotalDofdJKv_dq(int target_dof_id) const
+{
+	// // 1. check whether the target_dof_id effect the Jkv
+	tMatrixXd dJkv_dq = tMatrixXd::Zero(3, global_freedom);
+	for (int i = 0; i < 3; i++)
+		for (int j = 0; j < global_freedom; j++)
+		{
+			dJkv_dq(i, j) = GetJKv_dq(i)(j, target_dof_id);
+		}
+	return dJkv_dq;
+	// int local_id = -1;
+	// for (int i = 0; i < total_freedoms; i++)
+	// {
+	// 	if (target_dof_id == dependent_dof_id[i])
+	// 	{
+	// 		local_id = i;
+	// 		break;
+	// 	}
+	// }
+
+	// // 2. if not, return an zero matrix
+	// // 3. if it effects, get the local_dof_id accordly, get the dJkv_dq, and reassign it to an global map
+	// if (local_id != -1)
+	// {
+	// 	std::cout << "full dof " << num_of_full_freedom << std::endl;
+	// 	std::cout << "total local dof " << total_freedoms << std::endl;
+	// 	const tMatrixXd& dJkv_dq_local = GetJKv_dq(local_id);
+	// 	std::cout << "local dJkvdq size = " << dJkv_dq_local.rows() << " " << dJkv_dq_local.cols() << std::endl;
+	// 	for (int i = 0; i < total_freedoms; i++)
+	// 	{
+	// 		int g_id = dependent_dof_id[i];
+	// 		std::cout << "local dof " << i << " global dof " << g_id << std::endl;
+	// 		dJkv_dq_global.col(g_id) = dJkv_dq_local.col(i);
+	// 	}
+	// }
+
+	// return dJkv_dq_global;
 }

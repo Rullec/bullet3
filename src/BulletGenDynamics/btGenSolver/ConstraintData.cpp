@@ -2,6 +2,7 @@
 #include "BulletGenDynamics/btGenModel/SimObj.h"
 #include "BulletGenDynamics/btGenModel/RobotCollider.h"
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
+#include "BulletGenDynamics/btGenController/btGenContactAwareAdviser.h"
 #include <iostream>
 
 extern btGenRigidBody* UpcastRigidBody(const btCollisionObject* col);
@@ -20,13 +21,41 @@ btGenJointLimitData::btGenJointLimitData(int constraint_id_, cRobotModelDynamics
 	// if (is_upper_bound) joint_direction *= -1;
 }
 
-btGenContactPointData::btGenContactPointData(int c_id, double dt_)
+btGenContactPointData::btGenContactPointData(int c_id)
 {
 	contact_id = c_id;
-	dt = dt_;
 	mbody0GroupId = -1;
 	mbody1GroupId = -2;
 	mIsSelfCollision = false;
+}
+
+void btGenContactPointData::Init(double dt_, btPersistentManifold* manifold, int contact_id_in_manifold)
+{
+	dt = dt_;
+	mBodyA = UpcastColObj(manifold->getBody0());
+	mBodyB = UpcastColObj(manifold->getBody1());
+	mTypeA = mBodyA->GetType();
+	mTypeB = mBodyB->GetType();
+
+	if (mBodyA == nullptr || mBodyB == nullptr)
+	{
+		std::cout << "illegal body type!\n";
+		exit(1);
+	}
+
+	const auto& pt = manifold->getContactPoint(contact_id_in_manifold);
+	mNormalPointToA = btBulletUtil::btVectorTotVector0(pt.m_normalWorldOnB);
+	mContactPtOnA = btBulletUtil::btVectorTotVector1(pt.getPositionWorldOnA());
+	mContactPtOnB = btBulletUtil::btVectorTotVector1(pt.getPositionWorldOnB());
+	distance = pt.getDistance();
+
+	// judge if it is self collsiion (only for multibody)
+	if (eColObjType::RobotCollder == mBodyA->GetType() && eColObjType::RobotCollder == mBodyB->GetType())
+	{
+		auto mb_A = dynamic_cast<btGenRobotCollider*>(mBodyA);
+		auto mb_B = dynamic_cast<btGenRobotCollider*>(mBodyB);
+		if (mb_A->mModel == mb_B->mModel) mIsSelfCollision = true;
+	}
 }
 
 void btGenJointLimitData::ApplyJointTorque(double val)
@@ -393,8 +422,10 @@ void btGenCollisionObjData::SetupRobotCollider()
 	const tMatrixXd I = tMatrixXd::Identity(n_dof, n_dof);
 
 	// tMatrixXd residual_part = (I - dt * inv_M * (coriolis_mat + damping_mat)) * model->Getqdot();  // used as the last part of residual as shown below
-	tMatrixXd residual_part = (I - dt * inv_M * (coriolis_mat + damping_mat)) * model->Getqdot() +
-							  dt * inv_M * model->GetGeneralizedForce();
+	// tVectorXd residual_part = (I - dt * inv_M * (coriolis_mat + damping_mat)) * model->Getqdot() +
+	// 						  dt * inv_M * model->GetGeneralizedForce();
+	// the computation of residual part is different when the contact-aware LCP is enabled, so we extract it as an API
+	tVectorXd residual_part = CalcRobotColliderResidual(dt);
 
 	// 2. begin to form the ultimate velocity convert mat, handle the contact point part
 	tMatrixXd Jac_partA;
@@ -507,6 +538,8 @@ void btGenCollisionObjData::SetupRobotCollider()
 				// std::cout << "Jac partB = \n"
 				// 		  << Jac_partB.transpose() << std::endl;
 			}
+
+			Jac_partB = CalcRobotColliderJacPartBPrefix(dt) * Jac_partB;
 			// std::cout << "i " << i_cons_id << " j " << j_cons_id << " JacA size = " << Jac_partA.rows() << " " << Jac_partA.cols() << ", JacB size = " << Jac_partB.rows() << " " << Jac_partB.cols() << std::endl;
 			// 2.3 final part = Jac_partA * Jac_partB
 			mConvertCartesianForceToVelocityMat.block(i_st, j_st, i_size, j_size).noalias() = Jac_partA * Jac_partB;
@@ -523,6 +556,12 @@ void btGenCollisionObjData::SetupRobotCollider()
 	// std::cout << "----------set up robot collider end----------\n";
 }
 
+/**
+ * \brief				Calculate the contact jacobian which can convert the qdot to relative contact velocity
+ * 		
+ * For non-self collision, the jacobian is simple Jv
+ * For self collisin(2 links contacted with each other, the jacobian is (Jva-Jvb))
+*/
 void btGenCollisionObjData::GetContactJacobianArrayRobotCollider(tEigenArr<tMatrixXd>& nonself_contact_point_jac, tEigenArr<tMatrixXd>& self_contact_point_jac0_minus_jac1)
 {
 	btGenRobotCollider* collider = UpcastRobotCollider(mBody);
@@ -657,4 +696,82 @@ void btGenCollisionObjData::SetupRobotColliderVars()
 	}
 
 	num_joint_constraint = mJointLimits.size();
+}
+
+/**
+ * \brief					Calculate the robot collider residual used in the calculation of absolute velocity convert matrix 
+ * 
+ * If the contact-aware LCP is disabled, then the residual is simple 
+ * 		= dt * M^{-1} * (Q_applied - C\dot{q}_t)　+ \dot{q}_t
+ * 		
+ * But if the contact-aware LCP is enable, the residual is converted 
+ * 		= dt * M^{-1} * 
+ * 			(	\tilde{\tau} - C \tilde{B}\tilde{\chi} 
+ * 				+ Q_applied　- C\dot{q}_t) 
+ * 			+ \dot{q}_t
+*/
+tVectorXd btGenCollisionObjData::CalcRobotColliderResidual(double dt) const
+{
+	tVectorXd residual;
+	if (eColObjType::RobotCollder != mBody->GetType())
+	{
+		std::cout << "[error] CalcRobotColliderResidual: can only be used for robot collider, exit\n";
+		exit(1);
+	}
+	else
+	{
+		cRobotModelDynamics* model = static_cast<btGenRobotCollider*>(mBody)->mModel;
+		if (model == nullptr) std::cout << "[error] CalcRobotColliderResidual: model is empty, exit", exit(1);
+		int n_dof = model->GetNumOfFreedom();
+		const tMatrixXd I = tMatrixXd::Identity(n_dof, n_dof);
+
+		if (false == model->GetEnableContactAwareAdviser())
+		{
+			// std::cout << "contact aware adviser is disabled\n";
+			residual = (I - dt * inv_M * (coriolis_mat + damping_mat)) * model->Getqdot() +
+					   dt * inv_M * model->GetGeneralizedForce();
+		}
+		else
+		{
+			btGenContactAwareAdviser* adviser = model->GetContactAwareAdviser();
+			// tMatrixXd N = adviser->GetN(),
+			// 		  D = adviser->GetD();
+			// tVectorXd b = adviser->Getb();
+			// std::cout << "[warn] contact aware adviser is enabled, but the code hasn't been revised\n";
+			if (damping_mat.norm() > 0) std::cout << "[error] contact aware control didn't support damping cuz the absence of formulas\n", exit(1);
+			residual = adviser->CalcLCPResidual(dt);
+		}
+	}
+	return residual;
+}
+
+tMatrixXd btGenCollisionObjData::CalcRobotColliderJacPartBPrefix(double dt) const
+{
+	tMatrixXd prefix;
+	if (eColObjType::RobotCollder != mBody->GetType())
+	{
+		std::cout << "[error] CalcRobotColliderJacPartB: can only be used for robot collider, exit\n";
+		exit(1);
+	}
+	else
+	{
+		cRobotModelDynamics* model = static_cast<btGenRobotCollider*>(mBody)->mModel;
+		if (model == nullptr) std::cout << "[error] CalcRobotColliderJacPartB: model is empty, exit", exit(1);
+		int n_dof = model->GetNumOfFreedom();
+		const tMatrixXd I = tMatrixXd::Identity(n_dof, n_dof);
+
+		if (false == model->GetEnableContactAwareAdviser())
+		{
+			// std::cout << "contact aware adviser is disabled\n";
+			prefix.noalias() = tMatrixXd::Identity(n_dof, n_dof);
+		}
+		else
+		{
+			btGenContactAwareAdviser* adviser = model->GetContactAwareAdviser();
+			// tMatrixXd E = adviser->GetE(), N = adviser->GetN();
+			// std::cout << "[warn] contact aware adviser is enabled, but the code hasn't been revised\n";
+			prefix.noalias() = adviser->CalcLCPPartBPrefix();
+		}
+	}
+	return prefix;
 }

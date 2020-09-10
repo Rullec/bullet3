@@ -42,6 +42,7 @@
 #include "../OpenGLWindow/SimpleOpenGL2Renderer.h"
 #include "ExampleEntries.h"
 #include "OpenGLGuiHelper.h"
+#include "CustomGLGuiHelper.h"
 #include "Bullet3Common/b3FileUtils.h"
 
 #include "LinearMath/btIDebugDraw.h"
@@ -428,7 +429,8 @@ void openFileDemo(const char* filename)
 {
 	deleteDemo();
 
-	s_guiHelper = new OpenGLGuiHelper(s_app, sUseOpenGL2);
+	// s_guiHelper = new OpenGLGuiHelper(s_app, sUseOpenGL2);
+	s_guiHelper = new CustomGLGuiHelper(s_app, sUseOpenGL2);
 	s_guiHelper->setVisualizerFlagCallback(OpenGLExampleBrowserVisualizerFlagCallback);
 
 	s_parameterInterface->removeAllParameters();
@@ -475,7 +477,8 @@ void selectDemo(int demoIndex)
 			s_parameterInterface->removeAllParameters();
 		}
 		int option = gAllExamples->getExampleOption(demoIndex);
-		s_guiHelper = new OpenGLGuiHelper(s_app, sUseOpenGL2);
+		// s_guiHelper = new OpenGLGuiHelper(s_app, sUseOpenGL2);
+		s_guiHelper = new CustomGLGuiHelper(s_app, sUseOpenGL2);
 		s_guiHelper->setVisualizerFlagCallback(OpenGLExampleBrowserVisualizerFlagCallback);
 
 		CommonExampleOptions options(s_guiHelper, option);
@@ -1161,7 +1164,6 @@ void OpenGLExampleBrowser::updateGraphics()
 
 void OpenGLExampleBrowser::update(float deltaTime)
 {
-
 	b3ChromeUtilsEnableProfiling();
 
 	if (!gEnableRenderLoop && !singleStepSimulation)
@@ -1224,7 +1226,6 @@ void OpenGLExampleBrowser::update(float deltaTime)
 
 			if (gFixedTimeStep > 0)
 			{
-				
 				sCurrentDemo->stepSimulation(gFixedTimeStep);
 			}
 			else

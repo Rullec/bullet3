@@ -41,6 +41,7 @@ btGenRigidBody::btGenRigidBody(const tParams& params) : btGenCollisionObject(eCo
 btGenRigidBody::~btGenRigidBody()
 {
 	// cCollisionObject::~cCollisionObject();
+	// delete m_collisionShape;
 }
 /**
  * \brief
