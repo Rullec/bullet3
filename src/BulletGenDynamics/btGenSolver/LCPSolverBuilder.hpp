@@ -1,13 +1,13 @@
 #include "LCPSolverBase.h"
 #include "NativeLemke/NativeLemkeLCPSolver.h"
-#include "odeDantzig/odeDantzigLCPSolver.h"
 #include "btPath/btPath.h"
+#include "odeDantzig/odeDantzigLCPSolver.h"
 #include <iostream>
 
-cLCPSolverBase * BuildLCPSolver(const std::string & type)
+cLCPSolverBase *BuildLCPSolver(const std::string &type)
 {
-    cLCPSolverBase * solver = nullptr;
-    if(type == "NativeLemke")
+    cLCPSolverBase *solver = nullptr;
+    if (type == "NativeLemke")
     {
         solver = new cNativeLemkeLCPSolver();
     }
@@ -21,9 +21,9 @@ cLCPSolverBase * BuildLCPSolver(const std::string & type)
     }
     else
     {
-        std::cout <<"build LCP solver failed for type " << type << std::endl;
+        std::cout << "build LCP solver failed for type " << type << std::endl;
         exit(1);
     }
-    
+
     return solver;
 }

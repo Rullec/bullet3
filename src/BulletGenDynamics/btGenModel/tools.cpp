@@ -1,23 +1,24 @@
 #include "tools.h"
 // #include <emmintrin.h>
-#include <iostream>
 #include <immintrin.h>
+#include <iostream>
 tMatrix Tools::t = tMatrix::Zero();
 tMatrix Tools::t1 = tMatrix::Zero();
 tMatrix Tools::t2 = tMatrix::Zero();
-void Tools::AVX4x4v1(const tMatrix& a, const tMatrix& b, tMatrix& r)
+void Tools::AVX4x4v1(const tMatrix &a, const tMatrix &b, tMatrix &r)
 {
-	r.noalias() = a * b;
+    r.noalias() = a * b;
 }
 
-void Tools::AVX4x4v1_3mat(const tMatrix& a, const tMatrix& b, const tMatrix& c, tMatrix& r)
+void Tools::AVX4x4v1_3mat(const tMatrix &a, const tMatrix &b, const tMatrix &c,
+                          tMatrix &r)
 {
-	r.noalias() = a * b * c;
+    r.noalias() = a * b * c;
 }
 
 // static void AVX3x3v5(mat3 &a, mat3 &b, mat3 &r)
 // {
-	
+
 // }
 // void Tools::Multiply3x3(tMatrix3d& a, tMatrix3d& b, tMatrix3d& r) {
 // 	//// brute force
@@ -317,7 +318,8 @@ void Tools::AVX4x4v1_3mat(const tMatrix& a, const tMatrix& b, const tMatrix& c, 
 
 // 	auto zero = _mm256_setzero_pd();
 
-// 	auto v1 = _mm256_set_pd(0, a.coeffRef(0, 2), a.coeffRef(0, 1), a.coeffRef(0, 0));
+// 	auto v1 = _mm256_set_pd(0, a.coeffRef(0, 2), a.coeffRef(0, 1),
+// a.coeffRef(0, 0));
 
 // 	auto v5 = _mm256_load_pd(b.data());
 // 	auto v6 = _mm256_load_pd(b.data() + 3);
@@ -343,7 +345,8 @@ void Tools::AVX4x4v1_3mat(const tMatrix& a, const tMatrix& b, const tMatrix& c, 
 // 	_mm_store_pd(r1, h11_add_12);
 // 	r.data()[6] = r1[1];
 
-// 	auto v2 = _mm256_set_pd(0, a.coeffRef(1, 2), a.coeffRef(1, 1), a.coeffRef(1, 0));
+// 	auto v2 = _mm256_set_pd(0, a.coeffRef(1, 2), a.coeffRef(1, 1),
+// a.coeffRef(1, 0));
 
 // 	auto v25 = _mm256_mul_pd(v2, v5);
 // 	auto v26 = _mm256_mul_pd(v2, v6);
@@ -364,7 +367,8 @@ void Tools::AVX4x4v1_3mat(const tMatrix& a, const tMatrix& b, const tMatrix& c, 
 // 	_mm_store_pd(r1, h21_add_22);
 // 	r.data()[7]= r1[1];
 
-// 	auto v3 = _mm256_set_pd(0, a.coeffRef(2, 2), a.coeffRef(2, 1), a.coeffRef(2, 0));
+// 	auto v3 = _mm256_set_pd(0, a.coeffRef(2, 2), a.coeffRef(2, 1),
+// a.coeffRef(2, 0));
 
 // 	auto v35 = _mm256_mul_pd(v3, v5);
 // 	auto v36 = _mm256_mul_pd(v3, v6);
@@ -391,7 +395,8 @@ void Tools::AVX4x4v1_3mat(const tMatrix& a, const tMatrix& b, const tMatrix& c, 
 // __m128d hsum_double_avx(__m256d v) {
 // 	__m128d vlow	= _mm256_castpd256_pd128(v);
 // 	__m128d vhigh	= _mm256_extractf128_pd(v, 1); // high 128
-// 		    vlow	= _mm_add_pd(vlow, vhigh);     // reduce down to 128
+// 		    vlow	= _mm_add_pd(vlow, vhigh);     // reduce down to
+// 128
 
 // 	__m128d high64 = _mm_unpackhi_pd(vlow, vlow);
 // 	return  _mm_add_sd(vlow, high64);
@@ -403,9 +408,9 @@ void Tools::AVX4x4v1_3mat(const tMatrix& a, const tMatrix& b, const tMatrix& c, 
 // 	auto v5 = _mm256_load_pd(b.data());
 // 	auto v6 = _mm256_load_pd(b.data() + 3);
 // 	auto v7 = _mm256_load_pd(b.data() + 6);
-// 	//__m256d vb[3] = { _mm256_load_pd(b.data()), _mm256_load_pd(b.data() + 3), _mm256_load_pd(b.data() + 6) };
-// 	for(int i = 0; i < 3; ++i) {
-// 		auto v1 = _mm256_set_pd(0, a.coeffRef(i, 2), a.coeffRef(i, 1), a.coeffRef(i, 0));
+// 	//__m256d vb[3] = { _mm256_load_pd(b.data()), _mm256_load_pd(b.data() +
+// 3), _mm256_load_pd(b.data() + 6) }; 	for(int i = 0; i < 3; ++i) { 		auto v1 =
+// _mm256_set_pd(0, a.coeffRef(i, 2), a.coeffRef(i, 1), a.coeffRef(i, 0));
 
 // 		__m256d v15 = _mm256_mul_pd(v1, v5);
 // 		__m256d v16 = _mm256_mul_pd(v1, v6);
@@ -447,9 +452,10 @@ void Tools::AVX4x4v1_3mat(const tMatrix& a, const tMatrix& b, const tMatrix& c, 
 // void Tools::AVX3x3v3(tMatrix3d& a, tMatrix3d& b, tMatrix3d& r) {
 
 // 	__m256d _bv[3] = {
-// 		_mm256_set_pd(0, b.coeffRef(0, 2), b.coeffRef(0, 1), b.coeffRef(0, 0)),
-// 		_mm256_set_pd(0, b.coeffRef(1, 2), b.coeffRef(1, 1), b.coeffRef(1, 0)),
-// 		_mm256_set_pd(0, b.coeffRef(2, 2), b.coeffRef(2, 1), b.coeffRef(2, 0))
+// 		_mm256_set_pd(0, b.coeffRef(0, 2), b.coeffRef(0, 1), b.coeffRef(0,
+// 0)), 		_mm256_set_pd(0, b.coeffRef(1, 2), b.coeffRef(1, 1), b.coeffRef(1, 0)),
+// 		_mm256_set_pd(0, b.coeffRef(2, 2), b.coeffRef(2, 1), b.coeffRef(2,
+// 0))
 // 	};
 
 // 	double _d[4] = { 0, 0, 0, 0 };
@@ -522,9 +528,10 @@ void Tools::AVX4x4v1_3mat(const tMatrix& a, const tMatrix& b, const tMatrix& c, 
 
 // 	double r1[2] = { 0, 0 };
 // 	__m256d _av[3] = {
-// 		_mm256_set_pd(0, a.coeffRef(0, 2), a.coeffRef(0, 1), a.coeffRef(0, 0)),
-// 		_mm256_set_pd(0, a.coeffRef(1, 2), a.coeffRef(1, 1), a.coeffRef(1, 0)),
-// 		_mm256_set_pd(0, a.coeffRef(2, 2), a.coeffRef(2, 1), a.coeffRef(2, 0))
+// 		_mm256_set_pd(0, a.coeffRef(0, 2), a.coeffRef(0, 1), a.coeffRef(0,
+// 0)), 		_mm256_set_pd(0, a.coeffRef(1, 2), a.coeffRef(1, 1), a.coeffRef(1, 0)),
+// 		_mm256_set_pd(0, a.coeffRef(2, 2), a.coeffRef(2, 1), a.coeffRef(2,
+// 0))
 // 	};
 
 // 	__m256d h1;
@@ -599,22 +606,22 @@ void Tools::AVX4x4v1_3mat(const tMatrix& a, const tMatrix& b, const tMatrix& c, 
 // 	}
 // }
 
-// void Tools:: AVX4x4v1_3mat(const tMatrix& a, const tMatrix& b, const tMatrix& c, tMatrix& r) {
-// 	AVX4x4v1(a, b, t);
-// 	AVX4x4v1(t, c, r);
+// void Tools:: AVX4x4v1_3mat(const tMatrix& a, const tMatrix& b, const tMatrix&
+// c, tMatrix& r) { 	AVX4x4v1(a, b, t); 	AVX4x4v1(t, c, r);
 // }
 
-void Tools::AVX4x4v1_6mat(const tMatrix& a, const tMatrix& b, const tMatrix& c, const tMatrix& d, const tMatrix& e, const tMatrix& f,
-						  tMatrix& r)
+void Tools::AVX4x4v1_6mat(const tMatrix &a, const tMatrix &b, const tMatrix &c,
+                          const tMatrix &d, const tMatrix &e, const tMatrix &f,
+                          tMatrix &r)
 {
-	AVX4x4v1_3mat(a, b, c, t1);
-	AVX4x4v1_3mat(d, e, f, t2);
-	AVX4x4v1(t1, t2, r);
+    AVX4x4v1_3mat(a, b, c, t1);
+    AVX4x4v1_3mat(d, e, f, t2);
+    AVX4x4v1(t1, t2, r);
 }
 
-void Tools::MatMul4x1(const tMatrix& m, const tVector& v, tVector& r)
+void Tools::MatMul4x1(const tMatrix &m, const tVector &v, tVector &r)
 {
-	r.noalias() = m * v;
+    r.noalias() = m * v;
 }
 // void Tools::MatMul4x1(const tMatrix& m, const tVector& v, tVector& r)
 // {

@@ -36,8 +36,8 @@ using namespace Eigen;
 #include <vector>
 using namespace std;
 
-
-namespace lcpsolver {
-    int Lemke(const MatrixXd& _M, const VectorXd& _q, VectorXd& _z);
-    bool validate(const MatrixXd& _M, const VectorXd& _z, const VectorXd& _q);
-} //namespace lcpsolver
+namespace lcpsolver
+{
+int Lemke(const MatrixXd &_M, const VectorXd &_q, VectorXd &_z);
+bool validate(const MatrixXd &_M, const VectorXd &_z, const VectorXd &_q);
+} // namespace lcpsolver

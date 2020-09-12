@@ -1,9 +1,9 @@
 /* RTQL8, Copyright (c) 2011, Georgia Tech Research Corporation
  * All rights reserved.
  *
- * Author(s): Jie (Jay) Tan <jtan34@cc.gatech.edu> and Yunfei Bai <byf1658@gmail.com>
- * Georgia Tech Graphics Lab
- * 
+ * Author(s): Jie (Jay) Tan <jtan34@cc.gatech.edu> and Yunfei Bai
+ * <byf1658@gmail.com> Georgia Tech Graphics Lab
+ *
  * This file is provided under the following "BSD-style" License:
  *   Redistribution and use in source and binary forms, with or
  *   without modification, are permitted provided that the following
@@ -14,9 +14,9 @@
  *     copyright notice, this list of conditions and the following
  *     disclaimer in the documentation and/or other materials provided
  *     with the distribution.
- *   * This code incorporates portions of Open Dynamics Engine 
- *     (Copyright (c) 2001-2004, Russell L. Smith. All rights 
- *     reserved.) and portions of FCL (Copyright (c) 2011, Willow 
+ *   * This code incorporates portions of Open Dynamics Engine
+ *     (Copyright (c) 2001-2004, Russell L. Smith. All rights
+ *     reserved.) and portions of FCL (Copyright (c) 2011, Willow
  *     Garage, Inc. All rights reserved.), which were released under
  *     the same BSD license as below
  *
@@ -40,9 +40,11 @@ using namespace Eigen;
 #include <vector>
 using namespace std;
 
-namespace rtql8 {
-    namespace lcpsolver {
-        int Lemke(const MatrixXd& _M, const VectorXd& _q, VectorXd& _z);
-        bool validate(const MatrixXd& _M, const VectorXd& _z, const VectorXd& _q);
-    } // namespace lcpsolver
+namespace rtql8
+{
+namespace lcpsolver
+{
+int Lemke(const MatrixXd &_M, const VectorXd &_q, VectorXd &_z);
+bool validate(const MatrixXd &_M, const VectorXd &_z, const VectorXd &_q);
+} // namespace lcpsolver
 } // namespace rtql8

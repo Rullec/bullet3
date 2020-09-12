@@ -37,22 +37,22 @@
 class cNativeLemkeLCPSolver : public cLCPSolverBase
 {
 public:
-	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-	cNativeLemkeLCPSolver();
-	~cNativeLemkeLCPSolver();
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    cNativeLemkeLCPSolver();
+    ~cNativeLemkeLCPSolver();
 
-	virtual int Solve(int num_of_vars, const tMatrixXd &A, const tVectorXd &b, tVectorXd &x);
+    virtual int Solve(int num_of_vars, const tMatrixXd &A, const tVectorXd &b,
+                      tVectorXd &x);
 
 private:
-	void transferToODEFormulation(const tMatrixXd &_A, const tVectorXd &_b,
-								  tMatrixXd &AOut, tVectorXd &bOut, int numDir);
-	void transferSolFromODEFormulation(const tVectorXd &_x, tVectorXd &xOut,
-									   int numDir);
-	bool checkIfSolution(const tMatrixXd &_A, const tVectorXd &_b,
-						 const tVectorXd &_x);
-	int Solve(const tMatrixXd &_A, const tVectorXd &_b, tVectorXd &_x,
-			  double mu = 0, int numDir = 0, bool bUseODESolver = false,
-			  double *lo = nullptr, double *hi = nullptr);
-	bool ODESolve(const tMatrixXd &_A, const tVectorXd &_b,
-				  tVectorXd &_x);
+    void transferToODEFormulation(const tMatrixXd &_A, const tVectorXd &_b,
+                                  tMatrixXd &AOut, tVectorXd &bOut, int numDir);
+    void transferSolFromODEFormulation(const tVectorXd &_x, tVectorXd &xOut,
+                                       int numDir);
+    bool checkIfSolution(const tMatrixXd &_A, const tVectorXd &_b,
+                         const tVectorXd &_x);
+    int Solve(const tMatrixXd &_A, const tVectorXd &_b, tVectorXd &_x,
+              double mu = 0, int numDir = 0, bool bUseODESolver = false,
+              double *lo = nullptr, double *hi = nullptr);
+    bool ODESolve(const tMatrixXd &_A, const tVectorXd &_b, tVectorXd &_x);
 };
