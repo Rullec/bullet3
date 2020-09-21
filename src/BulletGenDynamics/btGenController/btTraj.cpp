@@ -210,8 +210,12 @@ btTraj::btTraj()
 btTraj::~btTraj()
 {
     for (auto &frame_fcs : mContactForce)
+    {
         for (auto &i : frame_fcs)
             delete i;
+        frame_fcs.clear();
+    }
+    mContactForce.clear();
 }
 bool btTraj::LoadTraj(const std::string &path, cRobotModelDynamics *model,
                       int max_frame /* = -1*/)

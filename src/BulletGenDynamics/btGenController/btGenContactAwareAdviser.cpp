@@ -49,6 +49,7 @@ btGenContactAwareAdviser::~btGenContactAwareAdviser()
 {
     delete mRefModel;
     delete mFeatureVector;
+    delete mRefTraj;
 }
 
 int btGenContactAwareAdviser::GetInternalFrameId() const

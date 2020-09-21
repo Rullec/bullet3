@@ -35,6 +35,7 @@ cRobotModel::~cRobotModel()
     {
         delete itr->second;
     }
+    joint_id_map.clear();
 }
 
 cRobotModel::cRobotModel()
@@ -398,9 +399,9 @@ void cRobotModel::LoadFreedom(const char *name, TiXmlElement *doc_joint,
 }
 
 /**
- * \brief					�� joint �е� freedom ���ӵ� robot ��
- *freedom_map �� �����?? robot ��ֱ�ӻ�ȡ freedom �����м��� \param joint
- *������ freedom �� freedom_map �� joint
+ * \brief					�� joint �е� freedom ���ӵ� robot
+ *�� freedom_map �� �����?? robot ��ֱ�ӻ�ȡ freedom �����м��� \param joint ������
+ *freedom �� freedom_map �� joint
  */
 void cRobotModel::InsertFreedomMap(BaseObject *joint)
 {
@@ -475,8 +476,9 @@ void cRobotModel::AddRootLink(const char *root_name)
 /**
  * \brif						���� Link
  * \param link_name			link���ƣ���link������
- * \param local_pos			link�����ھֲ�����ϵ�µ�λ�ã��ֲ�����ϵԭ���� parent
- * joint ������ \param local_rotation		link_mesh ����ת \param mesh_path
+ * \param local_pos			link�����ھֲ�����ϵ�µ�λ�ã��ֲ�����ϵԭ����
+ * parent joint ������ \param local_rotation		link_mesh ����ת \param
+ * mesh_path
  * link mesh ��·�� \param mesh_rotation		mesh ����ת \param mesh_scale
  * mesh �����ű��� \param mass				link ����
  */
@@ -518,9 +520,9 @@ void cRobotModel::AddLink(std::string link_name, tVector3d &local_pos,
 /**
  * \brif						���� Joint
  * \param joint_name			joint���ƣ���joint������
- * \param local_pos			joint�����ھֲ�����ϵ�µ�λ�ã��ֲ�����ϵԭ���� parent
- * link ������ \param local_rotation		joint�ھֲ�����ϵ�µ���ת \param
- * mesh_scale			mesh �����ű���
+ * \param local_pos			joint�����ھֲ�����ϵ�µ�λ�ã��ֲ�����ϵԭ����
+ * parent link ������ \param local_rotation		joint�ھֲ�����ϵ�µ���ת
+ * \param mesh_scale			mesh �����ű���
  */
 void cRobotModel::AddJoint(std::string joint_name, std::string father_name,
                            std::string child_name, const tVector3d &local_pos,
@@ -622,8 +624,9 @@ void cRobotModel::UpdateFreedomId()
 }
 
 /**
- * \brif						���� ball mesh, ������ joint, target
- *point ������ ���� joint ����ͬһ�� mesh�� ����һ��link mesh ͨ�����źͱ任����ʾ����link
+ * \brif						���� ball mesh, ������ joint,
+ *target point ������ ���� joint ����ͬһ�� mesh�� ����һ��link mesh
+ *ͨ�����źͱ任����ʾ����link
  */
 void cRobotModel::LoadBaseMesh()
 {
@@ -1230,8 +1233,8 @@ void cRobotModel::InitShapeMap()
 // 		btAssert((!shape || shape->getShapeType() !=
 // INVALID_SHAPE_PROXYTYPE));
 
-// 		//rigidbody is dynamic if and only if mass is non zero, otherwise
-// static 		bool isDynamic = (mass != 0.f);
+// 		//rigidbody is dynamic if and only if mass is non zero,
+// otherwise static 		bool isDynamic = (mass != 0.f);
 
 // 		btVector3 localInertia(0, 0, 0);
 // 		if (isDynamic)
@@ -1249,8 +1252,8 @@ void cRobotModel::InitShapeMap()
  * \brief					�����������ɶ�ֵ
  * \param ang				�µ����ɶ�ֵ
  * \param using_joint		�Ƿ�ͨ�� joint_map ������ freedom��
- *							ͨ�� joint_map �� freedom_map
- *������Ч����һ���ġ� \param compute_gradient	�Ƿ���㵼��??
+ *							ͨ�� joint_map ��
+ *freedom_map ������Ч����һ���ġ� \param compute_gradient	�Ƿ���㵼��??
  */
 void cRobotModel::Apply(const std::vector<double> &ang, int st,
                         bool compute_gradient)
@@ -1322,8 +1325,8 @@ void cRobotModel::ComputeGradientNumerically()
 
 /**
  * \brief					ʹ�ü��η������㵼����
- *							g = axis.cross(end_eff_pos -
- *joint_pos)
+ *							g = axis.cross(end_eff_pos
+ *- joint_pos)
  */
 void cRobotModel::ComputeGradientByGeometry()
 {
@@ -1433,12 +1436,12 @@ void cRobotModel::ComputeJacobiByGivenPoint(std::string name,
 }
 
 /**
- * \brief					Calculate Jacobian for this point with respect
- * to the whole DOF of this skeleton
+ * \brief					Calculate Jacobian for this point with
+ * respect to the whole DOF of this skeleton
  * \param	link_id			the attached link id of this point
  * \param	point			point position in world frame
- * \param	j				the reference of jacobian, it will be REVISED
- * in this function
+ * \param	j				the reference of jacobian, it will be
+ * REVISED in this function
  */
 void cRobotModel::ComputeJacobiByGivenPointTotalDOFWorldFrame(
     int link_id, const tVector3d &point_world, tMatrixXd &j) const
@@ -1605,7 +1608,8 @@ void cRobotModel::ComputeSecondDerive(tVectorXd &q_dot)
     // tMatrixXd jk_dot = tMatrixXd::Zero(6, num_of_freedom);
     // for(int i = 0; i < num_of_freedom; ++i) {
     //	jk_dot.block(0, 0, 3, num_of_freedom) += end_link->GetJKv_dq(i) *
-    //q_dot[i]; 	jk_dot.block(3, 0, 3, num_of_freedom) += end_link->GetJKw_dq(i)
+    // q_dot[i]; 	jk_dot.block(3, 0, 3, num_of_freedom) +=
+    // end_link->GetJKw_dq(i)
     //* q_dot[i];
     //}
 
@@ -2196,8 +2200,8 @@ void cRobotModel::ComputeCoriolisMatrix(tVectorXd &q_dot)
         // << std::endl;
 
         // tMatrixXd res1 = jk.transpose() * mass_cartesian * jk_dot +
-        // 				 jk.transpose() * w_skew * mass_cartesian *
-        // jk; tMatrixXd res2 = ; tMatrixXd diff = res1 - res2; std::cout <<
+        // 				 jk.transpose() * w_skew * mass_cartesian
+        // * jk; tMatrixXd res2 = ; tMatrixXd diff = res1 - res2; std::cout <<
         // "diff norm = " << diff.norm() << std::endl;
         coriolis_matrix.noalias() +=
             jk.transpose() *

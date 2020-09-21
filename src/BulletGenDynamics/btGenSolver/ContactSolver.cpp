@@ -142,6 +142,13 @@ btGenContactSolver::~btGenContactSolver()
 {
     if (mLCPSolver)
         delete mLCPSolver;
+
+    for (auto &x : contact_torque_array)
+        delete x;
+    contact_torque_array.clear();
+    for (auto &x : contact_force_array)
+        delete x;
+    contact_force_array.clear();
     DeleteColObjData();
 }
 
@@ -545,8 +552,8 @@ void btGenContactSolver::SolveByLCP()
 }
 
 /**
- * \brief			convert the result vector of LCP problem into contact
- * forces
+ * \brief			convert the result vector of LCP problem into
+ * contact forces
  */
 void btGenContactSolver::ConvertLCPResult()
 {
@@ -623,10 +630,10 @@ void btGenContactSolver::CalcCMats(tMatrixXd &C_lambda, tMatrixXd &C_mufn,
 }
 
 /**
- * \brief			Get all collision object in this world and create the
- * collision group Collision group is a set of collision object. All links of a
- * single multibody belong to the same collision group A rigidbody belong to a
- * single collision group
+ * \brief			Get all collision object in this world and
+ * create the collision group Collision group is a set of collision object. All
+ * links of a single multibody belong to the same collision group A rigidbody
+ * belong to a single collision group
  */
 void btGenContactSolver::RebuildColObjData()
 {
@@ -726,7 +733,8 @@ void btGenContactSolver::CalcAbsvelConvertMat()
         // 		  << data->mConvertCartesianForceToVelocityMat <<
         // std::endl; std::cout << "[abs convert] outside convert vec for group
         // " << i << ": \n"
-        // 		  << data->mConvertCartesianForceToVelocityVec.transpose()
+        // 		  <<
+        // data->mConvertCartesianForceToVelocityVec.transpose()
         // << std::endl;
     }
 }
@@ -879,8 +887,8 @@ void btGenContactSolver::CalcDecomposedConvertMat()
 }
 
 /**
- * \brief				Add a contact "manifold" into the constraint
- * solver.
+ * \brief				Add a contact "manifold" into the
+ * constraint solver.
  *
  * 		1. create a new tContactPoint object
  * 		2. add contact point into the CollisionGroup
@@ -1023,8 +1031,8 @@ void btGenContactSolver::AddJointLimit()
  * 				1. the "mNumFrictions+2" decomposed contact
  * force,
  * 				2. and the constraint force of joint limit
- * 			This function tries to calculate the convert matrix from the
- * result vector to the decomposed relative velocity next frame.
+ * 			This function tries to calculate the convert matrix from
+ * the result vector to the decomposed relative velocity next frame.
  */
 void btGenContactSolver::CalcResultVectorBasedConvertMat()
 {
@@ -1188,8 +1196,8 @@ void btGenContactSolver::UpdateVelocity(float dt)
 }
 
 /**
- * \brief				given a target vector and an array of vector
- * directions, find the most nearest one
+ * \brief				given a target vector and an array of
+ * vector directions, find the most nearest one
  */
 tVector FindMostNearDirection(const tMatrixXd &mat, const tVector &target)
 {
