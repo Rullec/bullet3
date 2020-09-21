@@ -397,9 +397,9 @@ void btGenContactAwareAdviser::UpdateMultibodyVelocityAndTransformDebug(
 
     mModel->UpdateVelocityAndTransform(dt);
 
-    std::cout << "mEnable sync traj per = " << mEnableSyncTrajPeriodly
-              << ", internal frame id " << mInternalFrameId
-              << ", sync period = " << mSyncTrajPeriod << std::endl;
+    // std::cout << "mEnable sync traj per = " << mEnableSyncTrajPeriodly
+    //           << ", internal frame id " << mInternalFrameId
+    //           << ", sync period = " << mSyncTrajPeriod << std::endl;
     if (mEnableSyncTrajPeriodly == true &&
         mInternalFrameId % mSyncTrajPeriod == 0)
     {
