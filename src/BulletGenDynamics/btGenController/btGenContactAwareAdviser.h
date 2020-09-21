@@ -62,7 +62,8 @@ protected:
     bool mResolveControlToruqe;
     Json::Value mFrameByFrameConfig;
     bool mOutputControlDiff;
-
+    bool mEnableSyncTrajPeriodly;
+    int mSyncTrajPeriod;
     cRobotModelDynamics *mModel;
     btGeneralizeWorld *mWorld;
     btGenFeatureArray *mFeatureVector;
@@ -81,6 +82,7 @@ protected:
         mE;       // convert matrices, please check the Note for more details
     tVectorXd mf; // convert vector, please check the Note for more details
     tVectorXd mTargetAccel, mTargetVel, mTargetPos, mTargetTau;
+
     // ----------------------- methods
     void ReadConfig(const std::string &config);
     void ResolveActiveForce();

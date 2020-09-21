@@ -28,6 +28,8 @@ btGenContactAwareAdviser::btGenContactAwareAdviser(btGeneralizeWorld *world)
     // mFBFPosCoef = 0.5;
     // mFBFVelCoef = 1;
     // mFBFAccelCoef = 1;
+    mEnableSyncTrajPeriodly = false;
+    mSyncTrajPeriod = 100;
 
     mModel = nullptr;
     mWorld = world;
@@ -323,6 +325,9 @@ void btGenContactAwareAdviser::ReadConfig(const std::string &config)
     mOutputTraj = nullptr;
     mFeatureVectorFile = btJsonUtil::ParseAsString("feature_vector_file", root);
     mOutputControlDiff = btJsonUtil::ParseAsBool("output_diff", root);
+    mEnableSyncTrajPeriodly =
+        btJsonUtil::ParseAsBool("enable_sync_traj_periodly", root);
+    mSyncTrajPeriod = btJsonUtil::ParseAsInt("sync_traj_period", root);
 
     mFrameByFrameConfig = btJsonUtil::ParseAsValue("ctrl_config", root);
     // mFBFPosCoef =
@@ -391,6 +396,19 @@ void btGenContactAwareAdviser::UpdateMultibodyVelocityAndTransformDebug(
     }
 
     mModel->UpdateVelocityAndTransform(dt);
+
+    std::cout << "mEnable sync traj per = " << mEnableSyncTrajPeriodly
+              << ", internal frame id " << mInternalFrameId
+              << ", sync period = " << mSyncTrajPeriod << std::endl;
+    if (mEnableSyncTrajPeriodly == true &&
+        mInternalFrameId % mSyncTrajPeriod == 0)
+    {
+        std::cout << "[sync] internal frame " << mInternalFrameId
+                  << ", sync traj period " << mSyncTrajPeriod << std::endl;
+
+        mModel->SetqAndqdot(mRefTraj->mq[mInternalFrameId],
+                            mRefTraj->mqdot[mInternalFrameId]);
+    }
 }
 
 tVectorXd btGenContactAwareAdviser::CalcLCPResidual(double dt) const

@@ -300,11 +300,11 @@ void btGenFrameByFrameOptimizer::CalcContactStatus()
             // pt->mStatus = eContactStatus::STATIC;
             auto link = mModel->GetLinkById(pt->mCollider->mLinkId);
 
-            std::cout << "[FBF] contact " << id << " on link "
-                      << link->GetName()
-                      << " cartesian vel in ref traj = " << vel.transpose()
-                      << " status " << gContactStatusStr[pt->mStatus]
-                      << std::endl;
+            // std::cout << "[FBF] contact " << id << " on link "
+            //           << link->GetName()
+            //           << " cartesian vel in ref traj = " << vel.transpose()
+            //           << " status " << gContactStatusStr[pt->mStatus]
+            //           << std::endl;
             // std::cout << "contact " << id << " gen vel = " <<
             // contact_vel_cur_ref[id].transpose() << std::endl;
             // 3. calculate convert mat
