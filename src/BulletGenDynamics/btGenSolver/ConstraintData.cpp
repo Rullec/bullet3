@@ -42,7 +42,7 @@ void btGenContactPointData::Init(double dt_, btPersistentManifold *manifold,
     if (mBodyA == nullptr || mBodyB == nullptr)
     {
         std::cout << "illegal body type!\n";
-        exit(1);
+        exit(0);
     }
 
     const auto &pt = manifold->getContactPoint(contact_id_in_manifold);
@@ -164,7 +164,7 @@ tMatrixXd btGenContactPointData::GetConvertMatS(int world_col_id)
         std::cout << "get S for world id " << world_col_id
                   << " but here are only " << mBodyId0 << " and " << mBodyId1
                   << std::endl;
-        exit(1);
+        exit(0);
     }
 }
 
@@ -297,7 +297,7 @@ void btGenCollisionObjData::Setup(int n_total_contact, int n_total_joint_limits)
         break;
     default:
         std::cout << "wrong type\n";
-        exit(1);
+        exit(0);
     }
 
     // std::ofstream fout(gOutputLogPath, std::ios::app);
@@ -806,7 +806,7 @@ tVectorXd btGenCollisionObjData::CalcRobotColliderResidual(double dt) const
     {
         std::cout << "[error] CalcRobotColliderResidual: can only be used for "
                      "robot collider, exit\n";
-        exit(1);
+        exit(0);
     }
     else
     {
@@ -815,7 +815,7 @@ tVectorXd btGenCollisionObjData::CalcRobotColliderResidual(double dt) const
         if (model == nullptr)
             std::cout
                 << "[error] CalcRobotColliderResidual: model is empty, exit",
-                exit(1);
+                exit(0);
         int n_dof = model->GetNumOfFreedom();
         const tMatrixXd I = tMatrixXd::Identity(n_dof, n_dof);
 
@@ -837,7 +837,7 @@ tVectorXd btGenCollisionObjData::CalcRobotColliderResidual(double dt) const
             if (damping_mat.norm() > 0)
                 std::cout << "[error] contact aware control didn't support "
                              "damping cuz the absence of formulas\n",
-                    exit(1);
+                    exit(0);
             residual = adviser->CalcLCPResidual(dt);
         }
     }
@@ -852,7 +852,7 @@ btGenCollisionObjData::CalcRobotColliderJacPartBPrefix(double dt) const
     {
         std::cout << "[error] CalcRobotColliderJacPartB: can only be used for "
                      "robot collider, exit\n";
-        exit(1);
+        exit(0);
     }
     else
     {
@@ -861,7 +861,7 @@ btGenCollisionObjData::CalcRobotColliderJacPartBPrefix(double dt) const
         if (model == nullptr)
             std::cout
                 << "[error] CalcRobotColliderJacPartB: model is empty, exit",
-                exit(1);
+                exit(0);
         int n_dof = model->GetNumOfFreedom();
         const tMatrixXd I = tMatrixXd::Identity(n_dof, n_dof);
 

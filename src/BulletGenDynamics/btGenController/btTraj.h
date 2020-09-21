@@ -11,6 +11,7 @@ struct btTraj
                   int max_frame = -1);
     bool SaveTraj(const std::string &path, cRobotModelDynamics *model);
     void Reshape(int num_of_frame_new);
+    double GetTimeLength() const;
     int mNumOfFrames;
     tEigenArr<tVectorXd> mq, mqdot, mqddot;
     tEigenArr<tVectorXd> mActiveForce;

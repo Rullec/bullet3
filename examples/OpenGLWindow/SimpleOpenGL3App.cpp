@@ -384,9 +384,9 @@ SimpleOpenGL3App::SimpleOpenGL3App(const char* title, int width, int height, boo
 
 #ifndef B3_USE_GLFW
 	if (glewInit() != GLEW_OK)
-		exit(1);            // or handle the error in a nicer way
+		exit(0);            // or handle the error in a nicer way
 	if (!GLEW_VERSION_2_1)  // check that the machine supports the 2.1 API.
-		exit(1);            // or handle the error in a nicer way
+		exit(0);            // or handle the error in a nicer way
 #endif                      //B3_USE_GLFW
 #endif                      //__APPLE__
 #endif                      //USE_GLEW

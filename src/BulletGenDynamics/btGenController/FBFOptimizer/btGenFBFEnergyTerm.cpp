@@ -15,7 +15,7 @@ btGenFrameByFrameEnergyTerm::btGenFrameByFrameEnergyTerm(
 int btGenFrameByFrameEnergyTerm::GetNumOfEnergy() const
 {
     std::cout << "unsupported API GetNumOfEnergy\n";
-    exit(1);
+    exit(0);
     return 0;
 }
 void btGenFrameByFrameEnergyTerm::AddEnergy(const tMatrixXd &Jacobian,

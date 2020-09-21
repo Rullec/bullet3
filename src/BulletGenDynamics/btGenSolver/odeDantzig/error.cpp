@@ -69,7 +69,7 @@ extern "C" void dError(int num, const char *msg, ...)
         error_function(num, msg, ap);
     else
         printMessage(num, "ODE Error", msg, ap);
-    exit(1);
+    exit(0);
 }
 
 extern "C" void dDebug(int num, const char *msg, ...)
@@ -123,7 +123,7 @@ extern "C" void dError(int num, const char *msg, ...)
         s[sizeof(s) - 1] = 0;
         MessageBox(0, s, title, MB_OK | MB_ICONWARNING);
     }
-    exit(1);
+    exit(0);
 }
 
 extern "C" void dDebug(int num, const char *msg, ...)

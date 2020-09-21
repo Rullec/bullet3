@@ -177,7 +177,7 @@ void ConstraintMBDemo::stepSimulation(float deltaTime)
 		mRecord.LinearMomentumPre = mMultibody->CalcLinearMomentum();
 		mRecord.AngMomentumPre = mMultibody->CalcAngMomentum();
 		mRecord.TotalExtForce = mMultibody->GetTotalMass() * m_dynamicsWorld->getGravity();
-		// exit(1);
+		// exit(0);
 		m_dynamicsWorld->stepSimulation(deltaTime, 0, deltaTime);
 		mRecord.AngMomentumPost = mMultibody->CalcAngMomentum();
 		mRecord.LinearMomentumPost = mMultibody->CalcLinearMomentum();

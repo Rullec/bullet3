@@ -194,11 +194,11 @@ void btGenContactSolver::TestCartesianForceToCartesianVel()
     }
     if (err)
     {
-        exit(1);
+        exit(0);
     }
     // std::cout << "test abs vel succ\n";
-    // exit(12);
-    // if (constraint_length > 3) exit(1);
+    // exit(02);
+    // if (constraint_length > 3) exit(0);
     PopState("TestCartesianForceToCartesianVel");
 }
 
@@ -275,7 +275,7 @@ void btGenContactSolver::TestCartesianForceToCartesianRelVel(
                 err = false;
             }
             if (err)
-                exit(1);
+                exit(0);
         }
     }
 
@@ -308,7 +308,7 @@ void btGenContactSolver::TestCartesianForceToCartesianRelVel(
             }
         }
         if (err)
-            exit(1);
+            exit(0);
     }
     PopState("TestCartesianForceToCartesianRelVel");
 }
@@ -412,7 +412,7 @@ void btGenContactSolver::TestCartesianForceToNormalAndTangetRelVel(
                 IsMultibodyAndVelMax(data->mBodyB))
                 err = false;
             else
-                exit(1);
+                exit(0);
         }
     }
 
@@ -444,7 +444,7 @@ void btGenContactSolver::TestCartesianForceToNormalAndTangetRelVel(
             if (data->multibody->IsGeneralizedMaxVel())
                 err = false;
             else
-                exit(1);
+                exit(0);
         }
     }
 
@@ -600,7 +600,7 @@ void btGenContactSolver::TestCartesianForceToNormalAndTangetResultBasedRelVel(
                       << rel_vel_tangent_pred.transpose() << std::endl;
         }
         if (err)
-            exit(1);
+            exit(0);
     }
 
     // get the true generalized velocity
@@ -627,7 +627,7 @@ void btGenContactSolver::TestCartesianForceToNormalAndTangetResultBasedRelVel(
             }
         }
         if (err)
-            exit(1);
+            exit(0);
     }
 
     // exit(0);

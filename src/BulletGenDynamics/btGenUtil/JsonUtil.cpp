@@ -128,7 +128,7 @@ bool btJsonUtil::WriteJson(const std::string &path, Json::Value &value,
     if (fout.fail() == true)
     {
         std::cout << "WriteJson open " << path << " failed\n";
-        exit(1);
+        exit(0);
     }
     writer->write(value, &fout);
     fout.close();

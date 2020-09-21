@@ -56,6 +56,7 @@ SET(
 	BulletGenPDControler_SRCS
 	./btGenController/btGenContactAwareAdviser.cpp
 	./btGenController/btGenFeature.cpp
+	./btGenController/btGenFeatureUtils.cpp
 	./btGenController/btGenPDController.cpp
 	./btGenController/FBFOptimizer/btGenFBFConstraint.cpp
 	./btGenController/FBFOptimizer/btGenFBFEnergyTerm.cpp

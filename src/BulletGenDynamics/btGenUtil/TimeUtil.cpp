@@ -17,7 +17,7 @@ void btTimeUtil::End(const std::string &name)
     {
         std::cout << "[error] btTimeUtil::End No static info about " << name
                   << std::endl;
-        exit(1);
+        exit(0);
     }
 
     std::cout << "[log] " << name << " cost time = "
@@ -46,7 +46,7 @@ void btTimeUtil::EndLazy(const std::string &name)
     {
         std::cout << "[error] btTimeUtil::End No static info about " << name
                   << std::endl;
-        exit(1);
+        exit(0);
     }
 
     mLazyTimeTable[name] +=

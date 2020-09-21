@@ -13,7 +13,7 @@ const std::string gContactStatusStr[] = {"INVALID_CONTACT_STATUS", "SLIDING",
                                          "STATIC", "BREAKAGE"};
 
 eContactStatus JudgeContactStatus(const tVector &vel,
-                                  double breakage_threshold = 1e-3,
+                                  double breakage_threshold = 2e-3,
                                   double sliding_threshold = 5e-3)
 {
     double vel_n = vel[1];
@@ -55,7 +55,7 @@ public:
         {
             std::cout << "[error] CalcContactStatus cannot handle self "
                          "collsion at this moment\n";
-            exit(1);
+            // exit(0);
         }
     }
     bool IsMultibodyInvolved(cRobotModelDynamics *model)
@@ -105,9 +105,7 @@ public:
     eContactStatus mStatus;
 };
 
-typedef btGenFrameByFrameOptimizer Optimizer;
-
-Optimizer::btGenFrameByFrameOptimizer()
+btGenFrameByFrameOptimizer::btGenFrameByFrameOptimizer()
 {
     mCurFrameId = -1;
     mModel = nullptr;
@@ -134,22 +132,35 @@ Optimizer::btGenFrameByFrameOptimizer()
 
     num_of_freedom = 0;
     num_of_underactuated_freedom = 0;
+    mEnableFixStaticContactPoint = false;
 }
 
-Optimizer::~btGenFrameByFrameOptimizer()
+btGenFrameByFrameOptimizer::~btGenFrameByFrameOptimizer()
 {
     if (mConstraint)
         delete mConstraint;
     if (mQPSolver)
         delete mQPSolver;
 }
-void Optimizer::Init(const Json::Value &conf, btTraj *ref_traj,
-                     btGeneralizeWorld *world)
+// void btGenFrameByFrameOptimizer::Init(const Json::Value &conf, btTraj
+// *ref_traj,
+//                      btGeneralizeWorld *world)
+void btGenFrameByFrameOptimizer::Init(btGeneralizeWorld *world,
+                                      const Json::Value &conf)
 {
-    mTraj = ref_traj;
     mWorld = world;
-    mModel = world->GetMultibody();
-    ParseConfig(conf);
+    mModel = mWorld->GetMultibody();
+
+    mDynamicPosEnergyCoeff =
+        btJsonUtil::ParseAsDouble("dynamic_pos_energy_coef", conf);
+    mDynamicVelEnergyCoeff =
+        btJsonUtil::ParseAsDouble("dynamic_vel_energy_coef", conf);
+    mDynamicAccelEnergyCoeff =
+        btJsonUtil::ParseAsDouble("dynamic_accel_energy_coef", conf);
+    mEnableFixStaticContactPoint =
+        btJsonUtil::ParseAsBool("fix_the_static_contact_point", conf);
+
+    // ParseConfig(conf);
     InitModelInfo();
     InitQPSolver();
 }
@@ -158,42 +169,52 @@ void Optimizer::Init(const Json::Value &conf, btTraj *ref_traj,
  * \brief                   Calculate the reference qddot and the reference tau
  * by frame-by-frame control
  */
-void Optimizer::CalcTarget(double dt, int target_frame_id,
-                           tVectorXd &tilde_qddot, tVectorXd &tilde_tau)
+void btGenFrameByFrameOptimizer::CalcTarget(double dt, int target_frame_id,
+                                            tVectorXd &tilde_qddot,
+                                            tVectorXd &tilde_qdot,
+                                            tVectorXd &tilde_q,
+                                            tVectorXd &tilde_tau)
 {
+    if (mTraj == nullptr)
+    {
+        std::cout
+            << "[error] the traj hasn't been set in the FBFOptimizer, exit";
+        exit(0);
+    }
     mCurFrameId = target_frame_id;
     mdt = dt;
 
-    if (mUseNativeRefTarget == true)
-    {
-        std::cout << "[warn] use native ref target in FBF optimizer\n";
-        tilde_qddot = mTraj->mqddot[mCurFrameId];
-        tilde_tau = mTraj->mActiveForce[mCurFrameId].segment(
-            6, num_of_underactuated_freedom);
-    }
-    else
-    {
-        // 1. judge the contact status
-        CalcContactStatus();
+    // if (mUseNativeRefTarget == true)
+    // {
+    //     std::cout << "[warn] use native ref target in FBF optimizer\n";
+    //     tilde_qddot = mTraj->mqddot[mCurFrameId];
+    //     tilde_tau = mTraj->mActiveForce[mCurFrameId].segment(
+    //         6, num_of_underactuated_freedom);
+    // }
+    // else
+    // {
+    // }
 
-        // 2. construct the optimization problem: energy terms + hard
-        // constraints for
-        CalcSolutionVector();
-        CalcEnergyTerms();
-        CalcConstraints();
+    // 1. judge the contact status
+    CalcContactStatus();
 
-        // 3. solve this problem and get the ref contact force, ref control
-        // force calculate the generalized coordinate accel qddot, and calculate
-        // the ref tau
-        Solve(tilde_qddot, tilde_tau);
-    }
+    // 2. construct the optimization problem: energy terms + hard
+    // constraints for
+    CalcSolutionVector();
+    CalcEnergyTerms();
+    CalcConstraints();
+
+    // 3. solve this problem and get the ref contact force, ref control
+    // force calculate the generalized coordinate accel qddot, and calculate
+    // the ref tau
+    Solve(tilde_qddot, tilde_qdot, tilde_q, tilde_tau);
 }
 
 /**
  * \brief                   Get the contact points, determine the contact
  * constraint
  */
-void Optimizer::CalcContactStatus()
+void btGenFrameByFrameOptimizer::CalcContactStatus()
 {
     ClearContactPoints();
     // 1. get contact points & link id, calc point positions in local frame
@@ -210,7 +231,8 @@ void Optimizer::CalcContactStatus()
             data->Init(0, mani, i);
 
             // judge whether it belongs to the multibody
-            if (data->IsMultibodyInvolved(mModel) == true)
+            if (data->IsMultibodyInvolved(mModel) == true &&
+                data->mIsSelfCollision == false)
             {
                 data->CalcCharacterInfo();
                 mContactPoints.push_back(data);
@@ -276,9 +298,13 @@ void Optimizer::CalcContactStatus()
             // 2. judge contact status
             pt->mStatus = JudgeContactStatus(vel);
             // pt->mStatus = eContactStatus::STATIC;
+            auto link = mModel->GetLinkById(pt->mCollider->mLinkId);
 
-            // std::cout << "contact " << id << " car vel = " << vel.transpose()
-            // << " status " << gContactStatusStr[pt->mStatus] << std::endl;
+            std::cout << "[FBF] contact " << id << " on link "
+                      << link->GetName()
+                      << " cartesian vel in ref traj = " << vel.transpose()
+                      << " status " << gContactStatusStr[pt->mStatus]
+                      << std::endl;
             // std::cout << "contact " << id << " gen vel = " <<
             // contact_vel_cur_ref[id].transpose() << std::endl;
             // 3. calculate convert mat
@@ -293,8 +319,12 @@ void Optimizer::CalcContactStatus()
 /**
  * \brief                   Calculate the reference qddot and control forces
  */
-void Optimizer::Solve(tVectorXd &tilde_qddot, tVectorXd &tilde_tau)
+void btGenFrameByFrameOptimizer::Solve(tVectorXd &tilde_qddot,
+                                       tVectorXd &tilde_qdot,
+                                       tVectorXd &tilde_q, tVectorXd &tilde_tau)
 {
+    // std::cout << "q, qdot solve hasn't been supported\n";
+    // exit(1);
     // 1. solve the QP problem
     // std::cout << "[debug] begin to solve the QP problem\n";
     mEnergyTerm->GetEnergyTerm(A, b);
@@ -319,7 +349,7 @@ void Optimizer::Solve(tVectorXd &tilde_qddot, tVectorXd &tilde_tau)
     // 	std::cout << "Aieq = \n"
     // 			  << Aineq << std::endl;
     // 	std::cout << "bieq = " << bineq.transpose() << std::endl;
-    // 	// exit(1);
+    // 	// exit(0);
     // }
     mQPSolver->Solve(mTotalSolutionSize, H, f, Aeq, beq, Aineq, bineq, 100,
                      solution);
@@ -327,20 +357,32 @@ void Optimizer::Solve(tVectorXd &tilde_qddot, tVectorXd &tilde_tau)
                     f.dot(solution) + b.dot(b);
     // std::cout << "[qp] energy = " << energy << std::endl;
 
-    CalcTargetInternal(solution, tilde_qddot, tilde_tau);
-    tVectorXd ref_tau = mTraj->mActiveForce[mCurFrameId].segment(
-        6, num_of_underactuated_freedom);
+    CalcTargetInternal(solution, tilde_qddot, tilde_qdot, tilde_q, tilde_tau);
+    // tVectorXd ref_tau = mTraj->mActiveForce[mCurFrameId].segment(
+    //     6, num_of_underactuated_freedom);
     // std::cout << "[solved] tau = " << tilde_tau.transpose() << std::endl;
     // std::cout << "[ref] tau = " << ref_tau.transpose() << std::endl;
 }
 
-void Optimizer::CalcTargetInternal(const tVectorXd &solution, tVectorXd &qddot,
-                                   tVectorXd &tau)
+/**
+ * \brief               Given the solution(solved contact forces + solved
+ * control forces), calculate:
+ * \param qddot         1. the gen accel of robot model at this moment (target)
+ * \param qdot          2. the gen vel of model in next frame (target)
+ * \param q             3. the gen pos of model in next frame (target)
+ * \param tau           4. and the control force (tau) according to the dynamics
+ * equation
+ */
+void btGenFrameByFrameOptimizer::CalcTargetInternal(const tVectorXd &solution,
+                                                    tVectorXd &qddot,
+                                                    tVectorXd &qdot,
+                                                    tVectorXd &q,
+                                                    tVectorXd &tau)
 {
     if (solution.size() != mTotalSolutionSize)
     {
         std::cout << "[error] solution size doesn't match\n";
-        exit(1);
+        exit(0);
     }
     tVectorXd contact_force = solution.segment(0, mContactSolutionSize);
     tVectorXd control_force =
@@ -375,67 +417,73 @@ void Optimizer::CalcTargetInternal(const tVectorXd &solution, tVectorXd &qddot,
     qddot = mModel->GetInvMassMatrix() * RHS;
     tau = control_force;
 
+    // 3. calculate the target vel and pos
+    qdot = mModel->Getqdot() + qddot * mdt;
+    q = mModel->Getq() + qdot * mdt;
+
+    // calculate the static contact point vel
     {
-        tVectorXd ref_qddot = mTraj->mqddot[mCurFrameId];
-        tVectorXd ref_qdot = mTraj->mqdot[mCurFrameId + 1];
-        tVectorXd ref_q = mTraj->mqdot[mCurFrameId + 1];
-        tVectorXd qdot_cur = mModel->Getqdot();
-        tVectorXd q_cur = mModel->Getq();
-        tVectorXd qddot_diff = ref_qddot - qddot;
-        tVectorXd qdot_diff = qdot_cur + qddot * mdt - ref_qdot;
-        tVectorXd q_diff = mdt * (qdot_cur + qddot * mdt) + q_cur - ref_q;
-        // std::cout << "[FBF] qddot diff = " << qddot_diff.norm() << ", qdot
-        // diff = " << qdot_diff.norm() << ", q diff = " << q_diff.norm() <<
-        // std::endl;
+        for (auto &pt : mContactPoints)
+        {
+            if (pt->mStatus == eContactStatus::STATIC)
+            {
+                tVector3d vel = pt->mJac * qdot;
+                std::cout << "[vel] static contact point " << pt->contact_id
+                          << " vel = " << vel.transpose() << std::endl;
+            }
+        }
     }
 }
 
-void Optimizer::ParseConfig(const Json::Value &conf)
+void btGenFrameByFrameOptimizer::ParseConfig(const Json::Value &conf)
 {
-    mEnableHardConstraintForDynamics =
-        btJsonUtil::ParseAsBool("enable_hard_dynamic_constraint", conf);
-    mUseNativeRefTarget =
-        btJsonUtil::ParseAsBool("use_native_reference_target", conf);
-    mDynamicPosEnergyCoeff =
-        btJsonUtil::ParseAsDouble("dynamic_pos_energy_coef", conf);
-    mDynamicVelEnergyCoeff =
-        btJsonUtil::ParseAsDouble("dynamic_vel_energy_coef", conf);
-    mDynamicAccelEnergyCoeff =
-        btJsonUtil::ParseAsDouble("dynamic_accel_energy_coef", conf);
+    // mEnableHardConstraintForDynamics =
+    //     btJsonUtil::ParseAsBool("enable_hard_dynamic_constraint", conf);
+    // mUseNativeRefTarget =
+    //     btJsonUtil::ParseAsBool("use_native_reference_target", conf);
+    // mDynamicPosEnergyCoeff =
+    //     btJsonUtil::ParseAsDouble("dynamic_pos_energy_coef", conf);
+    // mDynamicVelEnergyCoeff =
+    //     btJsonUtil::ParseAsDouble("dynamic_vel_energy_coef", conf);
+    // mDynamicAccelEnergyCoeff =
+    //     btJsonUtil::ParseAsDouble("dynamic_accel_energy_coef", conf);
 }
-void Optimizer::InitModelInfo()
+void btGenFrameByFrameOptimizer::InitModelInfo()
 {
     num_of_freedom = mModel->GetNumOfFreedom();
     num_of_underactuated_freedom = num_of_freedom - 6;
 }
 /**
- * \brief					Constrcut the Frame by frame optimization
- * problem
+ * \brief					Constrcut the Frame by frame
+ * optimization problem
  */
-void Optimizer::InitQPSolver()
+void btGenFrameByFrameOptimizer::InitQPSolver()
 {
     mQPSolver = new QuadProgQPSolver();
     // std::cout << "init qp solve done\n";
-    // exit(1);
+    // exit(0);
 }
 
 /**
- * \brief					Construct the energy terms
- * 			Energy terms:
+ * \brief					Construct the energy terms in
+ * this opt problem
+ *
+ *  Energy terms:
  * 	1. dynamics terms
  *  2. min control force
  *  3. min contact forces norm
  */
-void Optimizer::CalcEnergyTerms()
+void btGenFrameByFrameOptimizer::CalcEnergyTerms()
 {
     if (mEnergyTerm != nullptr)
         delete mEnergyTerm;
     mEnergyTerm = new btGenFrameByFrameEnergyTerm(mTotalSolutionSize);
 
-    if (mEnableHardConstraintForDynamics == false)
-    {
-        AddDynamicEnergyTerm();
-    }
+    // if (mEnableHardConstraintForDynamics == false)
+    // {
+
+    // }
+    AddDynamicEnergyTerm();
     AddMinTauEnergyTerm();
     AddMinContactForceEnergyTerm();
 }
@@ -443,14 +491,14 @@ void Optimizer::CalcEnergyTerms()
 /**
  * \brief					Construct the constraints
  */
-void Optimizer::CalcConstraints()
+void btGenFrameByFrameOptimizer::CalcConstraints()
 {
     if (nullptr != mConstraint)
         delete mConstraint;
     mConstraint = new btGenFrameByFrameConstraint(mTotalSolutionSize);
 
-    if (mEnableHardConstraintForDynamics == true)
-        AddDynamicConstraint();
+    // if (mEnableHardConstraintForDynamics == true)
+    // AddDynamicConstraint();
     // for (int i = 0; i < mContactPoints.size(); i++)
     for (auto &pt : mContactPoints)
     {
@@ -469,13 +517,25 @@ void Optimizer::CalcConstraints()
             std::cout << "[error] illegal contact status " << pt->mStatus
                       << std::endl;
 
-            exit(1);
+            exit(0);
             break;
         }
     }
+
+    // add hard constraint for static contact point
+
+    // maybe we still needs to add constraint on the contact position.
+    // do we need to fix the contact point at somewhere when it is judge static?
+
+    if (mEnableFixStaticContactPoint == true)
+    {
+        AddFixStaticContactPointConstraint();
+        // std::cout << "fix static contact point is enabled\n";
+        // exit(1);
+    }
 }
 
-void Optimizer::ClearContactPoints()
+void btGenFrameByFrameOptimizer::ClearContactPoints()
 {
     for (auto &data : mContactPoints)
         delete data;
@@ -485,12 +545,12 @@ void Optimizer::ClearContactPoints()
 }
 
 /**
- * \brief				Calculate solution size, the offset w.r.t each
- * contact point
+ * \brief				Calculate solution size, the offset
+ * w.r.t each contact point
  *
  * 		solution vector = [contact_foce_vector, active_ctrl_force]
  */
-void Optimizer::CalcSolutionVector()
+void btGenFrameByFrameOptimizer::CalcSolutionVector()
 {
     mContactSolutionSize = 0;
     mCtrlSolutionSize = 0;
@@ -517,14 +577,14 @@ void Optimizer::CalcSolutionVector()
     mCtrlSolutionSize += num_of_underactuated_freedom;
 
     mTotalSolutionSize = mCtrlSolutionSize + mContactSolutionSize;
-    std::cout << "[debug] contact num " << num_of_contacts
-              << ", total solution size " << mTotalSolutionSize << std::endl;
+    // std::cout << "[debug] contact num " << num_of_contacts
+    //           << ", total solution size " << mTotalSolutionSize << std::endl;
 }
 
 /**
  * \brief				Add sliding contact point constraint
  */
-void Optimizer::AddSlidingConstraint(btCharContactPt *pt)
+void btGenFrameByFrameOptimizer::AddSlidingConstraint(btCharContactPt *pt)
 {
     int contact_id = pt->contact_id;
     int offset = mContactSolOffset[contact_id];
@@ -544,8 +604,13 @@ void Optimizer::AddSlidingConstraint(btCharContactPt *pt)
     }
 }
 
-void Optimizer::AddStaticConstraint(btCharContactPt *pt)
+/**
+ * \brief               Given one contact point info, add the "static" contact
+ * constraint into the opt problem
+ */
+void btGenFrameByFrameOptimizer::AddStaticConstraint(btCharContactPt *pt)
 {
+    // add static constraint on the contact force
     int static_size = mContactSolSize[pt->contact_id];
     int offset = mContactSolOffset[pt->contact_id];
     tMatrixXd jac = tMatrixXd::Zero(static_size + 1, static_size);
@@ -558,7 +623,11 @@ void Optimizer::AddStaticConstraint(btCharContactPt *pt)
     mConstraint->AddIneqCon(jac, residual, offset);
 }
 
-void Optimizer::AddBreakageConstraint(btCharContactPt *pt)
+/**
+ * \brief               Given one contact point info, add the "breakage" contact
+ * constraint into the opt problem
+ */
+void btGenFrameByFrameOptimizer::AddBreakageConstraint(btCharContactPt *pt)
 {
     int offset = mContactSolOffset[pt->contact_id];
     tMatrixXd jac = tMatrix3d::Identity();
@@ -566,17 +635,21 @@ void Optimizer::AddBreakageConstraint(btCharContactPt *pt)
 }
 
 /**
- * \brief				Close to Origin energy term in this frame by frame
- * control
+ * \brief				Close to Origin energy term in this
+ * frame by frame control q, qdot, qddot
  */
-void Optimizer::AddDynamicEnergyTerm()
+void btGenFrameByFrameOptimizer::AddDynamicEnergyTerm()
 {
     AddDynamicEnergyTermPos();
     AddDynamicEnergyTermVel();
     AddDynamicEnergyTermAccel();
 }
 
-void Optimizer::AddDynamicConstraint()
+/**
+ * \brief               Add the hard constraint of lagragian equation in order
+ * to keep the physical-feasible property
+ */
+void btGenFrameByFrameOptimizer::AddDynamicConstraint()
 {
     // int num_of_freedom = mModel->GetNumOfFreedom();
     // int num_of_underactuated_freedom = num_of_freedom - 6;
@@ -615,7 +688,7 @@ void Optimizer::AddDynamicConstraint()
         .noalias() = A2;
     mConstraint->AddEquivalentEqCon(A, b, 0, 1e-12);
 }
-void Optimizer::AddMinTauEnergyTerm()
+void btGenFrameByFrameOptimizer::AddMinTauEnergyTerm()
 {
     // int num_of_underactuated_freedom = mModel->GetNumOfFreedom() - 6;
     tMatrixXd A = tMatrixXd::Identity(num_of_underactuated_freedom,
@@ -624,7 +697,10 @@ void Optimizer::AddMinTauEnergyTerm()
     mEnergyTerm->AddEnergy(A, b, mContactSolutionSize);
 }
 
-void Optimizer::AddMinContactForceEnergyTerm()
+/**
+ * \brief           Minimize the contact force value (in solved contact forces)
+ */
+void btGenFrameByFrameOptimizer::AddMinContactForceEnergyTerm()
 {
     tMatrixXd A =
         tMatrixXd::Identity(mContactSolutionSize, mContactSolutionSize);
@@ -632,6 +708,10 @@ void Optimizer::AddMinContactForceEnergyTerm()
     mEnergyTerm->AddEnergy(A, b, 0);
 }
 
+/**
+ * \brief               Given the num of friction direction, calculate the
+ * friction cone which is perpendicular to the ground plance
+ */
 tMatrixXd CalcFrictionCone(int friction_num)
 {
     assert(friction_num >= 3);
@@ -653,8 +733,12 @@ tMatrixXd CalcFrictionCone(int friction_num)
     return dir_mat;
 }
 
-void Optimizer::CalcContactConvertMat(btCharContactPt *contact,
-                                      tMatrixXd &convert_mat)
+/**
+ * \brief               Given a contact point, calculate the convert matrix from
+ * solution to cartesian force
+ */
+void btGenFrameByFrameOptimizer::CalcContactConvertMat(btCharContactPt *contact,
+                                                       tMatrixXd &convert_mat)
 {
     int size = GetSolutionSizeByContactStatus(contact->mStatus);
     switch (contact->mStatus)
@@ -686,7 +770,11 @@ void Optimizer::CalcContactConvertMat(btCharContactPt *contact,
     }
 }
 
-int Optimizer::GetSolutionSizeByContactStatus(eContactStatus status)
+/**
+ * \brief               Given the contact status, return the solution size
+ */
+int btGenFrameByFrameOptimizer::GetSolutionSizeByContactStatus(
+    eContactStatus status)
 {
     if (status == eContactStatus::SLIDING)
     {
@@ -701,11 +789,16 @@ int Optimizer::GetSolutionSizeByContactStatus(eContactStatus status)
         return mNumOfFrictionDirs + 1;
     }
     std::cout << "[error] Unsupported contact status " << status << std::endl;
-    exit(1);
+    exit(0);
     return 0;
 }
 
-void Optimizer::AddDynamicEnergyTermPos()
+/**
+ * \brief               Add the dynamic energy term which reduce the error of
+ * gen pos w.r.t ref traj in next frame the optimizaiton vec is contact force
+ * and control forces
+ */
+void btGenFrameByFrameOptimizer::AddDynamicEnergyTermPos()
 {
     tMatrixXd A = tMatrixXd::Zero(num_of_freedom, mTotalSolutionSize);
     tVectorXd b = tVectorXd::Zero(num_of_freedom);
@@ -746,7 +839,13 @@ void Optimizer::AddDynamicEnergyTermPos()
     b *= mDynamicPosEnergyCoeff;
     mEnergyTerm->AddEnergy(A, b, 0);
 }
-void Optimizer::AddDynamicEnergyTermVel()
+
+/**
+ * \brief               Add the dynamic energy term which reduce the error of
+ * gen vel w.r.t ref traj in next frame the optimizaiton vec is contact force
+ * and control forces
+ */
+void btGenFrameByFrameOptimizer::AddDynamicEnergyTermVel()
 {
     tMatrixXd A = tMatrixXd::Zero(num_of_freedom, mTotalSolutionSize);
     tVectorXd b = tVectorXd::Zero(num_of_freedom);
@@ -787,7 +886,13 @@ void Optimizer::AddDynamicEnergyTermVel()
     b *= mDynamicVelEnergyCoeff;
     mEnergyTerm->AddEnergy(A, b, 0);
 }
-void Optimizer::AddDynamicEnergyTermAccel()
+
+/**
+ * \brief               Add the dynamic energy term which reduce the error of
+ * accel w.r.t ref traj in next frame the optimizaiton vec is contact force and
+ * control forces
+ */
+void btGenFrameByFrameOptimizer::AddDynamicEnergyTermAccel()
 {
     tMatrixXd A = tMatrixXd::Zero(num_of_freedom, mTotalSolutionSize);
     tVectorXd b = tVectorXd::Zero(num_of_freedom);
@@ -825,4 +930,77 @@ void Optimizer::AddDynamicEnergyTermAccel()
     A *= mDynamicAccelEnergyCoeff;
     b *= mDynamicAccelEnergyCoeff;
     mEnergyTerm->AddEnergy(A, b, 0);
+}
+
+/**
+ * \brief               If the optimizer's guide trajectory has finished, we
+ * need to reset it and give another traj
+ */
+void btGenFrameByFrameOptimizer::Reset()
+{
+    // std::cout << "FBF optimizer reset\n";
+}
+
+void btGenFrameByFrameOptimizer::SetTraj(btTraj *traj) { this->mTraj = traj; }
+
+/**
+ * \brief               Fix all static contact (add hard constraint)
+ *
+ * for contact point c, then the constraint jacobian A and residual b is defined
+ * as:
+ *
+ *  A * f_total + b = 0, f_total \in R^K
+ *
+ * For i th static contact point:
+ *  J_assemble = [Jv_0^T * K_0; Jv_1^T * K_1; \dots; Jv_c^T  * K_c; N]
+ *  A_base = (dt * Minv * J_assemble)
+ *  b_base = (dt * Minv * (Q_gravity - C * qdot) + qdot)
+ *  A = Jv_i * A_base
+ *  b = Jv_i * b_base
+ *
+ *  solution vector = [contact_foce_vector, active_ctrl_force]
+ */
+void btGenFrameByFrameOptimizer::AddFixStaticContactPointConstraint()
+{
+    // 1. calculate the assemble Jacobian
+    tMatrixXd J_assemble = tMatrixXd::Zero(num_of_freedom, mTotalSolutionSize);
+    for (auto &pt : mContactPoints)
+    {
+        int id = pt->contact_id;
+        int offset = mContactSolOffset[id];
+        int sol_size = GetSolutionSizeByContactStatus(pt->mStatus);
+        J_assemble.block(0, offset, num_of_freedom, sol_size) =
+            pt->mJac.transpose() * pt->mS;
+    }
+    tMatrixXd N = tMatrixXd::Zero(num_of_freedom, num_of_underactuated_freedom);
+    N.block(6, 0, num_of_underactuated_freedom, num_of_underactuated_freedom)
+        .setIdentity();
+    J_assemble.block(0, mContactSolutionSize, num_of_freedom,
+                     mCtrlSolutionSize) = N;
+
+    // 2. calculate the A base and b base
+    const tMatrixXd &Minv = mModel->GetInvMassMatrix();
+    tMatrixXd A_base = mdt * Minv * J_assemble;
+
+    tVectorXd QG = mModel->CalcGenGravity(mWorld->GetGravity());
+    tVectorXd b_base =
+        (mdt * Minv * (QG - mModel->GetCoriolisMatrix() * mModel->Getqdot()) +
+         mModel->Getqdot());
+
+    // 3. iterate on each contact point, find all static ones, calculate A and
+    // b, then apply these constraints
+    for (auto &pt : mContactPoints)
+    {
+        if (eContactStatus::STATIC == pt->mStatus)
+        {
+
+            int id = pt->contact_id;
+            std::cout << "[FBF] add static hard position constraint for "
+                         "contact point "
+                      << id << ", on link " << pt->mCollider->mLinkId
+                      << std::endl;
+            mConstraint->AddEquivalentEqCon(pt->mJac * A_base,
+                                            pt->mJac * b_base, 0, 1e-12);
+        }
+    }
 }

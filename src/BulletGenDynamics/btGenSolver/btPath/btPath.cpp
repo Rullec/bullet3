@@ -75,7 +75,7 @@ cBulletPathLCPSolver::cBulletPathLCPSolver()
             break;
         }
         std::cout << std::endl;
-        exit(1);
+        exit(0);
     }
     memory = (struct memory *)shmat(shmid, NULL, 0);
 }

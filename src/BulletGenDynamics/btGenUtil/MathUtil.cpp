@@ -191,7 +191,7 @@ tVector btMathUtil::CalcAngularVelocityFromAxisAngle(const tQuaternion &old_rot,
 {
     std::cout << "cMathUtil::CalcAngularVelocityFromAxisAngle: this func "
                  "hasn't been well-tested, call another one\n";
-    exit(1);
+    exit(0);
     tVector old_aa = btMathUtil::QuaternionToAxisAngle(old_rot),
             new_aa = btMathUtil::QuaternionToAxisAngle(new_rot);
     return (new_aa - old_aa) / timestep;
@@ -228,7 +228,7 @@ tVector btMathUtil::QuaternionToEulerAngles(const tQuaternion &q,
         std::cout << "[error] tVector cMathUtil::QuaternionToEulerAngles "
                      "Unsupported rotation order = "
                   << order;
-        exit(1);
+        exit(0);
     }
     return res;
 }
@@ -298,7 +298,7 @@ tMatrix btMathUtil::EulerAnglesToRotMat(const tVector &euler,
         std::cout << "[error] cMathUtil::EulerAnglesToRotMat(const tVector& "
                      "euler): Unsupported rotation order"
                   << std::endl;
-        exit(1);
+        exit(0);
     }
     return mat;
 }
@@ -333,7 +333,7 @@ tMatrix btMathUtil::EulerAnglesToRotMatDot(const tVector &euler,
         std::cout << "[error] cMathUtil::EulerAnglesToRotMatDot(const tVector& "
                      "euler): Unsupported rotation order"
                   << std::endl;
-        exit(1);
+        exit(0);
     }
     return mat;
 }
@@ -399,7 +399,7 @@ tVector btMathUtil::AngularVelToqdot(const tVector &omega, const tVector &cur_q,
         std::cout
             << "[error] cMathUtil::AngularVelToqdot: Unsupported rotation order"
             << std::endl;
-        exit(1);
+        exit(0);
     }
 }
 
@@ -578,7 +578,7 @@ tMatrixXd btMathUtil::JacobPreconditioner(const tMatrixXd &A)
     {
         std::cout << "cMathUtil::JacobPreconditioner: A is not a square matrix "
                   << A.rows() << " " << A.cols() << std::endl;
-        exit(1);
+        exit(0);
     }
     tVectorXd diagonal = A.diagonal();
     if (diagonal.cwiseAbs().minCoeff() < 1e-10)
@@ -586,7 +586,7 @@ tMatrixXd btMathUtil::JacobPreconditioner(const tMatrixXd &A)
         std::cout
             << "cMathUtil::JacobPreconditioner: diagnoal is nearly zero for "
             << diagonal.transpose() << std::endl;
-        exit(1);
+        exit(0);
     }
 
     return diagonal.cwiseInverse().asDiagonal();

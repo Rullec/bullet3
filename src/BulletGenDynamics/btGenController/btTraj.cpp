@@ -28,7 +28,7 @@ int GetModelPoseSize(cRobotModelDynamics *model)
         default:
             std::cout << "get model pose size unsuporeted joint type " << type
                       << std::endl;
-            exit(1);
+            exit(0);
             break;
         }
     }
@@ -45,7 +45,7 @@ tVectorXd ConvertqToPose(const tVectorXd &q, cRobotModelDynamics *model)
     {
         std::cout << "[error] convert q to pose illegal, size = " << q.size()
                   << " " << model->GetNumOfFreedom() << std::endl;
-        exit(1);
+        exit(0);
     }
     int pose_size = GetModelPoseSize(model);
     tVectorXd pose = tVectorXd::Zero(pose_size);
@@ -102,7 +102,8 @@ tVectorXd ConvertqToPose(const tVectorXd &q, cRobotModelDynamics *model)
 }
 
 /**
- * \brief				Convert char pose to the generalized coordinate
+ * \brief				Convert char pose to the generalized
+ * coordinate
  * q
  */
 tVectorXd ConvertPoseToq(const tVectorXd &pose, cRobotModelDynamics *model)
@@ -122,7 +123,9 @@ tVectorXd ConvertPoseToq(const tVectorXd &pose, cRobotModelDynamics *model)
             pose_dof = 7;
             q_dof = 6;
             if (pose_st + pose_dof > pose.size() || q_dof + q_st > q.size())
-                std::cout << "joint id " << joint_id << ", exit\n", exit(1);
+                std::cout << "[error] ConvertPoseToq failed, joint id "
+                          << joint_id << " cause an illegal dof, exit\n",
+                    exit(0);
             else
             {
                 q.segment(q_st, 3) = pose.segment(pose_st, 3);
@@ -145,7 +148,9 @@ tVectorXd ConvertPoseToq(const tVectorXd &pose, cRobotModelDynamics *model)
             pose_dof = 4;
             q_dof = 3;
             if (pose_st + pose_dof > pose.size() || q_dof + q_st > q.size())
-                std::cout << "joint id " << joint_id << ", exit\n", exit(1);
+                std::cout << "［error] ConvertPoseToq failed, joint id "
+                          << joint_id << " cause an illegal dof, exit\n",
+                    exit(0);
             else
             {
                 tVector w_x_y_z = pose.segment(pose_st, 4);
@@ -162,7 +167,10 @@ tVectorXd ConvertPoseToq(const tVectorXd &pose, cRobotModelDynamics *model)
             pose_dof = 1;
             q_dof = 1;
             if (pose_st + pose_dof > pose.size() || q_dof + q_st > q.size())
-                std::cout << "joint id " << joint_id << ", exit\n", exit(1);
+                std::cout
+                    << "［error] ConvertPoseToq failed, joint id joint id "
+                    << joint_id << " cause an illegal dof, exit\n",
+                    exit(0);
             else
             {
                 q[q_st] = pose[pose_st];
@@ -174,8 +182,10 @@ tVectorXd ConvertPoseToq(const tVectorXd &pose, cRobotModelDynamics *model)
             q_dof = 0;
             break;
         default:
-            std::cout << "joint id " << joint_id << " type "
-                      << cur_joint->GetJointType() << std::endl;
+            std::cout
+                << "［error] ConvertPoseToq failed, joint id joint id joint id "
+                << joint_id << " cause an illegal dof, type "
+                << cur_joint->GetJointType() << std::endl;
             break;
         }
 
@@ -184,7 +194,7 @@ tVectorXd ConvertPoseToq(const tVectorXd &pose, cRobotModelDynamics *model)
     }
     // std::cout << "[conv] q = " << q.transpose() << std::endl;
     // std::cout << "[conv] pose = " << pose.transpose() << std::endl;
-    // exit(1);
+    // exit(0);
     return q;
 }
 
@@ -206,7 +216,7 @@ btTraj::~btTraj()
 bool btTraj::LoadTraj(const std::string &path, cRobotModelDynamics *model,
                       int max_frame /* = -1*/)
 {
-    std::cout << "Load traj v2 " << path << std::endl;
+    std::cout << "[btTraj] Load traj v2 from " << path << std::endl;
     // 1. clear the ref traj
     {
         mq.clear();
@@ -221,7 +231,7 @@ bool btTraj::LoadTraj(const std::string &path, cRobotModelDynamics *model,
     if (2 != btJsonUtil::ParseAsInt("version", root))
     {
         std::cout << "[error] traj version is not 2, exit\n";
-        exit(1);
+        exit(0);
     }
 
     Json::Value data_lst = btJsonUtil::ParseAsValue("list", root);
@@ -269,9 +279,8 @@ bool btTraj::LoadTraj(const std::string &path, cRobotModelDynamics *model,
         {
             auto &cur_contact_value_json = contact_info_value[c_id];
             auto &cur_contact_value = mContactForce[frame_id][c_id];
-            int link_id = btJsonUtil::ParseAsInt("force_link_id",
-                                                 cur_contact_value_json) -
-                          1;
+            int link_id =
+                btJsonUtil::ParseAsInt("force_link_id", cur_contact_value_json);
             tVectorXd pos, force_value;
             btJsonUtil::ReadVectorJson(
                 btJsonUtil::ParseAsValue("force_pos", cur_contact_value_json),
@@ -284,7 +293,7 @@ bool btTraj::LoadTraj(const std::string &path, cRobotModelDynamics *model,
             // if (is_self_collision == true)
             // {
             // 	std::cout << "[error] btGenContactAdviser: self collision hasn't
-            // been supported\n"; 	exit(1);
+            // been supported\n"; 	exit(0);
             // }
             btGenCollisionObject *obj = model->GetLinkCollider(link_id);
             // std::cout << "contact " << c_id << "link id " << link_id << " pos
@@ -310,7 +319,7 @@ bool btTraj::LoadTraj(const std::string &path, cRobotModelDynamics *model,
         // std::cout << "mq = " << mq[frame_id].transpose() << std::endl;
         // std::cout << "mqdot = " << mqdot[frame_id].transpose() << std::endl;
         // std::cout << "mqddot = " << mqddot[frame_id].transpose() <<
-        // std::endl; exit(1);
+        // std::endl; exit(0);
     }
     return true;
 }
@@ -340,7 +349,7 @@ bool btTraj::SaveTraj(const std::string &path, cRobotModelDynamics *model)
             // std::cout << "f collider = " << collider << std::endl;
             // std::cout << "f link id = " << collider->mLinkId << std::endl;
             Json::Value contact_info;
-            contact_info["force_link_id"] = collider->mLinkId + 1;
+            contact_info["force_link_id"] = collider->mLinkId;
             contact_info["force_pos"] =
                 btJsonUtil::BuildVectorJsonValue(f->mWorldPos);
             contact_info["force_value"] =
@@ -386,3 +395,5 @@ void btTraj::Reshape(int num_of_frame_new)
     mActiveForce.resize(num_of_frame_new);
     mContactForce.resize(num_of_frame_new);
 }
+
+double btTraj::GetTimeLength() const { return mTimestep * mNumOfFrames; }

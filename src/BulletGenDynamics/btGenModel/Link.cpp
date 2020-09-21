@@ -233,7 +233,7 @@ void Link::ComputeDJkwdq()
             // 	std::cout << "[debug] g" << i << j << " = " << g.transpose() <<
             // std::endl; 	std::cout << "[debug] mat_g" << i << j << " = \n"
             // 			  << gij.transpose() << std::endl;
-            // 	exit(1);
+            // 	exit(0);
             // }
             // todo fix local freedom id
             // jkw_dq[0].data()[i * global_freedom + dependent_dof_id[j]] =
@@ -252,7 +252,7 @@ void Link::ComputeDJkwdq()
             // 	std::cout << "[debug] g" << j << i << " = " << g.transpose() <<
             // std::endl; 	std::cout << "[debug] mat_g" << j << i << " = \n"
             // 			  << gji.transpose() << std::endl;
-            // 	exit(1);
+            // 	exit(0);
             // }
 
             // jkw_dq[0].data()[dependent_dof_id[j] * global_freedom + i] =
@@ -362,7 +362,7 @@ tVector3d Link::GetLinkOmega() const { return link_omega; }
 double Link::GetLinkMaxLength() const
 {
     std::cout << "link get max length exit\n";
-    exit(1);
+    exit(0);
     return 0;
 }
 
@@ -378,7 +378,7 @@ void Link::SetColGroup(int flag)
     if (col_group != 0 && col_group != 1)
     {
         std::cout << "[error] Invalid link colgroup " << col_group << std::endl;
-        exit(1);
+        exit(0);
     }
 }
 

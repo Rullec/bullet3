@@ -88,7 +88,7 @@ void btGenFrameByFrameConstraint::Validate(const tMatrixXd &jac,
         std::cout
             << "btGenFrameByFrameConstraint::Validate: the size of jacobian %d "
                "!= the size of residual %d\n";
-        exit(1);
+        exit(0);
     }
 
     if (st < 0 || (jac.cols() + st) > mSolutionSize)
@@ -96,7 +96,7 @@ void btGenFrameByFrameConstraint::Validate(const tMatrixXd &jac,
         std::cout << "btGenFrameByFrameConstraint::Validate: constraint start "
                      "pos %d is illegal, "
                      "constraint length %d, solution size %d\n";
-        exit(1);
+        exit(0);
     }
 }
 

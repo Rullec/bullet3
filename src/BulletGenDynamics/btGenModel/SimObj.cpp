@@ -319,7 +319,7 @@ void btGenRigidBody::PushState(const std::string &tag, bool only_vel_and_force)
     {
         std::cout << "[error] cSimRigidBody " << mName << " Stack try to push "
                   << tag << " but it is full\n";
-        exit(1);
+        exit(0);
     }
     tStateRecord *state = new tStateRecord();
 
@@ -348,14 +348,14 @@ void btGenRigidBody::PopState(const std::string &tag, bool only_vel_and_force)
     {
         std::cout << "[error] RigidBody" << mName
                   << " stack is empty when you try to pop " << tag << std::endl;
-        exit(1);
+        exit(0);
     }
     else if (mStateStack.back().first != tag)
     {
         std::cout << "[error] RigidBody " << mName << "stack trying to pop "
                   << mStateStack.back().first << " but the user try to do "
                   << tag << std::endl;
-        exit(1);
+        exit(0);
     }
     auto state = mStateStack.back().second;
     if (state->OnlyVelocityForceRecord != only_vel_and_force)
@@ -364,7 +364,7 @@ void btGenRigidBody::PopState(const std::string &tag, bool only_vel_and_force)
                   << state->OnlyVelocityForceRecord
                   << " but the user try to do " << only_vel_and_force
                   << std::endl;
-        exit(1);
+        exit(0);
     }
 
     mLinVel = state->mLinVel;

@@ -126,7 +126,7 @@ btGenContactSolver::btGenContactSolver(const std::string &config_path,
         }
     }
     if (err)
-        exit(1);
+        exit(0);
 
     contact_force_array.clear();
     map_colobjid_to_groupid.clear();
@@ -263,7 +263,7 @@ void btGenContactSolver::ConstraintFinished()
                 {
                     std::cout
                         << "[error] restore active force model inconsistent\n";
-                    exit(1);
+                    exit(0);
                 }
 
                 // get the jacobian
@@ -280,7 +280,7 @@ void btGenContactSolver::ConstraintFinished()
         // if (contact_torque_array.size())
         // {
         // 	std::cout << "[error] should not have constraint torque joint
-        // limit now\n"; 	exit(1);
+        // limit now\n"; 	exit(0);
         // }
         tVectorXd control_force_underactuated = adviser->CalcControlForce(Q);
         for (int dof = 6; dof < num_of_freedom; dof++)
@@ -301,9 +301,9 @@ void btGenContactSolver::ConstraintFinished()
         // 	std::cout << "contact force exist, exit now for debug
         // purpose\n";
 
-        // 	exit(1);
+        // 	exit(0);
         // }
-        // exit(1);
+        // exit(0);
     }
     // std::cout << "[log] contact force num = " << contact_force_array.size()
     // << std::endl; std::cout << "[log] contact torque num = " <<
@@ -358,7 +358,7 @@ void btGenContactSolver::ConstraintSetup()
         CalcAbsvelConvertMat();
         if (mEnableConvertMatTest)
             TestCartesianForceToCartesianVel();
-        // exit(1);
+        // exit(0);
         // the following calculation can only used in LCP solver, discard when
         // LCP is disabled
         if (mEnableLCPCalc)
@@ -375,7 +375,7 @@ void btGenContactSolver::ConstraintSetup()
                 TestCartesianForceToNormalAndTangetRelVel(
                     normal_vel_convert_mat, normal_vel_convert_vec,
                     tangent_vel_convert_mat, tangent_vel_convert_vec);
-            // if (mNumContactPoints > 0) exit(1);
+            // if (mNumContactPoints > 0) exit(0);
             // 6. change base for decomposed convert matrix: the original base
             // is cartesian force, now it is [fn, f_4dirs, \lambda]
             CalcResultVectorBasedConvertMat();
@@ -414,7 +414,7 @@ void btGenContactSolver::SolveByLCP()
     // {
     // 	std::cout << "error now friction dirs must be 4, otherwise the convert
     // tMatrixXd S is illegal\n";
-    // 	// exit(1);
+    // 	// exit(0);
     // }
 
     // construct a LCP problem: (x * Mx+n) = 0, x>=0, Mx+n >=0
@@ -514,13 +514,13 @@ void btGenContactSolver::SolveByLCP()
     // std::cout << "x_lcp = " << x_lcp.transpose() << std::endl;
     // std::cout << "M*x+n = " << (M * x_lcp + n).transpose() << std::endl;
     // fout.close();
-    // if (global_frame_id == 60) exit(1);
+    // if (global_frame_id == 60) exit(0);
     // std::cout << "[lcp] x_lcp = " << x_lcp.transpose() << std::endl;
     // std::cout << "[lcp] M norm = " << M.norm() << std::endl;
     // std::cout << "[lcp] n norm = " << n.norm() << std::endl;
     // std::cout << "[lcp] q = " << mMultibodyArray[0]->Getq().transpose() <<
     // std::endl; std::cout << "[lcp] qdot = " <<
-    // mMultibodyArray[0]->Getqdot().transpose() << std::endl; exit(1);
+    // mMultibodyArray[0]->Getqdot().transpose() << std::endl; exit(0);
     // std::cout << "end to do lcp solveing\n";
     // std::ofstream fout(gOutputLogPath, std::ios::app);
     // fout << "rel vel convert mat = \n"
@@ -812,7 +812,7 @@ void btGenContactSolver::CalcDecomposedConvertMat()
     // {
     // 	std::cout << "unsupported friction dirs = " << mNumFrictionDirs <<
     // std::endl;
-    // 	// exit(1);
+    // 	// exit(0);
     // }
     // int n_contact = mContactConstraintData.size();
     int x_size =
@@ -974,7 +974,7 @@ void btGenContactSolver::AddJointLimit()
             std::cout << "[error] add joint limit invalid\nub = "
                       << ub.transpose() << "\nlb = " << lb.transpose()
                       << std::endl;
-            exit(1);
+            exit(0);
         }
 
         // only care the revolute and spherical joint, no root joint, no
@@ -1009,7 +1009,7 @@ void btGenContactSolver::AddJointLimit()
                               << std::endl;
                 }
 
-                // exit(1);
+                // exit(0);
             }
         }
     }
@@ -1197,7 +1197,7 @@ tVector FindMostNearDirection(const tMatrixXd &mat, const tVector &target)
     if (mat.rows() != 3)
     {
         std::cout << "mat rows != 3\n";
-        exit(1);
+        exit(0);
     }
 
     double max_product_dot = -std::numeric_limits<double>::max();
@@ -1273,5 +1273,5 @@ void btGenContactSolver::VerifySolution()
     }
 
     PopState("verify");
-    // exit(1);
+    // exit(0);
 }

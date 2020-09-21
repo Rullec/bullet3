@@ -55,15 +55,16 @@ public:
     void ClearForce();
     void RemoveObj(int id);
     void StepSimulation(double dt);
-    std::vector<btGenContactForce *> GetContactForces() const;
-    std::vector<btPersistentManifold *> GetContactManifolds() const;
-
     void Reset();
     // get & set method
+    std::vector<btGenContactForce *> GetContactForces() const;
+    std::vector<btPersistentManifold *> GetContactManifolds() const;
+    btGenContactAwareAdviser *GetContactAwareAdviser();
     btDiscreteDynamicsWorld *GetInternalWorld();
     btBroadphaseInterface *GetBroadphase();
     btCollisionDispatcher *GetDispatcher();
     btDefaultCollisionConfiguration *GetConfiguration();
+    void SetEnableContacrAwareControl();
 
 protected:
     btDiscreteDynamicsWorld *mInternalWorld;

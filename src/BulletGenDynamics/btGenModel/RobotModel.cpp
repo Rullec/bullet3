@@ -1129,7 +1129,7 @@ void cRobotModel::LoadJsonModel(const char *file_path, double model_scale)
             Printer::ScreenLog(
                 "RobotModel::LoadJsonModel base object access illegal",
                 name.c_str());
-            exit(1);
+            exit(0);
         }
         base_object->UpdateShape(shape_param);
     }
@@ -2064,7 +2064,7 @@ tVector3d cRobotModel::GetFreedomDirectionWorldFrame(int dof_id) const
     }
     std::cout << "[error] cRobotModel::GetFreedomDirectionWorldFrame for dof "
               << dof_id << std::endl;
-    exit(1);
+    exit(0);
     return tVector3d::Zero();
 }
 

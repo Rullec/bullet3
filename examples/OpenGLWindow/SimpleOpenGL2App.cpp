@@ -142,12 +142,12 @@ SimpleOpenGL2App::SimpleOpenGL2App(const char* title, int width, int height)
 	if (glewInit() != GLEW_OK)
     {
         b3Error("glewInit failed");
-        exit(1);
+        exit(0);
     }
     if (!GLEW_VERSION_2_1)  // check that the machine supports the 2.1 API.
     {
         b3Error("GLEW_VERSION_2_1 needs to support 2_1");
-        exit(1); // or handle the error in a nicer way
+        exit(0); // or handle the error in a nicer way
     }
 #endif
 #endif  //B3_USE_GLFW

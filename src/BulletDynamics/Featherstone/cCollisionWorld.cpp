@@ -32,7 +32,7 @@ cCollisionWorld::cCollisionWorld(btDispatcher* dispatcher, btBroadphaseInterface
 
 #ifndef BT_USE_VIRTUAL_CLEARFORCES_AND_GRAVITY
 	std::cout << "[error] There should be another logic, exit\n";
-	exit(1);
+	exit(0);
 #endif // !BT_USE_VIRTUAL_CLEARFORCES_AND_GRAVITY
 }
 
@@ -48,7 +48,7 @@ int cCollisionWorld::stepSimulation(btScalar timeStep, int maxSubSteps/* = 1*/, 
 	if (maxSubSteps != 0 || std::abs(timeStep - fixedTimeStep) > 1e-10)
 	{
 		std::cout << "[error] cCollisionWorld::stepSimulation unsupported setting\n";
-		exit(1);
+		exit(0);
 	}
 	
 	startProfiling(timeStep);
@@ -224,7 +224,7 @@ void cCollisionWorld::solveCons2_ApplyActiveForce(btContactSolverInfo& solverInf
 					else
 					{
 						std::cout << "[error] cCollisionWorld:: there should be another logic\n";
-						exit(1);
+						exit(0);
 					}
 				}
 
@@ -253,7 +253,7 @@ void cCollisionWorld::solveCons4_finalize(btContactSolverInfo& solverInfo)
 	if (m_multiBodies[0]->internalNeedsJointFeedback() == true)
 	{
 		std::cout << "[error] void cCollisionWorld::solveCons4_finalize: unsupported joint feedback\n";
-		exit(1);
+		exit(0);
 	}
 
 	//PrintMultibodyInfo("before final update", true);
@@ -271,7 +271,7 @@ void cCollisionWorld::PrintForceInfo(const char * n, bool detailed)
 	if (getNumMultibodies() != 1)
 	{
 		std::cout << "[error] cCollisionWorld::PrintMultibodyInfo only permit 1 multibody = " << getNumMultibodies() << std::endl;
-		exit(1);
+		exit(0);
 	}
 	std::cout << "--------------" << n << "--------------" << std::endl;
 	btMultiBody * cur_body = m_multiBodies[0];
@@ -295,7 +295,7 @@ void cCollisionWorld::PrintForceInfo(const char * n, bool detailed)
 	if (getNumMultibodies() != 1)
 	{
 		std::cout << "[error] cCollisionWorld::PrintMultibodyInfo only permit 1 multibody = " << getNumMultibodies() << std::endl;
-		exit(1);
+		exit(0);
 	}
 	mWorldLog << "--------------frame " << mCurFrame << " " << n << "--------------" << std::endl;
 	btMultiBody * cur_body = m_multiBodies[0];
@@ -326,7 +326,7 @@ void cCollisionWorld::PrintMotionInfo(const char * n/* = nullptr*/, bool detaile
 	if (getNumMultibodies() != 1)
 	{
 		std::cout << "[error] cCollisionWorld::PrintMultibodyInfo only permit 1 multibody = " << getNumMultibodies() << std::endl;
-		exit(1);
+		exit(0);
 	}
 
 	if (n) std::cout << "--------------" << n << "--------------" << std::endl;
@@ -351,7 +351,7 @@ void cCollisionWorld::PrintMotionInfo(const char * n/* = nullptr*/, bool detaile
 	if (getNumMultibodies() != 1)
 	{
 		std::cout << "[error] cCollisionWorld::PrintMultibodyInfo only permit 1 multibody = " << getNumMultibodies() << std::endl;
-		exit(1);
+		exit(0);
 	}
 	
 	if (n) mWorldLog << "--------------frame " << mCurFrame <<" "<< n << "--------------" << std::endl;
@@ -378,7 +378,7 @@ void cCollisionWorld::SaveVelBuf()
 	if (getNumMultibodies() != 1)
 	{
 		std::cout << "[error] cCollisionWorld::SaveVelBuf only permit 1 multibody = " << getNumMultibodies() << std::endl;
-		exit(1);
+		exit(0);
 	}
 
 	btMultiBody * cur_body = m_multiBodies[0];
@@ -390,7 +390,7 @@ void cCollisionWorld::ReleaseVelBuf()
 	if (getNumMultibodies() != 1)
 	{
 		std::cout << "[error] cCollisionWorld::ReleaseVelBuf only permit 1 multibody = " << getNumMultibodies() << std::endl;
-		exit(1);
+		exit(0);
 	}
 	btMultiBody * cur_body = m_multiBodies[0];
 	cur_body->setRealBuf(mIntermediateVelBuffer);

@@ -1,0 +1,21 @@
+{
+    "root_height": {
+        "vel": 0.01
+    },
+    "root_location": {
+        "vel": 6.0
+    },
+    "root_joint": {
+        "vel": 0.0
+    },
+    "LeftLeg_joint": {
+        "vel": 1.0
+    },
+    "LeftFoot_joint": {
+        "vel": 1.0
+    },
+    "LFootTongue_joint": {
+        "vel": 1.0
+    },
+    "tau_weight": 0.01
+}

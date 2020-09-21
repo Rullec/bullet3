@@ -189,7 +189,7 @@ btVector3 cConstraintMultibody::CalcAngMomentum()
         total_ang_mom += part1 + part2;
     }
 
-    // exit(1);
+    // exit(0);
     return total_ang_mom;
 }
 

@@ -55,7 +55,7 @@ cIDSolver::cIDSolver(btMultiBody * body, btMultiBodyDynamicsWorld * world)
 
 	mNumLinks = mMultibody->getNumLinks() + 1;
 	std::cout <<"link num = " << mNumLinks << std::endl;
-	// exit(1);
+	// exit(0);
 	// clear buffer
 	solve_joint_force_bt.resize(mDof);
 	solve_joint_force_bt.setZero();
@@ -111,13 +111,13 @@ void cIDSolver::ClearID()
 	if (mMultibody == nullptr || mInverseModel == nullptr)
 	{
 		std::cout << "[error] mcIDSolver::ClearID: illegal input" << std::endl;
-		exit(1);
+		exit(0);
 	}
 
 	if (mFrameId + 1 >= MAX_FRAME_NUM)
 	{
 		std::cout << "[error] cIDSolver::ClearID buffer filled \n";
-		exit(1);
+		exit(0);
 	}
 
 	mFloatingBase = !(mMultibody->hasFixedBase());
@@ -249,7 +249,7 @@ void cIDSolver::PostSim()
 					if (diff.norm() > threshold)
 					{
 						std::cout << "test diff = " << diff.transpose() << " | " << diff.norm() << std::endl;
-						exit(1);
+						exit(0);
 					}
 				}
 				tVectorXd diff = old_vel_after - mBuffer_u[mFrameId];
@@ -258,7 +258,7 @@ void cIDSolver::PostSim()
 					std::cout << "truth vel = " << old_vel_after.transpose() << std::endl;
 					std::cout << "calculated vel = " << mBuffer_u[mFrameId].transpose() << std::endl;
 					std::cout << "calculate vel after error = " << (diff).transpose() << " | " << (old_vel_after - mBuffer_u[mFrameId]).norm() << std::endl;
-					exit(1);
+					exit(0);
 				}
 
 				// check vel
@@ -268,7 +268,7 @@ void cIDSolver::PostSim()
 					std::cout << "truth vel = " << old_vel_after.transpose() << std::endl;
 					std::cout << "calculated vel = " << mBuffer_u[mFrameId].transpose() << std::endl;
 					std::cout << "calculate vel before error = " << (diff).transpose() << " | " << (old_vel_after - mBuffer_u[mFrameId]).norm() << std::endl;
-					exit(1);
+					exit(0);
 				}
 
 				// check accel
@@ -278,7 +278,7 @@ void cIDSolver::PostSim()
 					std::cout << "truth accel =  " << old_accel.transpose() << std::endl;
 					std::cout << "calc accel =  " << mBuffer_u_dot[mFrameId - 1].transpose() << std::endl;
 					std::cout << "solved error = " << diff.transpose() << std::endl;
-					exit(1);
+					exit(0);
 				}
 			}
 
@@ -372,7 +372,7 @@ void cIDSolver::AddJointForces()
 		default:
 		{
 			std::cout << "[error] cIDSolver::AddJointForces: Unsupported joint type " << cur_link.m_jointType << std::endl;
-			exit(1);
+			exit(0);
 			break;
 		}
 		}
@@ -601,7 +601,7 @@ void cIDSolver::RecordGeneralizedInfo(btInverseDynamicsBullet3::vecx & q, btInve
 		default:
 		{
 			std::cout << "[error] unsupported joint type " << cur_link.m_jointType << std::endl;
-			exit(1);
+			exit(0);
 		}
 		}
 	}
@@ -688,7 +688,7 @@ void cIDSolver::SolveID()
 			default:
 			{
 				std::cout << "[error] unsupported joint type " << cur_link.m_jointType;
-				exit(1);
+				exit(0);
 				break;
 			}
 			}
@@ -697,7 +697,7 @@ void cIDSolver::SolveID()
 		if (err > threshold)
 		{
 			std::cout << "[error] ID solved wrong\n";
-			//exit(1);
+			//exit(0);
 		}
 	}
 

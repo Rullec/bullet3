@@ -25,7 +25,7 @@ bool QuadProgQPSolver::Solve(int num_of_vars, tMatrixXd &H, tVectorXd &f,
     //           << std::endl;
     // std::cout << "bineq size = " << bineq.rows() << " " << bineq.cols()
     //           << std::endl;
-    // exit(1);
+    // exit(0);
     // std::cout << "H = \n" << H << std::endl;
     // std::cout << "f = " << f.transpose() << std::endl;
     // tMatrixXd old_H = H;
@@ -47,13 +47,13 @@ bool QuadProgQPSolver::Solve(int num_of_vars, tMatrixXd &H, tVectorXd &f,
     // if (std::isinf(ret) == true)
     // {
     //     std::cout << "[error] solve QP failed\n";
-    //     exit(1);
+    //     exit(0);
     // }
     // if (eq_res.norm() > 1e-5)
     // {
     //     std::cout << "[error] Aeq = \n" << Aeq.transpose() << std::endl;
     //     std::cout << "[error] beq = " << beq.transpose() << std::endl;
-    //     exit(1);
+    //     exit(0);
     // }
 
     return true;

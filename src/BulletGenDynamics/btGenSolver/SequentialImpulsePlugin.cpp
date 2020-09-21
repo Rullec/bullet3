@@ -224,7 +224,7 @@ void btGenContactSolver::SetupDataForSI()
 
     // TestSICartesianConvertMatAndVec();
     // std::cout << "test finished\n";
-    // exit(1);
+    // exit(0);
 }
 
 void btGenContactSolver::UpdateDataForSI()
@@ -270,7 +270,7 @@ void btGenContactSolver::TestSICartesianConvertMatAndVec()
                       << "pred vel = " << pred_relvel.transpose() << std::endl;
             std::cout << "contact id " << id
                       << "true vel = " << true_relvel.transpose() << std::endl;
-            exit(1);
+            exit(0);
         }
 
         PopState("testSI");

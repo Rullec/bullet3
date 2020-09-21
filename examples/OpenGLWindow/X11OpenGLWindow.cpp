@@ -524,7 +524,7 @@ void X11OpenGLWindow::enableOpenGL()
 		if (ctxErrorOccurred || !ctx)
 		{
 			fprintf(stderr, "Failed to create an OpenGL context\n");
-			exit(1);
+			exit(0);
 		}
 
 		// Verifying that context is a direct context
@@ -638,7 +638,7 @@ void X11OpenGLWindow::createWindow(const b3gWindowConstructionInfo& ci)
 		if (!fbc)
 		{
 			fprintf(stderr, "Failed to retrieve a framebuffer config\n");
-			exit(1);
+			exit(0);
 		}
 ///don't use highest samples, it is really slow on some NVIDIA Quadro cards
 #ifdef USE_HIGHEST_SAMPLES

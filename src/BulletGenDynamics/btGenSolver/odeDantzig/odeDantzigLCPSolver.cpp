@@ -54,7 +54,7 @@ cODEDantzigLCPSolver::cODEDantzigLCPSolver() : cLCPSolverBase(eLCPSolverType::OD
 	// 	std::cout << "M_diff = " << (raw_M - M).norm() << std::endl;
 	// 	std::cout << "n_diff = " << (raw_n - n).norm() << std::endl;
 	// }
-	// exit(1);
+	// exit(0);
 }
 
 cODEDantzigLCPSolver::~cODEDantzigLCPSolver()
@@ -72,7 +72,7 @@ void cODEDantzigLCPSolver::SetInfo(int num_of_friciton_dir, double mu_, int num_
 	if (mNumOfFrictionDir != 4)
 	{
 		std::cout << "[error] cODEDantzigLCPSolver::SetInfo friction dir != 4\n";
-		exit(1);
+		exit(0);
 	}
 }
 
@@ -81,7 +81,7 @@ int cODEDantzigLCPSolver::Solve(int num_of_vars, const tMatrixXd& M, const tVect
 	if (mIsInitialized == false)
 	{
 		std::cout << "[error] Please initialize the ode dantzig sover before solving\n";
-		exit(1);
+		exit(0);
 	}
 
 	// 1. verify the shape of problem
@@ -89,7 +89,7 @@ int cODEDantzigLCPSolver::Solve(int num_of_vars, const tMatrixXd& M, const tVect
 	if (num_of_vars != ideal_size)
 	{
 		std::cout << "[error] cODEDantzigLCPSolver size inconsisitent with " << num_of_vars << " != " << ideal_size << std::endl;
-		exit(1);
+		exit(0);
 	}
 
 	if (ideal_size == 0) return 0;
@@ -189,7 +189,7 @@ int cODEDantzigLCPSolver::Solve(int num_of_vars, const tMatrixXd& M, const tVect
 	mIsInitialized = false;
 	VerifySolution(M, n, solution);
 	// std::cout << "after verified\n";
-	// exit(1);
+	// exit(0);
 	return 0;
 }
 
@@ -278,7 +278,7 @@ int GetNewId(int old_id, int num_of_contact, int num_friction)
 	{
 		// other constraints
 		// std::cout << "old id " << old_id << " total size = " << total_size << std::endl;
-		// exit(1);
+		// exit(0);
 		return old_id;
 	}
 	if (old_id % single_size == 0)
@@ -320,7 +320,7 @@ int GetOldId(int new_id, int num_of_contact, int num_friction)
 	{
 		// std::cout << "new_id " << new_id << " total size = " << total_size << std::endl;
 		return new_id;
-		// exit(1);
+		// exit(0);
 	}
 	if (new_id < normal_last_id)
 	{
@@ -404,7 +404,7 @@ void cODEDantzigLCPSolver::transfer_question_to_rtql8(const tMatrixXd& A, const 
 	if (A.rows() != size || A.cols() != size)
 	{
 		std::cout << "[error] A size " << A.rows() << " != " << size << std::endl;
-		exit(1);
+		exit(0);
 	}
 
 	// if LCP is enabled, simply do movement between constraints
@@ -465,7 +465,7 @@ void cODEDantzigLCPSolver::transfer_question_to_rtql8(const tMatrixXd& A, const 
 	// 		  << A_rtql8 << std::endl;
 	// std::cout << "b rtql8 = \n"
 	// 		  << b_rtql8.transpose() << std::endl;
-	// exit(1);
+	// exit(0);
 }
 
 // TODO: optimize it
@@ -476,7 +476,7 @@ void cODEDantzigLCPSolver::transfer_sol_from_rtql8(const tVectorXd& x_rtql8, tVe
 	if (x_rtql8.rows() != size)
 	{
 		std::cout << "[error] x_rtql8 size " << x_rtql8.rows() << " != " << size << std::endl;
-		exit(1);
+		exit(0);
 	}
 
 	if (mEnableFrictionLCP == true)
@@ -506,5 +506,5 @@ void cODEDantzigLCPSolver::VerifySolution(const tMatrixXd& A, const tVectorXd& b
 	// tVectorXd perp = A * x + b;
 	// if(per)
 	// std::cout << "[Dantzig] perp = " << perp.transpose() << std::endl;
-	// exit(1);
+	// exit(0);
 }

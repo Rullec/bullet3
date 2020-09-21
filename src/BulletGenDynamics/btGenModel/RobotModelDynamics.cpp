@@ -112,7 +112,7 @@ void cRobotModelDynamics::InitSimVars(btDynamicsWorld *world, bool zero_pose,
             break;
         default:
             std::cout << "unsupported type in init sim vars\n";
-            exit(1);
+            exit(0);
             break;
         }
         // mColShapes.push_back(shape);
@@ -215,7 +215,7 @@ void cRobotModelDynamics::InitSimVars(btDynamicsWorld *world, bool zero_pose,
     // 	std::cout << "joint " << i << " diff weight = " <<
     // joint->GetDiffWeight() << std::endl;
     // }
-    // exit(1);
+    // exit(0);
 }
 
 void cRobotModelDynamics::TestJacobian()
@@ -300,7 +300,7 @@ void cRobotModelDynamics::TestSecondJacobian()
         // 		std::cout << link->GetParent()->GetMWQQ(i, j) <<
         // std::endl;
         // 	}
-        // exit(1);
+        // exit(0);
     }
     // for (int i = 0; i < 2; i++)
     // {
@@ -315,7 +315,7 @@ void cRobotModelDynamics::TestSecondJacobian()
     // 				  << link->GetJKw() << std::endl;
     // 	}
     // }
-    // exit(1);
+    // exit(0);
     // 1. compute Jv'(dJv/dq) and Jw'(dJw/dq), current Jv and Jw
 
     tVector3d p = tVector3d(0, 0, 0);
@@ -347,7 +347,7 @@ void cRobotModelDynamics::TestSecondJacobian()
             // 		  << nxn_djwdq[sub_id] << std::endl;
         }
         // std::cout << "it should be all zero\n";
-        // exit(1);
+        // exit(0);
         for (int dof = 0; dof < num_of_freedom; dof++)
         {
             dJkvdq_ana[i][dof].resize(3, num_of_freedom);
@@ -402,7 +402,7 @@ void cRobotModelDynamics::TestSecondJacobian()
                           << " = \n"
                           << dJkvdq_num << std::endl;
                 std::cout << "error\n";
-                exit(1);
+                exit(0);
             }
             else
                 std::cout << "[log] link " << link_id << " dof " << dof
@@ -428,7 +428,7 @@ void cRobotModelDynamics::TestSecondJacobian()
                           << " = \n"
                           << dJkwdq_diff << std::endl;
                 std::cout << "error\n";
-                exit(1);
+                exit(0);
             }
             else
                 std::cout << "[log] link " << link_id << " dof " << dof
@@ -440,7 +440,7 @@ void cRobotModelDynamics::TestSecondJacobian()
     }
 
     // 3. compare
-    // exit(1);
+    // exit(0);
 }
 
 void cRobotModelDynamics::SetqAndqdot(const tVectorXd &q_,
@@ -504,7 +504,7 @@ void cRobotModelDynamics::ApplyForce(int link_id, const tVector &force,
     if (link_id < 0 || link_id >= GetNumOfLinks())
     {
         std::cout << "ApplyForce: illegal link id " << link_id << std::endl;
-        exit(1);
+        exit(0);
     }
 
     // 1. apply the force directly
@@ -522,7 +522,7 @@ void cRobotModelDynamics::ApplyGeneralizedForce(int dof_id, double value)
     {
         std::cout << "[error] add generalized force on dof " << dof_id
                   << " illegal\n";
-        exit(1);
+        exit(0);
     }
     mGenForce[dof_id] += value;
 }
@@ -538,7 +538,7 @@ void cRobotModelDynamics::ApplyLinkTorque(int link_id, const tVector &torque)
     {
         std::cout << "ApplyLinkTorque: illegal link id " << link_id
                   << std::endl;
-        exit(1);
+        exit(0);
     }
 
     mLinkTorques[link_id] += torque;
@@ -556,7 +556,7 @@ void cRobotModelDynamics::ApplyJointTorque(int joint_id, const tVector &torque)
     {
         std::cout << "ApplyJointTorque: illegal joint id " << joint_id
                   << std::endl;
-        exit(1);
+        exit(0);
     }
 
     // one pair of opposite torque
@@ -593,7 +593,7 @@ btGenRobotCollider *cRobotModelDynamics::GetLinkCollider(int link_id)
     {
         std::cout << "[error] GetLinkCollider invalid link id " << link_id
                   << std::endl;
-        exit(1);
+        exit(0);
     }
     return mColliders[link_id];
 }
@@ -857,7 +857,7 @@ void cRobotModelDynamics::PushState(const std::string &tag,
     {
         std::cout << "[error] cRobotModelDynamics::PushState exceed length "
                   << mStackCapacity << " for tag " << tag;
-        exit(1);
+        exit(0);
     }
     tStateRecord *state = new tStateRecord();
     state->only_vel_and_force_recorded = only_vel_and_force;
@@ -885,14 +885,14 @@ void cRobotModelDynamics::PopState(const std::string &tag,
     {
         std::cout << "[error] RobotModel stack is empty when you try to pop "
                   << tag << std::endl;
-        exit(1);
+        exit(0);
     }
     else if (mStateStack.back().first != tag)
     {
         std::cout << "[error] RobotModel stack trying to pop "
                   << mStateStack[mStateStack.size() - 1].first
                   << " but the user try to do " << tag << std::endl;
-        exit(1);
+        exit(0);
     }
 
     auto state = mStateStack.back().second;
@@ -902,7 +902,7 @@ void cRobotModelDynamics::PopState(const std::string &tag,
                   << state->only_vel_and_force_recorded
                   << " but the user try to do " << only_vel_and_force
                   << std::endl;
-        exit(1);
+        exit(0);
     }
 
     mqdot = state->qdot;
@@ -956,7 +956,7 @@ void cRobotModelDynamics::SetDampingCoeff(double damp1, double damp2)
     mDampingCoef1 = damp1;
     mDampingCoef2 = damp2;
     // std::cout << "damping = " << damping_coef << std::endl;
-    // exit(1);
+    // exit(0);
 }
 
 // void cRobotModelDynamics::SetAngleClamp(bool val)
@@ -972,7 +972,7 @@ void cRobotModelDynamics::SetMaxVel(double val) { mMaxVel = val; }
 // void cRobotModelDynamics::UpdateRK4(double dt)
 // {
 // 	// std::cout <<"update rk4";
-// 	// exit(1);
+// 	// exit(0);
 // 	tVectorXd k1(num_of_freedom * 2), k2(num_of_freedom * 2),
 // k3(num_of_freedom * 2), k4(num_of_freedom * 2); 	tVectorXd y_dot = mqdot,
 // y = mq; 	tVectorXd Q; 	tVectorXd qddot;
@@ -1207,7 +1207,7 @@ void cRobotModelDynamics::TestRotationChar()
                       << std::endl;
         }
     }
-    exit(1);
+    exit(0);
 }
 
 /**

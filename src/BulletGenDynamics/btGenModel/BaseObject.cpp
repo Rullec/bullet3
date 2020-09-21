@@ -124,7 +124,7 @@ void BaseObject::ComputeIbody()
     else
     {
         std::cout << "Unsupported type: " << shape_type << " in ComputeIbody\n";
-        exit(1);
+        exit(0);
     }
 
     // std::cout << "Inertia: " << std::endl;

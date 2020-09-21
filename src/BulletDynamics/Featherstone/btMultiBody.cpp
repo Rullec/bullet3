@@ -581,7 +581,7 @@ void btMultiBody::compTreeLinkVelocities(btVector3 *omega, btVector3 *vel) const
 		// i+1, omega[i + 1][0],omega[i + 1][1],omega[i + 1][2],
 		// vel[i + 1][0], vel[i + 1][1],vel[i + 1][2]);
 	}
-	// exit(1);
+	// exit(0);
 }
 
 btScalar btMultiBody::getKineticEnergy() const
@@ -873,7 +873,7 @@ void btMultiBody::computeAccelerationsArticulatedBodyAlgorithmMultiDof(btScalar 
 		// printf("linear vel = %.6f, %.6f, %.6f\n", spatVel[0].getLinear().getX(), spatVel[0].getLinear().getY(), spatVel[0].getLinear().getZ());
 		// printf("ang vel = %.6f, %.6f, %.6f\n", spatVel[0].getAngular().getX(), spatVel[0].getAngular().getY(), spatVel[0].getAngular().getZ());
 		// printf("z.a.f linear part = %.6f, %.6f, %.6f\n", tmp.getX(), tmp.getY(), tmp.getZ());
-		// exit(1);
+		// exit(0);
 	}
 
 	//init the spatial AB inertia (it has the simple form thanks to choosing local body frames origins at their COMs)
@@ -1215,7 +1215,7 @@ void btMultiBody::computeAccelerationsArticulatedBodyAlgorithmMultiDof(btScalar 
 		// btVector3 omegadot_self = I0.inverse() * (base_omega.cross(I0 * base_omega));
 		// printf("self omega dot = %.6f, %.6f, %.6f\n", omegadot_self.getX(), omegadot_self.getY(), omegadot_self.getZ());
 		// printf("res omega dot = %.6f, %.6f, %.6f\n", omegadot_out.getX(), omegadot_out.getY(), omegadot_out.getZ());
-		// exit(1);
+		// exit(0);
 	}
 
 	output[0] = omegadot_out[0];

@@ -1,0 +1,15 @@
+{
+    "root_height": {
+        "pos": 0.01
+    },
+    "root_location": {
+        "pos": 6.0
+    },
+    "root_joint": {
+        "pos": 0.0
+    },
+    "LeftLeg_joint": {
+        "pos": 1.0
+    },
+    "tau_weight": 0.0
+}

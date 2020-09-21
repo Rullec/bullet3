@@ -56,7 +56,7 @@ void cIDSolver::VerifyLinearMomentum()
 	// std::cout <<"Base vel diff = " << (base_vel - base_vel_pred).transpose() << std::endl;
 	
 
-    // exit(1);
+    // exit(0);
 }
 
 /*
@@ -109,7 +109,7 @@ void cIDSolver::VerifyMomentum()
     assert(mEnableVerifyMomentum);
     std::cout <<" void cIDSolver::VerifyMomentum()\n";
     VerifyLinearMomentum();
-    exit(1);
+    exit(0);
 }
 
 /*
@@ -198,7 +198,7 @@ void cIDSolver::VerifyLinkVel()
                     (compute_link_omega[ID_link_id] - mLinkOmega[mFrameId][ID_link_id]).transpose() << std::endl;
                 std::cout <<"[log] cIDSolver::VerifyLinkVel: diff for joint vel " << ID_link_id << \
                     (compute_link_vel[ID_link_id] - mLinkVel[mFrameId][ID_link_id]).transpose() << std::endl;
-                exit(1);
+                exit(0);
             }
             // assert(omega_buffer < 1e-10);
             // assert(omega_buffer < 1e-10);
@@ -232,7 +232,7 @@ void cIDSolver::VerifyLinkVel()
         std::cout << std::endl;
 #endif
     }
-    // exit(1);
+    // exit(0);
 }
 
 void cIDSolver::VerifyLinkOmega()
@@ -262,10 +262,10 @@ void cIDSolver::VerifyLinkOmega()
         //     std::cout <<"diff quaternion = " << diff_rot.coeffs().transpose() <<", axis angle = " << aa_omega.transpose() * mCurTimestep << std::endl;;
         //     std::cout <<"axis angle to quater = " << cMathUtil::AxisAngleToQuaternion(aa_omega * mCurTimestep).coeffs().transpose() << std::endl;
         //     std::cout <<"from quater to rotmat = \n" << cMathUtil::RotMat(diff_rot) << std::endl;
-        //     // exit(1);
+        //     // exit(0);
         // }
     }
-    // exit(1);
+    // exit(0);
 }
 
 tVector cIDSolver::CalcCOM(int frame_id)

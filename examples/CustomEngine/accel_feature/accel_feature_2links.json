@@ -1,0 +1,23 @@
+{
+    "root_height": {
+        "accel": 0.01,
+        "vel": 0.01,
+        "pos": 0.01
+    },
+    "root_location": {
+        "accel": 6.0,
+        "vel": 6.0,
+        "pos": 6.0
+    },
+    "root_joint": {
+        "accel": 0.0,
+        "vel": 0.0,
+        "pos": 0.0
+    },
+    "LeftLeg_joint": {
+        "accel": 1.0,
+        "vel": 1.0,
+        "pos": 1.0
+    },
+    "tau_weight": 1.0
+}

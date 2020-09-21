@@ -20,10 +20,12 @@ class btGenFrameByFrameOptimizer
 public:
     btGenFrameByFrameOptimizer();
     ~btGenFrameByFrameOptimizer();
-    void Init(const Json::Value &conf, btTraj *ref_traj,
-              btGeneralizeWorld *world);
+    void Init(btGeneralizeWorld *mWorld, const Json::Value &conf);
+    void SetTraj(btTraj *traj_);
     void CalcTarget(double dt, int target_frame_id, tVectorXd &tilde_qddot,
+                    tVectorXd &tilde_qdot, tVectorXd &tilde_q,
                     tVectorXd &tilde_tau);
+    void Reset();
 
 protected:
     // ---------methods
@@ -34,14 +36,16 @@ protected:
     void CalcSolutionVector();
     void CalcEnergyTerms();
     void CalcConstraints();
-    void Solve(tVectorXd &tilde_qddot, tVectorXd &tilde_tau);
+    void Solve(tVectorXd &tilde_qddot, tVectorXd &tilde_qdot,
+               tVectorXd &tilde_q, tVectorXd &tilde_tau);
     void CalcTargetInternal(const tVectorXd &solution, tVectorXd &qddot,
-                            tVectorXd &tau);
+                            tVectorXd &qdot, tVectorXd &q, tVectorXd &tau);
     void ClearContactPoints();
 
     void AddSlidingConstraint(btCharContactPt *pt);
     void AddStaticConstraint(btCharContactPt *pt);
     void AddBreakageConstraint(btCharContactPt *pt);
+    void AddFixStaticContactPointConstraint();
     void AddDynamicEnergyTerm();
     void AddDynamicEnergyTermPos();
     void AddDynamicEnergyTermVel();
@@ -67,11 +71,12 @@ protected:
                                         // contact pt in solution vector
 
     // optimization vars
-    bool mEnableHardConstraintForDynamics;
-    bool mUseNativeRefTarget;
+    // bool mEnableHardConstraintForDynamics;
+    // bool mUseNativeRefTarget;
     double mDynamicPosEnergyCoeff;
     double mDynamicVelEnergyCoeff;
     double mDynamicAccelEnergyCoeff;
+    bool mEnableFixStaticContactPoint;
     const double mu = 0.8;
     int mContactSolutionSize; // the size of contact force in result vector
     int mCtrlSolutionSize;    // the size of active ctrl froce in result vector

@@ -69,6 +69,7 @@ btGeneralizeWorld::~btGeneralizeWorld()
 
     delete mLCPContactSolver;
     delete mGuideTraj;
+    delete mControlAdviser;
 }
 
 void btGeneralizeWorld::Init(const std::string &config_path)
@@ -125,8 +126,9 @@ void btGeneralizeWorld::Init(const std::string &config_path)
             mMBEpsDiagnoalMassMat = btJsonUtil::ParseAsDouble(
                 "mb_add_eps_at_diagnoal_mass_mat", config_js);
             mMBMaxVel = btJsonUtil::ParseAsDouble("mb_max_vel", config_js);
-            mMBEnableContactAwareLCP = btJsonUtil::ParseAsBool(
-                "mb_enable_contact_aware_lcp", config_js);
+            mMBEnableContactAwareLCP = false;
+            // mMBEnableContactAwareLCP = btJsonUtil::ParseAsBool(
+            //     "mb_enable_contact_aware_lcp", config_js);
             // mMBEnableGuideAction =
             // btJsonUtil::ParseAsBool("mb_enable_guide_action", config_js);
             // mGuidedActionTrajFile =
@@ -134,13 +136,10 @@ void btGeneralizeWorld::Init(const std::string &config_path)
             // if (mMBEnableGuideAction && mMBEnableContactAwareLCP)
             // {
             // 	std::cout << "[error] the guided action & contact aware LCP
-            // cannot be opened simutaneously.\n"; 	exit(1);
+            // cannot be opened simutaneously.\n"; 	exit(0);
             // }
-            if (mMBEnableContactAwareLCP)
-            {
-                mContactAwareConfig = btJsonUtil::ParseAsString(
-                    "contact_aware_lcp_config", config_js);
-            }
+            mContactAwareConfig = btJsonUtil::ParseAsString(
+                "contact_aware_lcp_config", config_js);
             // mMBContactAwareW =
             // btJsonUtil::ParseAsDouble("mb_contact_aware_lcp_W", config_js);
             // mMBContactAwareWm =
@@ -188,12 +187,9 @@ void btGeneralizeWorld::Init(const std::string &config_path)
     // {
     // 	mPDController = new btGenPDController(mPDControllerPath);
     // }
-
-    if (mMBEnableContactAwareLCP)
-    {
-        mControlAdviser =
-            new btGenContactAwareAdviser(this, mContactAwareConfig);
-    }
+    mControlAdviser = nullptr;
+    // mControlAdviser = new btGenContactAwareAdviser();
+    // SetEnableContacrAwareControl();
 }
 
 void btGeneralizeWorld::AddGround(double height)
@@ -245,7 +241,7 @@ void btGeneralizeWorld::AddObj(int n, const std::string &obj_type,
     else
     {
         std::cout << "unsupported type " << obj_type << std::endl;
-        exit(1);
+        exit(0);
     }
 
     /// Create Dynamic Objects
@@ -350,11 +346,6 @@ void btGeneralizeWorld::AddMultibody(const std::string &skeleton_name)
     mMultibody->InitSimVars(mInternalWorld, mMBZeroInitPose, mMBZeroInitPoseVel,
                             true);
 
-    if (mMBEnableContactAwareLCP)
-    {
-        mControlAdviser->Init(mMultibody);
-    }
-
     // if (mMBEnableGuideAction == true)
     // {
     //     InitGuideTraj();
@@ -438,6 +429,10 @@ std::vector<btGenContactForce *> btGeneralizeWorld::GetContactForces() const
     return mContactForces;
 }
 
+btGenContactAwareAdviser *btGeneralizeWorld::GetContactAwareAdviser()
+{
+    return mControlAdviser;
+}
 std::vector<btPersistentManifold *>
 btGeneralizeWorld::GetContactManifolds() const
 {
@@ -527,7 +522,7 @@ void btGeneralizeWorld::createRigidBody(double mass,
     obj->setUserPointer(nullptr);
     mInternalWorld->addCollisionObject(obj, 1, -1);
     // std::cout << "col flag = " << obj->getCollisionFlags() << std::endl;
-    // exit(1);
+    // exit(0);
 }
 
 // 1. Apply active force, update the velocity, write into bullet
@@ -541,7 +536,7 @@ void btGeneralizeWorld::ApplyTestActiveForce(double dt)
     // 	if (mEnablePDControl)
     // 	{
     // 		std::cout << "prohibited\n";
-    // 		exit(1);
+    // 		exit(0);
     // 		mPDController->SetPDTargetq(tVectorXd::Zero(mMultibody->GetNumOfFreedom()));
     // 		mPDController->SetPDTargetqdot(tVectorXd::Zero(mMultibody->GetNumOfFreedom()));
     // 		mPDController->ApplyGeneralizedTau(dt);
@@ -580,6 +575,8 @@ void btGeneralizeWorld::ApplyGravity()
 
     if (mMultibody)
     {
+        // std::cout << "[before gravity] multibody force = "
+        //           << mMultibody->GetGeneralizedForce().transpose() << std::endl;
         mMultibody->ApplyGravity(mGravity);
     }
 }
@@ -643,7 +640,7 @@ void btGeneralizeWorld::CollisionResponse(double dt)
     // std::endl;
 
     // std::cout << "[before lcp] qdot = " << mMultibody->Getqdot().transpose()
-    // << std::endl; exit(1); tVectorXd qold = mMultibody->Getq(); tVectorXd
+    // << std::endl; exit(0); tVectorXd qold = mMultibody->Getq(); tVectorXd
     // qdotold = mMultibody->Getqdot(); tVectorXd qddotold =
     // mMultibody->Getqddot();
     // 4. collision response
@@ -974,7 +971,7 @@ void btGeneralizeWorld::Update(double dt)
                       << mMultibody->Getqdot().cwiseAbs().maxCoeff()
                       << std::endl;
             // if (mEnablePauseWhenMaxVel) gPauseSimulation = true;
-            // exit(1);
+            // exit(0);
         }
     }
 }
@@ -1206,6 +1203,19 @@ void btGeneralizeWorld::Reset()
     mMultibody->SyncToBullet();
 }
 
+void btGeneralizeWorld::SetEnableContacrAwareControl()
+{
+    std::cout << "btGeneralizeWorld::SetEnableContacrAwareControl is called\n";
+    if (mControlAdviser != nullptr || mMBEnableContactAwareLCP == true)
+    {
+        std::cout << "[error] control adviser exists, exit...\n";
+        exit(0);
+    }
+    mMBEnableContactAwareLCP = true;
+    mControlAdviser = new btGenContactAwareAdviser(this);
+    mControlAdviser->Init(this->mMultibody, mContactAwareConfig);
+}
+
 // /**
 //  * \brief			Initialize the guide trajectory from target file
 // */
@@ -1223,7 +1233,7 @@ void btGeneralizeWorld::Reset()
 // mGuideTraj->mqdot[mFrameId]);
 // 		// std::cout << "init guide traj done for " <<
 // mGuidedActionTrajFile << std::endl;
-// 		// exit(1);
+// 		// exit(0);
 // 	}
 // }
 
@@ -1237,7 +1247,7 @@ void btGeneralizeWorld::Reset()
 // 		if (mFrameId >= mGuideTraj->mNumOfFrames - 1)
 // 		{
 // 			std::cout << "guided traj exceed, exit\n";
-// 			exit(1);
+// 			exit(0);
 // 		}
 // 		tVectorXd force = mGuideTraj->mActiveForce[mFrameId];
 // 		std::cout << "cur frame id " << mFrameId << " active force = "
