@@ -1,6 +1,7 @@
 #include "btGenFrameByFrameOptimizer.h"
 #include "BulletGenDynamics/btGenController/FBFOptimizer/btGenFBFConstraint.h"
 #include "BulletGenDynamics/btGenController/FBFOptimizer/btGenFBFEnergyTerm.h"
+#include "BulletGenDynamics/btGenController/QPSolver/MatlabQPSolver.h"
 #include "BulletGenDynamics/btGenController/QPSolver/QuadProgQPSolver.h"
 #include "BulletGenDynamics/btGenController/btTraj.h"
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
@@ -106,6 +107,7 @@ public:
     eContactStatus mStatus;
 };
 
+// static QuadProgQPSolver *matlabQPSolver = nullptr;
 btGenFrameByFrameOptimizer::btGenFrameByFrameOptimizer()
 {
     mCurFrameId = -1;
@@ -303,11 +305,11 @@ void btGenFrameByFrameOptimizer::CalcContactStatus()
             // pt->mStatus = eContactStatus::STATIC;
             auto link = mModel->GetLinkById(pt->mCollider->mLinkId);
 
-            // std::cout << "[FBF] contact " << id << " on link "
-            //           << link->GetName()
-            //           << " cartesian vel in ref traj = " << vel.transpose()
-            //           << " status " << gContactStatusStr[pt->mStatus]
-            //           << std::endl;
+            std::cout << "[FBF] contact " << id << " on link "
+                      << link->GetName()
+                      << " cartesian vel in ref traj = " << vel.transpose()
+                      << " status " << gContactStatusStr[pt->mStatus]
+                      << std::endl;
             // std::cout << "contact " << id << " gen vel = " <<
             // contact_vel_cur_ref[id].transpose() << std::endl;
             // 3. calculate convert mat
@@ -356,6 +358,31 @@ void btGenFrameByFrameOptimizer::Solve(tVectorXd &tilde_qddot,
     // }
     mQPSolver->Solve(mTotalSolutionSize, H, f, Aeq, beq, Aineq, bineq, 100,
                      solution);
+
+    // try matlab solver
+    // matlab solver gives the same solution as quadprog
+    // {
+    //     tVectorXd matlab_sol;
+    //     tMatrixXd new_Aeq = Aeq.transpose(), new_Aineq = -Aineq.transpose();
+    //     tVectorXd new_beq = -beq, new_bineq = bineq;
+    //     matlabQPSolver->Solve(mTotalSolutionSize, H, f, new_Aeq, new_beq,
+    //                           new_Aineq, new_bineq, 100, matlab_sol);
+    //     tVectorXd diff = solution - matlab_sol;
+    //     if (diff.norm() > 1e-6)
+    //     {
+    //         std::cout << "[FBF] quad prog sol = " << solution.transpose()
+    //                   << std::endl;
+    //         std::cout << "[FBF] matlab sol = " << matlab_sol.transpose()
+    //                   << std::endl;
+    //         std::cout << "[FBF] sol diff = " << diff.transpose() <<
+    //         std::endl; std::cout << "[FBF] sol diff norm = " << diff.norm()
+    //         << std::endl; solution = matlab_sol;
+    //     }
+    //     else
+    //         std::cout << "[FBF] solved correctly\n";
+
+    //     // exit(0);
+    // }
     // double energy = 0.5 * (solution.transpose() * H).dot(solution) +
     //                 f.dot(solution) + b.dot(b);
     // std::cout << "[qp] energy = " << energy << std::endl;
@@ -471,6 +498,8 @@ void btGenFrameByFrameOptimizer::InitModelInfo()
 void btGenFrameByFrameOptimizer::InitQPSolver()
 {
     mQPSolver = new QuadProgQPSolver();
+    // matlabQPSolver = new MatlabQPSolver();
+
     // std::cout << "init qp solve done\n";
     // exit(0);
 }
@@ -559,7 +588,7 @@ void btGenFrameByFrameOptimizer::ClearContactPoints()
  * \brief				Calculate solution size, the offset
  * w.r.t each contact point
  *
- * 		solution vector = [contact_foce_vector, active_ctrl_force]
+ * 		solution vector = [contact_force_vector, active_ctrl_force]
  */
 void btGenFrameByFrameOptimizer::CalcSolutionVector()
 {

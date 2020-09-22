@@ -61,10 +61,31 @@ SET(
 	./btGenController/FBFOptimizer/btGenFBFConstraint.cpp
 	./btGenController/FBFOptimizer/btGenFBFEnergyTerm.cpp
 	./btGenController/FBFOptimizer/btGenFrameByFrameOptimizer.cpp
+	./btGenController/QPSolver/MatlabQPSolver.cpp
 	./btGenController/QPSolver/QuadProgQPSolver.cpp
 	./btGenController/QPSolver/eiquadprog.hpp
 	./btGenController/btTraj.cpp
 )
+
+if (UNIX)
+    find_package(Matlab REQUIRED)
+    if(Matlab_FOUND)
+        include_directories(${Matlab_INCLUDE_DIRS})
+    endif()
+
+    # add matlab QP solver
+    find_library(qp_lib
+                NAMES libQUADASSINPROG.so libQUADASSINPROG.dylib
+				PATHS "./btGenController/QPSolver/SQPMatlab/"
+				
+				# /home/xudong/Projects/bullet3/src/BulletGenDynamics
+				
+
+    )
+
+    # mwmclmcrrt就是matlab的runtime
+    set(matlab_lib ${qp_lib} mwmclmcrrt)
+endif()
 
 SET(BulletGenDynamics_SRCS
 	btGenWorld.cpp
@@ -84,6 +105,7 @@ link_libraries(${JSONCPP_LIBRARIES})
 
 ADD_LIBRARY(BulletGenDynamics ${BulletGenDynamics_SRCS})
 target_link_libraries(BulletGenDynamics ${JSONCPP_LIBRARIES})
+target_link_libraries(BulletGenDynamics ${matlab_lib})
 
 if (BUILD_SHARED_LIBS)
   target_link_libraries(BulletGenDynamics Bullet3Geometry)
