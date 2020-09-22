@@ -3,70 +3,84 @@ import re
 import matplotlib.pyplot as plt
 
 
-def get_q_qdot_qddot_error(filepath):
-    q_lst = []
-    qdot_lst = []
-    qddot_lst = []
-    with open(filepath) as f:
-        cont = f.readlines()
-        for line in cont:
-            if -1 != line.find("true"):
+def get_q_diff(line):
+    return float(line.split()[6])
+
+
+def get_qdot_diff(line):
+    return float(line.split()[9])
+
+
+def get_qddot_diff(line):
+    return float(line.split()[13])
+
+
+def get_ctrl_diff(log_path, get_method):
+
+    ctrl_and_ref_diff_lst, ctrl_and_target_diff_lst, ref_and_target_diff_lst = [], [], []
+
+    with open(log_path) as f:
+        for line in f.readlines():
+            if line.find("diff") != -1:
                 line = line.strip()
-                res = re.split('\s|,', line)
-                print(res)
-                qddot_lst.append(float(res[4]))
-                qdot_lst.append(float(res[9]))
-                q_lst.append(float(res[14]))
-    return q_lst, qdot_lst, qddot_lst
+                q_diff = get_method(line)
+                if line.find("ctrl_res") == -1:
+                    # handle ref traj and target diff
+                    ref_and_target_diff_lst.append(q_diff)
+                    # ref_and_target_qdot_diff_lst.append(qdot_diff)
+                    # ref_and_target_qddot_diff_lst.append(qddot_diff)
+                else:
+                    if line.find("ref_traj") != -1:
+                        # ref_traj and ctrl_res
+                        ctrl_and_ref_diff_lst.append(q_diff)
+                    elif line.find("target_traj") != -1:
+                        ctrl_and_target_diff_lst.append(q_diff)
+                    else:
+                        raise ValueError(f"fail to handle {line}")
+
+    return ctrl_and_ref_diff_lst, ctrl_and_target_diff_lst, ref_and_target_diff_lst
 
 
-pos_q, pos_qdot, pos_qddot = get_q_qdot_qddot_error("pos.log")
-vel_q, vel_qdot, vel_qddot = get_q_qdot_qddot_error("vel.log")
-accel_q, accel_qdot, accel_qddot = get_q_qdot_qddot_error("accel.log")
+ctrl_and_ref_q_diff_lst, ctrl_and_target_q_diff_lst, ref_and_target_q_diff_lst = get_ctrl_diff(
+    "./log", get_q_diff)
+ctrl_and_ref_qdot_diff_lst, ctrl_and_target_qdot_diff_lst, ref_and_target_qdot_diff_lst = get_ctrl_diff(
+    "./log", get_qdot_diff)
+ctrl_and_ref_qddot_diff_lst, ctrl_and_target_qddot_diff_lst, ref_and_target_qddot_diff_lst = get_ctrl_diff(
+    "./log", get_qddot_diff)
 
 
-# plt.plot(q_diff)
-# plt.title("q diff norm curve")
-# plt.show()
-
-# get_q_diff_norm("log")
-# def get_q_and_qdot_diff(filepath):
-#     with open(filepath, 'r') as f:
-#         cont = f.readlines()
-#     q_diff_lst, qdot_diff_lst, qddot_diff_lst = [], [], []
-#     for line in cont:
-#         line = line.strip()
-#         if -1 != line.find("[true]"):
-#             splited = re.split("\s|,", line)
-#             qddot_diff_lst.append(float(splited[4]))
-#             qdot_diff_lst.append(float(splited[9]))
-#             q_diff_lst.append(float(splited[14]))
-#             # print(line)
-#     return q_diff_lst, qdot_diff_lst, qddot_diff_lst
+def draw(idx, item, ctrl_and_ref_diff_lst, ctrl_and_target_diff_lst, ref_and_target_diff_lst):
+    plt.subplot(1, 3, idx)
+    plt.plot(ctrl_and_ref_diff_lst,
+             label=f"control result - ref traj")
+    plt.plot(ctrl_and_target_diff_lst,
+             label=f"control result - target traj")
+    plt.plot(ref_and_target_diff_lst,
+             label=f"ref traj - target traj")
+    plt.title(f"{item} diff norm")
+    plt.legend()
 
 
-# q_new, qdot_new, qddot_new = get_q_and_qdot_diff("new.log")
-# q_old, qdot_old, qddot_old = get_q_and_qdot_diff("old.log")
-
-plt.subplot(1, 3, 1)
-plt.plot(pos_q, label="pos_ctrled")
-plt.plot(vel_q, label="vel_ctrled")
-plt.plot(accel_q, label="accel_ctrled")
-plt.legend()
-plt.title("show q diff norm in 3 feature vectors")
-
-plt.subplot(1, 3, 2)
-plt.plot(pos_qdot, label="pos_ctrled")
-plt.plot(vel_qdot, label="vel_ctrled")
-plt.plot(accel_qdot, label="accel_ctrled")
-plt.legend()
-plt.title("show qdot diff norm in 3 feature vectors")
-
-plt.subplot(1, 3, 3)
-plt.plot(pos_qddot, label="pos_ctrled")
-plt.plot(vel_qddot, label="vel_ctrled")
-plt.plot(accel_qddot, label="accel_ctrled")
-plt.legend()
-plt.title("show qddot diff norm in 3 feature vectors")
-
+# plt.title("show q diff norm in 3 feature vectors")
+draw(1, "q", ctrl_and_ref_q_diff_lst,
+     ctrl_and_target_q_diff_lst, ref_and_target_q_diff_lst)
+draw(2, "qdot", ctrl_and_ref_qdot_diff_lst,
+     ctrl_and_target_qdot_diff_lst, ref_and_target_qdot_diff_lst)
+draw(3, "qddot", ctrl_and_ref_qddot_diff_lst,
+     ctrl_and_target_qddot_diff_lst, ref_and_target_qddot_diff_lst)
 plt.show()
+# plt.subplot(1, 3, 2)
+# plt.plot(pos_qdot, label="pos_ctrled")
+# plt.plot(vel_qdot, label="vel_ctrled")
+# plt.plot(accel_qdot, label="accel_ctrled")
+# plt.legend()
+# plt.title("show qdot diff norm in 3 feature vectors")
+
+# plt.subplot(1, 3, 3)
+# plt.plot(pos_qddot, label="pos_ctrled")
+# plt.plot(vel_qddot, label="vel_ctrled")
+# plt.plot(accel_qddot, label="accel_ctrled")
+# plt.legend()
+# plt.title("show qddot diff norm in 3 feature vectors")
+
+# plt.show()

@@ -73,7 +73,8 @@ protected:
     std::string mRefTrajPath;
     std::string mOutputTrajPath;
     bool mEnableOutput;
-    cRobotModelDynamics *mRefModel;
+    cRobotModelDynamics *mRefTrajModel;
+    cRobotModelDynamics *mFBFTrajModel;
 
     int num_of_freedom;               // model dof
     int num_of_underactuated_freedom; // model dof - 6

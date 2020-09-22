@@ -41,13 +41,15 @@ btGenContactAwareAdviser::btGenContactAwareAdviser(btGeneralizeWorld *world)
     mOutputTrajPath = "";
     mEnableOutput = false;
 
-    mRefModel = nullptr;
+    mRefTrajModel = nullptr;
+    mFBFTrajModel = nullptr;
     mOutputControlDiff = false;
 }
 
 btGenContactAwareAdviser::~btGenContactAwareAdviser()
 {
-    delete mRefModel;
+    delete mRefTrajModel;
+    delete mFBFTrajModel;
     delete mFeatureVector;
     delete mRefTraj;
 }
@@ -115,10 +117,7 @@ void btGenContactAwareAdviser::Init(cRobotModelDynamics *model_,
     mFBFOptimizer->Init(mWorld, mFrameByFrameConfig);
     mFeatureVector->Init(mFeatureVectorFile, mModel, mWorld->GetGravity());
 
-    if (mDrawReferenceTrajCharacter || mDrawTargetFBFCharacter)
-    {
-        CreateRefChar();
-    }
+    CreateRefChar();
     PostProcess();
 }
 
@@ -337,38 +336,44 @@ void btGenContactAwareAdviser::ReadConfig(const std::string &config)
     //     btJsonUtil::ParseAsDouble("dynamic_vel_energy_coef", ctrl_config);
     // mFBFAccelCoef =
     //     btJsonUtil::ParseAsDouble("dynamic_accel_energy_coef", ctrl_config);
-    if (mDrawTargetFBFCharacter && mDrawReferenceTrajCharacter)
-    {
-        std::cout << "[error] ContactAwareAdviser::Readconfig: 2 draw options"
-                     "are both turned on, exit\n";
-        exit(0);
-    }
+    // if (mDrawTargetFBFCharacter && mDrawReferenceTrajCharacter)
+    // {
+    //     std::cout << "[error] ContactAwareAdviser::Readconfig: 2 draw
+    //     options"
+    //                  "are both turned on, exit\n";
+    //     exit(0);
+    // }
 }
 
-void btGenContactAwareAdviser::UpdateMultibodyVelocityDebug(double dt)
-{
-    tVectorXd cur_qddot = mModel->Getqddot();
-    tVectorXd ref_qddot = mRefTraj->mqddot[mInternalFrameId - 1];
-    if (mOutputControlDiff == true)
-    {
-        // std::ofstream fout(mOutputControlDiffFile, std::ios::app);
-        // fout << "[ref] qddot diff = " << (cur_qddot -
-        // ref_qddot).transpose()
-        // << std::endl; fout.close(); std::cout << "[ref] qddot = " <<
-        // ref_qddot.transpose() << std::endl; std::cout << "[true] qddot = "
-        // <<
-        // cur_qddot.transpose() << std::endl;
-        tVectorXd q_diff = mModel->Getq() - mRefTraj->mq[mInternalFrameId - 1],
-                  qdot_diff =
-                      mModel->Getqdot() - mRefTraj->mqdot[mInternalFrameId - 1];
-        tVectorXd qddot_diff = cur_qddot - ref_qddot;
-        std::cout << "[true] qddot diff = " << qddot_diff.norm()
-                  << ", qdot diff = " << qdot_diff.norm()
-                  << ", q diff = " << q_diff.norm() << std::endl;
-    }
+// void btGenContactAwareAdviser::UpdateMultibodyVelocityDebug(double dt)
+// {
+//     // tVectorXd cur_qddot = mModel->Getqddot();
+//     // tVectorXd ref_qddot = mRefTraj->mqddot[mInternalFrameId - 1];
+//     if (mOutputControlDiff == true)
+//     {
+//         // std::ofstream fout(mOutputControlDiffFile, std::ios::app);
+//         // fout << "[ref] qddot diff = " << (cur_qddot -
+//         // ref_qddot).transpose()
+//         // << std::endl; fout.close(); std::cout << "[ref] qddot = " <<
+//         // ref_qddot.transpose() << std::endl; std::cout << "[true] qddot = "
+//         // <<
+//         // cur_qddot.transpose() << std::endl;
+//         // tVectorXd q_diff = mModel->Getq() - mRefTraj->mq[mInternalFrameId
+//         -
+//         // 1],
+//         //           qdot_diff =
+//         //               mModel->Getqdot() - mRefTraj->mqdot[mInternalFrameId
+//         -
+//         //               1];
+//         // tVectorXd qddot_diff = cur_qddot - ref_qddot;
+//         // std::cout << "[true] qddot diff = " << qddot_diff.norm()
+//         //           << ", qdot diff = " << qdot_diff.norm()
+//         //           << ", q diff = " << q_diff.norm() << std::endl;
 
-    mModel->UpdateVelocity(dt, false);
-}
+//     }
+
+//     mModel->UpdateVelocity(dt, false);
+// }
 /**
  * \brief					Update the multibody velocity,
  * used in debug mode
@@ -376,8 +381,9 @@ void btGenContactAwareAdviser::UpdateMultibodyVelocityDebug(double dt)
 void btGenContactAwareAdviser::UpdateMultibodyVelocityAndTransformDebug(
     double dt)
 {
-    tVectorXd cur_qddot = mModel->Getqddot();
-    tVectorXd ref_qddot = mRefTraj->mqddot[mInternalFrameId - 1];
+    tVectorXd qddot = mModel->Getqddot();
+    mModel->UpdateVelocityAndTransform(dt);
+    tVectorXd q = mModel->Getq(), qdot = mModel->Getqdot();
     if (mOutputControlDiff == true)
     {
         // std::ofstream fout(mOutputControlDiffFile, std::ios::app);
@@ -387,20 +393,43 @@ void btGenContactAwareAdviser::UpdateMultibodyVelocityAndTransformDebug(
         // ref_qddot.transpose() << std::endl; std::cout << "[true] qddot = "
         // <<
         // cur_qddot.transpose() << std::endl;
-        tVectorXd q_diff = mModel->Getq() - mRefTraj->mq[mInternalFrameId - 1],
-                  qdot_diff =
-                      mModel->Getqdot() - mRefTraj->mqdot[mInternalFrameId - 1];
-        tVectorXd qddot_diff = cur_qddot - ref_qddot;
-        std::cout << "[true] qddot diff = " << qddot_diff.norm()
-                  << ", qdot diff = " << qdot_diff.norm()
-                  << ", q diff = " << q_diff.norm() << std::endl;
+
+        const tVectorXd &ref_traj_q = mRefTraj->mq[mInternalFrameId],
+                        ref_traj_qdot = mRefTraj->mqdot[mInternalFrameId],
+                        ref_traj_qddot = mRefTraj->mqddot[mInternalFrameId - 1];
+
+        {
+            tVectorXd q_diff = q - ref_traj_q, qdot_diff = qdot - ref_traj_qdot,
+                      qddot_diff = qddot - ref_traj_qddot;
+
+            std::cout << "[debug] ctrl_res and ref_traj q diff "
+                      << q_diff.norm() << " qdot diff " << qdot_diff.norm()
+                      << " qddot diff = " << qddot_diff.norm() << std::endl;
+        }
+
+        {
+            tVectorXd q_diff = q - mTargetPos, qdot_diff = qdot - mTargetVel,
+                      qddot_diff = qddot - mTargetAccel;
+
+            std::cout << "[debug] ctrl_res and target_traj q diff "
+                      << q_diff.norm() << " qdot diff " << qdot_diff.norm()
+                      << " qddot diff = " << qddot_diff.norm() << std::endl;
+        }
+
+        {
+            tVectorXd q_diff = ref_traj_q - mTargetPos,
+                      qdot_diff = ref_traj_qdot - mTargetVel,
+                      qddot_diff = ref_traj_qddot - mTargetAccel;
+
+            std::cout << "[debug] ref_traj and target_traj q diff "
+                      << q_diff.norm() << " qdot diff " << qdot_diff.norm()
+                      << " qddot diff = " << qddot_diff.norm() << std::endl;
+        }
     }
-
-    mModel->UpdateVelocityAndTransform(dt);
-
     // std::cout << "mEnable sync traj per = " << mEnableSyncTrajPeriodly
     //           << ", internal frame id " << mInternalFrameId
     //           << ", sync period = " << mSyncTrajPeriod << std::endl;
+
     if (mEnableSyncTrajPeriodly == true &&
         mInternalFrameId % mSyncTrajPeriod == 0)
     {
@@ -477,11 +506,24 @@ void btGenContactAwareAdviser::GetTargetInfo(double dt, tVectorXd &qddot_target,
  */
 void btGenContactAwareAdviser::CreateRefChar()
 {
-    mRefModel = new cRobotModelDynamics();
+    if (mDrawReferenceTrajCharacter)
+    {
+        mRefTrajModel = new cRobotModelDynamics();
 
-    mRefModel->Init(mModel->GetCharFile().c_str(), mModel->GetScale(),
-                    ModelType::JSON);
-    mRefModel->InitSimVars(mWorld->GetInternalWorld(), true, true, false);
+        mRefTrajModel->Init(mModel->GetCharFile().c_str(), mModel->GetScale(),
+                            ModelType::JSON);
+        mRefTrajModel->InitSimVars(mWorld->GetInternalWorld(), true, true,
+                                   false);
+    }
+    if (mDrawTargetFBFCharacter)
+    {
+        mFBFTrajModel = new cRobotModelDynamics();
+
+        mFBFTrajModel->Init(mModel->GetCharFile().c_str(), mModel->GetScale(),
+                            ModelType::JSON);
+        mFBFTrajModel->InitSimVars(mWorld->GetInternalWorld(), true, true,
+                                   false);
+    }
     // mRefModel->SetqAndqdot(mRefTraj->mq[mInternalFrameId],
     // mRefTraj->mqdot[mInternalFrameId]);
 }
@@ -491,21 +533,16 @@ void btGenContactAwareAdviser::CreateRefChar()
  */
 void btGenContactAwareAdviser::UpdateRefChar()
 {
-    if (mRefModel != nullptr)
+    if (mDrawReferenceTrajCharacter)
     {
-        // mRefModel->SetqAndqdot(mRefTraj->mq[mInternalFrameId],
-        // mRefTraj->mqdot[mInternalFrameId]);
-        if (mDrawReferenceTrajCharacter)
-        {
-            mRefModel->SetqAndqdot(mRefTraj->mq[mInternalFrameId],
+        mRefTrajModel->SetqAndqdot(mRefTraj->mq[mInternalFrameId],
                                    mRefTraj->mqdot[mInternalFrameId]);
-        }
-        if (mDrawTargetFBFCharacter)
-        {
-            tVectorXd qdot_next = mTargetAccel * mCurdt + mModel->Getqdot();
-            tVectorXd q_next = qdot_next * mCurdt + mModel->Getq();
-            mRefModel->SetqAndqdot(q_next, qdot_next);
-        }
+    }
+    if (mDrawTargetFBFCharacter)
+    {
+        tVectorXd qdot_next = mTargetAccel * mCurdt + mModel->Getqdot();
+        tVectorXd q_next = qdot_next * mCurdt + mModel->Getq();
+        mFBFTrajModel->SetqAndqdot(q_next, qdot_next);
     }
 }
 
