@@ -5,6 +5,7 @@
 #include "BulletGenDynamics/btGenController/btTraj.h"
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
 #include "BulletGenDynamics/btGenSolver/ConstraintData.h"
+#include "BulletGenDynamics/btGenSolver/ContactSolver.h"
 #include "BulletGenDynamics/btGenUtil/JsonUtil.h"
 #include "BulletGenDynamics/btGenWorld.h"
 static int mNumOfFrictionDirs = 4;
@@ -157,6 +158,8 @@ void btGenFrameByFrameOptimizer::Init(btGeneralizeWorld *world,
         btJsonUtil::ParseAsDouble("dynamic_vel_energy_coef", conf);
     mDynamicAccelEnergyCoeff =
         btJsonUtil::ParseAsDouble("dynamic_accel_energy_coef", conf);
+    mControlForceCoef = btJsonUtil::ParseAsDouble("control_force_coef", conf);
+    mContactForceCoef = btJsonUtil::ParseAsDouble("contact_force_coef", conf);
     mEnableFixStaticContactPoint =
         btJsonUtil::ParseAsBool("fix_the_static_contact_point", conf);
 
@@ -353,11 +356,12 @@ void btGenFrameByFrameOptimizer::Solve(tVectorXd &tilde_qddot,
     // }
     mQPSolver->Solve(mTotalSolutionSize, H, f, Aeq, beq, Aineq, bineq, 100,
                      solution);
-    double energy = 0.5 * (solution.transpose() * H).dot(solution) +
-                    f.dot(solution) + b.dot(b);
+    // double energy = 0.5 * (solution.transpose() * H).dot(solution) +
+    //                 f.dot(solution) + b.dot(b);
     // std::cout << "[qp] energy = " << energy << std::endl;
 
     CalcTargetInternal(solution, tilde_qddot, tilde_qdot, tilde_q, tilde_tau);
+    mEnergyTerm->CheckEnergyValue(solution);
     // tVectorXd ref_tau = mTraj->mActiveForce[mCurFrameId].segment(
     //     6, num_of_underactuated_freedom);
     // std::cout << "[solved] tau = " << tilde_tau.transpose() << std::endl;
@@ -402,8 +406,8 @@ void btGenFrameByFrameOptimizer::CalcTargetInternal(const tVectorXd &solution,
         int offset = mContactSolOffset[i];
         int size = mContactSolSize[i];
         tVector3d solved_force = pt->mS * contact_force.segment(offset, size);
-        // std::cout << "[debug] contact force " << i << " solved " <<
-        // solved_force.transpose() << std::endl;
+        std::cout << "[solved] FBF contact force " << i << " "
+                  << solved_force.transpose() << std::endl;
         gen_contact_force += pt->mJac.transpose() * solved_force;
     }
     gen_ctrl_force.segment(6, num_of_underactuated_freedom) = control_force;
@@ -421,6 +425,13 @@ void btGenFrameByFrameOptimizer::CalcTargetInternal(const tVectorXd &solution,
     qdot = mModel->Getqdot() + qddot * mdt;
     q = mModel->Getq() + qdot * mdt;
 
+    // output the contact force info in the ref traj
+    for (auto &f : mTraj->mContactForce[mCurFrameId])
+    {
+        std::cout << "[ref] link "
+                  << dynamic_cast<btGenRobotCollider *>(f->mObj)->mLinkId
+                  << " force = " << f->mForce.transpose() << std::endl;
+    }
     // calculate the static contact point vel
     {
         for (auto &pt : mContactPoints)
@@ -694,7 +705,8 @@ void btGenFrameByFrameOptimizer::AddMinTauEnergyTerm()
     tMatrixXd A = tMatrixXd::Identity(num_of_underactuated_freedom,
                                       num_of_underactuated_freedom);
     tVectorXd b = tVectorXd::Zero(num_of_underactuated_freedom);
-    mEnergyTerm->AddEnergy(A, b, mContactSolutionSize);
+    mEnergyTerm->AddEnergy(A, b, mControlForceCoef, mContactSolutionSize,
+                           "control_force");
 }
 
 /**
@@ -705,7 +717,7 @@ void btGenFrameByFrameOptimizer::AddMinContactForceEnergyTerm()
     tMatrixXd A =
         tMatrixXd::Identity(mContactSolutionSize, mContactSolutionSize);
     tVectorXd b = tVectorXd::Zero(mContactSolutionSize);
-    mEnergyTerm->AddEnergy(A, b, 0);
+    mEnergyTerm->AddEnergy(A, b, mContactForceCoef, 0, "contact_force");
 }
 
 /**
@@ -835,9 +847,9 @@ void btGenFrameByFrameOptimizer::AddDynamicEnergyTermPos()
         .noalias() = A2;
     A /= dt2;
     b /= dt2;
-    A *= mDynamicPosEnergyCoeff;
-    b *= mDynamicPosEnergyCoeff;
-    mEnergyTerm->AddEnergy(A, b, 0);
+
+    // energy term Ax + b
+    mEnergyTerm->AddEnergy(A, b, mDynamicPosEnergyCoeff, 0, "pos");
 }
 
 /**
@@ -882,9 +894,7 @@ void btGenFrameByFrameOptimizer::AddDynamicEnergyTermVel()
         .noalias() = A2;
     A /= mdt;
     b /= mdt;
-    A *= mDynamicVelEnergyCoeff;
-    b *= mDynamicVelEnergyCoeff;
-    mEnergyTerm->AddEnergy(A, b, 0);
+    mEnergyTerm->AddEnergy(A, b, mDynamicVelEnergyCoeff, 0, "vel");
 }
 
 /**
@@ -929,7 +939,7 @@ void btGenFrameByFrameOptimizer::AddDynamicEnergyTermAccel()
         .noalias() = A2;
     A *= mDynamicAccelEnergyCoeff;
     b *= mDynamicAccelEnergyCoeff;
-    mEnergyTerm->AddEnergy(A, b, 0);
+    mEnergyTerm->AddEnergy(A, b, mDynamicAccelEnergyCoeff, 0, "accel");
 }
 
 /**

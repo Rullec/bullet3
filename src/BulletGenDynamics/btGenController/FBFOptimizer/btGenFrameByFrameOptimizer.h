@@ -76,6 +76,9 @@ protected:
     double mDynamicPosEnergyCoeff;
     double mDynamicVelEnergyCoeff;
     double mDynamicAccelEnergyCoeff;
+    double mControlForceCoef;
+    double mContactForceCoef;
+
     bool mEnableFixStaticContactPoint;
     const double mu = 0.8;
     int mContactSolutionSize; // the size of contact force in result vector
