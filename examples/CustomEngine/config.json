@@ -16,7 +16,7 @@
     "obj_type_bak1": "stick",
     "enable_obj_perturb": true,
     "default_timestep": 0.001666666666666666666666666666666666,
-    "pause_frame": 1,
+    "pause_frame": 50,
     "enable_pause_when_solved_wrong": false,
     "enable_resolve_when_solved_wrong": false,
     "output_log_path": "multibody_dis.log",

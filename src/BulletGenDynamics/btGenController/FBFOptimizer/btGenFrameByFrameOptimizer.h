@@ -1,3 +1,4 @@
+#pragma once
 #include "BulletGenDynamics/btGenUtil/JsonUtil.h"
 #include "BulletGenDynamics/btGenUtil/MathUtil.h"
 
@@ -53,6 +54,8 @@ protected:
     void AddDynamicConstraint();
     void AddMinTauEnergyTerm();
     void AddMinContactForceEnergyTerm();
+    void AddTauCloseToOriginEnergyTerm();
+    void AddContactForceCloseToOriginEnergyTerm();
     void CalcContactConvertMat(btCharContactPt *contact,
                                tMatrixXd &convert_mat);
     int GetSolutionSizeByContactStatus(eContactStatus status);

@@ -61,6 +61,8 @@ SET(
 	./btGenController/FBFOptimizer/btGenFBFConstraint.cpp
 	./btGenController/FBFOptimizer/btGenFBFEnergyTerm.cpp
 	./btGenController/FBFOptimizer/btGenFrameByFrameOptimizer.cpp
+	./btGenController/FBFOptimizer/btGenFrameByFrameOptimizerTerm.cpp
+	./btGenController/FBFOptimizer/btCharContactPoint.cpp
 	./btGenController/QPSolver/MatlabQPSolver.cpp
 	./btGenController/QPSolver/QuadProgQPSolver.cpp
 	./btGenController/QPSolver/eiquadprog.hpp

@@ -68,3 +68,4 @@ void btGenFrameByFrameEnergyTerm::CheckEnergyValue(const tVectorXd &sol)
                   << ", coef = " << coef << std::endl;
     }
 }
+
