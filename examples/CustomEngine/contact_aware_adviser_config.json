@@ -14,8 +14,10 @@
         "dynamic_pos_energy_coef": 5,
         "dynamic_vel_energy_coef": 1,
         "dynamic_accel_energy_coef": 1,
-        "control_force_coef": 10,
-        "contact_force_coef": 10,
+        "control_force_coef": 0,
+        "contact_force_coef": 0,
+        "control_force_close_to_origin_coef": 10,
+        "contact_force_close_to_orogin_coef": 10,
         "fix_the_static_contact_point": false,
         "enable_add_eps_diagnoal_A_matrix_FBF": true,
         "eps_diagnoal_A_matrix_FBF": 1e-5

@@ -78,6 +78,8 @@ protected:
     double mDynamicAccelEnergyCoeff;
     double mControlForceCoef;
     double mContactForceCoef;
+    double mControlForceCloseToOriginCoef;
+    double mContactForceCloseToOriginCoef;
 
     bool mEnableFixStaticContactPoint;
     const double mu = 0.8;

@@ -164,6 +164,10 @@ void btGenFrameByFrameOptimizer::Init(btGeneralizeWorld *world,
     mContactForceCoef = btJsonUtil::ParseAsDouble("contact_force_coef", conf);
     mEnableFixStaticContactPoint =
         btJsonUtil::ParseAsBool("fix_the_static_contact_point", conf);
+    mControlForceCloseToOriginCoef =
+        btJsonUtil::ParseAsDouble("control_force_close_to_origin_coef", conf);
+    mContactForceCloseToOriginCoef =
+        btJsonUtil::ParseAsDouble("contact_force_close_to_origin_coef", conf);
 
     // ParseConfig(conf);
     InitModelInfo();

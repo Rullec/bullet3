@@ -25,9 +25,6 @@ btGenContactAwareAdviser::btGenContactAwareAdviser(btGeneralizeWorld *world)
     mStartFrame = 1;
     mFeatureVectorFile = "";
     mResolveControlToruqe = false;
-    // mFBFPosCoef = 0.5;
-    // mFBFVelCoef = 1;
-    // mFBFAccelCoef = 1;
     mEnableSyncTrajPeriodly = false;
     mSyncTrajPeriod = 100;
 
