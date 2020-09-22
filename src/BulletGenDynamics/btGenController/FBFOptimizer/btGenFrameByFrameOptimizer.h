@@ -56,6 +56,9 @@ protected:
     void AddMinContactForceEnergyTerm();
     void AddTauCloseToOriginEnergyTerm();
     void AddContactForceCloseToOriginEnergyTerm();
+    void AddEndEffectorPosEnergyTerm();
+    void AddLinkPosEnergyTerm(int link_id, double coef,
+                              const tVector3d &target_pos);
     void CalcContactConvertMat(btCharContactPt *contact,
                                tMatrixXd &convert_mat);
     int GetSolutionSizeByContactStatus(eContactStatus status);
@@ -83,6 +86,7 @@ protected:
     double mContactForceCoef;
     double mControlForceCloseToOriginCoef;
     double mContactForceCloseToOriginCoef;
+    double mEndEffectorPosCoef;
 
     bool mEnableFixStaticContactPoint;
     const double mu = 0.8;

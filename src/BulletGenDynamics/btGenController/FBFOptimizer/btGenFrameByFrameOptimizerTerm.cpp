@@ -31,6 +31,9 @@ void btGenFrameByFrameOptimizer::CalcEnergyTerms()
         AddTauCloseToOriginEnergyTerm();
     if (mContactForceCloseToOriginCoef > 0)
         AddContactForceCloseToOriginEnergyTerm();
+
+    if (mEndEffectorPosCoef > 0)
+        AddEndEffectorPosEnergyTerm();
 }
 
 /**
@@ -497,4 +500,92 @@ void btGenFrameByFrameOptimizer::AddContactForceCloseToOriginEnergyTerm()
     // 3. add it to the energy term structure
     mEnergyTerm->AddEnergy(A, b, mContactForceCloseToOriginCoef, 0,
                            "contact_force_close_to_origin");
+}
+
+/**
+ * \brief                   Add an energy term to control the world position of
+ * end effector (enforcement)
+ */
+void btGenFrameByFrameOptimizer::AddEndEffectorPosEnergyTerm()
+{
+    // 1. get end effector id and their target pos
+    mModel->PushState("end_effecto_pos_energy");
+    std::vector<int> link_id_lst(0);
+    tEigenArr<tVector3d> link_target_pos_lst(0);
+    mModel->SetqAndqdot(mTraj->mq[mCurFrameId + 1],
+                        mTraj->mqdot[mCurFrameId + 1]);
+    for (int i = 0; i < mModel->GetNumOfLinks(); i++)
+    {
+        auto link = mModel->GetLinkById(i);
+
+        if (-1 == link->GetParentId() || link->GetNumOfChildren() == 0)
+        {
+            std::cout << "we want to control " << link->GetName() << std::endl;
+            link_id_lst.push_back(link->GetId());
+
+            link_target_pos_lst.push_back(link->GetWorldPos());
+        }
+    }
+    mModel->PopState("end_effecto_pos_energy");
+
+    // 2. construct the energy term for each of them
+    for (int idx = 0; idx < link_id_lst.size(); idx++)
+    {
+        AddLinkPosEnergyTerm(link_id_lst[idx], mEndEffectorPosCoef,
+                             link_target_pos_lst[idx]);
+    }
+}
+
+/**
+ * \brief                   Add an energy term to control the world pos of a
+ * targeted link
+ *
+ *
+ *          min || coef * (Jv_i * qdot_{t+1} + P_t - P_{t+1})||^2
+ */
+void btGenFrameByFrameOptimizer::AddLinkPosEnergyTerm(
+    int link_id, double coef, const tVector3d &target_pos)
+{
+    if (link_id < 0 || link_id >= mModel->GetNumOfLinks())
+    {
+        std::cout << "[error] link id " << link_id
+                  << " is illegal in AddLinkPosEnergyTerm\n";
+        exit(1);
+    }
+    auto link = mModel->GetLinkById(link_id);
+    tMatrixXd jac = link->GetJKv();
+    tVector3d cur_pos = link->GetWorldPos();
+    tMatrixXd A = tMatrixXd::Zero(3, mTotalSolutionSize);
+    tVectorXd b = tVectorXd::Zero(3);
+
+    const tMatrixXd &Minv = mModel->GetInvMassMatrix();
+    const tMatrixXd &C_d = mModel->GetCoriolisMatrix();
+    const tVectorXd &qdot = mModel->Getqdot();
+    const tVectorXd &q = mModel->Getq();
+    const tVectorXd &qdot_next_ref = mTraj->mq[mCurFrameId + 1];
+    // double dt2 = mdt * mdt;
+    tVectorXd QG = mModel->CalcGenGravity(mWorld->GetGravity());
+    b = jac * (mdt * Minv * (QG - C_d * qdot) + qdot - qdot_next_ref) +
+        cur_pos - target_pos;
+    // for contact forces
+    for (int c_id = 0; c_id < mContactPoints.size(); c_id++)
+    {
+        auto pt = mContactPoints[c_id];
+        int size = mContactSolSize[pt->contact_id];
+        int offset = mContactSolOffset[pt->contact_id];
+
+        // (3 * N) * (N * 3) * (3 * size) = 3 * size
+        A.block(0, offset, 3, size).noalias() =
+            jac * mdt * Minv * pt->mJac.transpose() * pt->mS;
+    }
+
+    // for control forces
+    tMatrixXd N = tMatrixXd::Zero(num_of_freedom, num_of_underactuated_freedom);
+    N.block(6, 0, num_of_underactuated_freedom, num_of_underactuated_freedom)
+        .setIdentity();
+    A.block(0, mContactSolutionSize, 3, mCtrlSolutionSize) =
+        jac * mdt * Minv * N;
+    mEnergyTerm->AddEnergy(A, b, coef, 0,
+                           "link_pos_for" + std::to_string(link_id));
+    
 }
