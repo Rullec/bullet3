@@ -101,10 +101,8 @@ void btGenFrameByFrameOptimizer::Init(btGeneralizeWorld *world,
         btJsonUtil::ParseAsDouble("control_force_close_to_origin_coef", conf);
     mContactForceCloseToOriginCoef =
         btJsonUtil::ParseAsDouble("contact_force_close_to_origin_coef", conf);
-    mEndEffectorPosLocationCoef =
-        btJsonUtil::ParseAsDouble("end_effector_pos_location_coef", conf);
-    mEndEffectorPosHeightCoef =
-        btJsonUtil::ParseAsDouble("end_effector_pos_height_coef", conf);
+    mEndEffectorPosCoef =
+        btJsonUtil::ParseAsDouble("end_effector_pos_coef", conf);
     mEndEffectorVelCoef =
         btJsonUtil::ParseAsDouble("end_effector_vel_coef", conf);
     mEndEffectorOrientationCoef =
@@ -298,7 +296,7 @@ void btGenFrameByFrameOptimizer::Solve(tVectorXd &tilde_qddot,
     Aineq.transposeInPlace();
     mQPSolver->Solve(mTotalSolutionSize, H, f, Aeq, beq, Aineq, bineq, 100,
                      solution);
-    std::cout << "quadprog sol = " << solution.transpose() << std::endl;
+    // std::cout << "quadprog sol = " << solution.transpose() << std::endl;
     if (solution.hasNaN() == true)
     {
         std::cout << "[error] Solution has Nan = " << solution.transpose()

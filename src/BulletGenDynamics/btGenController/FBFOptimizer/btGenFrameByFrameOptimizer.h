@@ -57,15 +57,12 @@ protected:
     void AddMinContactForceEnergyTerm();
     void AddTauCloseToOriginEnergyTerm();
     void AddContactForceCloseToOriginEnergyTerm();
-    void AddEndEffectorPosLocationEnergyTerm();
-    void AddEndEffectorPosHeightEnergyTerm();
+    void AddEndEffectorPosEnergyTerm();
     void AddEndEffectorVelEnergyTerm();
     void AddEndEffectorOrientationEnergyTerm();
     void AddRootPosEnergyTerm();
     void AddRootOrientationEnergyTerm();
-    void AddLinkPosHeightEnergyTerm(int link_id, double coef,
-                              const tVector3d &target_pos);
-    void AddLinkPosLocationEnergyTerm(int link_id, double coef,
+    void AddLinkPosEnergyTerm(int link_id, double coef,
                               const tVector3d &target_pos);
     void AddLinkVelEnergyTerm(int link_id, double coef,
                               const tVector3d &target_vel);
@@ -98,8 +95,7 @@ protected:
     double mContactForceCoef;
     double mControlForceCloseToOriginCoef;
     double mContactForceCloseToOriginCoef;
-    double mEndEffectorPosLocationCoef;
-    double mEndEffectorPosHeightCoef;
+    double mEndEffectorPosCoef;
     double mEndEffectorVelCoef;
     double mEndEffectorOrientationCoef;
     double mRootPosCoef;
