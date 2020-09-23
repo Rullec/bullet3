@@ -58,8 +58,11 @@ protected:
     void AddContactForceCloseToOriginEnergyTerm();
     void AddEndEffectorPosEnergyTerm();
     void AddRootPosEnergyTerm();
+    void AddRootOrientationEnergyTerm();
     void AddLinkPosEnergyTerm(int link_id, double coef,
                               const tVector3d &target_pos);
+    void AddLinkOrientationEnergyTerm(int link_id, double coef,
+                                      const tMatrix3d &target_orientation);
     void CalcContactConvertMat(btCharContactPt *contact,
                                tMatrixXd &convert_mat);
     int GetSolutionSizeByContactStatus(eContactStatus status);
@@ -89,6 +92,7 @@ protected:
     double mContactForceCloseToOriginCoef;
     double mEndEffectorPosCoef;
     double mRootPosCoef;
+    double mRootOrientationCoef; // control the orientation of root link
 
     bool mEnableFixStaticContactPoint;
     bool mIgnoreRootPosInDynamicEnergy;

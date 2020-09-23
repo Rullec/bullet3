@@ -36,6 +36,8 @@ void btGenFrameByFrameOptimizer::CalcEnergyTerms()
         AddEndEffectorPosEnergyTerm();
     if (mRootPosCoef > 0)
         AddRootPosEnergyTerm();
+    if (mRootOrientationCoef > 0)
+        AddRootOrientationEnergyTerm();
 }
 
 /**
@@ -261,7 +263,7 @@ void btGenFrameByFrameOptimizer::AddDynamicEnergyTermPos()
 
     if (mIgnoreRootPosInDynamicEnergy == true)
     {
-        A = A.block(6, 0, num_of_freedom, mTotalSolutionSize);
+        A = A.block(6, 0, num_of_underactuated_freedom, mTotalSolutionSize);
         b = b.segment(6, num_of_underactuated_freedom);
     }
     // energy term Ax + b
@@ -312,7 +314,7 @@ void btGenFrameByFrameOptimizer::AddDynamicEnergyTermVel()
     b /= mdt;
     if (mIgnoreRootPosInDynamicEnergy == true)
     {
-        A = A.block(6, 0, num_of_freedom, mTotalSolutionSize);
+        A = A.block(6, 0, num_of_underactuated_freedom, mTotalSolutionSize);
         b = b.segment(6, num_of_underactuated_freedom);
     }
     mEnergyTerm->AddEnergy(A, b, mDynamicVelEnergyCoeff, 0, "vel");
@@ -369,7 +371,7 @@ void btGenFrameByFrameOptimizer::AddDynamicEnergyTermAccel()
     // b *= mDynamicAccelEnergyCoeff;
     if (mIgnoreRootPosInDynamicEnergy == true)
     {
-        A = A.block(6, 0, num_of_freedom, mTotalSolutionSize);
+        A = A.block(6, 0, num_of_underactuated_freedom, mTotalSolutionSize);
         b = b.segment(6, num_of_underactuated_freedom);
     }
     mEnergyTerm->AddEnergy(A, b, mDynamicAccelEnergyCoeff, 0, "accel");
@@ -581,6 +583,22 @@ void btGenFrameByFrameOptimizer::AddRootPosEnergyTerm()
 }
 
 /**
+ * \brief                       Control the orientation of root link
+ */
+void btGenFrameByFrameOptimizer::AddRootOrientationEnergyTerm()
+{
+    mModel->PushState("root_ori_energy");
+
+    mModel->SetqAndqdot(mTraj->mq[mCurFrameId + 1],
+                        mTraj->mqdot[mCurFrameId + 1]);
+    auto link = mModel->GetLinkById(0);
+    tMatrix3d link_rot = link->GetWorldOrientation();
+    mModel->PopState("root_ori_energy");
+
+    AddLinkOrientationEnergyTerm(0, mRootOrientationCoef, link_rot);
+}
+
+/**
  * \brief                   Add an energy term to control the world pos of a
  * targeted link
  *
@@ -632,4 +650,109 @@ void btGenFrameByFrameOptimizer::AddLinkPosEnergyTerm(
     coef /= dt2;
     mEnergyTerm->AddEnergy(A, b, coef, 0,
                            "link_pos_for" + std::to_string(link_id));
+}
+
+/**
+ * \brief                   Add the target orientation energy term for a link
+ *
+ *  min | R_target - R_t+1^i | ^2
+ *
+ * For more details, please check the note
+ *
+ * F_err    = F_{t+1}^i - F_target^i
+ *          = dt * dFdq * \dot{q}_{t+1} + F_t^i - F_target^i
+ *          = dt2 * dFdq * Minv * Q_ext + dFdq * (dt2 * (Qg - Cqdot) + dt*qdot)
+ *              + F_{t} - F_target
+ */
+void btGenFrameByFrameOptimizer::AddLinkOrientationEnergyTerm(
+    int link_id, double coef, const tMatrix3d &target_orientation)
+{
+    auto Flatten = [](const tMatrix3d &mat) -> tVectorXd {
+        tVectorXd res = tVectorXd::Zero(9);
+        for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 3; j++)
+                res[i * 3 + j] = mat(i, j);
+        return res;
+    };
+
+    // 1. get dR/dq, flatten qcur, flatten qtarget
+    auto link = mModel->GetLinkById(link_id);
+
+    tMatrixXd dRdq = tMatrixXd::Zero(9, num_of_freedom);
+    {
+        auto prev_dof_map = link->GetPrevFreedomIds();
+
+        int num_of_total_freedom_link = link->GetNumTotalFreedoms();
+        if (num_of_total_freedom_link != prev_dof_map.size())
+        {
+            std::cout << "[error] the num of freedom doesn't match for link "
+                      << link_id << " prev dof = " << prev_dof_map.size()
+                      << " total dof = " << num_of_total_freedom_link
+                      << std::endl;
+            exit(0);
+        }
+
+        for (int local_freedom_id = 0;
+             local_freedom_id < num_of_total_freedom_link; local_freedom_id++)
+        {
+            int global_freedom_id = prev_dof_map[local_freedom_id];
+            // std::cout << "link " << link_id << " local dof " <<
+            // local_freedom_id
+            //           << " global freedom " << global_freedom_id <<
+            //           std::endl;
+            dRdq.col(global_freedom_id) =
+                Flatten(link->GetMWQ(local_freedom_id).block(0, 0, 3, 3));
+        }
+    }
+    // exit(0);
+    tVectorXd target_orient_flatten = Flatten(target_orientation);
+    tVectorXd cur_orient_flatten = Flatten(link->GetWorldOrientation());
+
+    // 2. shape the convert mat from opt solution to num_of_freedom
+    // for contact forces
+    const tMatrixXd &Minv = mModel->GetInvMassMatrix();
+    tMatrixXd convert_mat = tMatrixXd::Zero(num_of_freedom, mTotalSolutionSize);
+    for (int c_id = 0; c_id < mContactPoints.size(); c_id++)
+    {
+        auto pt = mContactPoints[c_id];
+        int size = mContactSolSize[pt->contact_id];
+        int offset = mContactSolOffset[pt->contact_id];
+
+        // (3 * N) * (N * 3) * (3 * size) = 3 * size
+        convert_mat.block(0, offset, num_of_freedom, size).noalias() =
+            pt->mJac.transpose() * pt->mS;
+    }
+
+    // for control forces
+    tMatrixXd N = tMatrixXd::Zero(num_of_freedom, num_of_underactuated_freedom);
+    N.block(6, 0, num_of_underactuated_freedom, num_of_underactuated_freedom)
+        .setIdentity();
+    convert_mat.block(0, mContactSolutionSize, num_of_freedom,
+                      mCtrlSolutionSize) = N;
+
+    // 2. shape the final A and b
+    const tMatrixXd &C_d = mModel->GetCoriolisMatrix();
+    const tVectorXd &qdot = mModel->Getqdot();
+    const tVectorXd &q = mModel->Getq();
+    const tVectorXd QG = mModel->CalcGenGravity(mWorld->GetGravity());
+    double dt2 = mdt * mdt;
+
+    tMatrixXd A = dt2 * dRdq * Minv * convert_mat;
+    tVectorXd b = dRdq * (dt2 * Minv * (QG - C_d * qdot) + mdt * qdot) +
+                  cur_orient_flatten - target_orient_flatten;
+
+    // A /= dt2;
+    // b /= dt2;
+    coef /= dt2;
+    std::cout << "cur orientation " << cur_orient_flatten.transpose()
+              << std::endl;
+    std::cout << "target orientation " << target_orient_flatten.transpose()
+
+              << std::endl;
+    // std::cout << "dFdq = \n" << dRdq << std::endl;
+    // std::cout << "A = \n" << A << std::endl;
+    // std::cout << "b = \n" << b.transpose() << std::endl;
+
+    mEnergyTerm->AddEnergy(A, b, coef, 0,
+                           "link_orientation_" + std::to_string(link_id));
 }

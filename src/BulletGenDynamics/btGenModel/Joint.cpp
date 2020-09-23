@@ -53,8 +53,8 @@ Freedom *Joint::GetFreedomByAxis(tVector3d axis, int type)
 }
 
 /**
- * \brief					��ʼ����ǰ�ؽ����������ɶȸ���, mTq ��
- * mWq.
+ * \brief					��ʼ����ǰ�ؽ����������ɶȸ���, mTq
+ * �� mWq.
  */
 void Joint::InitTerms()
 {
@@ -96,8 +96,8 @@ void Joint::InitMatrix()
     r_m.resize(local_freedom);
     r_m_first_deriv.resize(local_freedom);
     r_m_second_deriv.resize(local_freedom);
-    mTq.resize(local_freedom);
-    mWq.resize(total_freedoms);
+    mTq.resize(local_freedom, tMatrix::Zero());
+    mWq.resize(total_freedoms, tMatrix::Zero());
 
     JK_w.resize(3, global_freedom);
     JK_v.resize(3, global_freedom);
@@ -315,6 +315,14 @@ void Joint::ComputeGlobalTransformFirstDerive()
                             mWq[i + prev_freedoms]);
         }
     }
+    if (0 == id)
+    {
+        for (int i = local_freedom + prev_freedoms; i < total_freedoms; i++)
+        {
+            std::cout << "[joint] dRdq for dof " << i
+                      << " nnorm should be 0 = " << mWq[i].norm() << std::endl;
+        }
+    }
 }
 
 /**
@@ -387,8 +395,8 @@ void Joint::ComputeGlobalTransformSecondDerive()
         // for (int j = 0; j < local_freedom; j++)	{
         //	if (parent_joint)
         //		mWqq[i][j + num_parent_dofs] = parent_joint->GetMWQ(i) *
-        //parent_t_child * mTq[j]; 	else 		mWqq[i][j + num_parent_dofs] =
-        //init_rotation_matrix_4x4 * mTq[j];
+        // parent_t_child * mTq[j]; 	else 		mWqq[i][j +
+        // num_parent_dofs] = init_rotation_matrix_4x4 * mTq[j];
         //}
     }
 
@@ -475,9 +483,9 @@ void Joint::ComputeHessianByGivenPoint(EIGEN_V_MATXD &ms,
 }
 
 /**
- * \brief			Compute Jacobian (Jv) for this point p with respect to
- * the whole DOF of this skeleton \param j			the reference
- * jacobian mat, it will be revised in the function
+ * \brief			Compute Jacobian (Jv) for this point p with
+ * respect to the whole DOF of this skeleton \param j			the
+ * reference jacobian mat, it will be revised in the function
  * \param p			the target point where we want to get the
  * jacobian(Jv), expressed in joint local frame
  */

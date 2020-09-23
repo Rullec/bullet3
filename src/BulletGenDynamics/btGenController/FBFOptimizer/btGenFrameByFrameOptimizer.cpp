@@ -104,7 +104,8 @@ void btGenFrameByFrameOptimizer::Init(btGeneralizeWorld *world,
     mEndEffectorPosCoef =
         btJsonUtil::ParseAsDouble("end_effector_pos_coef", conf);
     mRootPosCoef = btJsonUtil::ParseAsDouble("root_pos_coef", conf);
-
+    mRootOrientationCoef =
+        btJsonUtil::ParseAsDouble("root_orientation_coef", conf);
     // ParseConfig(conf);
     InitModelInfo();
     InitQPSolver();
@@ -273,6 +274,8 @@ void btGenFrameByFrameOptimizer::Solve(tVectorXd &tilde_qddot,
     // 1. solve the QP problem
     // std::cout << "[debug] begin to solve the QP problem\n";
     mEnergyTerm->GetEnergyTerm(A, b);
+    // std::cout << "opt A = \n" << A << std::endl;
+    // std::cout << "opt b = " << b.transpose() << std::endl;
     mConstraint->GetEqJacobianAndResidual(Aeq, beq); // Aeq * x + beq = 0
     mConstraint->GetIneqJacobianAndResidual(Aineq,
                                             bineq); // Aineq * x + bineq >= 0
@@ -285,31 +288,27 @@ void btGenFrameByFrameOptimizer::Solve(tVectorXd &tilde_qddot,
     Aineq.transposeInPlace();
     mQPSolver->Solve(mTotalSolutionSize, H, f, Aeq, beq, Aineq, bineq, 100,
                      solution);
+    std::cout << "quadprog sol = " << solution.transpose() << std::endl;
+    if (solution.hasNaN() == true)
+    {
+        std::cout << "[error] Solution has Nan = " << solution.transpose()
+                  << std::endl;
+        exit(0);
+        // try matlab solver
+        // matlab solver gives the same solution as quadprog
+        // {
+        //     tVectorXd matlab_sol;
+        //     tMatrixXd new_Aeq = Aeq.transpose(), new_Aineq = -Aineq.transpose();
+        //     tVectorXd new_beq = -beq, new_bineq = bineq;
+        //     matlabQPSolver->Solve(mTotalSolutionSize, H, f, new_Aeq, new_beq,
+        //                           new_Aineq, new_bineq, 100, matlab_sol);
 
-    // try matlab solver
-    // matlab solver gives the same solution as quadprog
-    // {
-    //     tVectorXd matlab_sol;
-    //     tMatrixXd new_Aeq = Aeq.transpose(), new_Aineq = -Aineq.transpose();
-    //     tVectorXd new_beq = -beq, new_bineq = bineq;
-    //     matlabQPSolver->Solve(mTotalSolutionSize, H, f, new_Aeq, new_beq,
-    //                           new_Aineq, new_bineq, 100, matlab_sol);
-    //     tVectorXd diff = solution - matlab_sol;
-    //     if (diff.norm() > 1e-6)
-    //     {
-    //         std::cout << "[FBF] quad prog sol = " << solution.transpose()
-    //                   << std::endl;
-    //         std::cout << "[FBF] matlab sol = " << matlab_sol.transpose()
-    //                   << std::endl;
-    //         std::cout << "[FBF] sol diff = " << diff.transpose() <<
-    //         std::endl; std::cout << "[FBF] sol diff norm = " << diff.norm()
-    //         << std::endl; solution = matlab_sol;
-    //     }
-    //     else
-    //         std::cout << "[FBF] solved correctly\n";
+        //     std::cout << "matlab sol = " << matlab_sol.transpose() << std::endl;
+        //     solution = matlab_sol;
+        //     // exit(0);
+        // }
+    }
 
-    //     // exit(0);
-    // }
     // double energy = 0.5 * (solution.transpose() * H).dot(solution) +
     //                 f.dot(solution) + b.dot(b);
     // std::cout << "[qp] energy = " << energy << std::endl;
