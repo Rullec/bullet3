@@ -47,6 +47,7 @@ protected:
     void AddStaticConstraint(btCharContactPt *pt);
     void AddBreakageConstraint(btCharContactPt *pt);
     void AddFixStaticContactPointConstraint();
+    void AddContactForceLimitConstraint();
     void AddDynamicEnergyTerm();
     void AddDynamicEnergyTermPos();
     void AddDynamicEnergyTermVel();
@@ -95,6 +96,9 @@ protected:
     double mEndEffectorOrientationCoef;
     double mRootPosCoef;
     double mRootOrientationCoef; // control the orientation of root link
+
+    bool mEnableContactForceLimit; // limit the contact force in [-a, a]
+    double mContactForceLimit;     // the limitation of contact force
 
     bool mEnableFixStaticContactPoint;
     bool mIgnoreRootPosInDynamicEnergy;

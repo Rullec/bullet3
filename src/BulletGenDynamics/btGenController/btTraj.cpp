@@ -217,6 +217,7 @@ btTraj::~btTraj()
     }
     mContactForce.clear();
 }
+#include <algorithm>
 bool btTraj::LoadTraj(const std::string &path, cRobotModelDynamics *model,
                       int max_frame /* = -1*/)
 {
@@ -325,6 +326,29 @@ bool btTraj::LoadTraj(const std::string &path, cRobotModelDynamics *model,
         // std::cout << "mqddot = " << mqddot[frame_id].transpose() <<
         // std::endl; exit(0);
     }
+
+    // get all contact forces, sort and find some biggest
+    // {
+    //     tEigenArr<btGenContactForce *> forces(0);
+    //     for (auto &frame : mContactForce)
+    //     {
+    //         for (auto &f : frame)
+    //         {
+    //             forces.push_back(f);
+    //         }
+    //     }
+    //     auto comp = [](const btGenContactForce *f1,
+    //                    const btGenContactForce *f2) {
+    //         return f1->mForce.norm() > f2->mForce.norm();
+    //     };
+
+    //     std::sort(forces.begin(), forces.end(), comp);
+    //     for (int i = 0; i < 10; i++)
+    //     {
+    //         std::cout << forces[i]->mForce.transpose() << std::endl;
+    //     }
+    //     exit(1);
+    // }
     return true;
 }
 

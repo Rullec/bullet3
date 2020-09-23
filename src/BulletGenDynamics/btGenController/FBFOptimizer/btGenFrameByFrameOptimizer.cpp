@@ -10,7 +10,7 @@
 #include "BulletGenDynamics/btGenWorld.h"
 #include "btCharContactPoint.h"
 int mNumOfFrictionDirs = 4;
-double mu = 0.8;
+double mu = 1.8;
 const std::string gContactStatusStr[] = {"INVALID_CONTACT_STATUS", "SLIDING",
                                          "STATIC", "BREAKAGE"};
 
@@ -108,6 +108,10 @@ void btGenFrameByFrameOptimizer::Init(btGeneralizeWorld *world,
     mRootPosCoef = btJsonUtil::ParseAsDouble("root_pos_coef", conf);
     mRootOrientationCoef =
         btJsonUtil::ParseAsDouble("root_orientation_coef", conf);
+    mEnableContactForceLimit =
+        btJsonUtil::ParseAsBool("enable_contact_force_limit", conf);
+    mContactForceLimit = btJsonUtil::ParseAsDouble("contact_force_limit", conf);
+
     // ParseConfig(conf);
     InitModelInfo();
     InitQPSolver();
@@ -290,7 +294,7 @@ void btGenFrameByFrameOptimizer::Solve(tVectorXd &tilde_qddot,
     Aineq.transposeInPlace();
     mQPSolver->Solve(mTotalSolutionSize, H, f, Aeq, beq, Aineq, bineq, 100,
                      solution);
-    // std::cout << "quadprog sol = " << solution.transpose() << std::endl;
+    std::cout << "quadprog sol = " << solution.transpose() << std::endl;
     if (solution.hasNaN() == true)
     {
         std::cout << "[error] Solution has Nan = " << solution.transpose()

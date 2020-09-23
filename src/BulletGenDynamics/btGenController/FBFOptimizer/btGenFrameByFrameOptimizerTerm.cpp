@@ -83,11 +83,11 @@ void btGenFrameByFrameOptimizer::CalcConstraints()
     // do we need to fix the contact point at somewhere when it is judge static?
 
     if (mEnableFixStaticContactPoint == true)
-    {
         AddFixStaticContactPointConstraint();
-        // std::cout << "fix static contact point is enabled\n";
-        // exit(1);
-    }
+
+    // add the limitattion for contact forces
+    if (mEnableContactForceLimit == true)
+        AddContactForceLimitConstraint();
 }
 
 /**
@@ -449,6 +449,30 @@ void btGenFrameByFrameOptimizer::AddFixStaticContactPointConstraint()
 }
 
 /**
+ * \brief                   Constraint the contact forces inside some range
+ */
+void btGenFrameByFrameOptimizer::AddContactForceLimitConstraint()
+{
+    // 1. fetch and judge the contact force limit
+    double limit = mContactForceLimit;
+    if (limit <= 0)
+    {
+        std::cout << "the contact force limit is <=0, illegal\n";
+        exit(0);
+    }
+    tMatrixXd jac =
+        tMatrixXd::Identity(mContactSolutionSize, mContactSolutionSize);
+    tVectorXd upper_limit = tVectorXd::Ones(mContactSolutionSize) * limit,
+              lower_limit = -tVectorXd::Ones(mContactSolutionSize) * limit;
+
+    // force >= lower_limit
+    mConstraint->AddIneqCon(jac, lower_limit, 0);
+
+    // -1 * force >= -upper_limit
+    mConstraint->AddIneqCon(-jac, -upper_limit, 0);
+    std::cout << "[limit] set the contact force limit " << limit << std::endl;
+}
+/**
  * \brief           the control force tau should be close to the calculated
  * value in the reference trajectory
  *
@@ -561,7 +585,7 @@ void btGenFrameByFrameOptimizer::AddEndEffectorPosEnergyTerm()
         {
             // std::cout << "we want to control " << link->GetName() <<
             // std::endl;
-            link_id_lst.push_back(link->GetId());
+            link_id_lst.push_back(i);
 
             link_target_pos_lst.push_back(link->GetWorldPos());
         }
@@ -596,7 +620,7 @@ void btGenFrameByFrameOptimizer::AddEndEffectorOrientationEnergyTerm()
         {
             // std::cout << "we want to control " << link->GetName() <<
             // std::endl;
-            link_id_lst.push_back(link->GetId());
+            link_id_lst.push_back(i);
 
             link_target_rot_lst.push_back(link->GetWorldOrientation());
         }
