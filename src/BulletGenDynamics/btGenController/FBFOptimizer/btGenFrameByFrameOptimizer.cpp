@@ -103,6 +103,8 @@ void btGenFrameByFrameOptimizer::Init(btGeneralizeWorld *world,
         btJsonUtil::ParseAsDouble("contact_force_close_to_origin_coef", conf);
     mEndEffectorPosCoef =
         btJsonUtil::ParseAsDouble("end_effector_pos_coef", conf);
+    mEndEffectorOrientationCoef =
+        btJsonUtil::ParseAsDouble("end_effector_orient_coef", conf);
     mRootPosCoef = btJsonUtil::ParseAsDouble("root_pos_coef", conf);
     mRootOrientationCoef =
         btJsonUtil::ParseAsDouble("root_orientation_coef", conf);
@@ -288,7 +290,7 @@ void btGenFrameByFrameOptimizer::Solve(tVectorXd &tilde_qddot,
     Aineq.transposeInPlace();
     mQPSolver->Solve(mTotalSolutionSize, H, f, Aeq, beq, Aineq, bineq, 100,
                      solution);
-    std::cout << "quadprog sol = " << solution.transpose() << std::endl;
+    // std::cout << "quadprog sol = " << solution.transpose() << std::endl;
     if (solution.hasNaN() == true)
     {
         std::cout << "[error] Solution has Nan = " << solution.transpose()
@@ -298,13 +300,13 @@ void btGenFrameByFrameOptimizer::Solve(tVectorXd &tilde_qddot,
         // matlab solver gives the same solution as quadprog
         // {
         //     tVectorXd matlab_sol;
-        //     tMatrixXd new_Aeq = Aeq.transpose(), new_Aineq = -Aineq.transpose();
-        //     tVectorXd new_beq = -beq, new_bineq = bineq;
+        //     tMatrixXd new_Aeq = Aeq.transpose(), new_Aineq =
+        //     -Aineq.transpose(); tVectorXd new_beq = -beq, new_bineq = bineq;
         //     matlabQPSolver->Solve(mTotalSolutionSize, H, f, new_Aeq, new_beq,
         //                           new_Aineq, new_bineq, 100, matlab_sol);
 
-        //     std::cout << "matlab sol = " << matlab_sol.transpose() << std::endl;
-        //     solution = matlab_sol;
+        //     std::cout << "matlab sol = " << matlab_sol.transpose() <<
+        //     std::endl; solution = matlab_sol;
         //     // exit(0);
         // }
     }

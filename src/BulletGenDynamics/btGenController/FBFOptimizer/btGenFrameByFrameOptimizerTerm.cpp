@@ -34,6 +34,8 @@ void btGenFrameByFrameOptimizer::CalcEnergyTerms()
 
     if (mEndEffectorPosCoef > 0)
         AddEndEffectorPosEnergyTerm();
+    if (mEndEffectorOrientationCoef > 0)
+        AddEndEffectorOrientationEnergyTerm();
     if (mRootPosCoef > 0)
         AddRootPosEnergyTerm();
     if (mRootOrientationCoef > 0)
@@ -568,6 +570,41 @@ void btGenFrameByFrameOptimizer::AddEndEffectorPosEnergyTerm()
 }
 
 /**
+ * \brief                   Control the world orientation of end effector
+ */
+void btGenFrameByFrameOptimizer::AddEndEffectorOrientationEnergyTerm()
+{
+    // 1. get end effector id and their target pos
+    mModel->PushState("end_effector_pos_energy");
+    std::vector<int> link_id_lst(0);
+    tEigenArr<tMatrix3d> link_target_rot_lst(0);
+    mModel->SetqAndqdot(mTraj->mq[mCurFrameId + 1],
+                        mTraj->mqdot[mCurFrameId + 1]);
+    for (int i = 0; i < mModel->GetNumOfLinks(); i++)
+    {
+        auto link = mModel->GetLinkById(i);
+
+        // if (-1 == link->GetParentId() || link->GetNumOfChildren() == 0)
+        if (link->GetNumOfChildren() == 0)
+        {
+            // std::cout << "we want to control " << link->GetName() <<
+            // std::endl;
+            link_id_lst.push_back(link->GetId());
+
+            link_target_rot_lst.push_back(link->GetWorldOrientation());
+        }
+    }
+    mModel->PopState("end_effector_pos_energy");
+
+    // 2. construct the energy term for each of them
+    for (int idx = 0; idx < link_id_lst.size(); idx++)
+    {
+        AddLinkOrientationEnergyTerm(link_id_lst[idx],
+                                     mEndEffectorOrientationCoef,
+                                     link_target_rot_lst[idx]);
+    }
+}
+/**
  * \brief                       Control the root position
  */
 void btGenFrameByFrameOptimizer::AddRootPosEnergyTerm()
@@ -744,11 +781,10 @@ void btGenFrameByFrameOptimizer::AddLinkOrientationEnergyTerm(
     // A /= dt2;
     // b /= dt2;
     coef /= dt2;
-    std::cout << "cur orientation " << cur_orient_flatten.transpose()
-              << std::endl;
-    std::cout << "target orientation " << target_orient_flatten.transpose()
-
-              << std::endl;
+    // std::cout << "cur orientation " << cur_orient_flatten.transpose()
+    //           << std::endl;
+    // std::cout << "target orientation " << target_orient_flatten.transpose()
+    //           << std::endl;
     // std::cout << "dFdq = \n" << dRdq << std::endl;
     // std::cout << "A = \n" << A << std::endl;
     // std::cout << "b = \n" << b.transpose() << std::endl;

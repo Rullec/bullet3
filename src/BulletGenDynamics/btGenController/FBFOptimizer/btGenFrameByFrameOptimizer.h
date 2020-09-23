@@ -57,6 +57,7 @@ protected:
     void AddTauCloseToOriginEnergyTerm();
     void AddContactForceCloseToOriginEnergyTerm();
     void AddEndEffectorPosEnergyTerm();
+    void AddEndEffectorOrientationEnergyTerm();
     void AddRootPosEnergyTerm();
     void AddRootOrientationEnergyTerm();
     void AddLinkPosEnergyTerm(int link_id, double coef,
@@ -91,6 +92,7 @@ protected:
     double mControlForceCloseToOriginCoef;
     double mContactForceCloseToOriginCoef;
     double mEndEffectorPosCoef;
+    double mEndEffectorOrientationCoef;
     double mRootPosCoef;
     double mRootOrientationCoef; // control the orientation of root link
 
