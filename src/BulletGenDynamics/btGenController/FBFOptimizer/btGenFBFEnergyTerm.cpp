@@ -67,5 +67,17 @@ void btGenFrameByFrameEnergyTerm::CheckEnergyValue(const tVectorXd &sol)
         std::cout << "[energy] FBF " << mNameList[id] << " energy is " << energy
                   << ", coef = " << coef << std::endl;
     }
-}
 
+    // if there is not contact point, test whether the solution is the same as
+    // the least-square sol?
+    // {
+    //     const tMatrixXd &sub_A = mAList[0];
+    //     const tVectorXd &sub_b = mbList[0];
+    //     tVectorXd lsq_sol =
+    //         -(sub_A.transpose() * sub_A).inverse() * sub_A.transpose() * sub_b;
+    //     tVectorXd diff = sol - lsq_sol;
+    //     std::cout << "lsq sol = " << lsq_sol.transpose() << std::endl;
+    //     std::cout << "opt sol = " << sol.transpose() << std::endl;
+    //     std::cout << "diff = " << diff.transpose() << std::endl;
+    // }
+}

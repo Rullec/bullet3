@@ -99,7 +99,7 @@ void btGenFrameByFrameOptimizer::Init(btGeneralizeWorld *world,
         btJsonUtil::ParseAsDouble("contact_force_close_to_origin_coef", conf);
     mEndEffectorPosCoef =
         btJsonUtil::ParseAsDouble("end_effector_pos_coef", conf);
-        
+
     // ParseConfig(conf);
     InitModelInfo();
     InitQPSolver();
@@ -311,6 +311,88 @@ void btGenFrameByFrameOptimizer::Solve(tVectorXd &tilde_qddot,
 
     CalcTargetInternal(solution, tilde_qddot, tilde_qdot, tilde_q, tilde_tau);
     mEnergyTerm->CheckEnergyValue(solution);
+
+    // check accel energy term
+    // if (mDynamicAccelEnergyCoeff > 0 && mContactSolutionSize == 0)
+    // {
+    //     tMatrixXd N =
+    //         tMatrixXd::Zero(num_of_freedom, num_of_underactuated_freedom);
+    //     N.block(6, 0, num_of_underactuated_freedom,
+    //             num_of_underactuated_freedom)
+    //         .setIdentity();
+    //     tMatrixXd A_manual = mModel->GetInvMassMatrix() * N;
+    //     // std::cout << "N = \n" << N << std::endl;
+    //     tVectorXd QG = mModel->CalcGenGravity(mWorld->GetGravity());
+    //     tVectorXd b_manual =
+    //         mModel->GetInvMassMatrix() *
+    //             (QG - mModel->GetCoriolisMatrix() * mModel->Getqdot()) -
+    //         mTraj->mqddot[mCurFrameId];
+    //     tVectorXd lsq_sol = -(A_manual.transpose() * A_manual).inverse() *
+    //                         A_manual.transpose() * b_manual;
+
+    //     tVectorXd diff = solution - lsq_sol;
+    //     if (diff.norm() > 1e-10)
+    //     {
+    //         std::cout << "sol diff = " << diff.transpose() << std::endl;
+    //         std::cout << "sol diff norm = " << diff.norm() << std::endl;
+    //         exit(1);
+    //     }
+    // }
+
+    // // check vel energy term
+    // if (mDynamicVelEnergyCoeff > 0 && mContactSolutionSize == 0)
+    // {
+    //     tMatrixXd N =
+    //         tMatrixXd::Zero(num_of_freedom, num_of_underactuated_freedom);
+    //     N.block(6, 0, num_of_underactuated_freedom,
+    //             num_of_underactuated_freedom)
+    //         .setIdentity();
+    //     tVectorXd QG = mModel->CalcGenGravity(mWorld->GetGravity());
+
+    //     tMatrixXd A_man = mdt * mModel->GetInvMassMatrix() * N;
+    //     tVectorXd b_man =
+    //         mdt * mModel->GetInvMassMatrix() *
+    //             (QG - mModel->GetCoriolisMatrix() * mModel->Getqdot()) +
+    //         mModel->Getqdot() - mTraj->mqdot[mCurFrameId + 1];
+    //     tVectorXd lsq_sol =
+    //         -(A_man.transpose() * A_man).inverse() * A_man.transpose() * b_man;
+
+    //     tVectorXd diff = lsq_sol - solution;
+    //     if (diff.norm() > 1e-10)
+    //     {
+    //         std::cout << "[vel] diff = " << diff.norm() << std::endl;
+    //         exit(1);
+    //     }
+    // }
+    // if (mDynamicPosEnergyCoeff > 0 && mContactSolutionSize == 0)
+    // {
+    //     tMatrixXd N =
+    //         tMatrixXd::Zero(num_of_freedom, num_of_underactuated_freedom);
+    //     N.block(6, 0, num_of_underactuated_freedom,
+    //             num_of_underactuated_freedom)
+    //         .setIdentity();
+    //     tVectorXd QG = mModel->CalcGenGravity(mWorld->GetGravity());
+
+    //     tMatrixXd A_man = mdt * mdt * mModel->GetInvMassMatrix() * N;
+    //     tVectorXd b_man =
+    //         mdt * mdt * mModel->GetInvMassMatrix() *
+    //             (QG - mModel->GetCoriolisMatrix() * mModel->Getqdot()) +
+    //         mdt * mModel->Getqdot() + mModel->Getq() -
+    //         mTraj->mq[mCurFrameId + 1];
+    //     tVectorXd lsq_sol =
+    //         -(A_man.transpose() * A_man).inverse() * A_man.transpose() * b_man;
+
+    //     tVectorXd diff = lsq_sol - solution;
+    //     if (diff.norm() > 1e-10)
+    //     {
+    //         std::cout << "[pos] diff = " << diff.transpose() << std::endl;
+    //         std::cout << "[pos] diff norm = " << diff.norm() << std::endl;
+    //         std::cout << "[pos] opt sol = " << solution.transpose()
+    //                   << std::endl;
+    //         std::cout << "[pos] lsq sol = " << lsq_sol.transpose() << std::endl;
+    //         exit(1);
+    //     }
+    // }
     // tVectorXd ref_tau = mTraj->mActiveForce[mCurFrameId].segment(
     //     6, num_of_underactuated_freedom);
     // std::cout << "[solved] tau = " << tilde_tau.transpose() << std::endl;

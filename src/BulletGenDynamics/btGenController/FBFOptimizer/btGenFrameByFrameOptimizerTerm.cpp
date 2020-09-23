@@ -275,7 +275,7 @@ void btGenFrameByFrameOptimizer::AddDynamicEnergyTermVel()
     const tMatrixXd &C_d = mModel->GetCoriolisMatrix();
     const tVectorXd &qdot = mModel->Getqdot();
     const tVectorXd &q = mModel->Getq();
-    const tVectorXd &qdot_next_ref = mTraj->mq[mCurFrameId + 1];
+    const tVectorXd &qdot_next_ref = mTraj->mqdot[mCurFrameId + 1];
     // double dt2 = mdt * mdt;
     tVectorXd QG = mModel->CalcGenGravity(mWorld->GetGravity());
     b = mdt * Minv * (QG - C_d * qdot) + qdot - qdot_next_ref;
@@ -320,10 +320,16 @@ void btGenFrameByFrameOptimizer::AddDynamicEnergyTermAccel()
     const tMatrixXd &C_d = mModel->GetCoriolisMatrix();
     const tVectorXd &qdot = mModel->Getqdot();
     const tVectorXd &q = mModel->Getq();
-    const tVectorXd &qddot_cur_ref = mTraj->mq[mCurFrameId];
+    const tVectorXd &qddot_cur_ref = mTraj->mqddot[mCurFrameId];
     // double dt2 = mdt * mdt;
     tVectorXd QG = mModel->CalcGenGravity(mWorld->GetGravity());
     b = Minv * (QG - C_d * qdot) - qddot_cur_ref;
+    // std::cout << "[accel] b norm " << b.norm() << std::endl;
+    // std::cout << "[accel] Minv norm " << Minv.norm() << std::endl;
+    // std::cout << "[accel] QG norm " << QG.norm() << std::endl;
+    // std::cout << "[accel] Cd norm " << C_d.norm() << std::endl;
+    // std::cout << "[accel] qdot norm " << qdot.norm() << std::endl;
+    // std::cout << "[accel] qddot_ref norm " << qddot_cur_ref.norm() << std::endl;
     tMatrixXd A1 = tMatrixXd::Zero(num_of_freedom, mContactSolutionSize),
               A2 =
                   tMatrixXd::Zero(num_of_freedom, num_of_underactuated_freedom);
