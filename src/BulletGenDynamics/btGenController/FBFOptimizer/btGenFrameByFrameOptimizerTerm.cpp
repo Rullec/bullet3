@@ -41,6 +41,8 @@ void btGenFrameByFrameOptimizer::CalcEnergyTerms()
         AddEndEffectorVelEnergyTerm();
     if (mRootPosCoef > 0)
         AddRootPosEnergyTerm();
+    if (mRootVelCoef > 0)
+        AddRootVelEnergyTerm();
     if (mRootOrientationCoef > 0)
         AddRootOrientationEnergyTerm();
 }
@@ -686,6 +688,21 @@ void btGenFrameByFrameOptimizer::AddRootPosEnergyTerm()
     tVector3d link_pos = link->GetWorldPos();
     mModel->PopState("root_pos_energy");
     AddLinkPosEnergyTerm(0, mRootPosCoef, link_pos);
+}
+
+/**
+ * \brief                       Control the root vel
+ */
+void btGenFrameByFrameOptimizer::AddRootVelEnergyTerm()
+{
+    mModel->PushState("root_vel_energy");
+
+    mModel->SetqAndqdot(mTraj->mq[mCurFrameId + 1],
+                        mTraj->mqdot[mCurFrameId + 1]);
+    auto link = mModel->GetLinkById(0);
+    tVector3d vel = link->GetJKv() * mModel->Getqdot();
+    mModel->PopState("root_vel_energy");
+    AddLinkVelEnergyTerm(0, mRootVelCoef, vel);
 }
 
 /**

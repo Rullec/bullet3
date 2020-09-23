@@ -61,6 +61,7 @@ protected:
     void AddEndEffectorVelEnergyTerm();
     void AddEndEffectorOrientationEnergyTerm();
     void AddRootPosEnergyTerm();
+    void AddRootVelEnergyTerm();
     void AddRootOrientationEnergyTerm();
     void AddLinkPosEnergyTerm(int link_id, double coef,
                               const tVector3d &target_pos);
@@ -99,6 +100,7 @@ protected:
     double mEndEffectorVelCoef;
     double mEndEffectorOrientationCoef;
     double mRootPosCoef;
+    double mRootVelCoef;
     double mRootOrientationCoef; // control the orientation of root link
 
     bool mEnableContactForceLimit; // limit the contact force in [-a, a]

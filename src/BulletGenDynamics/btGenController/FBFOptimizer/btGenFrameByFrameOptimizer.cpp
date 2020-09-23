@@ -18,6 +18,8 @@ eContactStatus JudgeContactStatus(const tVector &vel,
                                   double breakage_threshold = 1e-2,
                                   double sliding_threshold = 5e-3)
 {
+    std::cout << "all judge are returning static\n";
+    return eContactStatus::STATIC;
     double vel_n = vel[1];
     double vel_t = std::sqrt(std::pow(vel[0], 2) + std::pow(vel[2], 2));
     if (vel_n > breakage_threshold)
@@ -108,6 +110,7 @@ void btGenFrameByFrameOptimizer::Init(btGeneralizeWorld *world,
     mEndEffectorOrientationCoef =
         btJsonUtil::ParseAsDouble("end_effector_orient_coef", conf);
     mRootPosCoef = btJsonUtil::ParseAsDouble("root_pos_coef", conf);
+    mRootVelCoef = btJsonUtil::ParseAsDouble("root_vel_coef", conf);
     mRootOrientationCoef =
         btJsonUtil::ParseAsDouble("root_orientation_coef", conf);
     mEnableContactForceLimit =

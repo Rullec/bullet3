@@ -9,7 +9,7 @@
     "multibody_path_old": "/home/xudong/Projects/DeepMimic/data/0805/characters/skeleton_2links.json",
     "multibody_path_full": "/home/xudong/Projects/DeepMimic/data/0908/characters/skeleton_oneleg.json",
     "multibody_path": "/home/xudong/Projects/DeepMimic/data/0908/characters/skeleton_legs.json",
-    "contact_aware_ref_traj": "/home/xudong/Projects/DeepMimic/data/id_test/sample_legs_nogravity/traj_legs_1562406723.json",
+    "contact_aware_ref_traj": "/home/xudong/Projects/DeepMimic/data/id_test/sample_legs_nogravity/traj_legs_1672724862.json",
     "contact_aware_ref_traj_legs": "/home/xudong/Projects/DeepMimic/data/id_test/sample_leftleg_bak/traj_leftleg_1874365342.json",
     "obj_num": 10,
     "obj_type": "ball",
