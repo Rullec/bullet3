@@ -10,12 +10,12 @@
 #include "BulletGenDynamics/btGenWorld.h"
 #include "btCharContactPoint.h"
 int mNumOfFrictionDirs = 4;
-double mu = 1.8;
+double mu = 1;
 const std::string gContactStatusStr[] = {"INVALID_CONTACT_STATUS", "SLIDING",
                                          "STATIC", "BREAKAGE"};
 
 eContactStatus JudgeContactStatus(const tVector &vel,
-                                  double breakage_threshold = 2e-3,
+                                  double breakage_threshold = 1e-2,
                                   double sliding_threshold = 5e-3)
 {
     double vel_n = vel[1];
@@ -254,11 +254,11 @@ void btGenFrameByFrameOptimizer::CalcContactStatus()
             // pt->mStatus = eContactStatus::STATIC;
             auto link = mModel->GetLinkById(pt->mCollider->mLinkId);
 
-            std::cout << "[FBF] contact " << id << " on link "
-                      << link->GetName()
-                      << " cartesian vel in ref traj = " << vel.transpose()
-                      << " status " << gContactStatusStr[pt->mStatus]
-                      << std::endl;
+            // std::cout << "[FBF] contact " << id << " on link "
+            //           << link->GetName()
+            //           << " cartesian vel in ref traj = " << vel.transpose()
+            //           << " status " << gContactStatusStr[pt->mStatus]
+            //           << std::endl;
             // std::cout << "contact " << id << " gen vel = " <<
             // contact_vel_cur_ref[id].transpose() << std::endl;
             // 3. calculate convert mat
@@ -452,7 +452,8 @@ void btGenFrameByFrameOptimizer::CalcTargetInternal(const tVectorXd &solution,
         int size = mContactSolSize[i];
         tVector3d solved_force = pt->mS * contact_force.segment(offset, size);
         std::cout << "[solved] FBF contact force " << i << " "
-                  << solved_force.transpose() << std::endl;
+                  << solved_force.transpose() << " status "
+                  << gContactStatusStr[pt->mStatus] << std::endl;
         gen_contact_force += pt->mJac.transpose() * solved_force;
     }
     gen_ctrl_force.segment(6, num_of_underactuated_freedom) = control_force;
@@ -471,12 +472,26 @@ void btGenFrameByFrameOptimizer::CalcTargetInternal(const tVectorXd &solution,
     q = mModel->Getq() + qdot * mdt;
 
     // output the contact force info in the ref traj
+    mModel->PushState("test");
+    mModel->SetqAndqdot(mTraj->mq[mCurFrameId], mTraj->mqdot[mCurFrameId]);
+
     for (auto &f : mTraj->mContactForce[mCurFrameId])
     {
-        std::cout << "[ref] link "
-                  << dynamic_cast<btGenRobotCollider *>(f->mObj)->mLinkId
-                  << " force = " << f->mForce.transpose() << std::endl;
+        int link_id = dynamic_cast<btGenRobotCollider *>(f->mObj)->mLinkId;
+
+        tMatrixXd jac;
+        mModel->ComputeJacobiByGivenPointTotalDOFWorldFrame(
+            link_id, f->mWorldPos.segment(0, 3), jac);
+        tVector3d vel = jac * mModel->Getqdot();
+        std::cout
+            << "[ref] link "
+            << dynamic_cast<btGenRobotCollider *>(f->mObj)->mLinkId
+            << " contact force = " << f->mForce.transpose()
+            << " vel = " << vel.transpose().segment(0, 3) << " status "
+            << gContactStatusStr[JudgeContactStatus(btMathUtil::Expand(vel, 0))]
+            << std::endl;
     }
+    mModel->PopState("test");
     // calculate the static contact point vel
     // {
     //     for (auto &pt : mContactPoints)
