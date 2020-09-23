@@ -16,16 +16,16 @@
         "dynamic_vel_energy_coef": 5,
         "dynamic_accel_energy_coef": 0,
         "control_force_coef": 1,
-        "contact_force_coef": 3,
+        "contact_force_coef": 1,
         "control_force_close_to_origin_coef": 0,
         "contact_force_close_to_origin_coef": 0,
-        "end_effector_pos_coef": 1,
-        "end_effector_orient_coef": 1,
-        "root_pos_coef": 1,
-        "root_orientation_coef": 1,
+        "end_effector_pos_coef": 0,
+        "end_effector_orient_coef": 0,
+        "root_pos_coef": 0,
+        "root_orientation_coef": 0,
         "fix_the_static_contact_point": false,
         "enable_add_eps_diagnoal_A_matrix_FBF": true,
-        "ignore_root_position_in_dynamic_energy": true,
+        "ignore_root_position_in_dynamic_energy": false,
         "eps_diagnoal_A_matrix_FBF": 1e-5
     }
 }
