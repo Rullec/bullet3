@@ -355,7 +355,8 @@ void btGenFrameByFrameOptimizer::Solve(tVectorXd &tilde_qddot,
     //             (QG - mModel->GetCoriolisMatrix() * mModel->Getqdot()) +
     //         mModel->Getqdot() - mTraj->mqdot[mCurFrameId + 1];
     //     tVectorXd lsq_sol =
-    //         -(A_man.transpose() * A_man).inverse() * A_man.transpose() * b_man;
+    //         -(A_man.transpose() * A_man).inverse() * A_man.transpose() *
+    //         b_man;
 
     //     tVectorXd diff = lsq_sol - solution;
     //     if (diff.norm() > 1e-10)
@@ -380,7 +381,8 @@ void btGenFrameByFrameOptimizer::Solve(tVectorXd &tilde_qddot,
     //         mdt * mModel->Getqdot() + mModel->Getq() -
     //         mTraj->mq[mCurFrameId + 1];
     //     tVectorXd lsq_sol =
-    //         -(A_man.transpose() * A_man).inverse() * A_man.transpose() * b_man;
+    //         -(A_man.transpose() * A_man).inverse() * A_man.transpose() *
+    //         b_man;
 
     //     tVectorXd diff = lsq_sol - solution;
     //     if (diff.norm() > 1e-10)
@@ -389,8 +391,8 @@ void btGenFrameByFrameOptimizer::Solve(tVectorXd &tilde_qddot,
     //         std::cout << "[pos] diff norm = " << diff.norm() << std::endl;
     //         std::cout << "[pos] opt sol = " << solution.transpose()
     //                   << std::endl;
-    //         std::cout << "[pos] lsq sol = " << lsq_sol.transpose() << std::endl;
-    //         exit(1);
+    //         std::cout << "[pos] lsq sol = " << lsq_sol.transpose() <<
+    //         std::endl; exit(1);
     //     }
     // }
     // tVectorXd ref_tau = mTraj->mActiveForce[mCurFrameId].segment(

@@ -329,7 +329,8 @@ void btGenFrameByFrameOptimizer::AddDynamicEnergyTermAccel()
     // std::cout << "[accel] QG norm " << QG.norm() << std::endl;
     // std::cout << "[accel] Cd norm " << C_d.norm() << std::endl;
     // std::cout << "[accel] qdot norm " << qdot.norm() << std::endl;
-    // std::cout << "[accel] qddot_ref norm " << qddot_cur_ref.norm() << std::endl;
+    // std::cout << "[accel] qddot_ref norm " << qddot_cur_ref.norm() <<
+    // std::endl;
     tMatrixXd A1 = tMatrixXd::Zero(num_of_freedom, mContactSolutionSize),
               A2 =
                   tMatrixXd::Zero(num_of_freedom, num_of_underactuated_freedom);
@@ -529,7 +530,8 @@ void btGenFrameByFrameOptimizer::AddEndEffectorPosEnergyTerm()
 
         if (-1 == link->GetParentId() || link->GetNumOfChildren() == 0)
         {
-            std::cout << "we want to control " << link->GetName() << std::endl;
+            // std::cout << "we want to control " << link->GetName() <<
+            // std::endl;
             link_id_lst.push_back(link->GetId());
 
             link_target_pos_lst.push_back(link->GetWorldPos());
@@ -566,16 +568,15 @@ void btGenFrameByFrameOptimizer::AddLinkPosEnergyTerm(
     tVector3d cur_pos = link->GetWorldPos();
     tMatrixXd A = tMatrixXd::Zero(3, mTotalSolutionSize);
     tVectorXd b = tVectorXd::Zero(3);
-
     const tMatrixXd &Minv = mModel->GetInvMassMatrix();
     const tMatrixXd &C_d = mModel->GetCoriolisMatrix();
     const tVectorXd &qdot = mModel->Getqdot();
     const tVectorXd &q = mModel->Getq();
-    const tVectorXd &qdot_next_ref = mTraj->mq[mCurFrameId + 1];
-    // double dt2 = mdt * mdt;
+    const tVectorXd &qdot_next_ref = mTraj->mqdot[mCurFrameId + 1];
+    double dt2 = mdt * mdt;
     tVectorXd QG = mModel->CalcGenGravity(mWorld->GetGravity());
-    b = jac * (mdt * Minv * (QG - C_d * qdot) + qdot - qdot_next_ref) +
-        cur_pos - target_pos;
+    b = dt2 * jac * Minv * (QG - C_d * qdot) + mdt * jac * qdot + cur_pos -
+        target_pos;
     // for contact forces
     for (int c_id = 0; c_id < mContactPoints.size(); c_id++)
     {
@@ -585,7 +586,7 @@ void btGenFrameByFrameOptimizer::AddLinkPosEnergyTerm(
 
         // (3 * N) * (N * 3) * (3 * size) = 3 * size
         A.block(0, offset, 3, size).noalias() =
-            jac * mdt * Minv * pt->mJac.transpose() * pt->mS;
+            dt2 * jac * Minv * pt->mJac.transpose() * pt->mS;
     }
 
     // for control forces
@@ -593,7 +594,7 @@ void btGenFrameByFrameOptimizer::AddLinkPosEnergyTerm(
     N.block(6, 0, num_of_underactuated_freedom, num_of_underactuated_freedom)
         .setIdentity();
     A.block(0, mContactSolutionSize, 3, mCtrlSolutionSize) =
-        jac * mdt * Minv * N;
+        dt2 * jac * Minv * N;
     mEnergyTerm->AddEnergy(A, b, coef, 0,
                            "link_pos_for" + std::to_string(link_id));
 }
