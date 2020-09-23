@@ -142,9 +142,12 @@ void btGenFrameByFrameOptimizer::AddBreakageConstraint(btCharContactPt *pt)
  */
 void btGenFrameByFrameOptimizer::AddDynamicEnergyTerm()
 {
-    AddDynamicEnergyTermPos();
-    AddDynamicEnergyTermVel();
-    AddDynamicEnergyTermAccel();
+    if (mDynamicPosEnergyCoeff > 0)
+        AddDynamicEnergyTermPos();
+    if (mDynamicVelEnergyCoeff > 0)
+        AddDynamicEnergyTermVel();
+    if (mDynamicAccelEnergyCoeff > 0)
+        AddDynamicEnergyTermAccel();
 }
 
 /**
@@ -317,10 +320,10 @@ void btGenFrameByFrameOptimizer::AddDynamicEnergyTermAccel()
     const tMatrixXd &C_d = mModel->GetCoriolisMatrix();
     const tVectorXd &qdot = mModel->Getqdot();
     const tVectorXd &q = mModel->Getq();
-    const tVectorXd &qddot_next_ref = mTraj->mq[mCurFrameId];
+    const tVectorXd &qddot_cur_ref = mTraj->mq[mCurFrameId];
     // double dt2 = mdt * mdt;
     tVectorXd QG = mModel->CalcGenGravity(mWorld->GetGravity());
-    b = Minv * (QG - C_d * qdot) + qdot - qddot_next_ref;
+    b = Minv * (QG - C_d * qdot) - qddot_cur_ref;
     tMatrixXd A1 = tMatrixXd::Zero(num_of_freedom, mContactSolutionSize),
               A2 =
                   tMatrixXd::Zero(num_of_freedom, num_of_underactuated_freedom);
@@ -587,5 +590,4 @@ void btGenFrameByFrameOptimizer::AddLinkPosEnergyTerm(
         jac * mdt * Minv * N;
     mEnergyTerm->AddEnergy(A, b, coef, 0,
                            "link_pos_for" + std::to_string(link_id));
-    
 }
