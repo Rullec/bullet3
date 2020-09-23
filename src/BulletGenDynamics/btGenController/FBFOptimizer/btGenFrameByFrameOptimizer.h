@@ -57,6 +57,7 @@ protected:
     void AddTauCloseToOriginEnergyTerm();
     void AddContactForceCloseToOriginEnergyTerm();
     void AddEndEffectorPosEnergyTerm();
+    void AddRootPosEnergyTerm();
     void AddLinkPosEnergyTerm(int link_id, double coef,
                               const tVector3d &target_pos);
     void CalcContactConvertMat(btCharContactPt *contact,
@@ -87,8 +88,10 @@ protected:
     double mControlForceCloseToOriginCoef;
     double mContactForceCloseToOriginCoef;
     double mEndEffectorPosCoef;
+    double mRootPosCoef;
 
     bool mEnableFixStaticContactPoint;
+    bool mIgnoreRootPosInDynamicEnergy;
     const double mu = 0.8;
     int mContactSolutionSize; // the size of contact force in result vector
     int mCtrlSolutionSize;    // the size of active ctrl froce in result vector

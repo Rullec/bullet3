@@ -34,6 +34,8 @@ void btGenFrameByFrameOptimizer::CalcEnergyTerms()
 
     if (mEndEffectorPosCoef > 0)
         AddEndEffectorPosEnergyTerm();
+    if (mRootPosCoef > 0)
+        AddRootPosEnergyTerm();
 }
 
 /**
@@ -257,6 +259,11 @@ void btGenFrameByFrameOptimizer::AddDynamicEnergyTermPos()
     A /= dt2;
     b /= dt2;
 
+    if (mIgnoreRootPosInDynamicEnergy == true)
+    {
+        A = A.block(6, 0, num_of_freedom, mTotalSolutionSize);
+        b = b.segment(6, num_of_underactuated_freedom);
+    }
     // energy term Ax + b
     mEnergyTerm->AddEnergy(A, b, mDynamicPosEnergyCoeff, 0, "pos");
 }
@@ -303,6 +310,11 @@ void btGenFrameByFrameOptimizer::AddDynamicEnergyTermVel()
         .noalias() = A2;
     A /= mdt;
     b /= mdt;
+    if (mIgnoreRootPosInDynamicEnergy == true)
+    {
+        A = A.block(6, 0, num_of_freedom, mTotalSolutionSize);
+        b = b.segment(6, num_of_underactuated_freedom);
+    }
     mEnergyTerm->AddEnergy(A, b, mDynamicVelEnergyCoeff, 0, "vel");
 }
 
@@ -355,6 +367,11 @@ void btGenFrameByFrameOptimizer::AddDynamicEnergyTermAccel()
         .noalias() = A2;
     // A *= mDynamicAccelEnergyCoeff;
     // b *= mDynamicAccelEnergyCoeff;
+    if (mIgnoreRootPosInDynamicEnergy == true)
+    {
+        A = A.block(6, 0, num_of_freedom, mTotalSolutionSize);
+        b = b.segment(6, num_of_underactuated_freedom);
+    }
     mEnergyTerm->AddEnergy(A, b, mDynamicAccelEnergyCoeff, 0, "accel");
 }
 
@@ -519,7 +536,7 @@ void btGenFrameByFrameOptimizer::AddContactForceCloseToOriginEnergyTerm()
 void btGenFrameByFrameOptimizer::AddEndEffectorPosEnergyTerm()
 {
     // 1. get end effector id and their target pos
-    mModel->PushState("end_effecto_pos_energy");
+    mModel->PushState("end_effector_pos_energy");
     std::vector<int> link_id_lst(0);
     tEigenArr<tVector3d> link_target_pos_lst(0);
     mModel->SetqAndqdot(mTraj->mq[mCurFrameId + 1],
@@ -528,7 +545,8 @@ void btGenFrameByFrameOptimizer::AddEndEffectorPosEnergyTerm()
     {
         auto link = mModel->GetLinkById(i);
 
-        if (-1 == link->GetParentId() || link->GetNumOfChildren() == 0)
+        // if (-1 == link->GetParentId() || link->GetNumOfChildren() == 0)
+        if (link->GetNumOfChildren() == 0)
         {
             // std::cout << "we want to control " << link->GetName() <<
             // std::endl;
@@ -537,7 +555,7 @@ void btGenFrameByFrameOptimizer::AddEndEffectorPosEnergyTerm()
             link_target_pos_lst.push_back(link->GetWorldPos());
         }
     }
-    mModel->PopState("end_effecto_pos_energy");
+    mModel->PopState("end_effector_pos_energy");
 
     // 2. construct the energy term for each of them
     for (int idx = 0; idx < link_id_lst.size(); idx++)
@@ -545,6 +563,21 @@ void btGenFrameByFrameOptimizer::AddEndEffectorPosEnergyTerm()
         AddLinkPosEnergyTerm(link_id_lst[idx], mEndEffectorPosCoef,
                              link_target_pos_lst[idx]);
     }
+}
+
+/**
+ * \brief                       Control the root position
+ */
+void btGenFrameByFrameOptimizer::AddRootPosEnergyTerm()
+{
+    mModel->PushState("root_pos_energy");
+
+    mModel->SetqAndqdot(mTraj->mq[mCurFrameId + 1],
+                        mTraj->mqdot[mCurFrameId + 1]);
+    auto link = mModel->GetLinkById(0);
+    tVector3d link_pos = link->GetWorldPos();
+    mModel->PopState("root_pos_energy");
+    AddLinkPosEnergyTerm(0, mRootPosCoef, link_pos);
 }
 
 /**
@@ -595,6 +628,8 @@ void btGenFrameByFrameOptimizer::AddLinkPosEnergyTerm(
         .setIdentity();
     A.block(0, mContactSolutionSize, 3, mCtrlSolutionSize) =
         dt2 * jac * Minv * N;
+
+    coef /= dt2;
     mEnergyTerm->AddEnergy(A, b, coef, 0,
                            "link_pos_for" + std::to_string(link_id));
 }

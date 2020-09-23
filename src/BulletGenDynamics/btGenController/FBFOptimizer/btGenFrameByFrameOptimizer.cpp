@@ -93,12 +93,17 @@ void btGenFrameByFrameOptimizer::Init(btGeneralizeWorld *world,
     mContactForceCoef = btJsonUtil::ParseAsDouble("contact_force_coef", conf);
     mEnableFixStaticContactPoint =
         btJsonUtil::ParseAsBool("fix_the_static_contact_point", conf);
+
+    mIgnoreRootPosInDynamicEnergy =
+        btJsonUtil::ParseAsBool("ignore_root_position_in_dynamic_energy", conf);
+
     mControlForceCloseToOriginCoef =
         btJsonUtil::ParseAsDouble("control_force_close_to_origin_coef", conf);
     mContactForceCloseToOriginCoef =
         btJsonUtil::ParseAsDouble("contact_force_close_to_origin_coef", conf);
     mEndEffectorPosCoef =
         btJsonUtil::ParseAsDouble("end_effector_pos_coef", conf);
+    mRootPosCoef = btJsonUtil::ParseAsDouble("root_pos_coef", conf);
 
     // ParseConfig(conf);
     InitModelInfo();
@@ -466,17 +471,17 @@ void btGenFrameByFrameOptimizer::CalcTargetInternal(const tVectorXd &solution,
                   << " force = " << f->mForce.transpose() << std::endl;
     }
     // calculate the static contact point vel
-    {
-        for (auto &pt : mContactPoints)
-        {
-            if (pt->mStatus == eContactStatus::STATIC)
-            {
-                tVector3d vel = pt->mJac * qdot;
-                std::cout << "[vel] static contact point " << pt->contact_id
-                          << " vel = " << vel.transpose() << std::endl;
-            }
-        }
-    }
+    // {
+    //     for (auto &pt : mContactPoints)
+    //     {
+    //         if (pt->mStatus == eContactStatus::STATIC)
+    //         {
+    //             tVector3d vel = pt->mJac * qdot;
+    //             std::cout << "[vel] static contact point " << pt->contact_id
+    //                       << " vel = " << vel.transpose() << std::endl;
+    //         }
+    //     }
+    // }
 }
 
 void btGenFrameByFrameOptimizer::ParseConfig(const Json::Value &conf)
