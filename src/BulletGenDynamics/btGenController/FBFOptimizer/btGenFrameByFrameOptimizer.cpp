@@ -101,8 +101,12 @@ void btGenFrameByFrameOptimizer::Init(btGeneralizeWorld *world,
         btJsonUtil::ParseAsDouble("control_force_close_to_origin_coef", conf);
     mContactForceCloseToOriginCoef =
         btJsonUtil::ParseAsDouble("contact_force_close_to_origin_coef", conf);
-    mEndEffectorPosCoef =
-        btJsonUtil::ParseAsDouble("end_effector_pos_coef", conf);
+    mEndEffectorPosLocationCoef =
+        btJsonUtil::ParseAsDouble("end_effector_pos_location_coef", conf);
+    mEndEffectorPosHeightCoef =
+        btJsonUtil::ParseAsDouble("end_effector_pos_height_coef", conf);
+    mEndEffectorVelCoef =
+        btJsonUtil::ParseAsDouble("end_effector_vel_coef", conf);
     mEndEffectorOrientationCoef =
         btJsonUtil::ParseAsDouble("end_effector_orient_coef", conf);
     mRootPosCoef = btJsonUtil::ParseAsDouble("root_pos_coef", conf);

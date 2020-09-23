@@ -57,12 +57,18 @@ protected:
     void AddMinContactForceEnergyTerm();
     void AddTauCloseToOriginEnergyTerm();
     void AddContactForceCloseToOriginEnergyTerm();
-    void AddEndEffectorPosEnergyTerm();
+    void AddEndEffectorPosLocationEnergyTerm();
+    void AddEndEffectorPosHeightEnergyTerm();
+    void AddEndEffectorVelEnergyTerm();
     void AddEndEffectorOrientationEnergyTerm();
     void AddRootPosEnergyTerm();
     void AddRootOrientationEnergyTerm();
-    void AddLinkPosEnergyTerm(int link_id, double coef,
+    void AddLinkPosHeightEnergyTerm(int link_id, double coef,
                               const tVector3d &target_pos);
+    void AddLinkPosLocationEnergyTerm(int link_id, double coef,
+                              const tVector3d &target_pos);
+    void AddLinkVelEnergyTerm(int link_id, double coef,
+                              const tVector3d &target_vel);
     void AddLinkOrientationEnergyTerm(int link_id, double coef,
                                       const tMatrix3d &target_orientation);
     void CalcContactConvertMat(btCharContactPt *contact,
@@ -92,7 +98,9 @@ protected:
     double mContactForceCoef;
     double mControlForceCloseToOriginCoef;
     double mContactForceCloseToOriginCoef;
-    double mEndEffectorPosCoef;
+    double mEndEffectorPosLocationCoef;
+    double mEndEffectorPosHeightCoef;
+    double mEndEffectorVelCoef;
     double mEndEffectorOrientationCoef;
     double mRootPosCoef;
     double mRootOrientationCoef; // control the orientation of root link
