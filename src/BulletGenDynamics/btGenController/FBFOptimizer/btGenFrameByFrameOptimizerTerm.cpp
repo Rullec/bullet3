@@ -6,6 +6,7 @@
 #include "btGenFBFEnergyTerm.h"
 #include "btGenFrameByFrameOptimizer.h"
 extern int mNumOfFrictionDirs;
+extern double mu;
 /**
  * \brief					Construct the energy terms in
  * this opt problem
@@ -214,6 +215,12 @@ void btGenFrameByFrameOptimizer::AddMinTauEnergyTerm()
  */
 void btGenFrameByFrameOptimizer::AddMinContactForceEnergyTerm()
 {
+    if (mContactSolutionSize == 0)
+    {
+        std::cout << "[debug] no contact solution size, the contact force "
+                     "min energy term should be closed\n";
+        return;
+    }
     tMatrixXd A =
         tMatrixXd::Identity(mContactSolutionSize, mContactSolutionSize);
     tVectorXd b = tVectorXd::Zero(mContactSolutionSize);
@@ -526,8 +533,8 @@ void btGenFrameByFrameOptimizer::AddContactForceCloseToOriginEnergyTerm()
         }
     }
     mModel->PopState("add_contact_force_close_energy");
-    std::cout << "A = \n" << A << std::endl;
-    std::cout << "b = " << b.transpose() << std::endl;
+    // std::cout << "A = \n" << A << std::endl;
+    // std::cout << "b = " << b.transpose() << std::endl;
     // 3. add it to the energy term structure
     mEnergyTerm->AddEnergy(A, b, mContactForceCloseToOriginCoef, 0,
                            "contact_force_close_to_origin");

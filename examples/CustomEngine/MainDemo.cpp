@@ -74,6 +74,8 @@ extern bool gPauseSimulation;
 #include "valgrind/callgrind.h"
 void CustomEngineMainDemo::stepSimulation(float dt)
 {
+    if (global_frame_id == 0)
+        m_guiHelper->resetCamera(1.64, -267.6, 13.4, 0.0078, 0.4760, 0.4799);
     // mTime += dt;
     // std::cout << "cur time = " << mTime << std::endl;
     // m_guiHelper;
@@ -188,9 +190,17 @@ void CustomEngineMainDemo::initPhysics()
     // 	obj->setUserIndex(-1);
     // 	m_dynamicsWorld->addCollisionObject(obj);
     // }
+    /*
+    camera set distance 1.6400
+    camera set pitch 13.4000
+    camera set yaw -267.6000
+    camera set pos 0.0078 0.4760 0.4799
+    */
 
+    // m_guiHelper->resetCamera(1.64, -267.6, 13.4, 0.0078, 0.4760, 0.4799);
     m_guiHelper->createPhysicsDebugDrawer(m_dynamicsWorld);
     m_guiHelper->autogenerateGraphicsObjects(m_dynamicsWorld);
+    // m_guiHelper->resetCamera(1.64, -267.6, 13.4, 0.0078, 0.4760, 0.4799);
 }
 
 void CustomEngineMainDemo::renderScene() { CommonRigidBodyBase::renderScene(); }

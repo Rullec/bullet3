@@ -10,7 +10,7 @@
 #include "BulletGenDynamics/btGenWorld.h"
 #include "btCharContactPoint.h"
 int mNumOfFrictionDirs = 4;
-
+double mu = 0.8;
 const std::string gContactStatusStr[] = {"INVALID_CONTACT_STATUS", "SLIDING",
                                          "STATIC", "BREAKAGE"};
 

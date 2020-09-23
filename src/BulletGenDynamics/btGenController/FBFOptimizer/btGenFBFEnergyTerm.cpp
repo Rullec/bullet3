@@ -62,8 +62,18 @@ void btGenFrameByFrameEnergyTerm::CheckEnergyValue(const tVectorXd &sol)
         double coef = mCoefList[id];
         const tMatrixXd &sub_A = mAList[id];
         const tVectorXd &sub_b = mbList[id];
-        tVectorXd res = (sub_A * sol + sub_b) * coef;
+        int st_pos = mStartPosList[id];
+        const tVectorXd part_sol = sol.segment(st_pos, sub_A.cols());
+        // std::cout << "name = " << mNameList[id] << std::endl;
+        // std::cout << "A size = " << sub_A.rows() << " " << sub_A.cols()
+        //           << std::endl;
+        // std::cout << "b size = " << sub_b.rows() << " " << sub_b.cols()
+        //           << std::endl;
+        tVectorXd res = (sub_A * part_sol + sub_b) * coef;
         double energy = res.norm();
+
+        // std::cout << "sol size = " << sol.size() << std::endl;
+
         std::cout << "[energy] FBF " << mNameList[id] << " energy is " << energy
                   << ", coef = " << coef << std::endl;
     }
@@ -74,7 +84,8 @@ void btGenFrameByFrameEnergyTerm::CheckEnergyValue(const tVectorXd &sol)
     //     const tMatrixXd &sub_A = mAList[0];
     //     const tVectorXd &sub_b = mbList[0];
     //     tVectorXd lsq_sol =
-    //         -(sub_A.transpose() * sub_A).inverse() * sub_A.transpose() * sub_b;
+    //         -(sub_A.transpose() * sub_A).inverse() * sub_A.transpose() *
+    //         sub_b;
     //     tVectorXd diff = sol - lsq_sol;
     //     std::cout << "lsq sol = " << lsq_sol.transpose() << std::endl;
     //     std::cout << "opt sol = " << sol.transpose() << std::endl;

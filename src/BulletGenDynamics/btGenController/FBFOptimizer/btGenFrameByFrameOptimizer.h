@@ -98,7 +98,6 @@ protected:
 
     bool mEnableFixStaticContactPoint;
     bool mIgnoreRootPosInDynamicEnergy;
-    const double mu = 0.8;
     int mContactSolutionSize; // the size of contact force in result vector
     int mCtrlSolutionSize;    // the size of active ctrl froce in result vector
     int mTotalSolutionSize;   // total solution size
