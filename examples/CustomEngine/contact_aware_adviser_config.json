@@ -1,5 +1,6 @@
 {
-    "feature_vector_file": "./examples/CustomEngine/orders_feature/legs/accel_feature_legs.json",
+    "feature_vector_file": "./examples/CustomEngine/orders_feature/accel_feature_full.json",
+    "feature_vector_file_oneleg": "./examples/CustomEngine/orders_feature/legs/accel_feature_legs.json",
     "feature_vector_file_legs": "examples/CustomEngine/orders_feature/oneleg/order_feature_oneleg_accel.json",
     "resolve_control_tau": true,
     "draw_reference_traj_character": true,
