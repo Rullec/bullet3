@@ -64,5 +64,5 @@
         "vel": 1,
         "pos": 1
     },
-    "tau_weight": 1.0
+    "tau_weight": 0.0
 }
