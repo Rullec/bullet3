@@ -279,9 +279,9 @@ void btGenFrameByFrameOptimizer::AddDynamicEnergyTermPos()
         A.block(0, mContactSolutionSize, num_of_freedom,
                 num_of_underactuated_freedom)
             .noalias() = A2;
-        std::cout << "[pos] A1 norm = " << A1.norm() << std::endl;
-        std::cout << "[pos] A2 norm = " << A2.norm() << std::endl;
-        std::cout << "[pos] Apre norm = " << A.norm() << std::endl;
+        // std::cout << "[pos] A1 norm = " << A1.norm() << std::endl;
+        // std::cout << "[pos] A2 norm = " << A2.norm() << std::endl;
+        // std::cout << "[pos] Apre norm = " << A.norm() << std::endl;
     }
 
     if (mIgnoreRootPosInDynamicEnergy == true)
@@ -292,11 +292,11 @@ void btGenFrameByFrameOptimizer::AddDynamicEnergyTermPos()
     }
     // energy term Ax + b
     double coef = mDynamicPosEnergyCoeff / dt2;
-    std::cout << "[pos] A norm = " << A.norm() << std::endl;
-    std::cout << "[pos] b norm = " << b.norm() << std::endl;
-    std::cout << "[pos] q norm = " << q.norm() << std::endl;
-    std::cout << "[pos] qdot norm = " << qdot.norm() << std::endl;
-    std::cout << "[pos] q_ref norm = " << q_next_ref.norm() << std::endl;
+    // std::cout << "[pos] A norm = " << A.norm() << std::endl;
+    // std::cout << "[pos] b norm = " << b.norm() << std::endl;
+    // std::cout << "[pos] q norm = " << q.norm() << std::endl;
+    // std::cout << "[pos] qdot norm = " << qdot.norm() << std::endl;
+    // std::cout << "[pos] q_ref norm = " << q_next_ref.norm() << std::endl;
     mEnergyTerm->AddEnergy(A, b, coef, 0, "pos");
 }
 
@@ -344,7 +344,8 @@ void btGenFrameByFrameOptimizer::AddDynamicEnergyTermVel()
     // b /= mdt;
     if (mIgnoreRootPosInDynamicEnergy == true)
     {
-        A = A.block(6, 0, num_of_underactuated_freedom, mTotalSolutionSize).eval();
+        A = A.block(6, 0, num_of_underactuated_freedom, mTotalSolutionSize)
+                .eval();
         b = b.segment(6, num_of_underactuated_freedom).eval();
     }
     double coef = mDynamicVelEnergyCoeff / mdt;
@@ -402,7 +403,8 @@ void btGenFrameByFrameOptimizer::AddDynamicEnergyTermAccel()
     // b *= mDynamicAccelEnergyCoeff;
     if (mIgnoreRootPosInDynamicEnergy == true)
     {
-        A = A.block(6, 0, num_of_underactuated_freedom, mTotalSolutionSize).eval();
+        A = A.block(6, 0, num_of_underactuated_freedom, mTotalSolutionSize)
+                .eval();
         b = b.segment(6, num_of_underactuated_freedom).eval();
     }
     mEnergyTerm->AddEnergy(A, b, mDynamicAccelEnergyCoeff, 0, "accel");

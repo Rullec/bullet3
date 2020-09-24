@@ -353,12 +353,12 @@ void btGenFrameByFrameOptimizer::Solve(tVectorXd &tilde_qddot,
     Aeq.transposeInPlace();
     Aineq.transposeInPlace();
 
-    std::cout << "[FBF] H norm = " << H.norm() << std::endl;
-    std::cout << "[FBF] f norm = " << f.norm() << std::endl;
-    std::cout << "[FBF] Aeq norm = " << Aeq.norm() << std::endl;
-    std::cout << "[FBF] beq norm = " << beq.norm() << std::endl;
-    std::cout << "[FBF] Aineq norm = " << Aineq.norm() << std::endl;
-    std::cout << "[FBF] bineq norm = " << bineq.norm() << std::endl;
+    // std::cout << "[FBF] H norm = " << H.norm() << std::endl;
+    // std::cout << "[FBF] f norm = " << f.norm() << std::endl;
+    // std::cout << "[FBF] Aeq norm = " << Aeq.norm() << std::endl;
+    // std::cout << "[FBF] beq norm = " << beq.norm() << std::endl;
+    // std::cout << "[FBF] Aineq norm = " << Aineq.norm() << std::endl;
+    // std::cout << "[FBF] bineq norm = " << bineq.norm() << std::endl;
     mQPSolver->Solve(mTotalSolutionSize, H, f, Aeq, beq, Aineq, bineq, 100,
                      solution);
     // std::cout << "[debug] equality num = " << Aeq.cols() << std::endl;
@@ -556,13 +556,13 @@ void btGenFrameByFrameOptimizer::CalcTargetInternal(const tVectorXd &solution,
         mModel->ComputeJacobiByGivenPointTotalDOFWorldFrame(
             link_id, f->mWorldPos.segment(0, 3), jac);
         tVector3d vel = jac * mModel->Getqdot();
-        std::cout
-            << "[ref] link "
-            << dynamic_cast<btGenRobotCollider *>(f->mObj)->mLinkId
-            << " contact force = " << f->mForce.transpose()
-            << " vel = " << vel.transpose().segment(0, 3) << " status "
-            << gContactStatusStr[JudgeContactStatus(btMathUtil::Expand(vel, 0))]
-            << std::endl;
+        // std::cout
+        //     << "[ref] link "
+        //     << dynamic_cast<btGenRobotCollider *>(f->mObj)->mLinkId
+        //     << " contact force = " << f->mForce.transpose()
+        //     << " vel = " << vel.transpose().segment(0, 3) << " status "
+        //     << gContactStatusStr[JudgeContactStatus(btMathUtil::Expand(vel, 0))]
+        //     << std::endl;
     }
     mModel->PopState("test");
     // calculate the static contact point vel

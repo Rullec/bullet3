@@ -130,17 +130,17 @@ void btGenContactAwareAdviser::Init(cRobotModelDynamics *model_,
 void btGenContactAwareAdviser::Update(double dt)
 {
     std::cout << "---------------------frame " << mInternalFrameId << std::endl;
-    std::cout << "[debug] model q = " << mModel->Getq().transpose()
-              << std::endl;
-    std::cout << "[debug] model qdot = " << mModel->Getqdot().transpose()
-              << std::endl;
+    // std::cout << "[debug] model q = " << mModel->Getq().transpose()
+    //           << std::endl;
+    // std::cout << "[debug] model qdot = " << mModel->Getqdot().transpose()
+    //           << std::endl;
     if (mEnableStateSave)
         SaveCurrentState();
     mCurdt = dt;
     if (mRefTraj == nullptr)
         std::cout << "[error] adviser guide traj hasn't been set\n", exit(0);
-    std::cout << "contact aware ref traj dt = " << mRefTraj->mTimestep << " "
-              << dt << std::endl;
+    // std::cout << "contact aware ref traj dt = " << mRefTraj->mTimestep << " "
+    //           << dt << std::endl;
     if (std::fabs(mRefTraj->mTimestep - dt) > 1e-8)
     {
         std::cout << "[error] btGenContactAwareAdviser ref motion dt "
