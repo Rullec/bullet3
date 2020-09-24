@@ -45,6 +45,7 @@ int global_frame_id = 0;
 
 int main(int argc, char *argv[])
 {
+    srand(0);
     initPhysics();
     mTimestep = 1.0 / 600;
     while (true)

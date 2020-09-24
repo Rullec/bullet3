@@ -51,6 +51,10 @@ void btGenFrameByFrameEnergyTerm::GetEnergyTerm(tMatrixXd &A, tVectorXd &b)
         A.block(cur_row, st_pos, rows, sub_A.cols()).noalias() = sub_A * coef;
         b.segment(cur_row, rows).noalias() = sub_b * coef;
         cur_row += rows;
+        std::cout << "[FBF] A sub " << mNameList[id]
+                  << " norm = " << sub_A.norm() << std::endl;
+        std::cout << "[FBF] b sub " << mNameList[id]
+                  << " norm = " << sub_b.norm() << std::endl;
     }
 }
 

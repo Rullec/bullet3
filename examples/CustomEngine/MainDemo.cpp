@@ -76,12 +76,7 @@ void CustomEngineMainDemo::stepSimulation(float dt)
 {
     if (global_frame_id == 0)
         m_guiHelper->resetCamera(1.64, -267.6, 13.4, 0.0078, 0.4760, 0.4799);
-    // mTime += dt;
-    // std::cout << "cur time = " << mTime << std::endl;
-    // m_guiHelper;
-    // dt = 1.0 / 600;
-    // std::cout << "dt = " << dt << std::endl;
-    // exit(0);
+    dt = physics_param->mDefaultTimestep;
     CALLGRIND_START_INSTRUMENTATION;
     if (mAdviser->IsEnd())
     {
@@ -112,6 +107,7 @@ void CustomEngineMainDemo::stepSimulation(float dt)
 void CustomEngineMainDemo::exitPhysics() { CALLGRIND_DUMP_STATS; }
 void CustomEngineMainDemo::initPhysics()
 {
+    srand(0);
     physics_param = new tParams("./examples/CustomEngine/config.json");
 
     m_guiHelper->setUpAxis(1);

@@ -353,6 +353,12 @@ void btGenFrameByFrameOptimizer::Solve(tVectorXd &tilde_qddot,
     Aeq.transposeInPlace();
     Aineq.transposeInPlace();
 
+    std::cout << "[FBF] H norm = " << H.norm() << std::endl;
+    std::cout << "[FBF] f norm = " << f.norm() << std::endl;
+    std::cout << "[FBF] Aeq norm = " << Aeq.norm() << std::endl;
+    std::cout << "[FBF] beq norm = " << beq.norm() << std::endl;
+    std::cout << "[FBF] Aineq norm = " << Aineq.norm() << std::endl;
+    std::cout << "[FBF] bineq norm = " << bineq.norm() << std::endl;
     mQPSolver->Solve(mTotalSolutionSize, H, f, Aeq, beq, Aineq, bineq, 100,
                      solution);
     // std::cout << "[debug] equality num = " << Aeq.cols() << std::endl;
