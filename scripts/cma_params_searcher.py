@@ -47,15 +47,19 @@ class Simulator:
 
     def run(self):
         a = time.time()
-        cmd = "cd .. ; ./App_ExampleBrowser"
+        cmd = "cd .. ; ./App_CustomEngine_noGUI"
         # print(f"begin to run {cmd}")
         output = os.popen(cmd).readlines()
         q_diff_lst = [float(line.split()[6]) for line in output if -
                       1 != line.find("[debug] ctrl_res and ref_traj q diff")]
+        for line in output:
+            if -1 != line.find("the cartesian velocity of model has exploded"):
+                print("[exp] cartesian vel exploded")
+                q_diff_lst.append(1e6)
         # [float(line.split()[6])/1e-3 for line in output if line is not None]
         b = time.time()
-        reward = sum(q_diff_lst)
-        # print(f"[log] cost {b - a} s, reward {reward}")
+        reward = sum(q_diff_lst) / len(q_diff_lst)
+        print(f"[log] cost {b - a} s, reward {reward}")
         return reward
         # filename = "tmp"
         # res = self.data[0]

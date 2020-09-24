@@ -154,6 +154,12 @@ void btGenContactAwareAdviser::Update(double dt)
         exit(0);
     }
 
+    if (mModel->IsCartesianMaxVel() == true)
+    {
+        std::cout
+            << "[error] the cartesian velocity of model has exploded, exit\n";
+        exit(0);
+    }
     RecordTraj();
     // // check the current q difference
     // {
