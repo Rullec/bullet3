@@ -355,8 +355,8 @@ void btGenFrameByFrameOptimizer::Solve(tVectorXd &tilde_qddot,
 
     mQPSolver->Solve(mTotalSolutionSize, H, f, Aeq, beq, Aineq, bineq, 100,
                      solution);
-    std::cout << "[debug] equality num = " << Aeq.cols() << std::endl;
-    std::cout << "[debug] inequality num = " << Aineq.cols() << std::endl;
+    // std::cout << "[debug] equality num = " << Aeq.cols() << std::endl;
+    // std::cout << "[debug] inequality num = " << Aineq.cols() << std::endl;
     // std::cout << "quadprog sol = " << solution.transpose() << std::endl;
     if (solution.hasNaN() == true)
     {
@@ -383,7 +383,7 @@ void btGenFrameByFrameOptimizer::Solve(tVectorXd &tilde_qddot,
     // std::cout << "[qp] energy = " << energy << std::endl;
 
     CalcTargetInternal(solution, tilde_qddot, tilde_qdot, tilde_q, tilde_tau);
-    mEnergyTerm->CheckEnergyValue(solution);
+    // mEnergyTerm->CheckEnergyValue(solution);
 
     // check accel energy term
     // if (mDynamicAccelEnergyCoeff > 0 && mContactSolutionSize == 0)

@@ -609,6 +609,7 @@ void btGenContactAwareAdviser::RecordTraj()
 void btGenContactAwareAdviser::Reset()
 {
     std::cout << "[adviser] adviser reset!\n";
+    exit(0);
     if (mEnableOutput == true)
     {
         std::cout << "[adviser] Save traj v2 to " << mOutputTrajPath

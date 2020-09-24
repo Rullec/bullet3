@@ -85,6 +85,7 @@ void CustomEngineMainDemo::stepSimulation(float dt)
     CALLGRIND_START_INSTRUMENTATION;
     if (mAdviser->IsEnd())
     {
+        std::cout << "traj terminated without save\n";
         mAdviser->Reset();
         mAdviser->SetTraj(gContactAwareTraj, "tmp_traj.json", true);
     }
