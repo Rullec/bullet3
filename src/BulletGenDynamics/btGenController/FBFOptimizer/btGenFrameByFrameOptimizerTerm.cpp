@@ -249,30 +249,37 @@ void btGenFrameByFrameOptimizer::AddDynamicEnergyTermPos()
     double dt2 = mdt * mdt;
     tVectorXd QG = mModel->CalcGenGravity(mWorld->GetGravity());
     b = dt2 * Minv * (QG - C_d * qdot) + q + mdt * qdot - q_next_ref;
-    tMatrixXd A1 = tMatrixXd::Zero(num_of_freedom, mContactSolutionSize),
-              A2 =
-                  tMatrixXd::Zero(num_of_freedom, num_of_underactuated_freedom);
-    for (int c_id = 0; c_id < mContactPoints.size(); c_id++)
     {
-        auto pt = mContactPoints[c_id];
-        int size = mContactSolSize[pt->contact_id];
-        int offset = mContactSolOffset[pt->contact_id];
+        tMatrixXd A1 = tMatrixXd::Zero(num_of_freedom, mContactSolutionSize),
+                  A2 = tMatrixXd::Zero(num_of_freedom,
+                                       num_of_underactuated_freedom);
 
-        // (N * 3) * (3 * size) = N * size
-        A1.block(0, offset, num_of_freedom, size).noalias() =
-            dt2 * Minv * pt->mJac.transpose() * pt->mS;
+        // A1
+        for (int c_id = 0; c_id < mContactPoints.size(); c_id++)
+        {
+            auto pt = mContactPoints[c_id];
+            int size = mContactSolSize[pt->contact_id];
+            int offset = mContactSolOffset[pt->contact_id];
+
+            // (N * 3) * (3 * size) = N * size
+            A1.block(0, offset, num_of_freedom, size).noalias() =
+                dt2 * Minv * pt->mJac.transpose() * pt->mS;
+        }
+
+        // A2
+        tMatrixXd N =
+            tMatrixXd::Zero(num_of_freedom, num_of_underactuated_freedom);
+        N.block(6, 0, num_of_underactuated_freedom,
+                num_of_underactuated_freedom)
+            .setIdentity();
+        A2.noalias() = dt2 * Minv * N;
+
+        // put A1 A2 in it
+        A.block(0, 0, num_of_freedom, mContactSolutionSize).noalias() = A1;
+        A.block(0, mContactSolutionSize, num_of_freedom,
+                num_of_underactuated_freedom)
+            .noalias() = A2;
     }
-
-    tMatrixXd N = tMatrixXd::Zero(num_of_freedom, num_of_underactuated_freedom);
-    N.block(6, 0, num_of_underactuated_freedom, num_of_underactuated_freedom)
-        .setIdentity();
-    A2.noalias() = dt2 * Minv * N;
-    A.block(0, 0, num_of_freedom, mContactSolutionSize).noalias() = A1;
-    A.block(0, mContactSolutionSize, num_of_freedom,
-            num_of_underactuated_freedom)
-        .noalias() = A2;
-    A /= dt2;
-    b /= dt2;
 
     if (mIgnoreRootPosInDynamicEnergy == true)
     {
@@ -280,7 +287,8 @@ void btGenFrameByFrameOptimizer::AddDynamicEnergyTermPos()
         b = b.segment(6, num_of_underactuated_freedom);
     }
     // energy term Ax + b
-    mEnergyTerm->AddEnergy(A, b, mDynamicPosEnergyCoeff, 0, "pos");
+    double coef = mDynamicPosEnergyCoeff / dt2;
+    mEnergyTerm->AddEnergy(A, b, coef, 0, "pos");
 }
 
 /**
@@ -323,14 +331,15 @@ void btGenFrameByFrameOptimizer::AddDynamicEnergyTermVel()
     A.block(0, mContactSolutionSize, num_of_freedom,
             num_of_underactuated_freedom)
         .noalias() = A2;
-    A /= mdt;
-    b /= mdt;
+    // A /= mdt;
+    // b /= mdt;
     if (mIgnoreRootPosInDynamicEnergy == true)
     {
         A = A.block(6, 0, num_of_underactuated_freedom, mTotalSolutionSize);
         b = b.segment(6, num_of_underactuated_freedom);
     }
-    mEnergyTerm->AddEnergy(A, b, mDynamicVelEnergyCoeff, 0, "vel");
+    double coef = mDynamicVelEnergyCoeff / mdt;
+    mEnergyTerm->AddEnergy(A, b, coef, 0, "vel");
 }
 
 /**
@@ -772,7 +781,7 @@ void btGenFrameByFrameOptimizer::AddLinkPosEnergyTerm(
 
     coef /= dt2;
     mEnergyTerm->AddEnergy(A, b, coef, 0,
-                           "link_pos_" + std::to_string(link_id));
+                           "link_pos_" + std::string(link->GetName()));
 }
 
 /**
@@ -876,7 +885,7 @@ void btGenFrameByFrameOptimizer::AddLinkOrientationEnergyTerm(
     // std::cout << "b = \n" << b.transpose() << std::endl;
 
     mEnergyTerm->AddEnergy(A, b, coef, 0,
-                           "link_orientation_" + std::to_string(link_id));
+                           "link_orientation_" + std::string(link->GetName()));
 }
 
 /**
@@ -921,5 +930,5 @@ void btGenFrameByFrameOptimizer::AddLinkVelEnergyTerm(
 
     coef /= mdt;
     mEnergyTerm->AddEnergy(A, b, coef, 0,
-                           "link_vel_" + std::to_string(link_id));
+                           "link_vel_" + std::string(link->GetName()));
 }

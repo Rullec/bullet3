@@ -93,6 +93,11 @@ void btGenContactAwareAdviser::SetTraj(const std::string &ref_traj,
     //           << mRefTraj->mqdot[mInternalFrameId].transpose() << std::endl;
     mFBFOptimizer->SetTraj(mRefTraj);
     mHasRefTraj = true;
+
+    if (mEnableInitStateLoad == true)
+    {
+        LoadInitState();
+    }
 }
 void btGenContactAwareAdviser::Init(cRobotModelDynamics *model_,
                                     const std::string &contact_aware_config)
@@ -125,6 +130,8 @@ void btGenContactAwareAdviser::Init(cRobotModelDynamics *model_,
 void btGenContactAwareAdviser::Update(double dt)
 {
     std::cout << "---------------------frame " << mInternalFrameId << std::endl;
+    if (mEnableStateSave)
+        SaveCurrentState();
     mCurdt = dt;
     if (mRefTraj == nullptr)
         std::cout << "[error] adviser guide traj hasn't been set\n", exit(0);
@@ -327,6 +334,23 @@ void btGenContactAwareAdviser::ReadConfig(const std::string &config)
     mSyncTrajPeriod = btJsonUtil::ParseAsInt("sync_traj_period", root);
 
     mFrameByFrameConfig = btJsonUtil::ParseAsValue("ctrl_config", root);
+    mEnableStateSave = btJsonUtil::ParseAsBool("enable_state_save", root);
+    mEnableInitStateLoad =
+        btJsonUtil::ParseAsBool("enable_init_state_load", root);
+    mInitStateFile = btJsonUtil::ParseAsString("init_state_file", root);
+    mStateSaveDir = btJsonUtil::ParseAsString("save_dir", root);
+
+    // validate the state save dir
+    if (mEnableStateSave == true)
+    {
+        std::ofstream ftest(mStateSaveDir + "1.txt", std::ios::app);
+        if (ftest.fail() == true)
+        {
+            std::cout << "[error] state save dir " << mStateSaveDir
+                      << " doesn't exist\n";
+            exit(0);
+        }
+    }
     // mFBFPosCoef =
     //     btJsonUtil::ParseAsDouble("dynamic_pos_energy_coef", ctrl_config);
     // mFBFVelCoef =
@@ -604,3 +628,69 @@ void btGenContactAwareAdviser::Reset()
 }
 
 btTraj *btGenContactAwareAdviser::GetRefTraj() { return this->mRefTraj; }
+
+/**
+ * \brief               Save current state to the path speicifed by "SaveDir"
+ */
+void btGenContactAwareAdviser::SaveCurrentState()
+{
+    /**
+     * 1. trajectory path
+     * 2. model path
+     * 3. model q, qdot
+     * 4. current frame id
+     */
+    std::string filename =
+        mStateSaveDir + "/" + std::to_string(mInternalFrameId);
+    Json::Value root;
+    root["ref_traj_path"] = mRefTrajPath;
+    root["model_path"] = mModel->GetCharFile();
+    root["q"] = btJsonUtil::BuildVectorJsonValue(mModel->Getq());
+    root["qdot"] = btJsonUtil::BuildVectorJsonValue(mModel->Getqdot());
+    root["frame_id"] = mInternalFrameId;
+    std::cout << "write adviser state to " << filename << std::endl;
+    btJsonUtil::WriteJson(filename, root, true);
+}
+
+void btGenContactAwareAdviser::LoadInitState()
+{
+    std::cout << "[load] begin to load init state file " << mInitStateFile
+              << std::endl;
+    Json::Value root;
+    if (false == btJsonUtil::LoadJson(mInitStateFile, root))
+    {
+        std::cout << "[error] load " << mInitStateFile << " failed\n";
+        exit(0);
+    }
+    std::string ref_traj_path =
+        btJsonUtil::ParseAsString("ref_traj_path", root);
+    std::string model_path = btJsonUtil::ParseAsString("model_path", root);
+    int frame_id = btJsonUtil::ParseAsInt("frame_id", root);
+    tVectorXd q, qdot;
+    btJsonUtil::ReadVectorJson(btJsonUtil::ParseAsValue("q", root), q);
+    btJsonUtil::ReadVectorJson(btJsonUtil::ParseAsValue("qdot", root), qdot);
+
+    if (ref_traj_path != mRefTrajPath)
+    {
+        std::cout << "[error] the loaded ref traj " << ref_traj_path
+                  << " != setting traj " << mRefTrajPath << std::endl;
+        exit(1);
+    }
+
+    if (model_path != mModel->GetCharFile())
+    {
+        std::cout << "[error] the loaded model " << model_path
+                  << " != setting model " << mModel->GetCharFile() << std::endl;
+        exit(1);
+    }
+
+    // set q, qdot and start frame id
+    mStartFrame = frame_id;
+    mInternalFrameId = mStartFrame;
+    std::cout << "model dof = " << mModel->GetNumOfFreedom() << std::endl;
+    std::cout << "q size = " << q.size() << std::endl;
+    std::cout << "qdot size = " << qdot.size() << std::endl;
+    std::cout << "set init frame = " << mStartFrame << std::endl;
+
+    mModel->SetqAndqdot(q, qdot);
+}

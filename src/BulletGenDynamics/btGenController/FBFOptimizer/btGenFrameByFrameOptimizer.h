@@ -106,8 +106,15 @@ protected:
     bool mEnableContactForceLimit; // limit the contact force in [-a, a]
     double mContactForceLimit;     // the limitation of contact force
 
-    bool mEnableFixStaticContactPoint;
-    bool mIgnoreRootPosInDynamicEnergy;
+    bool mEnableContactConstraint; // add contact constraint in this
+                                   // frame-by-frame constraint
+    bool mEnableContactReduction;  // reduct the contact points at a link to a
+                                   // single point (average)
+
+    bool mEnableFixStaticContactPoint;  // add hard/fix constraint for static
+                                        // contact
+    bool mIgnoreRootPosInDynamicEnergy; // ignore the root dof in Pos/Vel/Accel
+                                        // energy term
     int mContactSolutionSize; // the size of contact force in result vector
     int mCtrlSolutionSize;    // the size of active ctrl froce in result vector
     int mTotalSolutionSize;   // total solution size

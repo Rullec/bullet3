@@ -68,6 +68,11 @@ protected:
     btGeneralizeWorld *mWorld;
     btGenFeatureArray *mFeatureVector;
     btGenFrameByFrameOptimizer *mFBFOptimizer;
+    bool mEnableStateSave;
+    bool mEnableInitStateLoad;
+    std::string mInitStateFile;
+
+    std::string mStateSaveDir;
     btTraj *mOutputTraj;
     btTraj *mRefTraj;
     std::string mRefTrajPath;
@@ -96,4 +101,6 @@ protected:
     void CreateRefChar();
     void UpdateRefChar();
     void RecordTraj();
+    void SaveCurrentState();
+    void LoadInitState();
 };

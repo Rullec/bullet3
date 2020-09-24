@@ -20,6 +20,17 @@ void btCharContactPt::Init(double dt, btPersistentManifold *manifold,
         // exit(0);
     }
 }
+
+void btCharContactPt::Init(const tVector &world_pos,
+                           btGenRobotCollider *collider)
+{
+    mWorldPos = world_pos;
+    mCollider = collider;
+    mBodyA = mCollider;
+    mBodyB = mCollider;
+    mContactPtOnA = mWorldPos;
+    mContactPtOnB = mWorldPos;
+}
 bool btCharContactPt::IsMultibodyInvolved(cRobotModelDynamics *model)
 {
     bool involved = false;

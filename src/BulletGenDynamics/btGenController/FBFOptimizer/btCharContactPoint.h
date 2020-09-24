@@ -7,6 +7,7 @@ public:
     btCharContactPt(int c_id);
     void Init(double dt, btPersistentManifold *manifold,
               int contact_id_in_manifold);
+    void Init(const tVector &world_pos, btGenRobotCollider *collider);
     bool IsMultibodyInvolved(cRobotModelDynamics *model);
     void CalcCharacterInfo();
 

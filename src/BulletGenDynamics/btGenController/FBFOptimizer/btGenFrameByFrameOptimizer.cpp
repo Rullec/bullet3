@@ -117,6 +117,12 @@ void btGenFrameByFrameOptimizer::Init(btGeneralizeWorld *world,
         btJsonUtil::ParseAsBool("enable_contact_force_limit", conf);
     mContactForceLimit = btJsonUtil::ParseAsDouble("contact_force_limit", conf);
 
+    mEnableContactConstraint =
+        btJsonUtil::ParseAsBool("enable_contact_constraint", conf);
+
+    mEnableContactReduction =
+        btJsonUtil::ParseAsBool("enable_contact_reduction", conf);
+
     // ParseConfig(conf);
     InitModelInfo();
     InitQPSolver();
@@ -173,6 +179,11 @@ void btGenFrameByFrameOptimizer::CalcTarget(double dt, int target_frame_id,
  */
 void btGenFrameByFrameOptimizer::CalcContactStatus()
 {
+    if (mEnableContactConstraint == false)
+    {
+        std::cout << "[log] contact constraints are ignored\n";
+        return;
+    }
     ClearContactPoints();
     // 1. get contact points & link id, calc point positions in local frame
     std::vector<btPersistentManifold *> manifolds =
@@ -198,6 +209,50 @@ void btGenFrameByFrameOptimizer::CalcContactStatus()
             else
                 delete data;
         }
+    }
+
+    if (mEnableContactReduction == true)
+    {
+        std::cout << "[log] enable contact reduction\n";
+
+        // collect all of the contact points on a link
+        std::map<btGenRobotCollider *, std::vector<btCharContactPt *>>
+            LinkToContactPtsMap;
+        LinkToContactPtsMap.clear();
+        for (auto &f : mContactPoints)
+        {
+            LinkToContactPtsMap[f->mCollider].push_back(f);
+        }
+
+        // calculate concentrated contact point
+        std::vector<btCharContactPt *> mContactPointsNew(0);
+        for (auto &x : LinkToContactPtsMap)
+        {
+            // for this link, calculate the avg world pos
+            std::cout << "link " << x.first->GetName() << " contact points num "
+                      << x.second.size() << std::endl;
+            tVector avg_world_pos = tVector::Zero();
+            for (auto pt : x.second)
+                avg_world_pos += pt->mWorldPos / x.second.size();
+
+            // get a new contact point here
+            btCharContactPt *pt = new btCharContactPt(mContactPointsNew.size());
+            pt->Init(avg_world_pos, x.first);
+            pt->CalcCharacterInfo();
+            mContactPointsNew.push_back(pt);
+            std::cout << "[log] concentrated contact point on link "
+                      << x.first->GetName() << " on "
+                      << avg_world_pos.transpose() << std::endl;
+        }
+
+        // release all old contact points
+        for (auto &f : mContactPoints)
+            delete f;
+        mContactPoints.clear();
+        mContactPoints.assign(mContactPointsNew.begin(),
+                              mContactPointsNew.end());
+        std::cout << "[debug] new concentrated contact points num = "
+                  << mContactPoints.size() << std::endl;
     }
 
     // 2. get the reference pos for these points in next frame, calculate their
@@ -297,8 +352,11 @@ void btGenFrameByFrameOptimizer::Solve(tVectorXd &tilde_qddot,
     tVectorXd solution = tVectorXd::Zero(mTotalSolutionSize);
     Aeq.transposeInPlace();
     Aineq.transposeInPlace();
+
     mQPSolver->Solve(mTotalSolutionSize, H, f, Aeq, beq, Aineq, bineq, 100,
                      solution);
+    std::cout << "[debug] equality num = " << Aeq.cols() << std::endl;
+    std::cout << "[debug] inequality num = " << Aineq.cols() << std::endl;
     // std::cout << "quadprog sol = " << solution.transpose() << std::endl;
     if (solution.hasNaN() == true)
     {
@@ -346,12 +404,14 @@ void btGenFrameByFrameOptimizer::Solve(tVectorXd &tilde_qddot,
     //                         A_manual.transpose() * b_manual;
 
     //     tVectorXd diff = solution - lsq_sol;
-    //     if (diff.norm() > 1e-10)
+    //     if (diff.norm() > 1e-8)
     //     {
     //         std::cout << "sol diff = " << diff.transpose() << std::endl;
     //         std::cout << "sol diff norm = " << diff.norm() << std::endl;
     //         exit(1);
     //     }
+    //     else
+    //         std::cout << "verify accel succ\n";
     // }
 
     // // check vel energy term
@@ -374,11 +434,13 @@ void btGenFrameByFrameOptimizer::Solve(tVectorXd &tilde_qddot,
     //         b_man;
 
     //     tVectorXd diff = lsq_sol - solution;
-    //     if (diff.norm() > 1e-10)
+    //     if (diff.norm() > 1e-8)
     //     {
     //         std::cout << "[vel] diff = " << diff.norm() << std::endl;
     //         exit(1);
     //     }
+    //     else
+    //         std::cout << "lsq vel verified succ\n";
     // }
     // if (mDynamicPosEnergyCoeff > 0 && mContactSolutionSize == 0)
     // {
@@ -400,7 +462,7 @@ void btGenFrameByFrameOptimizer::Solve(tVectorXd &tilde_qddot,
     //         b_man;
 
     //     tVectorXd diff = lsq_sol - solution;
-    //     if (diff.norm() > 1e-10)
+    //     if (diff.norm() > 1e-6)
     //     {
     //         std::cout << "[pos] diff = " << diff.transpose() << std::endl;
     //         std::cout << "[pos] diff norm = " << diff.norm() << std::endl;
@@ -409,6 +471,8 @@ void btGenFrameByFrameOptimizer::Solve(tVectorXd &tilde_qddot,
     //         std::cout << "[pos] lsq sol = " << lsq_sol.transpose() <<
     //         std::endl; exit(1);
     //     }
+    //     else
+    //         std::cout << "pos diff lsq verified succ\n";
     // }
     // tVectorXd ref_tau = mTraj->mActiveForce[mCurFrameId].segment(
     //     6, num_of_underactuated_freedom);
