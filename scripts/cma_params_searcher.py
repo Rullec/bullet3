@@ -20,13 +20,16 @@ PARAM_NAME = [
     "root_orientation_coef"
 ]
 
-trajs = [
-    "/home/xudong/Projects/DeepMimic/data/id_test/sample_fullbody/traj_fullbody_137757747.json",
-    "/home/xudong/Projects/DeepMimic/data/id_test/sample_fullbody/traj_fullbody_143582365.json",
-    "/home/xudong/Projects/DeepMimic/data/id_test/sample_fullbody/traj_fullbody_1974042356.json",
-    "/home/xudong/Projects/DeepMimic/data/id_test/sample_fullbody/traj_fullbody_606226380.json",
-    "/home/xudong/Projects/DeepMimic/data/id_test/sample_fullbody/traj_fullbody_847986793.json"
-]
+trajs = ["/home/xudong/Projects/DeepMimic/data/id_test/sample_fullbody_arch/traj_fullbody_1253308781.json",
+         "/home/xudong/Projects/DeepMimic/data/id_test/sample_fullbody_arch/traj_fullbody_1921302967.json",
+         "/home/xudong/Projects/DeepMimic/data/id_test/sample_fullbody_arch/traj_fullbody_1948592662.json",
+         "/home/xudong/Projects/DeepMimic/data/id_test/sample_fullbody_arch/traj_fullbody_2027468659.json",
+         "/home/xudong/Projects/DeepMimic/data/id_test/sample_fullbody_arch/traj_fullbody_29021974.json",
+         "/home/xudong/Projects/DeepMimic/data/id_test/sample_fullbody_arch/traj_fullbody_404900127.json",
+         "/home/xudong/Projects/DeepMimic/data/id_test/sample_fullbody_arch/traj_fullbody_454324098.json",
+         "/home/xudong/Projects/DeepMimic/data/id_test/sample_fullbody_arch/traj_fullbody_797758014.json",
+         "/home/xudong/Projects/DeepMimic/data/id_test/sample_fullbody_arch/traj_fullbody_807318641.json",
+         "/home/xudong/Projects/DeepMimic/data/id_test/sample_fullbody_arch/traj_fullbody_983800607.json"]
 
 
 def GetParamterSize():

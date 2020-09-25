@@ -22,8 +22,6 @@
         "dynamic_accel_energy_coef": 0.48115058,
         "control_force_coef": 1.46024802,
         "contact_force_coef": 1.5938615,
-        "control_force_close_to_origin_coef": 2.0992315,
-        "contact_force_close_to_origin_coef": 1.77857783,
         "end_effector_pos_coef": 1.36824606,
         "end_effector_vel_coef": 1.03704329,
         "end_effector_orient_coef": 0.22182373,
