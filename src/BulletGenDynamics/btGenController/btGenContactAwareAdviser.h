@@ -46,6 +46,7 @@ public:
     tMatrixXd CalcLCPPartBPrefix() const;
     bool IsEnd();
     void Reset();
+    btGenFrameByFrameOptimizer *GetFBFOptimizer();
     // void GetAdviseInfo(tMatrixXd& C, tMatrixXd& D, tMatrixXd& E, tMatrixXd&
     // N, tVectorXd& b);
 

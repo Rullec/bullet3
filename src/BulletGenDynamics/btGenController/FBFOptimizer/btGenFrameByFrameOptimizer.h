@@ -23,6 +23,7 @@ public:
     ~btGenFrameByFrameOptimizer();
     void Init(btGeneralizeWorld *mWorld, const Json::Value &conf);
     void SetTraj(btTraj *traj_);
+    void SetCoef(const Json::Value &conf);
     void CalcTarget(double dt, int target_frame_id, tVectorXd &tilde_qddot,
                     tVectorXd &tilde_qdot, tVectorXd &tilde_q,
                     tVectorXd &tilde_tau);
@@ -94,8 +95,8 @@ protected:
     double mDynamicAccelEnergyCoeff;
     double mControlForceCoef;
     double mContactForceCoef;
-    double mControlForceCloseToOriginCoef;
-    double mContactForceCloseToOriginCoef;
+    // double mControlForceCloseToOriginCoef;
+    // double mContactForceCloseToOriginCoef;
     double mEndEffectorPosCoef;
     double mEndEffectorVelCoef;
     double mEndEffectorOrientationCoef;

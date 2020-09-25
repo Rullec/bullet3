@@ -18,7 +18,7 @@ eContactStatus JudgeContactStatus(const tVector &vel,
                                   double breakage_threshold = 1e-2,
                                   double sliding_threshold = 5e-3)
 {
-    std::cout << "all judge are returning static\n";
+    std::cout << "[warn] all judge are returning static\n";
     return eContactStatus::STATIC;
     double vel_n = vel[1];
     double vel_t = std::sqrt(std::pow(vel[0], 2) + std::pow(vel[2], 2));
@@ -79,40 +79,20 @@ btGenFrameByFrameOptimizer::~btGenFrameByFrameOptimizer()
 // void btGenFrameByFrameOptimizer::Init(const Json::Value &conf, btTraj
 // *ref_traj,
 //                      btGeneralizeWorld *world)
+
 void btGenFrameByFrameOptimizer::Init(btGeneralizeWorld *world,
                                       const Json::Value &conf)
 {
     mWorld = world;
     mModel = mWorld->GetMultibody();
+    SetCoef(conf);
 
-    mDynamicPosEnergyCoeff =
-        btJsonUtil::ParseAsDouble("dynamic_pos_energy_coef", conf);
-    mDynamicVelEnergyCoeff =
-        btJsonUtil::ParseAsDouble("dynamic_vel_energy_coef", conf);
-    mDynamicAccelEnergyCoeff =
-        btJsonUtil::ParseAsDouble("dynamic_accel_energy_coef", conf);
-    mControlForceCoef = btJsonUtil::ParseAsDouble("control_force_coef", conf);
-    mContactForceCoef = btJsonUtil::ParseAsDouble("contact_force_coef", conf);
     mEnableFixStaticContactPoint =
         btJsonUtil::ParseAsBool("fix_the_static_contact_point", conf);
 
     mIgnoreRootPosInDynamicEnergy =
         btJsonUtil::ParseAsBool("ignore_root_position_in_dynamic_energy", conf);
 
-    mControlForceCloseToOriginCoef =
-        btJsonUtil::ParseAsDouble("control_force_close_to_origin_coef", conf);
-    mContactForceCloseToOriginCoef =
-        btJsonUtil::ParseAsDouble("contact_force_close_to_origin_coef", conf);
-    mEndEffectorPosCoef =
-        btJsonUtil::ParseAsDouble("end_effector_pos_coef", conf);
-    mEndEffectorVelCoef =
-        btJsonUtil::ParseAsDouble("end_effector_vel_coef", conf);
-    mEndEffectorOrientationCoef =
-        btJsonUtil::ParseAsDouble("end_effector_orient_coef", conf);
-    mRootPosCoef = btJsonUtil::ParseAsDouble("root_pos_coef", conf);
-    mRootVelCoef = btJsonUtil::ParseAsDouble("root_vel_coef", conf);
-    mRootOrientationCoef =
-        btJsonUtil::ParseAsDouble("root_orientation_coef", conf);
     mEnableContactForceLimit =
         btJsonUtil::ParseAsBool("enable_contact_force_limit", conf);
     mContactForceLimit = btJsonUtil::ParseAsDouble("contact_force_limit", conf);
@@ -524,9 +504,9 @@ void btGenFrameByFrameOptimizer::CalcTargetInternal(const tVectorXd &solution,
         int offset = mContactSolOffset[i];
         int size = mContactSolSize[i];
         tVector3d solved_force = pt->mS * contact_force.segment(offset, size);
-        std::cout << "[solved] FBF contact force " << i << " "
-                  << solved_force.transpose() << " status "
-                  << gContactStatusStr[pt->mStatus] << std::endl;
+        // std::cout << "[solved] FBF contact force " << i << " "
+        //           << solved_force.transpose() << " status "
+        //           << gContactStatusStr[pt->mStatus] << std::endl;
         gen_contact_force += pt->mJac.transpose() * solved_force;
     }
     gen_ctrl_force.segment(6, num_of_underactuated_freedom) = control_force;
@@ -561,7 +541,8 @@ void btGenFrameByFrameOptimizer::CalcTargetInternal(const tVectorXd &solution,
         //     << dynamic_cast<btGenRobotCollider *>(f->mObj)->mLinkId
         //     << " contact force = " << f->mForce.transpose()
         //     << " vel = " << vel.transpose().segment(0, 3) << " status "
-        //     << gContactStatusStr[JudgeContactStatus(btMathUtil::Expand(vel, 0))]
+        //     << gContactStatusStr[JudgeContactStatus(btMathUtil::Expand(vel,
+        //     0))]
         //     << std::endl;
     }
     mModel->PopState("test");
@@ -592,6 +573,36 @@ void btGenFrameByFrameOptimizer::ParseConfig(const Json::Value &conf)
     // mDynamicAccelEnergyCoeff =
     //     btJsonUtil::ParseAsDouble("dynamic_accel_energy_coef", conf);
 }
+
+void btGenFrameByFrameOptimizer::SetCoef(const Json::Value &conf)
+{
+    std::cout << "[FBF] FBFOptimizer set coeff begin\n";
+    mDynamicPosEnergyCoeff =
+        btJsonUtil::ParseAsDouble("dynamic_pos_energy_coef", conf);
+    mDynamicVelEnergyCoeff =
+        btJsonUtil::ParseAsDouble("dynamic_vel_energy_coef", conf);
+    mDynamicAccelEnergyCoeff =
+        btJsonUtil::ParseAsDouble("dynamic_accel_energy_coef", conf);
+    mControlForceCoef = btJsonUtil::ParseAsDouble("control_force_coef", conf);
+    mContactForceCoef = btJsonUtil::ParseAsDouble("contact_force_coef", conf);
+    // mControlForceCloseToOriginCoef =
+    //     btJsonUtil::ParseAsDouble("control_force_close_to_origin_coef",
+    //     conf);
+    // mContactForceCloseToOriginCoef =
+    //     btJsonUtil::ParseAsDouble("contact_force_close_to_origin_coef",
+    //     conf);
+    mEndEffectorPosCoef =
+        btJsonUtil::ParseAsDouble("end_effector_pos_coef", conf);
+    mEndEffectorVelCoef =
+        btJsonUtil::ParseAsDouble("end_effector_vel_coef", conf);
+    mEndEffectorOrientationCoef =
+        btJsonUtil::ParseAsDouble("end_effector_orient_coef", conf);
+    mRootPosCoef = btJsonUtil::ParseAsDouble("root_pos_coef", conf);
+    mRootVelCoef = btJsonUtil::ParseAsDouble("root_vel_coef", conf);
+    mRootOrientationCoef =
+        btJsonUtil::ParseAsDouble("root_orientation_coef", conf);
+}
+
 void btGenFrameByFrameOptimizer::InitModelInfo()
 {
     num_of_freedom = mModel->GetNumOfFreedom();

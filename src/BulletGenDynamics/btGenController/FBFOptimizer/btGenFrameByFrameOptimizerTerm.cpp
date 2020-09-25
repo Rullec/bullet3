@@ -28,10 +28,10 @@ void btGenFrameByFrameOptimizer::CalcEnergyTerms()
         AddMinTauEnergyTerm();
     if (mContactForceCoef > 0)
         AddMinContactForceEnergyTerm();
-    if (mControlForceCloseToOriginCoef > 0)
-        AddTauCloseToOriginEnergyTerm();
-    if (mContactForceCloseToOriginCoef > 0)
-        AddContactForceCloseToOriginEnergyTerm();
+    // if (mControlForceCloseToOriginCoef > 0)
+    //     AddTauCloseToOriginEnergyTerm();
+    // if (mContactForceCloseToOriginCoef > 0)
+    //     AddContactForceCloseToOriginEnergyTerm();
 
     if (mEndEffectorPosCoef > 0)
         AddEndEffectorPosEnergyTerm();
@@ -509,23 +509,25 @@ void btGenFrameByFrameOptimizer::AddContactForceLimitConstraint()
  */
 void btGenFrameByFrameOptimizer::AddTauCloseToOriginEnergyTerm()
 {
-    // std::cout << "active force = " << mTraj->mActiveForce[mCurFrameId].size()
-    //           << std::endl;
+    // // std::cout << "active force = " <<
+    // mTraj->mActiveForce[mCurFrameId].size()
+    // //           << std::endl;
 
-    // std::cout << "underactuated dof = " << num_of_underactuated_freedom
-    //           << std::endl;
+    // // std::cout << "underactuated dof = " << num_of_underactuated_freedom
+    // //           << std::endl;
 
-    tMatrixXd A = tMatrixXd::Zero(num_of_freedom, num_of_underactuated_freedom);
-    int root_dof = num_of_freedom - num_of_underactuated_freedom;
-    A.block(root_dof, 0, num_of_underactuated_freedom,
-            num_of_underactuated_freedom)
-        .setIdentity();
-    tVectorXd b = -mTraj->mActiveForce[mCurFrameId];
-    // std::cout << "A = \n" << A << std::endl;
-    // std::cout << "b = " << b.transpose() << std::endl;
-    mEnergyTerm->AddEnergy(A, b, mControlForceCloseToOriginCoef,
-                           mContactSolutionSize,
-                           "control_force_close_to_origin");
+    // tMatrixXd A = tMatrixXd::Zero(num_of_freedom,
+    // num_of_underactuated_freedom); int root_dof = num_of_freedom -
+    // num_of_underactuated_freedom; A.block(root_dof, 0,
+    // num_of_underactuated_freedom,
+    //         num_of_underactuated_freedom)
+    //     .setIdentity();
+    // tVectorXd b = -mTraj->mActiveForce[mCurFrameId];
+    // // std::cout << "A = \n" << A << std::endl;
+    // // std::cout << "b = " << b.transpose() << std::endl;
+    // mEnergyTerm->AddEnergy(A, b, mControlForceCloseToOriginCoef,
+    //                        mContactSolutionSize,
+    //                        "control_force_close_to_origin");
     // exit(1);
 }
 
@@ -543,49 +545,49 @@ void btGenFrameByFrameOptimizer::AddTauCloseToOriginEnergyTerm()
  */
 void btGenFrameByFrameOptimizer::AddContactForceCloseToOriginEnergyTerm()
 {
-    if (mContactSolutionSize == 0)
-    {
-        std::cout << "[debug] no contact solution size, the contact force "
-                     "close to origin energy term should be closed\n";
-        return;
-    }
-    tMatrixXd A = tMatrixXd::Zero(num_of_freedom, mContactSolutionSize);
-    tVectorXd b = tVectorXd::Zero(num_of_freedom);
+    // if (mContactSolutionSize == 0)
+    // {
+    //     std::cout << "[debug] no contact solution size, the contact force "
+    //                  "close to origin energy term should be closed\n";
+    //     return;
+    // }
+    // tMatrixXd A = tMatrixXd::Zero(num_of_freedom, mContactSolutionSize);
+    // tVectorXd b = tVectorXd::Zero(num_of_freedom);
 
-    // 1. calculate A
-    for (int c_id = 0; c_id < mContactPoints.size(); c_id++)
-    {
-        auto pt = mContactPoints[c_id];
-        int size = mContactSolSize[pt->contact_id];
-        int offset = mContactSolOffset[pt->contact_id];
+    // // 1. calculate A
+    // for (int c_id = 0; c_id < mContactPoints.size(); c_id++)
+    // {
+    //     auto pt = mContactPoints[c_id];
+    //     int size = mContactSolSize[pt->contact_id];
+    //     int offset = mContactSolOffset[pt->contact_id];
 
-        // (N * 3) * (3 * size) = N * size
-        A.block(0, offset, num_of_freedom, size).noalias() =
-            pt->mJac.transpose() * pt->mS;
-    }
+    //     // (N * 3) * (3 * size) = N * size
+    //     A.block(0, offset, num_of_freedom, size).noalias() =
+    //         pt->mJac.transpose() * pt->mS;
+    // }
 
-    // 2. calculate b, set the old state and calcualte the jacobian for old
-    // contact forces
-    mModel->PushState("add_contact_force_close_energy");
-    {
-        tVectorXd old_q = mTraj->mq[mCurFrameId],
-                  old_qdot = mTraj->mqdot[mCurFrameId];
-        mModel->SetqAndqdot(old_q, old_qdot);
-        for (auto &f : mTraj->mContactForce[mCurFrameId])
-        {
-            int link_id = dynamic_cast<btGenRobotCollider *>(f->mObj)->mLinkId;
-            tMatrixXd jac;
-            mModel->ComputeJacobiByGivenPointTotalDOFWorldFrame(
-                link_id, f->mWorldPos.segment(0, 3), jac);
-            b -= jac.transpose() * f->mForce.segment(0, 3);
-        }
-    }
-    mModel->PopState("add_contact_force_close_energy");
-    // std::cout << "A = \n" << A << std::endl;
-    // std::cout << "b = " << b.transpose() << std::endl;
-    // 3. add it to the energy term structure
-    mEnergyTerm->AddEnergy(A, b, mContactForceCloseToOriginCoef, 0,
-                           "contact_force_close_to_origin");
+    // // 2. calculate b, set the old state and calcualte the jacobian for old
+    // // contact forces
+    // mModel->PushState("add_contact_force_close_energy");
+    // {
+    //     tVectorXd old_q = mTraj->mq[mCurFrameId],
+    //               old_qdot = mTraj->mqdot[mCurFrameId];
+    //     mModel->SetqAndqdot(old_q, old_qdot);
+    //     for (auto &f : mTraj->mContactForce[mCurFrameId])
+    //     {
+    //         int link_id = dynamic_cast<btGenRobotCollider
+    //         *>(f->mObj)->mLinkId; tMatrixXd jac;
+    //         mModel->ComputeJacobiByGivenPointTotalDOFWorldFrame(
+    //             link_id, f->mWorldPos.segment(0, 3), jac);
+    //         b -= jac.transpose() * f->mForce.segment(0, 3);
+    //     }
+    // }
+    // mModel->PopState("add_contact_force_close_energy");
+    // // std::cout << "A = \n" << A << std::endl;
+    // // std::cout << "b = " << b.transpose() << std::endl;
+    // // 3. add it to the energy term structure
+    // mEnergyTerm->AddEnergy(A, b, mContactForceCloseToOriginCoef, 0,
+    //                        "contact_force_close_to_origin");
 }
 
 /**
