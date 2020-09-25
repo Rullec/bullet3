@@ -5,7 +5,7 @@
     "resolve_control_tau": true,
     "draw_reference_traj_character": true,
     "draw_target_FBF_character": true,
-    "max_frame": 500,
+    "max_frame": 1000,
     "start_frame": 1,
     "output_diff": true,
     "output_diff_path": "build_cmake/contact_aware.log",
