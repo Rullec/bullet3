@@ -51,6 +51,10 @@ cRobotModelDynamics::~cRobotModelDynamics()
         delete x;
     }
     mColliders.clear();
+
+    for (auto &x : mStateStack)
+        delete x.second;
+    mStateStack.clear();
 }
 void cRobotModelDynamics::Init(const char *model_file, double scale, int type)
 {

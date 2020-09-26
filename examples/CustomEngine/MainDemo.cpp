@@ -42,6 +42,7 @@ struct CustomEngineMainDemo : public CommonRigidBodyBase
         bool mEnableObjPerturb;
         double mDefaultTimestep;
         int mPauseFrame;
+        bool mEnableContactAwareControl;
         tParams(const std::string &path);
     };
 
@@ -81,7 +82,7 @@ void CustomEngineMainDemo::stepSimulation(float dt)
     // std::cout << "dt = " << dt << std::endl;
     // exit(0);
     CALLGRIND_START_INSTRUMENTATION;
-    if (mAdviser->IsEnd())
+    if (physics_param->mEnableContactAwareControl && mAdviser->IsEnd())
     {
         mAdviser->Reset();
         mAdviser->SetTraj(gContactAwareTraj, "tmp_traj.json", true);
@@ -159,9 +160,12 @@ void CustomEngineMainDemo::initPhysics()
     if (physics_param->mAddMultibody)
     {
         mGenWorld->AddMultibody(physics_param->mMultibodyPath);
-        mGenWorld->SetEnableContacrAwareControl();
-        mAdviser = mGenWorld->GetContactAwareAdviser();
-        mAdviser->SetTraj(gContactAwareTraj, "tmp_traj.json", true);
+        if (physics_param->mEnableContactAwareControl)
+        {
+            mGenWorld->SetEnableContacrAwareControl();
+            mAdviser = mGenWorld->GetContactAwareAdviser();
+            mAdviser->SetTraj(gContactAwareTraj, "tmp_traj.json", true);
+        }
     }
 
     if (physics_param->mEnableGround)
@@ -211,6 +215,8 @@ CustomEngineMainDemo::tParams::tParams(const std::string &path)
     mEnableObjPerturb = json_root["enable_obj_perturb"].asBool();
     mDefaultTimestep = json_root["default_timestep"].asDouble();
     mPauseFrame = json_root["pause_frame"].asInt();
+    mEnableContactAwareControl =
+        btJsonUtil::ParseAsBool("enable_contact_aware_control", json_root);
     gEnablePauseWhenSolveError =
         json_root["enable_pause_when_solved_wrong"].asBool();
     gEnableResolveWhenSolveError =

@@ -62,7 +62,8 @@ protected:
     bool mResolveControlToruqe;
     Json::Value mFrameByFrameConfig;
     bool mOutputControlDiff;
-
+    bool mEnableSyncTrajPeriodly;
+    int mSyncTrajPeriod;
     cRobotModelDynamics *mModel;
     btGeneralizeWorld *mWorld;
     btGenFeatureArray *mFeatureVector;
@@ -72,7 +73,8 @@ protected:
     std::string mRefTrajPath;
     std::string mOutputTrajPath;
     bool mEnableOutput;
-    cRobotModelDynamics *mRefModel;
+    cRobotModelDynamics *mRefTrajModel;
+    cRobotModelDynamics *mFBFTrajModel;
 
     int num_of_freedom;               // model dof
     int num_of_underactuated_freedom; // model dof - 6
@@ -81,6 +83,7 @@ protected:
         mE;       // convert matrices, please check the Note for more details
     tVectorXd mf; // convert vector, please check the Note for more details
     tVectorXd mTargetAccel, mTargetVel, mTargetPos, mTargetTau;
+
     // ----------------------- methods
     void ReadConfig(const std::string &config);
     void ResolveActiveForce();

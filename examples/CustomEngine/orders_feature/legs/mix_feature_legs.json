@@ -1,68 +1,38 @@
 {
     "root_joint": {
-        "accel": 1.0,
+        "pos": 1.0,
         "vel": 1.0,
-        "pos": 1.0
-    },
-    "root_height": {
-        "accel": 1.0,
-        "vel": 1.0,
-        "pos": 1.0
-    },
-    "root_location": {
-        "accel": 0.0,
-        "vel": 0.0,
-        "pos": 10.0
+        "accel": 1.0
     },
     "RightLeg_joint": {
-        "accel": 1.0,
+        "pos": 1.0,
         "vel": 1.0,
-        "pos": 1.0
+        "accel": 1.0
     },
     "RightFoot_joint": {
-        "accel": 1.0,
+        "pos": 1.0,
         "vel": 1.0,
-        "pos": 1.0
+        "accel": 1.0
     },
     "RFootTongue_joint": {
-        "accel": 1.0,
+        "pos": 1.0,
         "vel": 1.0,
-        "pos": 1.0
-    },
-    "RFootTongue_location": {
-        "accel": 1.0,
-        "vel": 1.0,
-        "pos": 5.0
-    },
-    "RFootTongue_height": {
-        "accel": 1.0,
-        "vel": 1.0,
-        "pos": 5.0
+        "accel": 1.0
     },
     "LeftLeg_joint": {
-        "accel": 1.0,
+        "pos": 1.0,
         "vel": 1.0,
-        "pos": 1.0
+        "accel": 1.0
     },
     "LeftFoot_joint": {
-        "accel": 1.0,
+        "pos": 1.0,
         "vel": 1.0,
-        "pos": 1.0
+        "accel": 1.0
     },
     "LFootTongue_joint": {
-        "accel": 1.0,
+        "pos": 1.0,
         "vel": 1.0,
-        "pos": 5.0
-    },
-    "LFootTongue_location": {
-        "accel": 1.0,
-        "vel": 1.0,
-        "pos": 1.0
-    },
-    "LFootTongue_height": {
-        "accel": 1.0,
-        "vel": 1.0,
-        "pos": 5.0
+        "accel": 1.0
     },
     "tau_weight": 1.0
 }

@@ -7,7 +7,7 @@
     "enable_lcp_calculation": true,
     "enable_contact_lcp": true,
     "enable_frictional_lcp": true,
-    "enable_joint_limit_lcp": true,
+    "enable_joint_limit_lcp": false,
     "use_lcp_result": true,
     "enable_sequential_impulse_calculation": false,
     "enable_frictional_sequential_impulse": false,
