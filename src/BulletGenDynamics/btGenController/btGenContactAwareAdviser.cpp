@@ -13,6 +13,7 @@ tVectorXd ConvertPoseToq(const tVectorXd &pose, cRobotModelDynamics *model);
 // btGenContactAwareAdviser::btGenContactAwareAdviser(btGeneralizeWorld* world,
 // const std::string& path, double W, double Wm) : mW(W), mWm(Wm) std::string
 // new_path = "new.out";
+std::string debug_path = "numeric.log";
 btGenContactAwareAdviser::btGenContactAwareAdviser(btGeneralizeWorld *world)
 {
     mCurdt = 0;
@@ -44,6 +45,10 @@ btGenContactAwareAdviser::btGenContactAwareAdviser(btGeneralizeWorld *world)
     mRefTrajModel = nullptr;
     mFBFTrajModel = nullptr;
     mOutputControlDiff = false;
+
+    std::ofstream fout(debug_path);
+    fout << "";
+    fout.close();
 }
 
 btGenContactAwareAdviser::~btGenContactAwareAdviser()
@@ -96,6 +101,11 @@ void btGenContactAwareAdviser::SetTraj(const std::string &ref_traj,
     //           << mRefTraj->mqdot[mInternalFrameId].transpose() << std::endl;
     mFBFOptimizer->SetTraj(mRefTraj);
     mHasRefTraj = true;
+
+    if (mEnableInitStateLoad == true)
+    {
+        LoadInitState();
+    }
 }
 void btGenContactAwareAdviser::Init(cRobotModelDynamics *model_,
                                     const std::string &contact_aware_config)
@@ -128,9 +138,17 @@ void btGenContactAwareAdviser::Init(cRobotModelDynamics *model_,
 void btGenContactAwareAdviser::Update(double dt)
 {
     std::cout << "---------------------frame " << mInternalFrameId << std::endl;
+    // std::cout << "[debug] model q = " << mModel->Getq().transpose()
+    //           << std::endl;
+    // std::cout << "[debug] model qdot = " << mModel->Getqdot().transpose()
+    //           << std::endl;
+    if (mEnableStateSave)
+        SaveCurrentState();
     mCurdt = dt;
     if (mRefTraj == nullptr)
         std::cout << "[error] adviser guide traj hasn't been set\n", exit(0);
+    // std::cout << "contact aware ref traj dt = " << mRefTraj->mTimestep << " "
+    //           << dt << std::endl;
     if (std::fabs(mRefTraj->mTimestep - dt) > 1e-8)
     {
         std::cout << "[error] btGenContactAwareAdviser ref motion dt "
@@ -302,6 +320,11 @@ tVectorXd btGenContactAwareAdviser::CalcControlForce(const tVectorXd &Q_contact)
     // ref_force.transpose() << std::endl; 	Q_active = ref_force;
     // }
     mCtrlForce = Q_active;
+    std::ofstream fout(debug_path, std::ios::app);
+
+    fout << "[numeric] contact force = " << Q_contact.transpose() << std::endl;
+    fout << "[numeric] control force = " << mCtrlForce.transpose() << std::endl;
+    fout.close();
     return Q_active;
 }
 
@@ -330,6 +353,23 @@ void btGenContactAwareAdviser::ReadConfig(const std::string &config)
     mSyncTrajPeriod = btJsonUtil::ParseAsInt("sync_traj_period", root);
 
     mFrameByFrameConfig = btJsonUtil::ParseAsValue("ctrl_config", root);
+    mEnableStateSave = btJsonUtil::ParseAsBool("enable_state_save", root);
+    mEnableInitStateLoad =
+        btJsonUtil::ParseAsBool("enable_init_state_load", root);
+    mInitStateFile = btJsonUtil::ParseAsString("init_state_file", root);
+    mStateSaveDir = btJsonUtil::ParseAsString("save_dir", root);
+
+    // validate the state save dir
+    if (mEnableStateSave == true)
+    {
+        std::ofstream ftest(mStateSaveDir + "1.txt", std::ios::app);
+        if (ftest.fail() == true)
+        {
+            std::cout << "[error] state save dir " << mStateSaveDir
+                      << " doesn't exist\n";
+            exit(0);
+        }
+    }
     // mFBFPosCoef =
     //     btJsonUtil::ParseAsDouble("dynamic_pos_energy_coef", ctrl_config);
     // mFBFVelCoef =
@@ -397,6 +437,15 @@ void btGenContactAwareAdviser::UpdateMultibodyVelocityAndTransformDebug(
         const tVectorXd &ref_traj_q = mRefTraj->mq[mInternalFrameId],
                         ref_traj_qdot = mRefTraj->mqdot[mInternalFrameId],
                         ref_traj_qddot = mRefTraj->mqddot[mInternalFrameId - 1];
+        std::ofstream fout(debug_path, std::ios::app);
+        fout << "[numeric] ref q = " << ref_traj_q.transpose() << std::endl;
+        fout << "[numeric] ref qdot = " << ref_traj_qdot.transpose()
+             << std::endl;
+        fout << "[numeric] ref qddot = " << ref_traj_qddot.transpose()
+             << std::endl;
+        fout << "[numeric] ctrl_res q = " << q.transpose() << std::endl;
+        fout << "[numeric] ctrl_res qdot = " << qdot.transpose() << std::endl;
+        fout << "[numeric] ctrl_res qddot = " << qddot.transpose() << std::endl;
 
         {
             tVectorXd q_diff = q - ref_traj_q, qdot_diff = qdot - ref_traj_qdot,
@@ -485,19 +534,12 @@ void btGenContactAwareAdviser::GetTargetInfo(double dt, tVectorXd &qddot_target,
                                              tVectorXd &q_target,
                                              tVectorXd &tau_target)
 {
-    // if (false == mEnableFrameByFrameCtrl)
-    // {
-    //     int num_of_underactuated_freedom = mModel->GetNumOfFreedom() - 6;
-    //     qddot_target = mRefTraj->mqddot[mInternalFrameId];
-    //     tau_target = mRefTraj->mActiveForce[mInternalFrameId].segment(
-    //         6, num_of_underactuated_freedom);
-    // }
-    // else
-    // {
-
-    // }
     mFBFOptimizer->CalcTarget(dt, mInternalFrameId, qddot_target, qdot_target,
                               q_target, tau_target);
+    std::ofstream fout(debug_path, std::ios::app);
+    fout << "[numeric] FBF q = " << q_target.transpose() << std::endl;
+    fout << "[numeric] FBF qdot = " << qdot_target.transpose() << std::endl;
+    fout << "[numeric] FBF qddot = " << qddot_target.transpose() << std::endl;
 }
 
 /**
@@ -518,7 +560,6 @@ void btGenContactAwareAdviser::CreateRefChar()
     if (mDrawTargetFBFCharacter)
     {
         mFBFTrajModel = new cRobotModelDynamics();
-
         mFBFTrajModel->Init(mModel->GetCharFile().c_str(), mModel->GetScale(),
                             ModelType::JSON);
         mFBFTrajModel->InitSimVars(mWorld->GetInternalWorld(), true, true,
@@ -565,7 +606,7 @@ void btGenContactAwareAdviser::RecordTraj()
             delete x;
         rec_contacts.clear();
         int num_of_contact_forces = mWorld->GetContactForces().size();
-        // std::cout << "[rec] contact num = " << num_of_contact_forces
+        // std::cout << "[adviser] contact num = " << num_of_contact_forces
         //           << std::endl;
         for (int id = 0; id < num_of_contact_forces; id++)
         {
@@ -588,6 +629,7 @@ void btGenContactAwareAdviser::RecordTraj()
 void btGenContactAwareAdviser::Reset()
 {
     std::cout << "[adviser] adviser reset!\n";
+    exit(0);
     if (mEnableOutput == true)
     {
         std::cout << "[adviser] Save traj v2 to " << mOutputTrajPath
@@ -606,4 +648,75 @@ void btGenContactAwareAdviser::Reset()
     mFBFOptimizer->Reset();
 }
 
+btGenFrameByFrameOptimizer *btGenContactAwareAdviser::GetFBFOptimizer()
+{
+    return this->mFBFOptimizer;
+}
+
 btTraj *btGenContactAwareAdviser::GetRefTraj() { return this->mRefTraj; }
+
+/**
+ * \brief               Save current state to the path speicifed by "SaveDir"
+ */
+void btGenContactAwareAdviser::SaveCurrentState()
+{
+    /**
+     * 1. trajectory path
+     * 2. model path
+     * 3. model q, qdot
+     * 4. current frame id
+     */
+    std::string filename =
+        mStateSaveDir + "/" + std::to_string(mInternalFrameId);
+    Json::Value root;
+    root["ref_traj_path"] = mRefTrajPath;
+    root["model_path"] = mModel->GetCharFile();
+    root["q"] = btJsonUtil::BuildVectorJsonValue(mModel->Getq());
+    root["qdot"] = btJsonUtil::BuildVectorJsonValue(mModel->Getqdot());
+    root["frame_id"] = mInternalFrameId;
+    std::cout << "write adviser state to " << filename << std::endl;
+    btJsonUtil::WriteJson(filename, root, true);
+}
+
+void btGenContactAwareAdviser::LoadInitState()
+{
+    std::cout << "[load] begin to load init state file " << mInitStateFile
+              << std::endl;
+    Json::Value root;
+    if (false == btJsonUtil::LoadJson(mInitStateFile, root))
+    {
+        std::cout << "[error] load " << mInitStateFile << " failed\n";
+        exit(0);
+    }
+    std::string ref_traj_path =
+        btJsonUtil::ParseAsString("ref_traj_path", root);
+    std::string model_path = btJsonUtil::ParseAsString("model_path", root);
+    int frame_id = btJsonUtil::ParseAsInt("frame_id", root);
+    tVectorXd q, qdot;
+    btJsonUtil::ReadVectorJson(btJsonUtil::ParseAsValue("q", root), q);
+    btJsonUtil::ReadVectorJson(btJsonUtil::ParseAsValue("qdot", root), qdot);
+
+    if (ref_traj_path != mRefTrajPath)
+    {
+        std::cout << "[error] the loaded ref traj " << ref_traj_path
+                  << " != setting traj " << mRefTrajPath << std::endl;
+        exit(1);
+    }
+
+    if (model_path != mModel->GetCharFile())
+    {
+        std::cout << "[error] the loaded model " << model_path
+                  << " != setting model " << mModel->GetCharFile() << std::endl;
+        exit(1);
+    }
+
+    // set q, qdot and start frame id
+    mStartFrame = frame_id;
+    mInternalFrameId = mStartFrame;
+    std::cout << "model dof = " << mModel->GetNumOfFreedom() << std::endl;
+    std::cout << "q size = " << q.size() << std::endl;
+    std::cout << "qdot size = " << qdot.size() << std::endl;
+    std::cout << "set init frame = " << mStartFrame << std::endl;
+
+    mModel->SetqAndqdot(q, qdot);
+}

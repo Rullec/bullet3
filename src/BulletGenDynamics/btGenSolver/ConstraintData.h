@@ -1,3 +1,4 @@
+#pragma once
 #include "../btGenModel/ColObjBase.h"
 #include "BulletGenDynamics/btGenUtil/MathUtil.h"
 

@@ -75,15 +75,13 @@ extern bool gPauseSimulation;
 #include "valgrind/callgrind.h"
 void CustomEngineMainDemo::stepSimulation(float dt)
 {
-    // mTime += dt;
-    // std::cout << "cur time = " << mTime << std::endl;
-    // m_guiHelper;
-    // dt = 1.0 / 600;
-    // std::cout << "dt = " << dt << std::endl;
-    // exit(0);
+    if (global_frame_id == 0)
+        m_guiHelper->resetCamera(1.64, -267.6, 13.4, 0.0078, 0.4760, 0.4799);
+    dt = physics_param->mDefaultTimestep;
     CALLGRIND_START_INSTRUMENTATION;
     if (physics_param->mEnableContactAwareControl && mAdviser->IsEnd())
     {
+        std::cout << "traj terminated without save\n";
         mAdviser->Reset();
         mAdviser->SetTraj(gContactAwareTraj, "tmp_traj.json", true);
     }
@@ -110,6 +108,7 @@ void CustomEngineMainDemo::stepSimulation(float dt)
 void CustomEngineMainDemo::exitPhysics() { CALLGRIND_DUMP_STATS; }
 void CustomEngineMainDemo::initPhysics()
 {
+    srand(0);
     physics_param = new tParams("./examples/CustomEngine/config.json");
 
     m_guiHelper->setUpAxis(1);
@@ -192,9 +191,17 @@ void CustomEngineMainDemo::initPhysics()
     // 	obj->setUserIndex(-1);
     // 	m_dynamicsWorld->addCollisionObject(obj);
     // }
+    /*
+    camera set distance 1.6400
+    camera set pitch 13.4000
+    camera set yaw -267.6000
+    camera set pos 0.0078 0.4760 0.4799
+    */
 
+    // m_guiHelper->resetCamera(1.64, -267.6, 13.4, 0.0078, 0.4760, 0.4799);
     m_guiHelper->createPhysicsDebugDrawer(m_dynamicsWorld);
     m_guiHelper->autogenerateGraphicsObjects(m_dynamicsWorld);
+    // m_guiHelper->resetCamera(1.64, -267.6, 13.4, 0.0078, 0.4760, 0.4799);
 }
 
 void CustomEngineMainDemo::renderScene() { CommonRigidBodyBase::renderScene(); }

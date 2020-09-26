@@ -516,6 +516,7 @@ void btGenContactSolver::SolveByLCP()
     int ret = mLCPSolver->Solve(x_lcp.size(), M, n, x_lcp);
     // std::cout << "[lcp] M norm = " << M.norm() << std::endl;
     // std::cout << "[lcp] n norm = " << n.norm() << std::endl;
+    // std::cout << "[lcp] x norm = " << x_lcp.norm() << std::endl;
     // btTimeUtil::End("MLCPSolver->Solver");
     // fout << "x = " << x_lcp.transpose() << std::endl;
     // std::cout << "x_lcp = " << x_lcp.transpose() << std::endl;

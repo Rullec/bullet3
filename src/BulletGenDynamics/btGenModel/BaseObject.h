@@ -197,18 +197,9 @@ public:
 
     // ====================================================
     // modeified 04/06/20,
-    const tMatrixXd &GetJKv_dq(int i) const
-    {
-        return jkv_dq[i];
-    } // \frac{ \partial Jw_k } { \partial q_i}, dim=(3, n_freedoms)
-    const tMatrixXd &GetJKw_dq(int i) const
-    {
-        return jkw_dq[i];
-    } // \frac{ \partial Jv_k } { \partial q_i}, dim=(3, n_freedoms)
-    const tMatrix &GetMWQ(int i)
-    {
-        return mWq[i];
-    }; // \frac{\partial R} {\partial q_i} dim=(4, 4)
+    const tMatrixXd &GetJKv_dq(int i) const;
+    const tMatrixXd &GetJKw_dq(int i) const;
+    const tMatrix &GetMWQ(int i);
     virtual const tMatrix &
     GetMWQQ(int i, int j) = 0; // \frac{\partial^2 R} {\partial q_i, \partial
                                // q_i} dim=(4, 4), !! only works for joint

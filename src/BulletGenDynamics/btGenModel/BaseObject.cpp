@@ -3,6 +3,29 @@
 #include "tools.h"
 #include <iostream>
 
+// \frac{ \partial Jw_k } { \partial q_i}, dim=(3, n_freedoms)
+const tMatrixXd &BaseObject::GetJKv_dq(int i) const { return jkv_dq[i]; }
+
+// \frac{ \partial Jv_k } { \partial q_i}, dim=(3, n_freedoms)
+const tMatrixXd &BaseObject::GetJKw_dq(int i) const { return jkw_dq[i]; }
+
+/**
+ * \brief       Get \frac{\partial R} {\partial q_i} dim=(4, 4)
+ * \param i     the local freedom id in this base object, not the global freedom
+ * id
+ */
+const tMatrix &BaseObject::GetMWQ(int i)
+{
+    if (i >= total_freedoms)
+    {
+        std::cout << "[error] BaseObject GetMWQ for dof " << i
+                  << " but the total freedoms is " << total_freedoms
+                  << std::endl;
+        exit(0);
+    }
+    return mWq[i];
+}
+
 int BaseObject::GetNumOfChildren() const
 {
     return static_cast<int>(children.size());

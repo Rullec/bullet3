@@ -46,6 +46,7 @@ public:
     tMatrixXd CalcLCPPartBPrefix() const;
     bool IsEnd();
     void Reset();
+    btGenFrameByFrameOptimizer *GetFBFOptimizer();
     // void GetAdviseInfo(tMatrixXd& C, tMatrixXd& D, tMatrixXd& E, tMatrixXd&
     // N, tVectorXd& b);
 
@@ -68,6 +69,11 @@ protected:
     btGeneralizeWorld *mWorld;
     btGenFeatureArray *mFeatureVector;
     btGenFrameByFrameOptimizer *mFBFOptimizer;
+    bool mEnableStateSave;
+    bool mEnableInitStateLoad;
+    std::string mInitStateFile;
+
+    std::string mStateSaveDir;
     btTraj *mOutputTraj;
     btTraj *mRefTraj;
     std::string mRefTrajPath;
@@ -96,4 +102,6 @@ protected:
     void CreateRefChar();
     void UpdateRefChar();
     void RecordTraj();
+    void SaveCurrentState();
+    void LoadInitState();
 };
