@@ -93,6 +93,8 @@ void btGenFrameByFrameOptimizer::Init(btGeneralizeWorld *world,
 
     mIgnoreRootPosInDynamicEnergy =
         btJsonUtil::ParseAsBool("ignore_root_position_in_dynamic_energy", conf);
+    mIgnoreRootBiasInEndEffectorControl = btJsonUtil::ParseAsBool(
+        "ignore_root_bias_in_end_effector_control", conf);
 
     mEnableContactForceLimit =
         btJsonUtil::ParseAsBool("enable_contact_force_limit", conf);

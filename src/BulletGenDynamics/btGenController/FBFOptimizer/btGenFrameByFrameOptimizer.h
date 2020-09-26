@@ -67,6 +67,9 @@ protected:
     void AddRootOrientationEnergyTerm();
     void AddLinkPosEnergyTerm(int link_id, double coef,
                               const tVector3d &target_pos);
+    void AddLinkPosEnergyTermIgnoreRoot(
+        int link_id, double coef,
+        const tVector3d &target_link_local_pos_wrt_root);
     void AddLinkVelEnergyTerm(int link_id, double coef,
                               const tVector3d &target_vel);
     void AddLinkOrientationEnergyTerm(int link_id, double coef,
@@ -118,6 +121,7 @@ protected:
                                         // contact
     bool mIgnoreRootPosInDynamicEnergy; // ignore the root dof in Pos/Vel/Accel
                                         // energy term
+    bool mIgnoreRootBiasInEndEffectorControl;
     int mContactSolutionSize; // the size of contact force in result vector
     int mCtrlSolutionSize;    // the size of active ctrl froce in result vector
     int mTotalSolutionSize;   // total solution size

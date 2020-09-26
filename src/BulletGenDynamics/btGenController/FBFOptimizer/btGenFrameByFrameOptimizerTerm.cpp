@@ -650,12 +650,18 @@ void btGenFrameByFrameOptimizer::AddContactForceCloseToOriginEnergyTerm()
  */
 void btGenFrameByFrameOptimizer::AddEndEffectorPosEnergyTerm()
 {
+
     // 1. get end effector id and their target pos
     mModel->PushState("end_effector_pos_energy");
     std::vector<int> link_id_lst(0);
     tEigenArr<tVector3d> link_target_pos_lst(0);
+    tEigenArr<tVector3d> link_no_root_bias_pos_lst(0);
     mModel->SetqAndqdot(mTraj->mq[mCurFrameId + 1],
                         mTraj->mqdot[mCurFrameId + 1]);
+    auto root_link = mModel->GetLinkById(0);
+    tVector3d root_link_pos = root_link->GetWorldPos();
+    tMatrix3d root_link_rot_inv = root_link->GetWorldOrientation().transpose();
+
     for (int i = 0; i < mModel->GetNumOfLinks(); i++)
     {
         auto link = mModel->GetLinkById(i);
@@ -668,6 +674,8 @@ void btGenFrameByFrameOptimizer::AddEndEffectorPosEnergyTerm()
             link_id_lst.push_back(i);
 
             link_target_pos_lst.push_back(link->GetWorldPos());
+            link_no_root_bias_pos_lst.push_back(
+                root_link_rot_inv * (link->GetWorldPos() - root_link_pos));
         }
     }
     mModel->PopState("end_effector_pos_energy");
@@ -675,8 +683,18 @@ void btGenFrameByFrameOptimizer::AddEndEffectorPosEnergyTerm()
     // 2. construct the energy term for each of them
     for (int idx = 0; idx < link_id_lst.size(); idx++)
     {
-        AddLinkPosEnergyTerm(link_id_lst[idx], mEndEffectorPosCoef,
-                             link_target_pos_lst[idx]);
+        if (mIgnoreRootBiasInEndEffectorControl == false)
+        {
+            AddLinkPosEnergyTerm(link_id_lst[idx], mEndEffectorPosCoef,
+                                 link_target_pos_lst[idx]);
+        }
+        else
+        {
+            // add link pos energy term, but despite the rotation of root
+            AddLinkPosEnergyTermIgnoreRoot(link_id_lst[idx],
+                                           mEndEffectorPosCoef,
+                                           link_no_root_bias_pos_lst[idx]);
+        }
     }
 }
 
@@ -849,6 +867,70 @@ void btGenFrameByFrameOptimizer::AddLinkPosEnergyTerm(
     coef /= dt2;
     mEnergyTerm->AddEnergy(A, b, coef, 0,
                            "link_pos_" + std::string(link->GetName()));
+}
+
+/**
+ * \brief                   Only Constraint the relative pos wrt the root link
+ * for the end effector
+ */
+void btGenFrameByFrameOptimizer::AddLinkPosEnergyTermIgnoreRoot(
+    int link_id, double coef, const tVector3d &target_link_local_pos_wrt_root)
+{
+    std::cout << "add AddLinkPosEnergyTermIgnoreRoot for link " << link_id
+              << std::endl;
+    if (link_id == 0)
+    {
+        std::cout << "[error] ignore root link pos energy term shouldn't be "
+                     "added to root link\n";
+        exit(1);
+    }
+    if (link_id < 0 || link_id >= mModel->GetNumOfLinks())
+    {
+        std::cout << "[error] link id " << link_id
+                  << " is illegal in AddLinkPosEnergyTermIgnoreRoot\n";
+        exit(1);
+    }
+    auto link = mModel->GetLinkById(link_id);
+    tMatrix3d root_rot_inv =
+        mModel->GetLinkById(0)->GetWorldOrientation().transpose();
+    tMatrixXd jac = link->GetJKv();
+    tVector3d cur_pos = link->GetWorldPos();
+    tVector3d cur_root_pos = mModel->GetLinkById(0)->GetWorldPos();
+    tMatrixXd A = tMatrixXd::Zero(3, mTotalSolutionSize);
+    tVectorXd b = tVectorXd::Zero(3);
+    const tMatrixXd &Minv = mModel->GetInvMassMatrix();
+    const tMatrixXd &C_d = mModel->GetCoriolisMatrix();
+    const tVectorXd &qdot = mModel->Getqdot();
+    const tVectorXd &q = mModel->Getq();
+    const tVectorXd &qdot_next_ref = mTraj->mqdot[mCurFrameId + 1];
+    double dt2 = mdt * mdt;
+    tVectorXd QG = mModel->CalcGenGravity(mWorld->GetGravity());
+    b = dt2 * root_rot_inv * jac * Minv * (QG - C_d * qdot) +
+        mdt * root_rot_inv * jac * qdot +
+        root_rot_inv * (cur_pos - cur_root_pos) -
+        target_link_local_pos_wrt_root;
+    // for contact forces
+    for (int c_id = 0; c_id < mContactPoints.size(); c_id++)
+    {
+        auto pt = mContactPoints[c_id];
+        int size = mContactSolSize[pt->contact_id];
+        int offset = mContactSolOffset[pt->contact_id];
+
+        // (3 * N) * (N * 3) * (3 * size) = 3 * size
+        A.block(0, offset, 3, size).noalias() =
+            dt2 * root_rot_inv * jac * Minv * pt->mJac.transpose() * pt->mS;
+    }
+
+    // for control forces
+    tMatrixXd N = tMatrixXd::Zero(num_of_freedom, num_of_underactuated_freedom);
+    N.block(6, 0, num_of_underactuated_freedom, num_of_underactuated_freedom)
+        .setIdentity();
+    A.block(0, mContactSolutionSize, 3, mCtrlSolutionSize) =
+        dt2 * root_rot_inv * jac * Minv * N;
+
+    coef /= dt2;
+    mEnergyTerm->AddEnergy(
+        A, b, coef, 0, "link_ignore_root_pos_" + std::string(link->GetName()));
 }
 
 /**
