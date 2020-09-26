@@ -9,11 +9,12 @@
 #include "BulletGenDynamics/btGenUtil/JsonUtil.h"
 #include "BulletGenDynamics/btGenWorld.h"
 #include "btCharContactPoint.h"
+#include <fstream>
 int mNumOfFrictionDirs = 4;
 double mu = 1;
 const std::string gContactStatusStr[] = {"INVALID_CONTACT_STATUS", "SLIDING",
                                          "STATIC", "BREAKAGE"};
-
+extern std::string debug_path;
 eContactStatus JudgeContactStatus(const tVector &vel,
                                   double breakage_threshold = 1e-2,
                                   double sliding_threshold = 5e-3)
@@ -234,7 +235,11 @@ void btGenFrameByFrameOptimizer::CalcContactStatus()
         std::cout << "[debug] new concentrated contact points num = "
                   << mContactPoints.size() << std::endl;
     }
+    std::cout << "[debug] contact_pts num = " << mContactPoints.size()
+              << std::endl;
 
+    std::ofstream fout(debug_path, std::ios::app);
+    fout << "[debug] contact_pts num = " << mContactPoints.size() << std::endl;
     // 2. get the reference pos for these points in next frame, calculate their
     // velocity judge the contact status
     {
@@ -369,7 +374,7 @@ void btGenFrameByFrameOptimizer::Solve(tVectorXd &tilde_qddot,
     // std::cout << "[qp] energy = " << energy << std::endl;
 
     CalcTargetInternal(solution, tilde_qddot, tilde_qdot, tilde_q, tilde_tau);
-    // mEnergyTerm->CheckEnergyValue(solution);
+    mEnergyTerm->CheckEnergyValue(solution);
 
     // check accel energy term
     // if (mDynamicAccelEnergyCoeff > 0 && mContactSolutionSize == 0)
@@ -583,6 +588,8 @@ void btGenFrameByFrameOptimizer::SetCoef(const Json::Value &conf)
         btJsonUtil::ParseAsDouble("dynamic_vel_energy_coef", conf);
     mDynamicAccelEnergyCoeff =
         btJsonUtil::ParseAsDouble("dynamic_accel_energy_coef", conf);
+    mDynamicMinAccelEnergyCoeff =
+        btJsonUtil::ParseAsDouble("dynamic_min_accel_energy_coef", conf);
     mControlForceCoef = btJsonUtil::ParseAsDouble("control_force_coef", conf);
     mContactForceCoef = btJsonUtil::ParseAsDouble("contact_force_coef", conf);
     // mControlForceCloseToOriginCoef =

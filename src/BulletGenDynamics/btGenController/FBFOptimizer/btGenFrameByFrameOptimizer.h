@@ -53,6 +53,7 @@ protected:
     void AddDynamicEnergyTermPos();
     void AddDynamicEnergyTermVel();
     void AddDynamicEnergyTermAccel();
+    void AddDynamicEnergyTermMinAccel();
     void AddDynamicConstraint();
     void AddMinTauEnergyTerm();
     void AddMinContactForceEnergyTerm();
@@ -93,6 +94,7 @@ protected:
     double mDynamicPosEnergyCoeff;
     double mDynamicVelEnergyCoeff;
     double mDynamicAccelEnergyCoeff;
+    double mDynamicMinAccelEnergyCoeff;
     double mControlForceCoef;
     double mContactForceCoef;
     // double mControlForceCloseToOriginCoef;

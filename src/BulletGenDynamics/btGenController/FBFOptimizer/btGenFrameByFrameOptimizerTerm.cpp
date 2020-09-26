@@ -159,6 +159,8 @@ void btGenFrameByFrameOptimizer::AddDynamicEnergyTerm()
         AddDynamicEnergyTermVel();
     if (mDynamicAccelEnergyCoeff > 0)
         AddDynamicEnergyTermAccel();
+    if (mDynamicMinAccelEnergyCoeff > 0)
+        AddDynamicEnergyTermMinAccel();
 }
 
 /**
@@ -410,6 +412,58 @@ void btGenFrameByFrameOptimizer::AddDynamicEnergyTermAccel()
     mEnergyTerm->AddEnergy(A, b, mDynamicAccelEnergyCoeff, 0, "accel");
 }
 
+void btGenFrameByFrameOptimizer::AddDynamicEnergyTermMinAccel()
+{
+    tMatrixXd A = tMatrixXd::Zero(num_of_freedom, mTotalSolutionSize);
+    tVectorXd b = tVectorXd::Zero(num_of_freedom);
+
+    const tMatrixXd &Minv = mModel->GetInvMassMatrix();
+    const tMatrixXd &C_d = mModel->GetCoriolisMatrix();
+    const tVectorXd &qdot = mModel->Getqdot();
+    const tVectorXd &q = mModel->Getq();
+    const tVectorXd &qddot_cur_ref = mTraj->mqddot[mCurFrameId];
+    // double dt2 = mdt * mdt;
+    tVectorXd QG = mModel->CalcGenGravity(mWorld->GetGravity());
+    b = Minv * (QG - C_d * qdot);
+    // std::cout << "[accel] b norm " << b.norm() << std::endl;
+    // std::cout << "[accel] Minv norm " << Minv.norm() << std::endl;
+    // std::cout << "[accel] QG norm " << QG.norm() << std::endl;
+    // std::cout << "[accel] Cd norm " << C_d.norm() << std::endl;
+    // std::cout << "[accel] qdot norm " << qdot.norm() << std::endl;
+    // std::cout << "[accel] qddot_ref norm " << qddot_cur_ref.norm() <<
+    // std::endl;
+    tMatrixXd A1 = tMatrixXd::Zero(num_of_freedom, mContactSolutionSize),
+              A2 =
+                  tMatrixXd::Zero(num_of_freedom, num_of_underactuated_freedom);
+    for (int c_id = 0; c_id < mContactPoints.size(); c_id++)
+    {
+        auto pt = mContactPoints[c_id];
+        int size = mContactSolSize[pt->contact_id];
+        int offset = mContactSolOffset[pt->contact_id];
+
+        // (N * 3) * (3 * size) = N * size
+        A1.block(0, offset, num_of_freedom, size).noalias() =
+            Minv * pt->mJac.transpose() * pt->mS;
+    }
+
+    tMatrixXd N = tMatrixXd::Zero(num_of_freedom, num_of_underactuated_freedom);
+    N.block(6, 0, num_of_underactuated_freedom, num_of_underactuated_freedom)
+        .setIdentity();
+    A2.noalias() = Minv * N;
+    A.block(0, 0, num_of_freedom, mContactSolutionSize).noalias() = A1;
+    A.block(0, mContactSolutionSize, num_of_freedom,
+            num_of_underactuated_freedom)
+        .noalias() = A2;
+    // A *= mDynamicAccelEnergyCoeff;
+    // b *= mDynamicAccelEnergyCoeff;
+    if (mIgnoreRootPosInDynamicEnergy == true)
+    {
+        A = A.block(6, 0, num_of_underactuated_freedom, mTotalSolutionSize)
+                .eval();
+        b = b.segment(6, num_of_underactuated_freedom).eval();
+    }
+    mEnergyTerm->AddEnergy(A, b, mDynamicAccelEnergyCoeff, 0, "min_accel");
+}
 /**
  * \brief               Fix all static contact (add hard constraint)
  *

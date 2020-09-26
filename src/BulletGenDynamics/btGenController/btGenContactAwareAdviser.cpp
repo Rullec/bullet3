@@ -13,6 +13,7 @@ tVectorXd ConvertPoseToq(const tVectorXd &pose, cRobotModelDynamics *model);
 // btGenContactAwareAdviser::btGenContactAwareAdviser(btGeneralizeWorld* world,
 // const std::string& path, double W, double Wm) : mW(W), mWm(Wm) std::string
 // new_path = "new.out";
+std::string debug_path = "numeric.log";
 btGenContactAwareAdviser::btGenContactAwareAdviser(btGeneralizeWorld *world)
 {
     mCurdt = 0;
@@ -41,6 +42,10 @@ btGenContactAwareAdviser::btGenContactAwareAdviser(btGeneralizeWorld *world)
     mRefTrajModel = nullptr;
     mFBFTrajModel = nullptr;
     mOutputControlDiff = false;
+
+    std::ofstream fout(debug_path);
+    fout << "";
+    fout.close();
 }
 
 btGenContactAwareAdviser::~btGenContactAwareAdviser()
@@ -312,6 +317,11 @@ tVectorXd btGenContactAwareAdviser::CalcControlForce(const tVectorXd &Q_contact)
     // ref_force.transpose() << std::endl; 	Q_active = ref_force;
     // }
     mCtrlForce = Q_active;
+    std::ofstream fout(debug_path, std::ios::app);
+
+    fout << "[numeric] contact force = " << Q_contact.transpose() << std::endl;
+    fout << "[numeric] control force = " << mCtrlForce.transpose() << std::endl;
+    fout.close();
     return Q_active;
 }
 
@@ -424,6 +434,15 @@ void btGenContactAwareAdviser::UpdateMultibodyVelocityAndTransformDebug(
         const tVectorXd &ref_traj_q = mRefTraj->mq[mInternalFrameId],
                         ref_traj_qdot = mRefTraj->mqdot[mInternalFrameId],
                         ref_traj_qddot = mRefTraj->mqddot[mInternalFrameId - 1];
+        std::ofstream fout(debug_path, std::ios::app);
+        fout << "[numeric] ref q = " << ref_traj_q.transpose() << std::endl;
+        fout << "[numeric] ref qdot = " << ref_traj_qdot.transpose()
+             << std::endl;
+        fout << "[numeric] ref qddot = " << ref_traj_qddot.transpose()
+             << std::endl;
+        fout << "[numeric] ctrl_res q = " << q.transpose() << std::endl;
+        fout << "[numeric] ctrl_res qdot = " << qdot.transpose() << std::endl;
+        fout << "[numeric] ctrl_res qddot = " << qddot.transpose() << std::endl;
 
         {
             tVectorXd q_diff = q - ref_traj_q, qdot_diff = qdot - ref_traj_qdot,
@@ -512,19 +531,12 @@ void btGenContactAwareAdviser::GetTargetInfo(double dt, tVectorXd &qddot_target,
                                              tVectorXd &q_target,
                                              tVectorXd &tau_target)
 {
-    // if (false == mEnableFrameByFrameCtrl)
-    // {
-    //     int num_of_underactuated_freedom = mModel->GetNumOfFreedom() - 6;
-    //     qddot_target = mRefTraj->mqddot[mInternalFrameId];
-    //     tau_target = mRefTraj->mActiveForce[mInternalFrameId].segment(
-    //         6, num_of_underactuated_freedom);
-    // }
-    // else
-    // {
-
-    // }
     mFBFOptimizer->CalcTarget(dt, mInternalFrameId, qddot_target, qdot_target,
                               q_target, tau_target);
+    std::ofstream fout(debug_path, std::ios::app);
+    fout << "[numeric] FBF q = " << q_target.transpose() << std::endl;
+    fout << "[numeric] FBF qdot = " << qdot_target.transpose() << std::endl;
+    fout << "[numeric] FBF qddot = " << qddot_target.transpose() << std::endl;
 }
 
 /**
@@ -592,7 +604,7 @@ void btGenContactAwareAdviser::RecordTraj()
             delete x;
         rec_contacts.clear();
         int num_of_contact_forces = mWorld->GetContactForces().size();
-        // std::cout << "[rec] contact num = " << num_of_contact_forces
+        // std::cout << "[adviser] contact num = " << num_of_contact_forces
         //           << std::endl;
         for (int id = 0; id < num_of_contact_forces; id++)
         {
