@@ -18,9 +18,9 @@ extern double mu;
  */
 void btGenFrameByFrameOptimizer::CalcEnergyTerms()
 {
-    if (mEnergyTerm != nullptr)
-        delete mEnergyTerm;
-    mEnergyTerm = new btGenFrameByFrameEnergyTerm(mTotalSolutionSize);
+    if (mEnergyTerm == nullptr)
+        std::cout << "[error] energy term hasn't been inited\n", exit(0);
+    mEnergyTerm->Reset(mTotalSolutionSize);
 
     AddDynamicEnergyTerm();
 
@@ -92,6 +92,10 @@ void btGenFrameByFrameOptimizer::CalcConstraints()
     // add the limitattion for contact forces
     if (mEnableContactForceLimit == true)
         AddContactForceLimitConstraint();
+
+    // add the non-penetration hard constraint on each contact pointI
+    if (mEnableContactNonPenetrationConstraint == true)
+        AddNonPenetrationContactConstraint();
 }
 
 /**
@@ -106,14 +110,18 @@ void btGenFrameByFrameOptimizer::AddSlidingConstraint(btCharContactPt *pt)
     {
         tMatrixXd jac = tMatrixXd::Identity(size, size);
         tVectorXd res = tVectorXd::Zero(size);
-        mConstraint->AddIneqCon(jac, res, offset);
+        mConstraint->AddIneqCon(jac, res, offset,
+                                "sliding_force_point_" +
+                                    std::to_string(pt->contact_id));
     }
     // 2. equalities make ft = mu * fn
     {
         tMatrixXd jac = tMatrixXd::Zero(1, size);
         jac(0, 0) = mu;
         jac.block(0, 1, 1, size - 1).fill(-1);
-        mConstraint->AddEqCon(jac, tVectorXd::Zero(1), offset);
+        mConstraint->AddEqCon(jac, tVectorXd::Zero(1), offset,
+                              "sliding_force_point_" +
+                                  std::to_string(pt->contact_id));
     }
 }
 
@@ -133,7 +141,9 @@ void btGenFrameByFrameOptimizer::AddStaticConstraint(btCharContactPt *pt)
 
     jac(static_size, 0) = mu;
     jac.block(static_size, 1, 1, mNumOfFrictionDirs).fill(-1);
-    mConstraint->AddIneqCon(jac, residual, offset);
+    mConstraint->AddIneqCon(jac, residual, offset,
+                            "static_force_point_" +
+                                std::to_string(pt->contact_id));
 }
 
 /**
@@ -144,7 +154,9 @@ void btGenFrameByFrameOptimizer::AddBreakageConstraint(btCharContactPt *pt)
 {
     int offset = mContactSolOffset[pt->contact_id];
     tMatrixXd jac = tMatrix3d::Identity();
-    mConstraint->AddEqCon(jac, tVector3d::Zero(), offset);
+    mConstraint->AddEqCon(jac, tVector3d::Zero(), offset,
+                          "breakage_force_point_" +
+                              std::to_string(pt->contact_id));
 }
 
 /**
@@ -204,7 +216,7 @@ void btGenFrameByFrameOptimizer::AddDynamicConstraint()
     A.block(0, mContactSolutionSize, num_of_freedom,
             num_of_underactuated_freedom)
         .noalias() = A2;
-    mConstraint->AddEquivalentEqCon(A, b, 0, 1e-12);
+    mConstraint->AddEquivalentEqCon(A, b, 0, 1e-12, "dynamic_hard_constraint");
 }
 void btGenFrameByFrameOptimizer::AddMinTauEnergyTerm()
 {
@@ -286,12 +298,12 @@ void btGenFrameByFrameOptimizer::AddDynamicEnergyTermPos()
         // std::cout << "[pos] Apre norm = " << A.norm() << std::endl;
     }
 
-    if (mIgnoreRootPosInDynamicEnergy == true)
-    {
-        A = A.block(6, 0, num_of_underactuated_freedom, mTotalSolutionSize)
-                .eval();
-        b = b.segment(6, num_of_underactuated_freedom).eval();
-    }
+    // if (mIgnoreRootPosInDynamicEnergy == true)
+    // {
+    //     A = A.block(6, 0, num_of_underactuated_freedom, mTotalSolutionSize)
+    //             .eval();
+    //     b = b.segment(6, num_of_underactuated_freedom).eval();
+    // }
     // energy term Ax + b
     double coef = mDynamicPosEnergyCoeff / dt2;
     // std::cout << "[pos] A norm = " << A.norm() << std::endl;
@@ -344,12 +356,12 @@ void btGenFrameByFrameOptimizer::AddDynamicEnergyTermVel()
         .noalias() = A2;
     // A /= mdt;
     // b /= mdt;
-    if (mIgnoreRootPosInDynamicEnergy == true)
-    {
-        A = A.block(6, 0, num_of_underactuated_freedom, mTotalSolutionSize)
-                .eval();
-        b = b.segment(6, num_of_underactuated_freedom).eval();
-    }
+    // if (mIgnoreRootPosInDynamicEnergy == true)
+    // {
+    //     A = A.block(6, 0, num_of_underactuated_freedom, mTotalSolutionSize)
+    //             .eval();
+    //     b = b.segment(6, num_of_underactuated_freedom).eval();
+    // }
     double coef = mDynamicVelEnergyCoeff / mdt;
     mEnergyTerm->AddEnergy(A, b, coef, 0, "vel");
 }
@@ -403,12 +415,12 @@ void btGenFrameByFrameOptimizer::AddDynamicEnergyTermAccel()
         .noalias() = A2;
     // A *= mDynamicAccelEnergyCoeff;
     // b *= mDynamicAccelEnergyCoeff;
-    if (mIgnoreRootPosInDynamicEnergy == true)
-    {
-        A = A.block(6, 0, num_of_underactuated_freedom, mTotalSolutionSize)
-                .eval();
-        b = b.segment(6, num_of_underactuated_freedom).eval();
-    }
+    // if (mIgnoreRootPosInDynamicEnergy == true)
+    // {
+    //     A = A.block(6, 0, num_of_underactuated_freedom, mTotalSolutionSize)
+    //             .eval();
+    //     b = b.segment(6, num_of_underactuated_freedom).eval();
+    // }
     mEnergyTerm->AddEnergy(A, b, mDynamicAccelEnergyCoeff, 0, "accel");
 }
 
@@ -456,12 +468,12 @@ void btGenFrameByFrameOptimizer::AddDynamicEnergyTermMinAccel()
         .noalias() = A2;
     // A *= mDynamicAccelEnergyCoeff;
     // b *= mDynamicAccelEnergyCoeff;
-    if (mIgnoreRootPosInDynamicEnergy == true)
-    {
-        A = A.block(6, 0, num_of_underactuated_freedom, mTotalSolutionSize)
-                .eval();
-        b = b.segment(6, num_of_underactuated_freedom).eval();
-    }
+    // if (mIgnoreRootPosInDynamicEnergy == true)
+    // {
+    //     A = A.block(6, 0, num_of_underactuated_freedom, mTotalSolutionSize)
+    //             .eval();
+    //     b = b.segment(6, num_of_underactuated_freedom).eval();
+    // }
     mEnergyTerm->AddEnergy(A, b, mDynamicAccelEnergyCoeff, 0, "min_accel");
 }
 /**
@@ -520,8 +532,9 @@ void btGenFrameByFrameOptimizer::AddFixStaticContactPointConstraint()
                          "contact point "
                       << id << ", on link " << pt->mCollider->mLinkId
                       << std::endl;
-            mConstraint->AddEquivalentEqCon(pt->mJac * A_base,
-                                            pt->mJac * b_base, 0, 1e-12);
+            mConstraint->AddEquivalentEqCon(
+                pt->mJac * A_base, pt->mJac * b_base, 0, 1e-12,
+                "fix_static_contact_point_" + std::to_string(pt->contact_id));
         }
     }
 }
@@ -544,10 +557,12 @@ void btGenFrameByFrameOptimizer::AddContactForceLimitConstraint()
               lower_limit = -tVectorXd::Ones(mContactSolutionSize) * limit;
 
     // force >= lower_limit
-    mConstraint->AddIneqCon(jac, lower_limit, 0);
+    // force - lower_limit >= 0
+    mConstraint->AddIneqCon(jac, -lower_limit, 0, "lower_force_limit");
 
     // -1 * force >= -upper_limit
-    mConstraint->AddIneqCon(-jac, -upper_limit, 0);
+    // -1 * force + upper_limit  >= 0
+    mConstraint->AddIneqCon(-jac, upper_limit, 0, "upper_force_limit");
     std::cout << "[limit] set the contact force limit " << limit << std::endl;
 }
 /**
@@ -1080,4 +1095,67 @@ void btGenFrameByFrameOptimizer::AddLinkVelEnergyTerm(
     coef /= mdt;
     mEnergyTerm->AddEnergy(A, b, coef, 0,
                            "link_vel_" + std::string(link->GetName()));
+}
+
+/**
+ * \brief                   enforce that the contact point cannot be penetrated
+ * in next frame
+ */
+void btGenFrameByFrameOptimizer::AddNonPenetrationContactConstraint()
+{
+    // std::cout << "added !\n ";
+    // exit(1);
+    if (mContactSolutionSize == 0)
+        return;
+    tMatrixXd A = tMatrixXd::Zero(num_of_freedom, mTotalSolutionSize);
+    tVectorXd b = tVectorXd::Zero(num_of_freedom);
+    const tMatrixXd &Minv = mModel->GetInvMassMatrix();
+    const tMatrixXd &C_d = mModel->GetCoriolisMatrix();
+    const tVectorXd &qdot = mModel->Getqdot();
+    const tVectorXd &q = mModel->Getq();
+    const tVectorXd &qdot_next_ref = mTraj->mqdot[mCurFrameId + 1];
+    tVectorXd QG = mModel->CalcGenGravity(mWorld->GetGravity());
+    b = mdt * Minv * (QG - C_d * qdot) + qdot;
+    // for contact forces
+    for (int c_id = 0; c_id < mContactPoints.size(); c_id++)
+    {
+        auto pt = mContactPoints[c_id];
+        int size = mContactSolSize[pt->contact_id];
+        int offset = mContactSolOffset[pt->contact_id];
+
+        // (3 * N) * (N * 3) * (3 * size) = 3 * size
+        A.block(0, offset, num_of_freedom, size).noalias() =
+            mdt * Minv * pt->mJac.transpose() * pt->mS;
+    }
+
+    // for control forces
+    tMatrixXd N = tMatrixXd::Zero(num_of_freedom, num_of_underactuated_freedom);
+    N.block(6, 0, num_of_underactuated_freedom, num_of_underactuated_freedom)
+        .setIdentity();
+    A.block(0, mContactSolutionSize, num_of_freedom, mCtrlSolutionSize) =
+        mdt * Minv * N;
+
+    // std::cout << "--------------begin to add non penetration cons\n";
+    for (int id = 0; id < mContactPoints.size(); id++)
+    {
+
+        auto &pt = mContactPoints[id];
+        tVector3d normal = pt->mNormalPointToA.segment(
+            0, 3); // the contact force is calculated to be
+                   // applied on bodyA, so we take the normal "to
+                   // A" but not "from A"
+        tMatrixXd A_final = normal.transpose() * pt->mJac * A;
+        tVectorXd b_final = normal.transpose() * pt->mJac * b;
+        // std::cout << "contact " << id << " norm = " << normal.transpose()
+        //           << std::endl;
+        // std::cout << "A final = \n" << A_final << std::endl;
+        // std::cout << "b final = \n" << b_final << std::endl;
+        // A x + b >= eps
+        // A x + b - eps >= 0
+        // b_final -= eps * tVectorXd::Ones(b_final.size());
+        mConstraint->AddIneqCon(A_final, b_final, 0,
+                                "NonPenetration_point_" + std::to_string(id));
+    }
+
+    // exit(0);
 }

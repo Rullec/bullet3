@@ -82,6 +82,7 @@ void CustomEngineMainDemo::stepSimulation(float dt)
     if (physics_param->mEnableContactAwareControl && mAdviser->IsEnd())
     {
         std::cout << "traj terminated without save\n";
+        exit(0);
         mAdviser->Reset();
         mAdviser->SetTraj(gContactAwareTraj, "tmp_traj.json", true);
     }

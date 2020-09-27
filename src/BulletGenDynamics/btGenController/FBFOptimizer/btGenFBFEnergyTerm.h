@@ -5,16 +5,17 @@ class btGenFrameByFrameEnergyTerm
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-    btGenFrameByFrameEnergyTerm(int size_of_solution_vector);
+    btGenFrameByFrameEnergyTerm();
     virtual int GetNumOfEnergy() const;
     virtual void AddEnergy(const tMatrixXd &Jacobian, const tVectorXd &residual,
                            double coeff, int st_pos, const std::string &name);
     virtual void GetEnergyTerm(tMatrixXd &A, tVectorXd &b);
     virtual void CheckEnergyValue(const tVectorXd &sol);
+    virtual void Reset(int size_of_solution_vector);
 
 protected:
     void Validate(const tMatrixXd &jac, const tVectorXd &tVectorXd, int st);
-    const int mSolutionSize;
+    int mSolutionSize;
     std::vector<std::string> mNameList;
     std::vector<double> mCoefList;
     tEigenArr<tMatrixXd> mAList;

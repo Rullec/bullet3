@@ -50,6 +50,7 @@ protected:
     void AddBreakageConstraint(btCharContactPt *pt);
     void AddFixStaticContactPointConstraint();
     void AddContactForceLimitConstraint();
+    void AddNonPenetrationContactConstraint();
     void AddDynamicEnergyTerm();
     void AddDynamicEnergyTermPos();
     void AddDynamicEnergyTermVel();
@@ -113,15 +114,16 @@ protected:
     bool mEnableContactForceLimit; // limit the contact force in [-a, a]
     double mContactForceLimit;     // the limitation of contact force
 
-    bool mEnableContactConstraint; // add contact constraint in this
-                                   // frame-by-frame constraint
-    bool mEnableContactReduction;  // reduct the contact points at a link to a
-                                   // single point (average)
-
-    bool mEnableFixStaticContactPoint;  // add hard/fix constraint for static
-                                        // contact
-    bool mIgnoreRootPosInDynamicEnergy; // ignore the root dof in Pos/Vel/Accel
-                                        // energy term
+    bool mEnableContactReduction; // reduct the contact points at a link to a
+                                  // single point (average)
+    bool
+        mEnableContactNonPenetrationConstraint; // add the non penetration
+                                                // constraint for contact points
+    bool mEnableFixStaticContactPoint; // add hard/fix constraint for static
+                                       // contact
+    // bool mIgnoreRootPosInDynamicEnergy; // ignore the root dof in
+    // Pos/Vel/Accel
+    //                                     // energy term, depracted
     bool mIgnoreRootBiasInEndEffectorControl;
     int mContactSolutionSize; // the size of contact force in result vector
     int mCtrlSolutionSize;    // the size of active ctrl froce in result vector

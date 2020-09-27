@@ -63,7 +63,7 @@ btGenFrameByFrameOptimizer::btGenFrameByFrameOptimizer()
     beq.resize(0);
     bineq.resize(0);
     mConstraint = nullptr;
-    mEnergyTerm = nullptr;
+    mEnergyTerm = new btGenFrameByFrameEnergyTerm();
 
     num_of_freedom = 0;
     num_of_underactuated_freedom = 0;
@@ -91,8 +91,9 @@ void btGenFrameByFrameOptimizer::Init(btGeneralizeWorld *world,
     mEnableFixStaticContactPoint =
         btJsonUtil::ParseAsBool("fix_the_static_contact_point", conf);
 
-    mIgnoreRootPosInDynamicEnergy =
-        btJsonUtil::ParseAsBool("ignore_root_position_in_dynamic_energy", conf);
+    // mIgnoreRootPosInDynamicEnergy =
+    //     btJsonUtil::ParseAsBool("ignore_root_position_in_dynamic_energy",
+    //     conf);
     mIgnoreRootBiasInEndEffectorControl = btJsonUtil::ParseAsBool(
         "ignore_root_bias_in_end_effector_control", conf);
 
@@ -100,12 +101,13 @@ void btGenFrameByFrameOptimizer::Init(btGeneralizeWorld *world,
         btJsonUtil::ParseAsBool("enable_contact_force_limit", conf);
     mContactForceLimit = btJsonUtil::ParseAsDouble("contact_force_limit", conf);
 
-    mEnableContactConstraint =
-        btJsonUtil::ParseAsBool("enable_contact_constraint", conf);
-
     mEnableContactReduction =
         btJsonUtil::ParseAsBool("enable_contact_reduction", conf);
-
+    mEnableContactNonPenetrationConstraint = btJsonUtil::ParseAsBool(
+        "enable_contact_nonpenetration_constraint", conf);
+    // std::cout << "non pentation = " << mEnableContactNonPenetrationConstraint
+    //           << std::endl;
+    // exit(0);
     // ParseConfig(conf);
     InitModelInfo();
     InitQPSolver();
@@ -162,11 +164,6 @@ void btGenFrameByFrameOptimizer::CalcTarget(double dt, int target_frame_id,
  */
 void btGenFrameByFrameOptimizer::CalcContactStatus()
 {
-    if (mEnableContactConstraint == false)
-    {
-        std::cout << "[log] contact constraints are ignored\n";
-        return;
-    }
     ClearContactPoints();
     // 1. get contact points & link id, calc point positions in local frame
     std::vector<btPersistentManifold *> manifolds =
@@ -350,26 +347,28 @@ void btGenFrameByFrameOptimizer::Solve(tVectorXd &tilde_qddot,
                      solution);
     // std::cout << "[debug] equality num = " << Aeq.cols() << std::endl;
     // std::cout << "[debug] inequality num = " << Aineq.cols() << std::endl;
-    // std::cout << "quadprog sol = " << solution.transpose() << std::endl;
-    if (solution.hasNaN() == true)
-    {
-        std::cout << "[error] Solution has Nan = " << solution.transpose()
-                  << std::endl;
-        exit(0);
-        // try matlab solver
-        // matlab solver gives the same solution as quadprog
-        // {
-        //     tVectorXd matlab_sol;
-        //     tMatrixXd new_Aeq = Aeq.transpose(), new_Aineq =
-        //     -Aineq.transpose(); tVectorXd new_beq = -beq, new_bineq = bineq;
-        //     matlabQPSolver->Solve(mTotalSolutionSize, H, f, new_Aeq, new_beq,
-        //                           new_Aineq, new_bineq, 100, matlab_sol);
+    std::cout << "[FBF] quadprog solution = " << solution.transpose()
+              << std::endl;
+    // if (solution.hasNaN() == true)
+    // {
+    //     std::cout << "[warn] use matlab solver instead = " <<
+    //     solution.transpose()
+    //               << std::endl;
+    //     // exit(0);
+    //     // try matlab solver
+    //     // matlab solver gives the same solution as quadprog
+    //     {
+    //         tVectorXd matlab_sol;
+    //         tMatrixXd new_Aeq = Aeq.transpose(), new_Aineq =
+    //         -Aineq.transpose(); tVectorXd new_beq = -beq, new_bineq = bineq;
+    //         matlabQPSolver->Solve(mTotalSolutionSize, H, f, new_Aeq, new_beq,
+    //                               new_Aineq, new_bineq, 100, matlab_sol);
 
-        //     std::cout << "matlab sol = " << matlab_sol.transpose() <<
-        //     std::endl; solution = matlab_sol;
-        //     // exit(0);
-        // }
-    }
+    //         std::cout << "matlab sol = " << matlab_sol.transpose() <<
+    //         std::endl; solution = matlab_sol;
+    //         // exit(0);
+    //     }
+    // }
 
     // double energy = 0.5 * (solution.transpose() * H).dot(solution) +
     //                 f.dot(solution) + b.dot(b);
@@ -377,6 +376,7 @@ void btGenFrameByFrameOptimizer::Solve(tVectorXd &tilde_qddot,
 
     CalcTargetInternal(solution, tilde_qddot, tilde_qdot, tilde_q, tilde_tau);
     mEnergyTerm->CheckEnergyValue(solution);
+    mConstraint->CheckConstraint(solution);
 
     // check accel energy term
     // if (mDynamicAccelEnergyCoeff > 0 && mContactSolutionSize == 0)
@@ -511,9 +511,9 @@ void btGenFrameByFrameOptimizer::CalcTargetInternal(const tVectorXd &solution,
         int offset = mContactSolOffset[i];
         int size = mContactSolSize[i];
         tVector3d solved_force = pt->mS * contact_force.segment(offset, size);
-        // std::cout << "[solved] FBF contact force " << i << " "
-        //           << solved_force.transpose() << " status "
-        //           << gContactStatusStr[pt->mStatus] << std::endl;
+        std::cout << "[solved] FBF cartesian contact force " << i << " "
+                  << solved_force.transpose() << " status "
+                  << gContactStatusStr[pt->mStatus] << std::endl;
         mGenContactForce += pt->mJac.transpose() * solved_force;
     }
     mGenControlForce.segment(6, num_of_underactuated_freedom) = control_force;
@@ -531,28 +531,47 @@ void btGenFrameByFrameOptimizer::CalcTargetInternal(const tVectorXd &solution,
     qdot = mModel->Getqdot() + qddot * mdt;
     q = mModel->Getq() + qdot * mdt;
 
-    // output the contact force info in the ref traj
-    mModel->PushState("test");
-    mModel->SetqAndqdot(mTraj->mq[mCurFrameId], mTraj->mqdot[mCurFrameId]);
+    // check the contact point velocity should be >=0
+    // if (mEnableContactNonPenetrationConstraint == true)
+    // {
+    //     // output the contact force info in the ref traj
 
-    for (auto &f : mTraj->mContactForce[mCurFrameId])
-    {
-        int link_id = dynamic_cast<btGenRobotCollider *>(f->mObj)->mLinkId;
+    //     for (auto &pt : mContactPoints)
+    //     {
+    //         tVector3d vel = pt->mJac * qdot;
+    //         double comp = vel.dot(pt->mNormalPointToA.segment(0, 3));
+    //         std::cout << "[FBF] check contact " << pt->contact_id
+    //                   << " after solved vel = " << vel.transpose() <<
+    //                   std::endl;
+    //         if (comp < -1e-3)
+    //         {
+    //             std::cout << "[error] contact point penetration failed\n";
+    //             exit(0);
+    //         }
+    //     }
+    // }
 
-        tMatrixXd jac;
-        mModel->ComputeJacobiByGivenPointTotalDOFWorldFrame(
-            link_id, f->mWorldPos.segment(0, 3), jac);
-        tVector3d vel = jac * mModel->Getqdot();
-        // std::cout
-        //     << "[ref] link "
-        //     << dynamic_cast<btGenRobotCollider *>(f->mObj)->mLinkId
-        //     << " contact force = " << f->mForce.transpose()
-        //     << " vel = " << vel.transpose().segment(0, 3) << " status "
-        //     << gContactStatusStr[JudgeContactStatus(btMathUtil::Expand(vel,
-        //     0))]
-        //     << std::endl;
-    }
-    mModel->PopState("test");
+    // mModel->SetqAndqdot(mTraj->mq[mCurFrameId], mTraj->mqdot[mCurFrameId]);
+
+    // for (auto &f : mTraj->mContactForce[mCurFrameId])
+    // {
+    //     int link_id = dynamic_cast<btGenRobotCollider *>(f->mObj)->mLinkId;
+
+    //     tMatrixXd jac;
+    //     mModel->ComputeJacobiByGivenPointTotalDOFWorldFrame(
+    //         link_id, f->mWorldPos.segment(0, 3), jac);
+    //     tVector3d vel = jac * mModel->Getqdot();
+    //     // std::cout
+    //     //     << "[ref] link "
+    //     //     << dynamic_cast<btGenRobotCollider *>(f->mObj)->mLinkId
+    //     //     << " contact force = " << f->mForce.transpose()
+    //     //     << " vel = " << vel.transpose().segment(0, 3) << " status "
+    //     //     <<
+    //     gContactStatusStr[JudgeContactStatus(btMathUtil::Expand(vel,
+    //     //     0))]
+    //     //     << std::endl;
+    // }
+
     // calculate the static contact point vel
     // {
     //     for (auto &pt : mContactPoints)
@@ -708,6 +727,33 @@ tMatrixXd CalcFrictionCone(int friction_num)
 void btGenFrameByFrameOptimizer::CalcContactConvertMat(btCharContactPt *contact,
                                                        tMatrixXd &convert_mat)
 {
+    // 1. confirm this contact point is not self collision
+    if (true == contact->mIsSelfCollision)
+    {
+        std::cout << "[error] the contact point " << contact->contact_id
+                  << " is self collision, cannot calculate the convert mat\n";
+        exit(0);
+    }
+    // 2. if it is not self collision, confirm that the robotmodel is the bodyA
+    if (contact->mBodyA->GetType() != eColObjType::RobotCollder)
+    {
+        std::cout << "[error] the bodyA of contact point "
+                  << contact->contact_id
+                  << " is not the robot collider, it will make the convert mat "
+                     "become error";
+        exit(0);
+    }
+    // 3. if the robotmodel is the bodyA, then all is correct. If not, bodyB is
+    // the collider, the normal needs to be converted
+
+    // 4. confirm that the contact normal is 0, 1, 0
+    if ((contact->mNormalPointToA - tVector(0, 1, 0, 0)).norm() > 1e-10)
+    {
+        std::cout << "[error] contact " << contact->contact_id
+                  << " normal to A is not normed Y = "
+                  << contact->mNormalPointToA.transpose() << std::endl;
+        exit(0);
+    }
     int size = GetSolutionSizeByContactStatus(contact->mStatus);
     switch (contact->mStatus)
     {
@@ -781,7 +827,7 @@ void btGenFrameByFrameOptimizer::ControlByFBF()
     std::cout << "[log] control by frame by frame begin\n";
     std::cout << "[fbf] control force = " << mGenControlForce.transpose()
               << std::endl;
-    std::cout << "[fbf] contact force = " << mGenContactForce.transpose()
+    std::cout << "[fbf] contact gen force = " << mGenContactForce.transpose()
               << std::endl;
 
     for (int i = 0; i < num_of_freedom; i++)

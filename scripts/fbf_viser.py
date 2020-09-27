@@ -73,7 +73,7 @@ def extract_norm(x): return np.linalg.norm(x)
 prev_frames = -1
 while True:
     ref_traj_info, fbf_traj_info, ctrl_res_info, contact_force_lst, control_force_lst, contact_num_lst = load_info(
-        "../numeric.log")
+        "../energy.txt")
     # print(contact_num_lst)
     # exit()
     now_frames = len(control_force_lst)
