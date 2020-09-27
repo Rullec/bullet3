@@ -27,6 +27,7 @@ public:
     void CalcTarget(double dt, int target_frame_id, tVectorXd &tilde_qddot,
                     tVectorXd &tilde_qdot, tVectorXd &tilde_q,
                     tVectorXd &tilde_tau);
+    int GetCalculatedNumOfContact() const;
     void ControlByFBF();
     void Reset();
 

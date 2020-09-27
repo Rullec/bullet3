@@ -33,7 +33,7 @@ public:
     btGenContactAwareAdviser(btGeneralizeWorld *world);
     ~btGenContactAwareAdviser();
     void Init(cRobotModelDynamics *mModel, const std::string &config_file);
-    int GetInternalFrameId() const;
+    // int GetInternalFrameId() const;
     void SetTraj(const std::string &mRefTrajPath,
                  const std::string &mOutputTraj, bool enable_output = false);
     btTraj *GetRefTraj();
@@ -53,19 +53,28 @@ public:
 protected:
     double mCurdt;
     bool mHasRefTraj;
-    int mInternalFrameId;
+    int mSimFrameId; // simulation id, +=1 per frame
+    int mRefFrameId; // the frame id of target in ref traj
     bool mDrawReferenceTrajCharacter;
     bool mDrawTargetFBFCharacter;
     int mMaxFrame;
     int mStartFrame;
     std::string mFeatureVectorFile;
     tVectorXd mCtrlForce;
-    bool mResolveControlToruqe;
+    bool mResolveControlToruqe; // given the mocap data (ref traj), re solve the
+                                // control torque
     Json::Value mFrameByFrameConfig;
     bool mOutputControlDiff;
-    bool mEnableSyncTrajPeriodly;
-    bool mEnableOnlyFBFControl;
-    int mSyncTrajPeriod;
+    bool mEnableSyncTrajPeriodly; // sync the ref traj to the simulation
+                                  // character periodly
+    bool mEnableOnlyFBFControl;   // use the contact force and control force
+                                  // calculated by the FBF optimzier, apply them
+                                  // to the model directly and check the result
+    bool mEnableRefTrajDelayedUpdate; // when the ref traj hasn't been exetucted
+                                      // perfectly, stop the forwardness of the
+                                      // ref traj and make the control target
+                                      // stay at the current frame
+    int mSyncTrajPeriod; // the sync period speicifed by config file
     cRobotModelDynamics *mModel;
     btGeneralizeWorld *mWorld;
     btGenFeatureArray *mFeatureVector;
@@ -105,4 +114,5 @@ protected:
     void RecordTraj();
     void SaveCurrentState();
     void LoadInitState();
+    void UpdateReferenceTraj();
 };

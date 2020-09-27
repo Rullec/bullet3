@@ -234,11 +234,7 @@ void btGenFrameByFrameOptimizer::AddMinTauEnergyTerm()
 void btGenFrameByFrameOptimizer::AddMinContactForceEnergyTerm()
 {
     if (mContactSolutionSize == 0)
-    {
-        std::cout << "[debug] no contact solution size, the contact force "
-                     "min energy term should be closed\n";
         return;
-    }
     tMatrixXd A =
         tMatrixXd::Identity(mContactSolutionSize, mContactSolutionSize);
     tVectorXd b = tVectorXd::Zero(mContactSolutionSize);

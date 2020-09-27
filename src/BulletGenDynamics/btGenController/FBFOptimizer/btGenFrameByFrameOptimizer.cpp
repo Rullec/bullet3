@@ -11,7 +11,7 @@
 #include "btCharContactPoint.h"
 #include <fstream>
 int mNumOfFrictionDirs = 4;
-double mu = 1;
+double mu = 0.8;
 const std::string gContactStatusStr[] = {"INVALID_CONTACT_STATUS", "SLIDING",
                                          "STATIC", "BREAKAGE"};
 extern std::string debug_path;
@@ -234,8 +234,10 @@ void btGenFrameByFrameOptimizer::CalcContactStatus()
         std::cout << "[debug] new concentrated contact points num = "
                   << mContactPoints.size() << std::endl;
     }
-    std::cout << "[debug] contact_pts num = " << mContactPoints.size()
-              << std::endl;
+    // std::cout << "[debug] cur contact_pts num = " << mContactPoints.size()
+    //           << std::endl;
+    // std::cout << "[debug] ref contact_pts num = "
+    //           << this->mTraj->mContactForce[mCurFrameId].size() << std::endl;
 
     std::ofstream fout(debug_path, std::ios::app);
     fout << "[debug] contact_pts num = " << mContactPoints.size() << std::endl;
@@ -835,4 +837,9 @@ void btGenFrameByFrameOptimizer::ControlByFBF()
         mModel->ApplyGeneralizedForce(i, mGenContactForce[i] +
                                              mGenControlForce[i]);
     }
+}
+
+int btGenFrameByFrameOptimizer::GetCalculatedNumOfContact() const
+{
+    return mContactPoints.size();
 }
