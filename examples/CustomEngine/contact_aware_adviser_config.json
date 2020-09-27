@@ -21,7 +21,7 @@
         "dynamic_pos_energy_coef": 1,
         "dynamic_vel_energy_coef": 0,
         "dynamic_accel_energy_coef": 0,
-        "dynamic_min_accel_energy_coef": 1,
+        "dynamic_min_accel_energy_coef": 0.001,
         "control_force_coef": 1,
         "contact_force_coef": 1,
         "end_effector_pos_coef": 10,

@@ -474,7 +474,7 @@ void btGenFrameByFrameOptimizer::AddDynamicEnergyTermMinAccel()
     //             .eval();
     //     b = b.segment(6, num_of_underactuated_freedom).eval();
     // }
-    mEnergyTerm->AddEnergy(A, b, mDynamicAccelEnergyCoeff, 0, "min_accel");
+    mEnergyTerm->AddEnergy(A, b, mDynamicMinAccelEnergyCoeff, 0, "min_accel");
 }
 /**
  * \brief               Fix all static contact (add hard constraint)
