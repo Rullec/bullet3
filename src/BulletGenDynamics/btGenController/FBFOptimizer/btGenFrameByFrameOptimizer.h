@@ -27,6 +27,7 @@ public:
     void CalcTarget(double dt, int target_frame_id, tVectorXd &tilde_qddot,
                     tVectorXd &tilde_qdot, tVectorXd &tilde_q,
                     tVectorXd &tilde_tau);
+    void ControlByFBF();
     void Reset();
 
 protected:
@@ -131,6 +132,8 @@ protected:
     tVectorXd b, beq, bineq;
     btGenFrameByFrameConstraint *mConstraint;
     btGenFrameByFrameEnergyTerm *mEnergyTerm;
+    tVectorXd mGenContactForce;
+    tVectorXd mGenControlForce;
 
     // model buffer vars
     int num_of_freedom;

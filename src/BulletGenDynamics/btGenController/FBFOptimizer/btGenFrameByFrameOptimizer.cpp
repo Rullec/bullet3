@@ -498,8 +498,8 @@ void btGenFrameByFrameOptimizer::CalcTargetInternal(const tVectorXd &solution,
         solution.segment(mContactSolutionSize, mCtrlSolutionSize);
 
     // 1. calculate the gen contact force and gen control force
-    tVectorXd gen_contact_force = tVectorXd::Zero(num_of_freedom);
-    tVectorXd gen_ctrl_force = tVectorXd::Zero(num_of_freedom);
+    mGenContactForce = tVectorXd::Zero(num_of_freedom);
+    mGenControlForce = tVectorXd::Zero(num_of_freedom);
 
     // std::cout << "contact point size = " << mContactPoints.size() <<
     // std::endl; std::cout << "[solved] raw contact solution = " <<
@@ -514,14 +514,14 @@ void btGenFrameByFrameOptimizer::CalcTargetInternal(const tVectorXd &solution,
         // std::cout << "[solved] FBF contact force " << i << " "
         //           << solved_force.transpose() << " status "
         //           << gContactStatusStr[pt->mStatus] << std::endl;
-        gen_contact_force += pt->mJac.transpose() * solved_force;
+        mGenContactForce += pt->mJac.transpose() * solved_force;
     }
-    gen_ctrl_force.segment(6, num_of_underactuated_freedom) = control_force;
+    mGenControlForce.segment(6, num_of_underactuated_freedom) = control_force;
     tVectorXd QG = mModel->CalcGenGravity(mWorld->GetGravity());
-    tVectorXd RHS = gen_contact_force + gen_ctrl_force + QG -
+    tVectorXd RHS = mGenContactForce + mGenControlForce + QG -
                     mModel->GetCoriolisMatrix() * mModel->Getqdot();
-    // std::cout << gen_ctrl_force.size() << std::endl;
-    // std::cout << gen_contact_force.size() << std::endl;
+    // std::cout << mGenControlForce.size() << std::endl;
+    // std::cout << mGenContactForce.size() << std::endl;
     // std::cout << RHS.size() << std::endl;
     // 2. calculate the generated accel
     qddot = mModel->GetInvMassMatrix() * RHS;
@@ -771,3 +771,22 @@ void btGenFrameByFrameOptimizer::Reset()
 }
 
 void btGenFrameByFrameOptimizer::SetTraj(btTraj *traj) { this->mTraj = traj; }
+
+/**
+ * \brief               Apply the contact force and control force calculatred by
+ * the frame by frame optimzier
+ */
+void btGenFrameByFrameOptimizer::ControlByFBF()
+{
+    std::cout << "[log] control by frame by frame begin\n";
+    std::cout << "[fbf] control force = " << mGenControlForce.transpose()
+              << std::endl;
+    std::cout << "[fbf] contact force = " << mGenContactForce.transpose()
+              << std::endl;
+
+    for (int i = 0; i < num_of_freedom; i++)
+    {
+        mModel->ApplyGeneralizedForce(i, mGenContactForce[i] +
+                                             mGenControlForce[i]);
+    }
+}

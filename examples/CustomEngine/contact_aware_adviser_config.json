@@ -1,11 +1,11 @@
 {
-    "feature_vector_file": "./examples/CustomEngine/orders_feature/accel_feature_full.json",
-    "feature_vector_file_oneleg": "./examples/CustomEngine/orders_feature/legs/accel_feature_legs.json",
+    "feature_vector_file_oneleg": "./examples/CustomEngine/orders_feature/accel_feature_full.json",
+    "feature_vector_file": "./examples/CustomEngine/orders_feature/legs/accel_feature_legs.json",
     "feature_vector_file_legs": "examples/CustomEngine/orders_feature/oneleg/order_feature_oneleg_accel.json",
     "resolve_control_tau": true,
     "draw_reference_traj_character": true,
     "draw_target_FBF_character": true,
-    "max_frame": 600,
+    "max_frame": 6000,
     "start_frame": 1,
     "output_diff": true,
     "output_diff_path": "build_cmake/contact_aware.log",
@@ -16,6 +16,7 @@
     "save_dir": "/tmp/bullet/states",
     "enable_init_state_load": false,
     "init_state_file": "/tmp/bullet/states/373",
+    "enable_only_FBF_control": true,
     "ctrl_config": {
         "dynamic_pos_energy_coef": 2.74476491,
         "dynamic_vel_energy_coef": 0.66119373,
@@ -38,5 +39,6 @@
         "eps_diagnoal_A_matrix_FBF": 1e-05,
         "enable_contact_constraint": true,
         "enable_contact_reduction": false
+        
     }
 }

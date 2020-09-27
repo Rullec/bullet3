@@ -177,8 +177,15 @@ void btGenContactAwareAdviser::Update(double dt)
     // 	// std::cout << "[ref] q diff = " << q_diff.transpose() << std::endl;
     // }
     GetTargetInfo(dt, mTargetAccel, mTargetVel, mTargetPos, mTargetTau);
-    mFeatureVector->Eval(dt, mTargetAccel, mTargetVel, mTargetPos, mTargetTau,
-                         mH, mE, mf);
+    if (mEnableOnlyFBFControl == true)
+    {
+        mFBFOptimizer->ControlByFBF();
+    }
+    else
+    {
+        mFeatureVector->Eval(dt, mTargetAccel, mTargetVel, mTargetPos,
+                             mTargetTau, mH, mE, mf);
+    }
 
     UpdateRefChar();
     // std::cout << "[debug] [new] frame " << mInternalFrameId << " N norm = "
@@ -293,6 +300,12 @@ void btGenContactAwareAdviser::PostProcess()
  */
 tVectorXd btGenContactAwareAdviser::CalcControlForce(const tVectorXd &Q_contact)
 {
+    if (mEnableOnlyFBFControl == true)
+    {
+        std::cout << "[error] This function CalcControlForce should not be "
+                     "called in only FBF model, exit\n";
+        exit(0);
+    }
     // std::cout << "[adviser] contact force = " << Q_contact.norm() <<
     // std::endl; std::cout << "mH = \n"
     // 		  << mH << std::endl;
@@ -358,7 +371,21 @@ void btGenContactAwareAdviser::ReadConfig(const std::string &config)
         btJsonUtil::ParseAsBool("enable_init_state_load", root);
     mInitStateFile = btJsonUtil::ParseAsString("init_state_file", root);
     mStateSaveDir = btJsonUtil::ParseAsString("save_dir", root);
+    mEnableOnlyFBFControl =
+        btJsonUtil::ParseAsBool("enable_only_FBF_control", root);
 
+    if (mEnableOnlyFBFControl == true)
+    {
+        // we must check, the contact mode of gen world is exactly "No"
+        if (btGeneralizeWorld::eContactResponseMode::NoMode !=
+            mWorld->GetContactResponseMode())
+        {
+            std::cout << "[error] The contact response mode of gen world is "
+                         "not No. In this case, the only FBF control is "
+                         "prohibited to be ture\n";
+            exit(1);
+        }
+    }
     // validate the state save dir
     if (mEnableStateSave == true)
     {
@@ -492,6 +519,12 @@ void btGenContactAwareAdviser::UpdateMultibodyVelocityAndTransformDebug(
 
 tVectorXd btGenContactAwareAdviser::CalcLCPResidual(double dt) const
 {
+    if (mEnableOnlyFBFControl == true)
+    {
+        std::cout << "[error] This function CalcLCPResidual should not be "
+                     "called in only FBF model, exit\n";
+        exit(0);
+    }
     // std::cout << "Adviser Residual hasn't been implemented\n", exit(0);
     const tMatrixXd &Minv = mModel->GetInvMassMatrix();
     // mModel
@@ -507,6 +540,12 @@ tVectorXd btGenContactAwareAdviser::CalcLCPResidual(double dt) const
 }
 tMatrixXd btGenContactAwareAdviser::CalcLCPPartBPrefix() const
 {
+    if (mEnableOnlyFBFControl == true)
+    {
+        std::cout << "[error] This function CalcLCPPartBPrefix should not be "
+                     "called in only FBF model, exit\n";
+        exit(0);
+    }
     // std::cout << "Adviser PartB hasn't been implemented\n", exit(0);
     int num_of_freedom = mModel->GetNumOfFreedom();
     tMatrixXd partb =

@@ -65,6 +65,7 @@ public:
     btBroadphaseInterface *GetBroadphase();
     btCollisionDispatcher *GetDispatcher();
     btDefaultCollisionConfiguration *GetConfiguration();
+    eContactResponseMode GetContactResponseMode() const;
     void SetEnableContacrAwareControl();
 
 protected:

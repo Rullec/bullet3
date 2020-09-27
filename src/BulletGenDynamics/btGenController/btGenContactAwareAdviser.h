@@ -64,6 +64,7 @@ protected:
     Json::Value mFrameByFrameConfig;
     bool mOutputControlDiff;
     bool mEnableSyncTrajPeriodly;
+    bool mEnableOnlyFBFControl;
     int mSyncTrajPeriod;
     cRobotModelDynamics *mModel;
     btGeneralizeWorld *mWorld;

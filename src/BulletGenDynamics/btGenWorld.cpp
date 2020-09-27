@@ -472,6 +472,12 @@ btDefaultCollisionConfiguration *btGeneralizeWorld::GetConfiguration()
 {
     return m_collisionConfiguration;
 }
+
+btGeneralizeWorld::eContactResponseMode
+btGeneralizeWorld::GetContactResponseMode() const
+{
+    return mContactMode;
+}
 #include "btGenUtil/BulletUtil.h"
 void btGeneralizeWorld::createRigidBody(double mass,
                                         const btTransform &startTransform_,
