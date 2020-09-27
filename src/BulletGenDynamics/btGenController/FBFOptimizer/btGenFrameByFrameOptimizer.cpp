@@ -42,7 +42,7 @@ eContactStatus JudgeContactStatus(const tVector &vel,
 // static QuadProgQPSolver *matlabQPSolver = nullptr;
 btGenFrameByFrameOptimizer::btGenFrameByFrameOptimizer()
 {
-    mCurFrameId = -1;
+    mRefFrameId = -1;
     mModel = nullptr;
     mTraj = nullptr;
     mWorld = nullptr;
@@ -129,7 +129,7 @@ void btGenFrameByFrameOptimizer::CalcTarget(double dt, int target_frame_id,
             << "[error] the traj hasn't been set in the FBFOptimizer, exit";
         exit(0);
     }
-    mCurFrameId = target_frame_id;
+    mRefFrameId = target_frame_id;
     mdt = dt;
 
     // if (mUseNativeRefTarget == true)
@@ -251,7 +251,7 @@ void btGenFrameByFrameOptimizer::CalcContactStatus()
         tEigenArr<tVector> contact_vel_cur_ref(0);
         {
             mModel->PushState("fbf ctrl");
-            tVectorXd q_cur_ref = mTraj->mq[mCurFrameId];
+            tVectorXd q_cur_ref = mTraj->mq[mRefFrameId];
             mModel->Apply(q_cur_ref, false);
             for (auto &pt : mContactPoints)
             {
@@ -263,7 +263,7 @@ void btGenFrameByFrameOptimizer::CalcContactStatus()
         }
         {
             mModel->PushState("fbf ctrl");
-            tVectorXd q_next_ref = mTraj->mq[mCurFrameId + 1];
+            tVectorXd q_next_ref = mTraj->mq[mRefFrameId + 1];
             mModel->Apply(q_next_ref, false);
             for (auto &pt : mContactPoints)
             {
@@ -276,7 +276,7 @@ void btGenFrameByFrameOptimizer::CalcContactStatus()
                     tMatrixXd jac;
                     mModel->ComputeJacobiByGivenPointTotalDOFWorldFrame(
                         link->GetId(), cur_global_pos.segment(0, 3), jac);
-                    tVectorXd qdot = mTraj->mqdot[mCurFrameId + 1];
+                    tVectorXd qdot = mTraj->mqdot[mRefFrameId + 1];
                     tVector vel = tVector::Zero();
                     vel.segment(0, 3) = jac * qdot;
                     contact_vel_cur_ref.push_back(vel);
@@ -631,6 +631,19 @@ void btGenFrameByFrameOptimizer::SetCoef(const Json::Value &conf)
     mRootVelCoef = btJsonUtil::ParseAsDouble("root_vel_coef", conf);
     mRootOrientationCoef =
         btJsonUtil::ParseAsDouble("root_orientation_coef", conf);
+
+    mTrackRefContactRange =
+        btJsonUtil::ParseAsInt("track_ref_contact_range", conf);
+    tVectorXd coef;
+    btJsonUtil::ReadVectorJson("track_ref_contact_range_coef_minmax", coef);
+    if (coef.size() != 2)
+    {
+        std::cout << "[error] coef size != 2, but " << coef.transpose()
+                  << std::endl;
+        exit(1);
+    }
+    mTrackRefContactMinCoef = coef[0];
+    mTrackRefContactMaxCoef = coef[1];
 }
 
 void btGenFrameByFrameOptimizer::InitModelInfo()

@@ -77,12 +77,13 @@ protected:
                               const tVector3d &target_vel);
     void AddLinkOrientationEnergyTerm(int link_id, double coef,
                                       const tMatrix3d &target_orientation);
+    void AddTrackRefContactEnergyTerm();
     void CalcContactConvertMat(btCharContactPt *contact,
                                tMatrixXd &convert_mat);
     int GetSolutionSizeByContactStatus(eContactStatus status);
 
     // ---------vars
-    int mCurFrameId;
+    int mRefFrameId;
     double mdt;
     QuadProgQPSolver *mQPSolver;
     cRobotModelDynamics *mModel;
@@ -111,6 +112,10 @@ protected:
     double mRootPosCoef;
     double mRootVelCoef;
     double mRootOrientationCoef; // control the orientation of root link
+    bool mEnableTrackRefContact;
+    int mTrackRefContactRange;
+    double mTrackRefContactMinCoef;
+    double mTrackRefContactMaxCoef;
 
     bool mEnableContactForceLimit; // limit the contact force in [-a, a]
     double mContactForceLimit;     // the limitation of contact force

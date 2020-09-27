@@ -45,6 +45,7 @@ void btGenFrameByFrameOptimizer::CalcEnergyTerms()
         AddRootVelEnergyTerm();
     if (mRootOrientationCoef > 0)
         AddRootOrientationEnergyTerm();
+    if (mEnableTrackRefContact == true)
 }
 
 /**
@@ -190,7 +191,7 @@ void btGenFrameByFrameOptimizer::AddDynamicConstraint()
     const tMatrixXd &C_d = mModel->GetCoriolisMatrix();
     const tVectorXd &qdot = mModel->Getqdot();
     const tVectorXd &q = mModel->Getq();
-    const tVectorXd &q_next_ref = mTraj->mq[mCurFrameId + 1];
+    const tVectorXd &q_next_ref = mTraj->mq[mRefFrameId + 1];
     double dt2 = mdt * mdt;
     tVectorXd QG = mModel->CalcGenGravity(mWorld->GetGravity());
     b = dt2 * Minv * (QG - C_d * qdot) + q + mdt * qdot - q_next_ref;
@@ -255,7 +256,7 @@ void btGenFrameByFrameOptimizer::AddDynamicEnergyTermPos()
     const tMatrixXd &C_d = mModel->GetCoriolisMatrix();
     const tVectorXd &qdot = mModel->Getqdot();
     const tVectorXd &q = mModel->Getq();
-    const tVectorXd &q_next_ref = mTraj->mq[mCurFrameId + 1];
+    const tVectorXd &q_next_ref = mTraj->mq[mRefFrameId + 1];
     double dt2 = mdt * mdt;
     tVectorXd QG = mModel->CalcGenGravity(mWorld->GetGravity());
     b = dt2 * Minv * (QG - C_d * qdot) + q + mdt * qdot - q_next_ref;
@@ -324,7 +325,7 @@ void btGenFrameByFrameOptimizer::AddDynamicEnergyTermVel()
     const tMatrixXd &C_d = mModel->GetCoriolisMatrix();
     const tVectorXd &qdot = mModel->Getqdot();
     const tVectorXd &q = mModel->Getq();
-    const tVectorXd &qdot_next_ref = mTraj->mqdot[mCurFrameId + 1];
+    const tVectorXd &qdot_next_ref = mTraj->mqdot[mRefFrameId + 1];
     // double dt2 = mdt * mdt;
     tVectorXd QG = mModel->CalcGenGravity(mWorld->GetGravity());
     b = mdt * Minv * (QG - C_d * qdot) + qdot - qdot_next_ref;
@@ -376,7 +377,7 @@ void btGenFrameByFrameOptimizer::AddDynamicEnergyTermAccel()
     const tMatrixXd &C_d = mModel->GetCoriolisMatrix();
     const tVectorXd &qdot = mModel->Getqdot();
     const tVectorXd &q = mModel->Getq();
-    const tVectorXd &qddot_cur_ref = mTraj->mqddot[mCurFrameId];
+    const tVectorXd &qddot_cur_ref = mTraj->mqddot[mRefFrameId];
     // double dt2 = mdt * mdt;
     tVectorXd QG = mModel->CalcGenGravity(mWorld->GetGravity());
     b = Minv * (QG - C_d * qdot) - qddot_cur_ref;
@@ -429,7 +430,7 @@ void btGenFrameByFrameOptimizer::AddDynamicEnergyTermMinAccel()
     const tMatrixXd &C_d = mModel->GetCoriolisMatrix();
     const tVectorXd &qdot = mModel->Getqdot();
     const tVectorXd &q = mModel->Getq();
-    const tVectorXd &qddot_cur_ref = mTraj->mqddot[mCurFrameId];
+    const tVectorXd &qddot_cur_ref = mTraj->mqddot[mRefFrameId];
     // double dt2 = mdt * mdt;
     tVectorXd QG = mModel->CalcGenGravity(mWorld->GetGravity());
     b = Minv * (QG - C_d * qdot);
@@ -667,8 +668,8 @@ void btGenFrameByFrameOptimizer::AddEndEffectorPosEnergyTerm()
     std::vector<int> link_id_lst(0);
     tEigenArr<tVector3d> link_target_pos_lst(0);
     tEigenArr<tVector3d> link_no_root_bias_pos_lst(0);
-    mModel->SetqAndqdot(mTraj->mq[mCurFrameId + 1],
-                        mTraj->mqdot[mCurFrameId + 1]);
+    mModel->SetqAndqdot(mTraj->mq[mRefFrameId + 1],
+                        mTraj->mqdot[mRefFrameId + 1]);
     auto root_link = mModel->GetLinkById(0);
     tVector3d root_link_pos = root_link->GetWorldPos();
     tMatrix3d root_link_rot_inv = root_link->GetWorldOrientation().transpose();
@@ -719,8 +720,8 @@ void btGenFrameByFrameOptimizer::AddEndEffectorVelEnergyTerm()
     mModel->PushState("end_effector_vel_energy");
     std::vector<int> link_id_lst(0);
     tEigenArr<tVector3d> link_target_vel_lst(0);
-    mModel->SetqAndqdot(mTraj->mq[mCurFrameId + 1],
-                        mTraj->mqdot[mCurFrameId + 1]);
+    mModel->SetqAndqdot(mTraj->mq[mRefFrameId + 1],
+                        mTraj->mqdot[mRefFrameId + 1]);
     for (int i = 0; i < mModel->GetNumOfLinks(); i++)
     {
         auto link = mModel->GetLinkById(i);
@@ -754,8 +755,8 @@ void btGenFrameByFrameOptimizer::AddEndEffectorOrientationEnergyTerm()
     mModel->PushState("end_effector_pos_energy");
     std::vector<int> link_id_lst(0);
     tEigenArr<tMatrix3d> link_target_rot_lst(0);
-    mModel->SetqAndqdot(mTraj->mq[mCurFrameId + 1],
-                        mTraj->mqdot[mCurFrameId + 1]);
+    mModel->SetqAndqdot(mTraj->mq[mRefFrameId + 1],
+                        mTraj->mqdot[mRefFrameId + 1]);
     for (int i = 0; i < mModel->GetNumOfLinks(); i++)
     {
         auto link = mModel->GetLinkById(i);
@@ -787,8 +788,8 @@ void btGenFrameByFrameOptimizer::AddRootPosEnergyTerm()
 {
     mModel->PushState("root_pos_energy");
 
-    mModel->SetqAndqdot(mTraj->mq[mCurFrameId + 1],
-                        mTraj->mqdot[mCurFrameId + 1]);
+    mModel->SetqAndqdot(mTraj->mq[mRefFrameId + 1],
+                        mTraj->mqdot[mRefFrameId + 1]);
     auto link = mModel->GetLinkById(0);
     tVector3d link_pos = link->GetWorldPos();
     mModel->PopState("root_pos_energy");
@@ -802,8 +803,8 @@ void btGenFrameByFrameOptimizer::AddRootVelEnergyTerm()
 {
     mModel->PushState("root_vel_energy");
 
-    mModel->SetqAndqdot(mTraj->mq[mCurFrameId + 1],
-                        mTraj->mqdot[mCurFrameId + 1]);
+    mModel->SetqAndqdot(mTraj->mq[mRefFrameId + 1],
+                        mTraj->mqdot[mRefFrameId + 1]);
     auto link = mModel->GetLinkById(0);
     tVector3d vel = link->GetJKv() * mModel->Getqdot();
     mModel->PopState("root_vel_energy");
@@ -817,8 +818,8 @@ void btGenFrameByFrameOptimizer::AddRootOrientationEnergyTerm()
 {
     mModel->PushState("root_ori_energy");
 
-    mModel->SetqAndqdot(mTraj->mq[mCurFrameId + 1],
-                        mTraj->mqdot[mCurFrameId + 1]);
+    mModel->SetqAndqdot(mTraj->mq[mRefFrameId + 1],
+                        mTraj->mqdot[mRefFrameId + 1]);
     auto link = mModel->GetLinkById(0);
     tMatrix3d link_rot = link->GetWorldOrientation();
     mModel->PopState("root_ori_energy");
@@ -851,7 +852,7 @@ void btGenFrameByFrameOptimizer::AddLinkPosEnergyTerm(
     const tMatrixXd &C_d = mModel->GetCoriolisMatrix();
     const tVectorXd &qdot = mModel->Getqdot();
     const tVectorXd &q = mModel->Getq();
-    const tVectorXd &qdot_next_ref = mTraj->mqdot[mCurFrameId + 1];
+    const tVectorXd &qdot_next_ref = mTraj->mqdot[mRefFrameId + 1];
     double dt2 = mdt * mdt;
     tVectorXd QG = mModel->CalcGenGravity(mWorld->GetGravity());
     b = dt2 * jac * Minv * (QG - C_d * qdot) + mdt * jac * qdot + cur_pos -
@@ -913,7 +914,7 @@ void btGenFrameByFrameOptimizer::AddLinkPosEnergyTermIgnoreRoot(
     const tMatrixXd &C_d = mModel->GetCoriolisMatrix();
     const tVectorXd &qdot = mModel->Getqdot();
     const tVectorXd &q = mModel->Getq();
-    const tVectorXd &qdot_next_ref = mTraj->mqdot[mCurFrameId + 1];
+    const tVectorXd &qdot_next_ref = mTraj->mqdot[mRefFrameId + 1];
     double dt2 = mdt * mdt;
     tVectorXd QG = mModel->CalcGenGravity(mWorld->GetGravity());
     b = dt2 * root_rot_inv * jac * Minv * (QG - C_d * qdot) +
@@ -1109,7 +1110,7 @@ void btGenFrameByFrameOptimizer::AddNonPenetrationContactConstraint()
     const tMatrixXd &C_d = mModel->GetCoriolisMatrix();
     const tVectorXd &qdot = mModel->Getqdot();
     const tVectorXd &q = mModel->Getq();
-    const tVectorXd &qdot_next_ref = mTraj->mqdot[mCurFrameId + 1];
+    const tVectorXd &qdot_next_ref = mTraj->mqdot[mRefFrameId + 1];
     tVectorXd QG = mModel->CalcGenGravity(mWorld->GetGravity());
     b = mdt * Minv * (QG - C_d * qdot) + qdot;
     // for contact forces
