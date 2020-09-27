@@ -204,7 +204,7 @@ void cRobotModelDynamics::InitSimVars(btDynamicsWorld *world, bool zero_pose,
         // -0.15255, -0.0482463, -0.0216697, 0.0095504, -0.191753, -1.25285,
         // -0.693689, 0.481192, 0.136336;
     }
-    mq[1] = 2;
+    mq[1] = 0.8;
 
     cRobotModelDynamics::SetqAndqdot(mq, mqdot);
 

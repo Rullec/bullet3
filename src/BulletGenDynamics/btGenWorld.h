@@ -17,6 +17,7 @@ public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
     enum eContactResponseMode
     {
+        NoMode,
         LCPMode,
         PenaltyMode,
         SequentialImpulseMode

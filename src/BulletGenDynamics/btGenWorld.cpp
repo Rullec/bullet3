@@ -96,11 +96,27 @@ void btGeneralizeWorld::Init(const std::string &config_path)
                 mGravity.setZero();
             }
 
-            bool enable_lcp = btJsonUtil::ParseAsBool("enable_lcp", config_js);
-            if (enable_lcp == true)
+            std::string contact_response_mode =
+                btJsonUtil::ParseAsString("contact_response_mode", config_js);
+            if (contact_response_mode == "LCP")
+            {
                 mContactMode = eContactResponseMode::LCPMode;
-            else
+            }
+            else if (contact_response_mode == "Penalty")
+            {
                 mContactMode = eContactResponseMode::PenaltyMode;
+            }
+            else if (contact_response_mode == "No")
+            {
+                mContactMode = eContactResponseMode::NoMode;
+            }
+            else
+            {
+                std::cout << "[error] Unsupported contact response mode "
+                          << contact_response_mode << std::endl;
+                exit(1);
+            }
+
             mRigidDamping =
                 btJsonUtil::ParseAsDouble("rigid_damping", config_js);
 
@@ -576,7 +592,8 @@ void btGeneralizeWorld::ApplyGravity()
     if (mMultibody)
     {
         // std::cout << "[before gravity] multibody force = "
-        //           << mMultibody->GetGeneralizedForce().transpose() << std::endl;
+        //           << mMultibody->GetGeneralizedForce().transpose() <<
+        //           std::endl;
         mMultibody->ApplyGravity(mGravity);
     }
 }
@@ -652,9 +669,17 @@ void btGeneralizeWorld::CollisionResponse(double dt)
         break;
     case eContactResponseMode::LCPMode:
         CollisionResponseLCP(dt);
+        break;
     case eContactResponseMode::SequentialImpulseMode:
-
+        std::cout << "[error] Sequential Impulse Mode has been depracated\n";
+        exit(0);
+        break;
+    case eContactResponseMode::NoMode:
+        std::cout << "[log] No Contact Response\n";
+        break;
     default:
+        std::cout << "[error] No contact mode " << mContactMode << std::endl;
+        exit(0);
         break;
     }
     // btTimeUtil::End("LCP total");
