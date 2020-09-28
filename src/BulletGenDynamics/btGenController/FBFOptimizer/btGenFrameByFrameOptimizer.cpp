@@ -16,8 +16,8 @@ const std::string gContactStatusStr[] = {"INVALID_CONTACT_STATUS", "SLIDING",
                                          "STATIC", "BREAKAGE"};
 extern std::string debug_path;
 eContactStatus JudgeContactStatus(const tVector &vel,
-                                  double breakage_threshold = 0.1,
-                                  double sliding_threshold = 0.15)
+                                  double breakage_threshold = 1.5,
+                                  double sliding_threshold = 0.5)
 {
     // std::cout << "[warn] all judge are returning static\n";
     // return eContactStatus::STATIC;
@@ -91,7 +91,8 @@ void btGenFrameByFrameOptimizer::Init(btGeneralizeWorld *world,
 
     mEnableFixStaticContactPoint =
         btJsonUtil::ParseAsBool("fix_the_static_contact_point", conf);
-
+    mEnableLimitSlidingContactVel = btJsonUtil::ParseAsBool(
+        "limit_the_height_vel_of_sliding_contact_point", conf);
     // mIgnoreRootPosInDynamicEnergy =
     //     btJsonUtil::ParseAsBool("ignore_root_position_in_dynamic_energy",
     //     conf);
@@ -300,6 +301,13 @@ void btGenFrameByFrameOptimizer::CalcContactStatus()
                 (contact_pos_next_ref[id] - contact_pos_cur_ref[id]) / mdt;
             // 2. judge contact status
             pt->mStatus = JudgeContactStatus(vel);
+            double height = contact_pos_cur_ref[id][1];
+            if (height > 0.05 && pt->mStatus == eContactStatus::STATIC)
+            {
+                std::cout << "[debug] the height of static contact pt is "
+                          << height << " , convert it to sliding\n";
+                pt->mStatus = eContactStatus::SLIDING;
+            }
             // pt->mStatus = eContactStatus::STATIC;
             auto link = mModel->GetLinkById(pt->mCollider->mLinkId);
 
@@ -307,6 +315,7 @@ void btGenFrameByFrameOptimizer::CalcContactStatus()
                       << link->GetName()
                       << " cartesian vel in ref traj = " << vel.transpose()
                       << " status " << gContactStatusStr[pt->mStatus]
+                      << " height = " << contact_pos_cur_ref[id][1]
                       << std::endl;
             // std::cout << "contact " << id << " gen vel = " <<
             // contact_vel_cur_ref[id].transpose() << std::endl;
@@ -547,6 +556,20 @@ void btGenFrameByFrameOptimizer::CalcTargetInternal(const tVectorXd &solution,
     qdot = mModel->Getqdot() + qddot * mdt;
     q = mModel->Getq() + qdot * mdt;
 
+    for (auto &pt : mContactPoints)
+    {
+        tVector3d vel = pt->mJac * qdot;
+        double comp = vel.dot(pt->mNormalPointToA.segment(0, 3));
+        std::cout << "[FBF] check contact " << pt->contact_id
+                  << " after solved vel = " << vel.transpose()
+                  << " normal = " << pt->mNormalPointToA.transpose()
+                  << std::endl;
+        // if (comp < -1)
+        // {
+        //     std::cout << "[error] contact point penetration failed\n";
+        //     exit(0);
+        // }
+    }
     // check the contact point velocity should be >=0
     // if (mEnableContactNonPenetrationConstraint == true)
     // {

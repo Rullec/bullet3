@@ -808,6 +808,7 @@ void btGenContactAwareAdviser::UpdateReferenceTraj()
         {
             if (mSimFrameId - mRefFrameId >= 5)
             {
+                mRefFrameId = mSimFrameId;
                 mRefFrameId++;
             }
         }

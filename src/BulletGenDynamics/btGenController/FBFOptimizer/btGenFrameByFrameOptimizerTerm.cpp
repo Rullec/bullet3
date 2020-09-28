@@ -97,6 +97,9 @@ void btGenFrameByFrameOptimizer::CalcConstraints()
     if (mEnableFixStaticContactPoint == true)
         AddFixStaticContactPointConstraint();
 
+    if (mEnableLimitSlidingContactVel == true)
+        AddLimitSlidingContactPointConstraintVel();
+
     // add the limitattion for contact forces
     if (mEnableContactForceLimit == true)
         AddContactForceLimitConstraint();
@@ -1431,4 +1434,63 @@ void btGenFrameByFrameOptimizer::AddtvcgControlForceCloseToPrevEnergyTerm()
     mEnergyTerm->AddEnergy(A, b, mTVCGControlForceCloseToPrevCoef,
                            mContactSolutionSize,
                            "tvcg_control_force_close_prev");
+}
+
+void btGenFrameByFrameOptimizer::AddLimitSlidingContactPointConstraintVel()
+{
+    // 1. find the sliding points
+    std::vector<btCharContactPt *> sliding_ids(0);
+    for (auto &pt : mContactPoints)
+    {
+        if (pt->mStatus == eContactStatus::SLIDING)
+        {
+            // limit the normal vel to be less thant 2.0
+            sliding_ids.push_back(pt);
+        }
+    }
+
+    if (sliding_ids.size() == 0)
+        return;
+
+    // 2. shape the essential matrix
+    tVector3d normal = tVector3d(0, 1, 0);
+    const tMatrixXd &Minv = mModel->GetInvMassMatrix();
+    const tMatrixXd &C = mModel->GetCoriolisMatrix();
+    const tVectorXd &qdot = mModel->Getqdot();
+    const tVectorXd &Qg = mModel->CalcGenGravity(mWorld->GetGravity());
+    tMatrixXd K = tMatrixXd::Zero(num_of_freedom, mTotalSolutionSize);
+
+    {
+        for (int c_id = 0; c_id < mContactPoints.size(); c_id++)
+        {
+            auto pt = mContactPoints[c_id];
+            int size = mContactSolSize[pt->contact_id];
+            int offset = mContactSolOffset[pt->contact_id];
+
+            // (3 * N) * (N * 3) * (3 * size) = 3 * size
+            K.block(0, offset, num_of_freedom, size).noalias() =
+                pt->mJac.transpose() * pt->mS;
+        }
+
+        // for control forces
+        tMatrixXd N =
+            tMatrixXd::Zero(num_of_freedom, num_of_underactuated_freedom);
+        N.block(6, 0, num_of_underactuated_freedom,
+                num_of_underactuated_freedom)
+            .setIdentity();
+        K.block(0, mContactSolutionSize, num_of_freedom, mCtrlSolutionSize) = N;
+    }
+
+    // 3. shape the constraint
+    double threshold = 0.1;
+    for (auto &pt : mContactPoints)
+    {
+        tMatrixXd jac = -mdt * normal.transpose() * pt->mJac * Minv * K;
+        tVectorXd res =
+            tVectorXd::Ones(1) * threshold -
+            mdt * normal.transpose() * pt->mJac * Minv * (Qg - C * qdot) -
+            normal.transpose() * pt->mJac * qdot;
+        mConstraint->AddIneqCon(
+            jac, res, 0, "limit_sliding_vel_" + std::to_string(pt->contact_id));
+    }
 }

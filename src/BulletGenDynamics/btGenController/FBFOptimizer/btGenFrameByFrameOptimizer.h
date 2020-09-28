@@ -50,6 +50,7 @@ protected:
     void AddStaticConstraint(btCharContactPt *pt);
     void AddBreakageConstraint(btCharContactPt *pt);
     void AddFixStaticContactPointConstraint();
+    void AddLimitSlidingContactPointConstraintVel();
     void AddContactForceLimitConstraint();
     void AddNonPenetrationContactConstraint();
     void AddDynamicEnergyTerm();
@@ -140,6 +141,8 @@ protected:
         // constraint for contact points
     bool mEnableFixStaticContactPoint; // add hard/fix constraint for static
                                        // contact
+    bool
+        mEnableLimitSlidingContactVel; // limit the height velocity of sliding contact point
     // bool mIgnoreRootPosInDynamicEnergy; // ignore the root dof in
     // Pos/Vel/Accel
     //                                     // energy term, depracted

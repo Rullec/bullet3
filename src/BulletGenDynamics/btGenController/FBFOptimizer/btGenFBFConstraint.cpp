@@ -70,7 +70,7 @@ void btGenFrameByFrameConstraint::AddEquivalentEqCon(const tMatrixXd &jac,
                st_pos, "eq_" + name + "_ineq_less");
 }
 
-// Note that jac * x >= residual
+// Note that jac * x - residual >= 0
 void btGenFrameByFrameConstraint::AddIneqCon(const tMatrixXd &jac,
                                              const tVectorXd &residual,
                                              int st_pos,
