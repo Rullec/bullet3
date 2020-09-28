@@ -77,6 +77,10 @@ protected:
                               const tVector3d &target_vel);
     void AddLinkOrientationEnergyTerm(int link_id, double coef,
                                       const tMatrix3d &target_orientation);
+
+    // void AddtvcgVelCloseToPrevEnergyTerm();
+    void AddtvcgSupportFootSlidingPenaltyEnergyTerm();
+    void AddtvcgControlForceCloseToPrevEnergyTerm();
     void CalcTrackRefContactRef(
         tEigenArr<tMatrixXd> &jac_lst, std::vector<double> &coeff_lst,
         tEigenArr<tVector3d> &contact_point_next_target_pos_lst,
@@ -116,6 +120,12 @@ protected:
     double mRootPosCoef;
     double mRootVelCoef;
     double mRootOrientationCoef; // control the orientation of root link
+    // double
+    //     mTVCGVelCloseToPrevCoef; // the vel should be close to previous vel, from TVCG
+    double
+        mTVCGControlForceCloseToPrevCoef; // the control force should be close to the previous vel, from TVCG
+    double
+        mTVCGSupportFootSlidingPenaltyCoef; // make sure supporting legs should be as less as possible, for stability from TVCG
     bool mEnableTrackRefContact;
     int mTrackRefContactRange;
     double mTrackRefContactMinCoef;
@@ -146,7 +156,8 @@ protected:
     tVectorXd mGenContactForce;
     tVectorXd mGenControlForce;
     std::vector<tEigenArr<tVector3d>> mRefContactLocalPos;
-
+    tVectorXd
+        mControlForce; // used in the tvcg control force close to prev energy term
     // model buffer vars
     int num_of_freedom;
     int num_of_underactuated_freedom;

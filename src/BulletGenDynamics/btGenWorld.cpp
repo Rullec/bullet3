@@ -626,8 +626,6 @@ void btGeneralizeWorld::CollisionDetect()
     // std::cout << "[bt] num of manifolds = " << num_of_manifolds << std::endl;
     for (int i = 0; i < num_of_manifolds; i++)
         mManifolds.push_back(m_dispatcher->getManifoldByIndexInternal(i));
-    std::cout << "[col detect] model q = " << mMultibody->Getq().transpose()
-              << std::endl;
 #ifdef __DEBUG__
     std::cout << "manifolds = " << num_of_manifolds << std::endl;
 #endif

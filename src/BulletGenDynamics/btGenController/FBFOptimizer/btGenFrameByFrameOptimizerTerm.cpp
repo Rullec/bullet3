@@ -5,6 +5,7 @@
 #include "btGenFBFConstraint.h"
 #include "btGenFBFEnergyTerm.h"
 #include "btGenFrameByFrameOptimizer.h"
+#include <set>
 extern int mNumOfFrictionDirs;
 extern double mu;
 /**
@@ -45,6 +46,11 @@ void btGenFrameByFrameOptimizer::CalcEnergyTerms()
         AddRootVelEnergyTerm();
     if (mRootOrientationCoef > 0)
         AddRootOrientationEnergyTerm();
+    if (mTVCGControlForceCloseToPrevCoef > 0)
+        AddtvcgControlForceCloseToPrevEnergyTerm();
+    if (mTVCGSupportFootSlidingPenaltyCoef > 0)
+        AddtvcgSupportFootSlidingPenaltyEnergyTerm();
+
     if (mEnableTrackRefContact == true)
         AddTrackRefContactEnergyTerm();
 }
@@ -526,10 +532,10 @@ void btGenFrameByFrameOptimizer::AddFixStaticContactPointConstraint()
         {
 
             int id = pt->contact_id;
-            std::cout << "[FBF] add static hard position constraint for "
-                         "contact point "
-                      << id << ", on link " << pt->mCollider->mLinkId
-                      << std::endl;
+            // std::cout << "[FBF] add static hard position constraint for "
+            //              "contact point "
+            //           << id << ", on link " << pt->mCollider->mLinkId
+            //           << std::endl;
             mConstraint->AddEquivalentEqCon(
                 pt->mJac * A_base, pt->mJac * b_base, 0, 1e-12,
                 "fix_static_contact_point_" + std::to_string(pt->contact_id));
@@ -1187,9 +1193,9 @@ void btGenFrameByFrameOptimizer::AddTrackRefContactEnergyTerm()
     {
         int link_id = pt->mCollider->mLinkId;
         auto link = mModel->GetLinkById(pt->mCollider->mLinkId);
-        std::cout << "contact " << pt->contact_id << " link " << link_id << " "
-                  << link->GetName()
-                  << " world pos = " << pt->mWorldPos.transpose() << std::endl;
+        // std::cout << "contact " << pt->contact_id << " link " << link_id << " "
+        //           << link->GetName()
+        //           << " world pos = " << pt->mWorldPos.transpose() << std::endl;
         pt->mLocalPos;
     }
     // 1. get the points we want to control, calculate the coef weight by the
@@ -1371,4 +1377,58 @@ void btGenFrameByFrameOptimizer::CalcTrackRefContactRef(
         //           << std::endl;
     }
     mModel->PopState("track_ref_contact");
+}
+
+/**
+ * \brief               control the supporting foot position should be close to the last end effector
+*/
+void btGenFrameByFrameOptimizer::AddtvcgSupportFootSlidingPenaltyEnergyTerm()
+{
+    // 1. recorgnize the supported end effecotor (which end effector is contact with the ground in the ref traj)
+    auto &contact_forces = mTraj->mContactForce[mRefFrameId + 1];
+    std::set<int> ctrled_support_end_id;
+    for (auto &f : contact_forces)
+    {
+        auto gen_collider = dynamic_cast<btGenRobotCollider *>(f->mObj);
+        int link_id = gen_collider->mLinkId;
+        auto link = mModel->GetLinkById(link_id);
+        if (link->GetNumOfChildren() == 0)
+        {
+            if (ctrled_support_end_id.end() ==
+                ctrled_support_end_id.find(link_id))
+            {
+                ctrled_support_end_id.insert(link_id);
+                std::cout << "link " << link_id << " " << link->GetName()
+                          << " is the supporting leg\n";
+            }
+        }
+    }
+
+    // 2. set that, this end effector's position should be as close as possible to its preivous value
+    for (auto &id : ctrled_support_end_id)
+    {
+        // 2.1 get the current pos of this link
+        auto link = mModel->GetLinkById(id);
+        tVector3d cur_pos = link->GetWorldPos();
+        AddLinkPosEnergyTerm(id, mTVCGSupportFootSlidingPenaltyCoef, cur_pos);
+    }
+}
+
+/**
+ * \brief               the control force should be close to the previous control force
+*/
+void btGenFrameByFrameOptimizer::AddtvcgControlForceCloseToPrevEnergyTerm()
+{
+
+    // for the first frame, the control force is zero and have no reference value
+    if (mControlForce.norm() < 1e-10)
+        return;
+
+    // 1. the control force, should be as close as possible to its prevous value
+    tMatrixXd A = tMatrixXd::Identity(num_of_underactuated_freedom,
+                                      num_of_underactuated_freedom);
+    tVectorXd b = -mControlForce;
+    mEnergyTerm->AddEnergy(A, b, mTVCGControlForceCloseToPrevCoef,
+                           mContactSolutionSize,
+                           "tvcg_control_force_close_prev");
 }

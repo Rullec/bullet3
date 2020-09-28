@@ -218,7 +218,7 @@ void btGenFrameByFrameConstraint::CheckConstraint(
         int size = jac.cols();
         const tVectorXd &part_solution = total_solution.segment(st, size);
         const tVectorXd &violate = jac * part_solution + res;
-        if (violate.cwiseAbs().maxCoeff() > 1e-10)
+        if (violate.cwiseAbs().maxCoeff() > 1e-4)
         {
             std::cout << "[error] eq constraint " << name
                       << " solved failed, the violate value = "

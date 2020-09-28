@@ -11,22 +11,23 @@
 #include "btCharContactPoint.h"
 #include <fstream>
 int mNumOfFrictionDirs = 4;
-double mu = 0.8;
+double mu = 1;
 const std::string gContactStatusStr[] = {"INVALID_CONTACT_STATUS", "SLIDING",
                                          "STATIC", "BREAKAGE"};
 extern std::string debug_path;
 eContactStatus JudgeContactStatus(const tVector &vel,
-                                  double breakage_threshold = 1e-2,
-                                  double sliding_threshold = 5e-3)
+                                  double breakage_threshold = 0.1,
+                                  double sliding_threshold = 0.15)
 {
-    std::cout << "[warn] all judge are returning static\n";
-    return eContactStatus::STATIC;
+    // std::cout << "[warn] all judge are returning static\n";
+    // return eContactStatus::STATIC;
     double vel_n = vel[1];
     double vel_t = std::sqrt(std::pow(vel[0], 2) + std::pow(vel[2], 2));
     if (vel_n > breakage_threshold)
     {
         return eContactStatus::BREAKAGE;
         // return eContactStatus::STATIC;
+        // return eContactStatus::SLIDING;
     }
     else
     {
@@ -302,11 +303,11 @@ void btGenFrameByFrameOptimizer::CalcContactStatus()
             // pt->mStatus = eContactStatus::STATIC;
             auto link = mModel->GetLinkById(pt->mCollider->mLinkId);
 
-            // std::cout << "[FBF] contact " << id << " on link "
-            //           << link->GetName()
-            //           << " cartesian vel in ref traj = " << vel.transpose()
-            //           << " status " << gContactStatusStr[pt->mStatus]
-            //           << std::endl;
+            std::cout << "[FBF] contact " << id << " on link "
+                      << link->GetName()
+                      << " cartesian vel in ref traj = " << vel.transpose()
+                      << " status " << gContactStatusStr[pt->mStatus]
+                      << std::endl;
             // std::cout << "contact " << id << " gen vel = " <<
             // contact_vel_cur_ref[id].transpose() << std::endl;
             // 3. calculate convert mat
@@ -381,6 +382,7 @@ void btGenFrameByFrameOptimizer::Solve(tVectorXd &tilde_qddot,
     // std::cout << "[qp] energy = " << energy << std::endl;
 
     CalcTargetInternal(solution, tilde_qddot, tilde_qdot, tilde_q, tilde_tau);
+    mControlForce = tilde_tau;
     mEnergyTerm->CheckEnergyValue(solution);
     mConstraint->CheckConstraint(solution);
 
@@ -645,6 +647,13 @@ void btGenFrameByFrameOptimizer::SetCoef(const Json::Value &conf)
     mRootOrientationCoef =
         btJsonUtil::ParseAsDouble("root_orientation_coef", conf);
 
+    // mTVCGVelCloseToPrevCoef =
+    //     btJsonUtil::ParseAsDouble("TVCG_vel_close_to_prev_coef", conf);
+    mTVCGControlForceCloseToPrevCoef = btJsonUtil::ParseAsDouble(
+        "TVCG_control_force_close_to_prev_coef", conf);
+    mTVCGSupportFootSlidingPenaltyCoef = btJsonUtil::ParseAsDouble(
+        "TVCG_support_foot_sliding_penalty_coef", conf);
+
     mEnableTrackRefContact =
         btJsonUtil::ParseAsBool("enable_track_ref_contact_energy_term", conf);
     mTrackRefContactRange =
@@ -667,6 +676,7 @@ void btGenFrameByFrameOptimizer::InitModelInfo()
 {
     num_of_freedom = mModel->GetNumOfFreedom();
     num_of_underactuated_freedom = num_of_freedom - 6;
+    mControlForce = tVectorXd::Zero(num_of_underactuated_freedom);
 }
 /**
  * \brief					Constrcut the Frame by frame
@@ -894,10 +904,10 @@ void btGenFrameByFrameOptimizer::SetTraj(btTraj *traj)
 void btGenFrameByFrameOptimizer::ControlByFBF()
 {
     std::cout << "[log] control by frame by frame begin\n";
-    std::cout << "[fbf] control force = " << mGenControlForce.transpose()
-              << std::endl;
-    std::cout << "[fbf] contact gen force = " << mGenContactForce.transpose()
-              << std::endl;
+    std::cout << "[fbf] control force = norm "
+              << mGenControlForce.transpose().norm() << std::endl;
+    std::cout << "[fbf] contact gen force norm = "
+              << mGenContactForce.transpose().norm() << std::endl;
 
     for (int i = 0; i < num_of_freedom; i++)
     {
