@@ -1179,7 +1179,19 @@ void btGenFrameByFrameOptimizer::AddNonPenetrationContactConstraint()
  */
 void btGenFrameByFrameOptimizer::AddTrackRefContactEnergyTerm()
 {
-    std::cout << "begin to add track ref contact energy term\n";
+    // std::cout << "begin to add track ref contact energy term\n";
+    std::cout << "[log] contact num = " << mContactPoints.size()
+              << " ref contact num = "
+              << mTraj->mContactForce[mRefFrameId].size() << std::endl;
+    for (auto &pt : mContactPoints)
+    {
+        int link_id = pt->mCollider->mLinkId;
+        auto link = mModel->GetLinkById(pt->mCollider->mLinkId);
+        std::cout << "contact " << pt->contact_id << " link " << link_id << " "
+                  << link->GetName()
+                  << " world pos = " << pt->mWorldPos.transpose() << std::endl;
+        pt->mLocalPos;
+    }
     // 1. get the points we want to control, calculate the coef weight by the
     // frame id
     tEigenArr<tMatrixXd> contact_jac_lst(0);
@@ -1193,9 +1205,9 @@ void btGenFrameByFrameOptimizer::AddTrackRefContactEnergyTerm()
     // 2. begin to calculate the energy term
     // 2.1 calculate the A part
     tMatrixXd K = tMatrixXd::Zero(num_of_freedom, mTotalSolutionSize);
-    int num_of_track_pts = mContactPoints.size();
+
     {
-        for (int c_id = 0; c_id < num_of_track_pts; c_id++)
+        for (int c_id = 0; c_id < mContactPoints.size(); c_id++)
         {
             auto pt = mContactPoints[c_id];
             int size = mContactSolSize[pt->contact_id];
@@ -1225,6 +1237,7 @@ void btGenFrameByFrameOptimizer::AddTrackRefContactEnergyTerm()
     tVectorXd b1 = dt2 * Minv * (QG - C * qdot) + mdt * qdot;
 
     // 2.3 calculate the J_total and and b_total
+    int num_of_track_pts = contact_jac_lst.size();
     tMatrixXd J_total = tMatrixXd::Zero(3 * num_of_track_pts, num_of_freedom);
     tVectorXd b_total = tVectorXd::Zero(3 * num_of_track_pts);
     for (int id = 0; id < num_of_track_pts; id++)
@@ -1239,9 +1252,12 @@ void btGenFrameByFrameOptimizer::AddTrackRefContactEnergyTerm()
                         contact_point_next_target_lst[id];
         b_total.segment(3 * id, 3) = coef * (jac * b1 + b2i);
     }
-
+    A /= dt2;
+    b_total /= dt2;
     // 2.4 shape the final energy term
     mEnergyTerm->AddEnergy(J_total * A, b_total, 1, 0, "track_ref_contact");
+    std::cout << "[log] add track ref contact points " << num_of_track_pts
+              << std::endl;
 }
 
 /**
@@ -1289,16 +1305,20 @@ void btGenFrameByFrameOptimizer::CalcTrackRefContactRef(
     {
         // 1. calc current frame & judge
         int frame_id = mRefFrameId + inc;
-        if (mRefFrameId >= mTraj->mNumOfFrames)
+        if (frame_id >= mTraj->mNumOfFrames)
             break;
 
         // 2. calc coeff in this frame
         double cur_coef =
             blend(mTrackRefContactMaxCoef, mTrackRefContactMinCoef,
                   mTrackRefContactRange, inc);
-        // std::cout << "---------------frame " << frame_id << std::endl;
+
         // 3. fetch & save the local pos, calculate the current world pos, calculate the jacobian
+
         auto &local_contact_points = mRefContactLocalPos[frame_id];
+        // std::cout << "[track ref contact] frame " << frame_id
+        //           << " contact num = " << local_contact_points.size()
+        //           << std::endl;
         for (int i = 0; i < local_contact_points.size(); i++)
         {
             const tVector3d &local_contact_pt = local_contact_points[i];

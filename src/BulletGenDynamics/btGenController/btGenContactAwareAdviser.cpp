@@ -93,13 +93,22 @@ void btGenContactAwareAdviser::SetTraj(const std::string &ref_traj,
                   << mRefFrameId << ", doesn't match\n";
         exit(0);
     }
-    if (mRefFrameId)
+
+    // set the start point
+    {
         mModel->SetqAndqdot(mRefTraj->mq[mRefFrameId],
                             mRefTraj->mqdot[mRefFrameId]);
+        mRefTrajModel->SetqAndqdot(mRefTraj->mq[mRefFrameId],
+                                   mRefTraj->mqdot[mRefFrameId]);
+        mFBFTrajModel->SetqAndqdot(mRefTraj->mq[mRefFrameId],
+                                   mRefTraj->mqdot[mRefFrameId]);
+    }
+
     // std::cout << "[adviser] init q = "
-    //           << mRefTraj->mq[mInternalFrameId].transpose() << std::endl;
+    //           << mRefTraj->mq[mRefFrameId].segment(0, 3).transpose()
+    //           << std::endl;
     // std::cout << "[adviser] init qdot = "
-    //           << mRefTraj->mqdot[mInternalFrameId].transpose() << std::endl;
+    //           << mRefTraj->mqdot[mRefFrameId].transpose() << std::endl;
     mFBFOptimizer->SetTraj(mRefTraj);
     mHasRefTraj = true;
 
@@ -107,6 +116,11 @@ void btGenContactAwareAdviser::SetTraj(const std::string &ref_traj,
     {
         LoadInitState();
     }
+    // std::cout << "[adviser] final init q = "
+    //           << mRefTraj->mq[mRefFrameId].segment(0, 3).transpose()
+    //           << std::endl;
+    // std::cout << "[adviser] final init qdot = "
+    //           << mRefTraj->mqdot[mRefFrameId].transpose() << std::endl;
 }
 void btGenContactAwareAdviser::Init(cRobotModelDynamics *model_,
                                     const std::string &contact_aware_config)
@@ -142,6 +156,8 @@ void btGenContactAwareAdviser::Update(double dt)
               << mRefFrameId << std::endl;
     // std::cout << "[debug] model q = " << mModel->Getq().transpose()
     //           << std::endl;
+    // std::cout << "[debug] ref q = "
+    //           << this->mRefTraj->mq[mRefFrameId].transpose() << std::endl;
     // std::cout << "[debug] model qdot = " << mModel->Getqdot().transpose()
     //           << std::endl;
     if (mEnableStateSave)
@@ -242,6 +258,7 @@ void btGenContactAwareAdviser::ResolveActiveForce()
                     Mqddot + Cqdot = QG + Qcontrol + Qcontact
                     Qcontrol = Mqddot + Cqdot - QG - Qcontact
             */
+    mModel->PushState("resolve");
     int num_of_frame = mRefTraj->mq.size();
     int num_of_freedom = mModel->GetNumOfFreedom();
     for (int frame_id = 1; frame_id < num_of_frame - 1; frame_id++)
@@ -274,6 +291,7 @@ void btGenContactAwareAdviser::ResolveActiveForce()
         }
         mRefTraj->mActiveForce[frame_id] = LHS - G - Qcontact;
     }
+    mModel->PopState("resolve");
 }
 
 /**
@@ -485,18 +503,18 @@ void btGenContactAwareAdviser::UpdateMultibodyVelocityAndTransformDebug(
             tVectorXd q_diff = q - ref_traj_q, qdot_diff = qdot - ref_traj_qdot,
                       qddot_diff = qddot - ref_traj_qddot;
 
-            std::cout << "[debug] ctrl_res and ref_traj q diff "
-                      << q_diff.norm() << " qdot diff " << qdot_diff.norm()
-                      << " qddot diff = " << qddot_diff.norm() << std::endl;
+            // std::cout << "[debug] ctrl_res and ref_traj q diff "
+            //           << q_diff.norm() << " qdot diff " << qdot_diff.norm()
+            //           << " qddot diff = " << qddot_diff.norm() << std::endl;
         }
 
         {
             tVectorXd q_diff = q - mTargetPos, qdot_diff = qdot - mTargetVel,
                       qddot_diff = qddot - mTargetAccel;
 
-            std::cout << "[debug] ctrl_res and target_traj q diff "
-                      << q_diff.norm() << " qdot diff " << qdot_diff.norm()
-                      << " qddot diff = " << qddot_diff.norm() << std::endl;
+            // std::cout << "[debug] ctrl_res and target_traj q diff "
+            //           << q_diff.norm() << " qdot diff " << qdot_diff.norm()
+            //           << " qddot diff = " << qddot_diff.norm() << std::endl;
         }
 
         {
@@ -504,9 +522,9 @@ void btGenContactAwareAdviser::UpdateMultibodyVelocityAndTransformDebug(
                       qdot_diff = ref_traj_qdot - mTargetVel,
                       qddot_diff = ref_traj_qddot - mTargetAccel;
 
-            std::cout << "[debug] ref_traj and target_traj q diff "
-                      << q_diff.norm() << " qdot diff " << qdot_diff.norm()
-                      << " qddot diff = " << qddot_diff.norm() << std::endl;
+            // std::cout << "[debug] ref_traj and target_traj q diff "
+            //           << q_diff.norm() << " qdot diff " << qdot_diff.norm()
+            //           << " qddot diff = " << qddot_diff.norm() << std::endl;
         }
     }
     // std::cout << "mEnable sync traj per = " << mEnableSyncTrajPeriodly
@@ -796,7 +814,7 @@ void btGenContactAwareAdviser::UpdateReferenceTraj()
     }
     else
     {
-        std::cout << "[debug] no delayed update ref traj\n";
+        // std::cout << "[debug] no delayed update ref traj\n";
         mRefFrameId++;
     }
 }

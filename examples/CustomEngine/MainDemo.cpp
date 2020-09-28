@@ -77,24 +77,33 @@ void CustomEngineMainDemo::stepSimulation(float dt)
 {
     if (global_frame_id == 0)
         m_guiHelper->resetCamera(1.64, -267.6, 13.4, 0.0078, 0.4760, 0.4799);
-    dt = physics_param->mDefaultTimestep;
-    CALLGRIND_START_INSTRUMENTATION;
-    if (physics_param->mEnableContactAwareControl && mAdviser->IsEnd())
-    {
-        std::cout << "traj terminated without save\n";
-        exit(0);
-        mAdviser->Reset();
-        mAdviser->SetTraj(gContactAwareTraj, "tmp_traj.json", true);
-    }
-    mGenWorld->ClearForce();
-    mGenWorld->StepSimulation(
-        static_cast<float>(physics_param->mDefaultTimestep));
     if (physics_param->mPauseFrame == global_frame_id)
     {
+        // std::cout << "[pre pause] q = "
+        //           << mGenWorld->GetMultibody()->Getq().segment(0, 3).transpose()
+        //           << std::endl;
         gPauseSimulation = true;
+        global_frame_id++;
     }
-    global_frame_id++;
-    CALLGRIND_STOP_INSTRUMENTATION;
+    else
+    {
+        dt = physics_param->mDefaultTimestep;
+        CALLGRIND_START_INSTRUMENTATION;
+        if (physics_param->mEnableContactAwareControl && mAdviser->IsEnd())
+        {
+            std::cout << "traj terminated without save\n";
+            exit(0);
+            mAdviser->Reset();
+            mAdviser->SetTraj(gContactAwareTraj, "tmp_traj.json", true);
+        }
+        mGenWorld->ClearForce();
+        mGenWorld->StepSimulation(
+            static_cast<float>(physics_param->mDefaultTimestep));
+
+        global_frame_id++;
+        CALLGRIND_STOP_INSTRUMENTATION;
+    }
+
     // CommonRigidBodyBase::stepSimulation(dt);
     // if (mTime > 1)
     // {
@@ -103,6 +112,9 @@ void CustomEngineMainDemo::stepSimulation(float dt)
     // }
     // std::cout <<"collision shapes = " << m_collisionShapes.size() <<
     // std::endl;
+    // std::cout << "[before draw] q = "
+    //           << mGenWorld->GetMultibody()->Getq().segment(0, 3).transpose()
+    //           << std::endl;
     m_guiHelper->autogenerateGraphicsObjects(m_dynamicsWorld);
 }
 
@@ -198,7 +210,6 @@ void CustomEngineMainDemo::initPhysics()
     camera set yaw -267.6000
     camera set pos 0.0078 0.4760 0.4799
     */
-
     // m_guiHelper->resetCamera(1.64, -267.6, 13.4, 0.0078, 0.4760, 0.4799);
     m_guiHelper->createPhysicsDebugDrawer(m_dynamicsWorld);
     m_guiHelper->autogenerateGraphicsObjects(m_dynamicsWorld);

@@ -936,7 +936,7 @@ void cRobotModelDynamics::PopState(const std::string &tag,
     ComputeCoriolisMatrix(mqdot);
     ComputeDampingMatrix();
     UpdateCartesianVelocity();
-
+    SyncToBullet();
     delete state;
     mStateStack.pop_back();
 }

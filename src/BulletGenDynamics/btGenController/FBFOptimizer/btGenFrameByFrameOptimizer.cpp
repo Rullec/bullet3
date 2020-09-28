@@ -169,7 +169,8 @@ void btGenFrameByFrameOptimizer::CalcContactStatus()
     // 1. get contact points & link id, calc point positions in local frame
     std::vector<btPersistentManifold *> manifolds =
         mWorld->GetContactManifolds();
-
+    // std::cout << "[debug] adviser get manifold " << manifolds.size()
+    //           << std::endl;
     tEigenArr<tVector> ContactLocalPos(0);
     std::vector<int> ContactLinkId(0);
     for (auto &mani : manifolds)
@@ -191,7 +192,9 @@ void btGenFrameByFrameOptimizer::CalcContactStatus()
                 delete data;
         }
     }
-
+    std::cout << "[debug] cur contact num " << mContactPoints.size()
+              << " ref contact num " << mTraj->mContactForce[mRefFrameId].size()
+              << std::endl;
     if (mEnableContactReduction == true)
     {
         std::cout << "[log] enable contact reduction\n";
@@ -350,8 +353,8 @@ void btGenFrameByFrameOptimizer::Solve(tVectorXd &tilde_qddot,
                      solution);
     // std::cout << "[debug] equality num = " << Aeq.cols() << std::endl;
     // std::cout << "[debug] inequality num = " << Aineq.cols() << std::endl;
-    std::cout << "[FBF] quadprog solution = " << solution.transpose()
-              << std::endl;
+    // std::cout << "[FBF] quadprog solution = " << solution.transpose()
+    //           << std::endl;
     // if (solution.hasNaN() == true)
     // {
     //     std::cout << "[warn] use matlab solver instead = " <<
@@ -519,6 +522,14 @@ void btGenFrameByFrameOptimizer::CalcTargetInternal(const tVectorXd &solution,
                   << gContactStatusStr[pt->mStatus] << std::endl;
         mGenContactForce += pt->mJac.transpose() * solved_force;
     }
+
+    // output the ref contact forces
+    for (int i = 0; i < mTraj->mContactForce[mRefFrameId].size(); i++)
+    {
+        std::cout << "[ref] ref cartesian contact force " << i << " "
+                  << mTraj->mContactForce[mRefFrameId][i]->mForce.transpose()
+                  << std::endl;
+    }
     mGenControlForce.segment(6, num_of_underactuated_freedom) = control_force;
     tVectorXd QG = mModel->CalcGenGravity(mWorld->GetGravity());
     tVectorXd RHS = mGenContactForce + mGenControlForce + QG -
@@ -544,9 +555,10 @@ void btGenFrameByFrameOptimizer::CalcTargetInternal(const tVectorXd &solution,
     //         tVector3d vel = pt->mJac * qdot;
     //         double comp = vel.dot(pt->mNormalPointToA.segment(0, 3));
     //         std::cout << "[FBF] check contact " << pt->contact_id
-    //                   << " after solved vel = " << vel.transpose() <<
-    //                   std::endl;
-    //         if (comp < -1e-3)
+    //                   << " after solved vel = " << vel.transpose()
+    //                   << " normal = " << pt->mNormalPointToA.transpose()
+    //                   << std::endl;
+    //         if (comp < -1)
     //         {
     //             std::cout << "[error] contact point penetration failed\n";
     //             exit(0);
