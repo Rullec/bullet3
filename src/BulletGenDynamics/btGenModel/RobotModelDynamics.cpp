@@ -450,6 +450,14 @@ void cRobotModelDynamics::TestSecondJacobian()
 void cRobotModelDynamics::SetqAndqdot(const tVectorXd &q_,
                                       const tVectorXd &qdot_)
 {
+    if (q_.size() != num_of_freedom || qdot_.size() != num_of_freedom)
+    {
+        std::cout << "[error] illegal q & qdot size : q " << q_.size()
+                  << " qdot " << qdot_.size() << " dof " << num_of_freedom
+                  << std::endl;
+        assert(false);
+        exit(0);
+    }
     mq = q_;
     mqdot = qdot_;
     Apply(mq, true);

@@ -77,6 +77,10 @@ protected:
                               const tVector3d &target_vel);
     void AddLinkOrientationEnergyTerm(int link_id, double coef,
                                       const tMatrix3d &target_orientation);
+    void CalcTrackRefContactRef(
+        tEigenArr<tMatrixXd> &jac_lst, std::vector<double> &coeff_lst,
+        tEigenArr<tVector3d> &contact_point_next_target_pos_lst,
+        tEigenArr<tVector3d> &contact_point_cur_pos_lst);
     void AddTrackRefContactEnergyTerm();
     void CalcContactConvertMat(btCharContactPt *contact,
                                tMatrixXd &convert_mat);
@@ -122,9 +126,8 @@ protected:
 
     bool mEnableContactReduction; // reduct the contact points at a link to a
                                   // single point (average)
-    bool
-        mEnableContactNonPenetrationConstraint; // add the non penetration
-                                                // constraint for contact points
+    bool mEnableContactNonPenetrationConstraint; // add the non penetration
+        // constraint for contact points
     bool mEnableFixStaticContactPoint; // add hard/fix constraint for static
                                        // contact
     // bool mIgnoreRootPosInDynamicEnergy; // ignore the root dof in
@@ -142,6 +145,7 @@ protected:
     btGenFrameByFrameEnergyTerm *mEnergyTerm;
     tVectorXd mGenContactForce;
     tVectorXd mGenControlForce;
+    std::vector<tEigenArr<tVector3d>> mRefContactLocalPos;
 
     // model buffer vars
     int num_of_freedom;

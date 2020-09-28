@@ -46,6 +46,7 @@ void btGenFrameByFrameOptimizer::CalcEnergyTerms()
     if (mRootOrientationCoef > 0)
         AddRootOrientationEnergyTerm();
     if (mEnableTrackRefContact == true)
+        AddTrackRefContactEnergyTerm();
 }
 
 /**
@@ -1155,4 +1156,199 @@ void btGenFrameByFrameOptimizer::AddNonPenetrationContactConstraint()
     }
 
     // exit(0);
+}
+
+/**
+ * \brief                   track the contact points in ref trajectory
+ * 
+ * P_err = J_ci * A * X + J_ci * b_1 + b_2i
+ * 
+ * E_err = (coefi * P_err)^2
+ *       = [coefi * J_ci * A * X + coefi * (J_ci * b_1 + b_2i)]^2
+ *       =
+ *          [ coef0 * J_c0 ]            [coef0 * (J_c0 * b1 + b_20)]
+ *          [ coef1 * J_c1 ]            [coef1 * (J_c1 * b1 + b_21)]
+ *          [      ...     ]            [           ...            ]
+ *          [ coefn * J_cn ] * A * X +  [coefn * (J_cn * b1 + b_2n)]
+ *       =   J_total * A * X + b_total
+ * 
+ * J_c is the jacobian of tracked contact point
+ * A = dt2 * Minv * K 
+ * b1 = dt2 * Minv * (QG - C*qdot) + dt * qdot
+ * b2 = pt - ptar
+ */
+void btGenFrameByFrameOptimizer::AddTrackRefContactEnergyTerm()
+{
+    std::cout << "begin to add track ref contact energy term\n";
+    // 1. get the points we want to control, calculate the coef weight by the
+    // frame id
+    tEigenArr<tMatrixXd> contact_jac_lst(0);
+    std::vector<double> coeff_lst(0);
+    tEigenArr<tVector3d> contact_point_cur_target_lst(0);
+    tEigenArr<tVector3d> contact_point_next_target_lst(0);
+    CalcTrackRefContactRef(contact_jac_lst, coeff_lst,
+                           contact_point_next_target_lst,
+                           contact_point_cur_target_lst);
+
+    // 2. begin to calculate the energy term
+    // 2.1 calculate the A part
+    tMatrixXd K = tMatrixXd::Zero(num_of_freedom, mTotalSolutionSize);
+    int num_of_track_pts = mContactPoints.size();
+    {
+        for (int c_id = 0; c_id < num_of_track_pts; c_id++)
+        {
+            auto pt = mContactPoints[c_id];
+            int size = mContactSolSize[pt->contact_id];
+            int offset = mContactSolOffset[pt->contact_id];
+
+            // (3 * N) * (N * 3) * (3 * size) = 3 * size
+            K.block(0, offset, num_of_freedom, size).noalias() =
+                pt->mJac.transpose() * pt->mS;
+        }
+
+        // for control forces
+        tMatrixXd N =
+            tMatrixXd::Zero(num_of_freedom, num_of_underactuated_freedom);
+        N.block(6, 0, num_of_underactuated_freedom,
+                num_of_underactuated_freedom)
+            .setIdentity();
+        K.block(0, mContactSolutionSize, num_of_freedom, mCtrlSolutionSize) = N;
+    }
+    const tMatrixXd &Minv = mModel->GetInvMassMatrix();
+    double dt2 = mdt * mdt;
+    tMatrixXd A = dt2 * Minv * K;
+
+    // 2.2 calculate the b1
+    const tMatrixXd &C = mModel->GetCoriolisMatrix();
+    const tVectorXd &qdot = mModel->Getqdot();
+    const tVectorXd &QG = mModel->CalcGenGravity(mWorld->GetGravity());
+    tVectorXd b1 = dt2 * Minv * (QG - C * qdot) + mdt * qdot;
+
+    // 2.3 calculate the J_total and and b_total
+    tMatrixXd J_total = tMatrixXd::Zero(3 * num_of_track_pts, num_of_freedom);
+    tVectorXd b_total = tVectorXd::Zero(3 * num_of_track_pts);
+    for (int id = 0; id < num_of_track_pts; id++)
+    {
+        // 2.3.1 blank in the J_total
+        const double &coef = coeff_lst[id];
+        const tMatrixXd &jac = contact_jac_lst[id];
+        J_total.block(id * 3, 0, 3, num_of_freedom) = coef * jac;
+
+        // 2.3.2 calc the b_total componenet
+        tVectorXd b2i = contact_point_cur_target_lst[id] -
+                        contact_point_next_target_lst[id];
+        b_total.segment(3 * id, 3) = coef * (jac * b1 + b2i);
+    }
+
+    // 2.4 shape the final energy term
+    mEnergyTerm->AddEnergy(J_total * A, b_total, 1, 0, "track_ref_contact");
+}
+
+/**
+ * \brief                       Calculate the contact points in the ref
+ * trajectory which we needs to track in "Track_Ref_Contact" Energy Term
+ * \param jac_lst               the jacobian of these selected contact points in next frame
+ * \param coeff_lst             the weight coefficient of this contact point
+ * \param next_target_pos_lst   the target position of tracked contact point next frame in ref traj
+ * \param cur_pos_lst           current position of tracked contact point
+ * 
+ */
+double blend(double max_coef, double min_coef, int control_frame_range,
+             int cur_frame)
+{
+    if (max_coef <= min_coef)
+    {
+        std::cout << "[error] max coef " << max_coef << " < " << min_coef
+                  << std::endl;
+        exit(1);
+    }
+    if (cur_frame > control_frame_range)
+    {
+        std::cout << "[error] cur frame " << cur_frame << " > "
+                  << control_frame_range << std::endl;
+        exit(1);
+    }
+    double cur_coef =
+        (max_coef - min_coef) / control_frame_range * cur_frame + min_coef;
+    return cur_coef;
+}
+
+void btGenFrameByFrameOptimizer::CalcTrackRefContactRef(
+    tEigenArr<tMatrixXd> &jac_lst, std::vector<double> &coeff_lst,
+    tEigenArr<tVector3d> &next_target_pos_lst,
+    tEigenArr<tVector3d> &cur_pos_lst)
+{
+    jac_lst.clear();
+    coeff_lst.clear();
+    next_target_pos_lst.clear();
+    cur_pos_lst.clear();
+
+    std::vector<int> link_id_lst(0);
+    tEigenArr<tVector3d> local_pos_lst(0);
+    for (int inc = 0; inc < mTrackRefContactRange; inc++)
+    {
+        // 1. calc current frame & judge
+        int frame_id = mRefFrameId + inc;
+        if (mRefFrameId >= mTraj->mNumOfFrames)
+            break;
+
+        // 2. calc coeff in this frame
+        double cur_coef =
+            blend(mTrackRefContactMaxCoef, mTrackRefContactMinCoef,
+                  mTrackRefContactRange, inc);
+        // std::cout << "---------------frame " << frame_id << std::endl;
+        // 3. fetch & save the local pos, calculate the current world pos, calculate the jacobian
+        auto &local_contact_points = mRefContactLocalPos[frame_id];
+        for (int i = 0; i < local_contact_points.size(); i++)
+        {
+            const tVector3d &local_contact_pt = local_contact_points[i];
+            local_pos_lst.push_back(local_contact_pt);
+            // 3.1 save the coef
+            coeff_lst.push_back(cur_coef);
+
+            // 3.2 calculate cur pos
+
+            auto gen_collider = static_cast<btGenRobotCollider *>(
+                mTraj->mContactForce[frame_id][i]->mObj);
+            int link_id = gen_collider->mLinkId;
+            link_id_lst.push_back(link_id);
+            auto link = mModel->GetLinkById(link_id);
+
+            tVector cur_world_pos = link->GetGlobalTransform() *
+                                    btMathUtil::Expand(local_contact_pt, 1);
+            cur_pos_lst.push_back(cur_world_pos.segment(0, 3));
+
+            // 3.3 calcualte the jacobian
+            tMatrixXd jac;
+            mModel->ComputeJacobiByGivenPointTotalDOFWorldFrame(
+                link_id, cur_world_pos.segment(0, 3), jac);
+            jac_lst.push_back(jac);
+            // std::cout << "link " << link_id << " local pos "
+            //           << local_contact_pt.transpose() << " cur world pos "
+            //           << cur_world_pos.transpose() << std::endl;
+        }
+    }
+
+    // 4. calculate the target world pos for tracked ref contacts in next frame
+    mModel->PushState("track_ref_contact");
+    const tVectorXd &q_next = mTraj->mq[mRefFrameId + 1];
+    const tVectorXd &qdot_next = mTraj->mq[mRefFrameId + 1];
+    mModel->SetqAndqdot(q_next, qdot_next);
+
+    for (int contact_id = 0; contact_id < local_pos_lst.size(); contact_id++)
+    {
+
+        const tVector3d &local_pos = local_pos_lst[contact_id];
+        int link_id = link_id_lst[contact_id];
+        auto link = mModel->GetLinkById(link_id);
+        tVector next_world_pos =
+            link->GetGlobalTransform() *
+            btMathUtil::Expand(local_pos_lst[contact_id], 1);
+        next_target_pos_lst.push_back(next_world_pos.segment(0, 3));
+        // std::cout << "contact id " << contact_id << " local pos "
+        //           << local_pos_lst[contact_id].transpose()
+        //           << " target world pos " << next_world_pos.transpose()
+        //           << std::endl;
+    }
+    mModel->PopState("track_ref_contact");
 }

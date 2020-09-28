@@ -249,6 +249,7 @@ bool btTraj::LoadTraj(const std::string &path, cRobotModelDynamics *model,
     mqddot.resize(mNumOfFrames);
     mActiveForce.resize(mNumOfFrames);
     mContactForce.resize(mNumOfFrames);
+    // mContactLocaPos.resize(mNumOfFrames);
 
     for (auto &x : mContactForce)
         x.clear();
@@ -280,6 +281,7 @@ bool btTraj::LoadTraj(const std::string &path, cRobotModelDynamics *model,
 
         // contact force
         mContactForce[frame_id].resize(num_of_contact);
+        // mContactLocaPos[frame_id].resize(num_of_contact);
         for (int c_id = 0; c_id < num_of_contact; c_id++)
         {
             auto &cur_contact_value_json = contact_info_value[c_id];

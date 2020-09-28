@@ -105,6 +105,7 @@ void btGenFrameByFrameOptimizer::Init(btGeneralizeWorld *world,
         btJsonUtil::ParseAsBool("enable_contact_reduction", conf);
     mEnableContactNonPenetrationConstraint = btJsonUtil::ParseAsBool(
         "enable_contact_nonpenetration_constraint", conf);
+
     // std::cout << "non pentation = " << mEnableContactNonPenetrationConstraint
     //           << std::endl;
     // exit(0);
@@ -632,10 +633,14 @@ void btGenFrameByFrameOptimizer::SetCoef(const Json::Value &conf)
     mRootOrientationCoef =
         btJsonUtil::ParseAsDouble("root_orientation_coef", conf);
 
+    mEnableTrackRefContact =
+        btJsonUtil::ParseAsBool("enable_track_ref_contact_energy_term", conf);
     mTrackRefContactRange =
         btJsonUtil::ParseAsInt("track_ref_contact_range", conf);
     tVectorXd coef;
-    btJsonUtil::ReadVectorJson("track_ref_contact_range_coef_minmax", coef);
+    btJsonUtil::ReadVectorJson(
+        btJsonUtil::ParseAsValue("track_ref_contact_range_coef_minmax", conf),
+        coef);
     if (coef.size() != 2)
     {
         std::cout << "[error] coef size != 2, but " << coef.transpose()
@@ -831,7 +836,44 @@ void btGenFrameByFrameOptimizer::Reset()
     // std::cout << "FBF optimizer reset\n";
 }
 
-void btGenFrameByFrameOptimizer::SetTraj(btTraj *traj) { this->mTraj = traj; }
+void btGenFrameByFrameOptimizer::SetTraj(btTraj *traj)
+{
+    mTraj = traj;
+
+    // if the track ref contact energy term is enabled, we needs to calculate
+    // the local pos of contact points in the ref trajectory
+    if (mEnableTrackRefContact == true)
+    {
+        mModel->PushState("track");
+        mRefContactLocalPos.resize(mTraj->mNumOfFrames);
+        for (int frame = 0; frame < mTraj->mNumOfFrames; frame++)
+        {
+            // std::cout << "-----------------frame " << frame << std::endl;
+            mModel->SetqAndqdot(mTraj->mq[frame], mModel->Getqdot());
+
+            auto &forces = mTraj->mContactForce[frame];
+            auto &local_pts = mRefContactLocalPos[frame];
+            local_pts.resize(forces.size());
+            for (int i = 0; i < forces.size(); i++)
+            {
+                auto &cur_force = forces[i];
+                int link_id =
+                    static_cast<btGenRobotCollider *>(cur_force->mObj)->mLinkId;
+
+                tMatrix inv_trans = btMathUtil::InverseTransform(
+                    mModel->GetLinkById(link_id)->GetGlobalTransform());
+                tVector local_pos = inv_trans * cur_force->mWorldPos;
+                // std::cout << "link " << link_id
+                //           << " world pos = " << cur_force->mWorldPos.transpose()
+                //           << " local pos = " << local_pos.transpose()
+                //           << std::endl;
+                local_pts[i] = local_pos.segment(0, 3);
+            }
+        }
+        mModel->PopState("track");
+    }
+    // exit(0);
+}
 
 /**
  * \brief               Apply the contact force and control force calculatred by
