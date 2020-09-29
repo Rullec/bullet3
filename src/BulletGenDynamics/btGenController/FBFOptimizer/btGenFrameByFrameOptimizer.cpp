@@ -1,4 +1,5 @@
 #include "btGenFrameByFrameOptimizer.h"
+#include "../examples/CommonInterfaces/CommonGUIHelperInterface.h"
 #include "BulletGenDynamics/btGenController/FBFOptimizer/btGenFBFConstraint.h"
 #include "BulletGenDynamics/btGenController/FBFOptimizer/btGenFBFEnergyTerm.h"
 #include "BulletGenDynamics/btGenController/QPSolver/MatlabQPSolver.h"
@@ -69,6 +70,7 @@ btGenFrameByFrameOptimizer::btGenFrameByFrameOptimizer()
     num_of_freedom = 0;
     num_of_underactuated_freedom = 0;
     mEnableFixStaticContactPoint = false;
+    mBulletGUIHelper = nullptr;
 }
 
 btGenFrameByFrameOptimizer::~btGenFrameByFrameOptimizer()
@@ -107,6 +109,8 @@ void btGenFrameByFrameOptimizer::Init(btGeneralizeWorld *world,
         btJsonUtil::ParseAsBool("enable_contact_reduction", conf);
     mEnableContactNonPenetrationConstraint = btJsonUtil::ParseAsBool(
         "enable_contact_nonpenetration_constraint", conf);
+    mEnableDrawContactPointsInBulletGUI = btJsonUtil::ParseAsBool(
+        "enable_draw_contact_points_in_bullet_GUI", conf);
 
     // std::cout << "non pentation = " << mEnableContactNonPenetrationConstraint
     //           << std::endl;
@@ -126,6 +130,20 @@ void btGenFrameByFrameOptimizer::CalcTarget(double dt, int target_frame_id,
                                             tVectorXd &tilde_q,
                                             tVectorXd &tilde_tau)
 {
+    // if (mBulletGUIHelper != nullptr)
+    // {
+    //     if (this->mRefFrameId % 2 == 0)
+    //     {
+    //         DrawPoint(tVector3d::Random(), 1);
+    //     }
+
+    //     if (this->mRefFrameId % 10 == 0)
+    //     {
+    //         // DrawPoint(tVector3d::Random(), 1);
+    //         ClearDrawPoints();
+    //     }
+    // }
+
     if (mTraj == nullptr)
     {
         std::cout
@@ -159,6 +177,22 @@ void btGenFrameByFrameOptimizer::CalcTarget(double dt, int target_frame_id,
     // force calculate the generalized coordinate accel qddot, and calculate
     // the ref tau
     Solve(tilde_qddot, tilde_qdot, tilde_q, tilde_tau);
+
+    // 4. draw the contact points
+    if (mEnableDrawContactPointsInBulletGUI == true)
+    {
+        if (mBulletGUIHelper == nullptr)
+        {
+            std::cout << "[error] the enable draw contact points in bullet GUI "
+                         "is enabled but no GUI pointer provided, exit\n";
+            exit(0);
+        }
+        ClearDrawPoints();
+        for (auto &pt : mContactPoints)
+        {
+            DrawPoint(pt->mWorldPos.segment(0, 3));
+        }
+    }
 }
 
 /**
@@ -291,8 +325,7 @@ void btGenFrameByFrameOptimizer::CalcContactStatus()
             mModel->PopState("fbf ctrl");
         }
 
-        int num_of_contacts = mContactPoints.size();
-        for (int id = 0; id < num_of_contacts; id++)
+        for (int id = 0; id < mContactPoints.size(); id++)
         {
             auto &pt = mContactPoints[id];
 
@@ -308,6 +341,16 @@ void btGenFrameByFrameOptimizer::CalcContactStatus()
                           << height << " , convert it to sliding\n";
                 pt->mStatus = eContactStatus::SLIDING;
             }
+
+            // remove it if the height if ref traj is too high
+            // if (height > 0.1)
+            // {
+            //     std::cout << "[debug] the height of contact pt is " << height
+            //               << " , remove it \n";
+            //     mContactPoints.erase(mContactPoints.begin() + id);
+            //     id -= 1;
+            //     continue;
+            // }
             // pt->mStatus = eContactStatus::STATIC;
             auto link = mModel->GetLinkById(pt->mCollider->mLinkId);
 
@@ -685,6 +728,7 @@ void btGenFrameByFrameOptimizer::SetCoef(const Json::Value &conf)
     btJsonUtil::ReadVectorJson(
         btJsonUtil::ParseAsValue("track_ref_contact_range_coef_minmax", conf),
         coef);
+
     if (coef.size() != 2)
     {
         std::cout << "[error] coef size != 2, but " << coef.transpose()
@@ -881,6 +925,12 @@ void btGenFrameByFrameOptimizer::Reset()
     // std::cout << "FBF optimizer reset\n";
 }
 
+void btGenFrameByFrameOptimizer::SetBulletGUIHelperInterface(
+    struct GUIHelperInterface *inter)
+{
+    mBulletGUIHelper = inter;
+}
+
 void btGenFrameByFrameOptimizer::SetTraj(btTraj *traj)
 {
     mTraj = traj;
@@ -942,4 +992,45 @@ void btGenFrameByFrameOptimizer::ControlByFBF()
 int btGenFrameByFrameOptimizer::GetCalculatedNumOfContact() const
 {
     return mContactPoints.size();
+}
+
+// struct GUIHelperInterface *gGUIHelper;
+void btGenFrameByFrameOptimizer::DrawPoint(const tVector3d &pos, double radius)
+{
+    if (mBulletGUIHelper == nullptr)
+        return;
+    btCollisionShape *colShape = nullptr;
+    btCollisionObject *obj = new btCollisionObject();
+    colShape = new btSphereShape(btScalar(radius));
+    btTransform trans;
+    trans.setOrigin(btVector3(pos[0], pos[1], pos[2]));
+    obj->setWorldTransform(trans);
+    obj->setCollisionShape(colShape);
+    obj->setCollisionFlags(0);
+    mWorld->GetInternalWorld()->addCollisionObject(obj, 0, 0);
+    mDrawPointsList.push_back(obj);
+    
+    auto inter_world = mWorld->GetInternalWorld();
+    // std::cout << "num collision objs = "
+    //           << inter_world->getNumCollisionObjects() << std::endl;
+}
+
+void btGenFrameByFrameOptimizer::ClearDrawPoints()
+{
+    if (mBulletGUIHelper == nullptr)
+        return;
+    auto inter_world = mWorld->GetInternalWorld();
+    // std::cout << "clear points num = " << mDrawPointsList.size()
+    //           << " now = " << inter_world->getCollisionObjectArray().size()
+    //           << std::endl;
+
+    for (auto &pt : this->mDrawPointsList)
+    {
+        // inter_world->getCollisionObjectArray().remove(pt);
+        delete pt->getCollisionShape();
+        mWorld->GetInternalWorld()->removeCollisionObject(pt);
+        mBulletGUIHelper->removeGraphicsInstance(pt->getUserIndex());
+        delete pt;
+    }
+    mDrawPointsList.clear();
 }

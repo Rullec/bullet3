@@ -5,13 +5,13 @@
     "resolve_control_tau": true,
     "draw_reference_traj_character": true,
     "draw_target_FBF_character": true,
-    "max_frame": 500,
+    "max_frame": 200,
     "start_frame": 1,
     "output_diff": true,
     "output_diff_path": "build_cmake/contact_aware.log",
     "enable_record_ctrled_traj": true,
     "enable_sync_traj_periodly": false,
-    "sync_traj_period": 100,
+    "sync_traj_period": 500,
     "enable_state_save": false,
     "enable_ref_traj_delayed_update": false,
     "save_dir": "/tmp/bullet/states",
@@ -47,6 +47,7 @@
         "ignore_root_bias_in_end_effector_control": false,
         "eps_diagnoal_A_matrix_FBF": 1e-05,
         "enable_contact_nonpenetration_constraint": true,
-        "enable_contact_reduction": false
+        "enable_contact_reduction": false,
+        "enable_draw_contact_points_in_bullet_GUI": true
     }
 }

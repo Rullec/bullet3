@@ -114,5 +114,6 @@ protected:
     void RecordTraj();
     void SaveCurrentState();
     void LoadInitState();
+
     void UpdateReferenceTraj();
 };

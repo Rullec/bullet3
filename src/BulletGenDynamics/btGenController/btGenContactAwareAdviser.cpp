@@ -819,3 +819,69 @@ void btGenContactAwareAdviser::UpdateReferenceTraj()
         mRefFrameId++;
     }
 }
+
+// void btGeneralizeWorld::AddObj(int n, const std::string &obj_type,
+//                                bool add_perturb /*=false*/)
+// {
+
+//     if (obj_type == "ball")
+//     {
+
+//         mCollisionShapeArray.push_back(compunde);
+//     }
+//     else if (obj_type == "cube")
+//     {
+//         colShape = new btBoxShape(btVector3(0.5, 0.5, 0.5));
+//         mCollisionShapeArray.push_back(colShape);
+//     }
+//     else if (obj_type == "stick")
+//     {
+//         colShape = new btBoxShape(btVector3(0.001, 0.1, 2));
+//         mCollisionShapeArray.push_back(colShape);
+//     }
+//     else
+//     {
+//         std::cout << "unsupported type " << obj_type << std::endl;
+//         exit(0);
+//     }
+
+//     /// Create Dynamic Objects
+//     btTransform startTransform;
+//     startTransform.setIdentity();
+//     startTransform.setOrigin(btVector3(0, -1, 0));
+//     // startTransform.setOrigin(btVector3(0.680375, -1.18218, 0.566198));
+//     // tQuaternion qua = tQuaternion(0.800701, 0.372043, 0.28516, -0.373023);
+//     // startTransform.setRotation(btBulletUtil::tQuaternionTobtQuaternion(qua));
+
+//     // startTransform.setRotation(btQuaternion(btVector3(1, 1, 0), SIMD_PI
+//     // / 6.));
+
+//     // for (int i = 0; i < n; i++)
+//     // {
+//     // 	startTransform.setOrigin(startTransform.getOrigin() + btVector3(0, 1.5,
+//     // 0)); 	createRigidBody(1.f, startTransform, colShape, "ball" +
+//     // std::to_string(i));
+//     // }
+
+//     for (int k = 0; k < n; k++)
+//     {
+//         for (int i = 0; i < 1; i++)
+//         {
+//             for (int j = 0; j < 1; j++)
+//             {
+//                 startTransform.setOrigin(btVector3(
+//                     btScalar(1 * i), btScalar(-1 + 1.1 * k), btScalar(1 * j)));
+//                 if (add_perturb)
+//                     startTransform.setOrigin(startTransform.getOrigin() +
+//                                              btBulletUtil::tVectorTobtVector(
+//                                                  tVector::Random() * 0.1));
+//                 createRigidBody(1.f, startTransform, colShape,
+//                                 obj_type + std::to_string(k));
+//             }
+//         }
+//     }
+//     std::cout << "obj num = " << mSimObjs.size() << std::endl;
+//     // mSimObjs[0]-(tVector(0, -0.607199, 0, 0));
+//     // mSimObjs[0]->SetAngVel(tVector(2.14574, 0.00479028, -0.277455, 0));
+//     // mSimObjs[0]->set(tVector(0, -0.607168, 0, 0));
+// }

@@ -35,11 +35,13 @@ void CustomGLGuiHelper::autogenerateGraphicsObjects(btDiscreteDynamicsWorld* rbW
 
 	btAlignedObjectArray<btCollisionObject*> sortedObjects;
 	sortedObjects.reserve(rbWorld->getNumCollisionObjects());
+	
 	for (int i = 0; i < rbWorld->getNumCollisionObjects(); i++)
 	{
 		btCollisionObject* colObj = rbWorld->getCollisionObjectArray()[i];
 		sortedObjects.push_back(colObj);
 	}
+	// printf("[paint] sorted objects = %d\n", sortedObjects.size());
 	sortedObjects.quickSort(shapePointerCompareFunc);
 	for (int i = 0; i < sortedObjects.size(); i++)
 	{

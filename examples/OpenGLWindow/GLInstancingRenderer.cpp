@@ -2240,7 +2240,7 @@ void GLInstancingRenderer::renderSceneInternal(int orgRenderMode)
 	{
 		totalNumInstances += m_graphicsInstances[i]->m_numGraphicsInstances;
 	}
-
+	// printf("[paint] total num instances %d\n", totalNumInstances);
 	b3AlignedObjectArray<SortableTransparentInstance> transparentInstances;
 	{
 		int curOffset = 0;

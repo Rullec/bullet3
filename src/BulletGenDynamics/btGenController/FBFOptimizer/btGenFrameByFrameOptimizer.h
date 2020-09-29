@@ -9,6 +9,7 @@ class QuadProgQPSolver;
 class btCharContactPt;
 class btGenFrameByFrameConstraint;
 class btGenFrameByFrameEnergyTerm;
+struct GUIHelperInterface;
 enum eContactStatus
 {
     INVALID_CONTACT_STATUS,
@@ -16,6 +17,7 @@ enum eContactStatus
     STATIC,
     BREAKAGE
 };
+class btCollisionObject;
 class btGenFrameByFrameOptimizer
 {
 public:
@@ -30,6 +32,7 @@ public:
     int GetCalculatedNumOfContact() const;
     void ControlByFBF();
     void Reset();
+    void SetBulletGUIHelperInterface(struct GUIHelperInterface *inter);
 
 protected:
     // ---------methods
@@ -90,7 +93,8 @@ protected:
     void CalcContactConvertMat(btCharContactPt *contact,
                                tMatrixXd &convert_mat);
     int GetSolutionSizeByContactStatus(eContactStatus status);
-
+    void ClearDrawPoints();
+    void DrawPoint(const tVector3d &pos, double r = 0.05);
     // ---------vars
     int mRefFrameId;
     double mdt;
@@ -138,7 +142,9 @@ protected:
     bool mEnableContactReduction; // reduct the contact points at a link to a
                                   // single point (average)
     bool mEnableContactNonPenetrationConstraint; // add the non penetration
-        // constraint for contact points
+    // constraint for contact points
+    bool
+        mEnableDrawContactPointsInBulletGUI; // draw the contact points of robotmodel in bullet ExampleBrowser, for debug purpose
     bool mEnableFixStaticContactPoint; // add hard/fix constraint for static
                                        // contact
     bool
@@ -164,4 +170,9 @@ protected:
     // model buffer vars
     int num_of_freedom;
     int num_of_underactuated_freedom;
+
+    // draw contact points utils
+    struct GUIHelperInterface *mBulletGUIHelper;
+
+    std::vector<btCollisionObject *> mDrawPointsList;
 };

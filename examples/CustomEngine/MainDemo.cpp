@@ -11,6 +11,7 @@
 #include "../CommonInterfaces/CommonRigidBodyBase.h"
 #include "BulletDynamics/MLCPSolvers/btMLCPSolver.h"
 #include "BulletDynamics/MLCPSolvers/btSolveProjectedGaussSeidel.h"
+#include "BulletGenDynamics/btGenController/FBFOptimizer/btGenFrameByFrameOptimizer.h"
 #include "BulletGenDynamics/btGenController/btGenContactAwareAdviser.h"
 #include "BulletGenDynamics/btGenUtil/JsonUtil.h"
 #include "BulletGenDynamics/btGenWorld.h"
@@ -115,6 +116,9 @@ void CustomEngineMainDemo::stepSimulation(float dt)
     // std::cout << "[before draw] q = "
     //           << mGenWorld->GetMultibody()->Getq().segment(0, 3).transpose()
     //           << std::endl;
+    // m_guiHelper->removeAllGraphicsInstances();
+
+    // m_guiHelper->removeAllInstances();
     m_guiHelper->autogenerateGraphicsObjects(m_dynamicsWorld);
 }
 
@@ -177,6 +181,8 @@ void CustomEngineMainDemo::initPhysics()
             mGenWorld->SetEnableContacrAwareControl();
             mAdviser = mGenWorld->GetContactAwareAdviser();
             mAdviser->SetTraj(gContactAwareTraj, "tmp_traj.json", true);
+            mAdviser->GetFBFOptimizer()->SetBulletGUIHelperInterface(
+                m_guiHelper);
         }
     }
 
