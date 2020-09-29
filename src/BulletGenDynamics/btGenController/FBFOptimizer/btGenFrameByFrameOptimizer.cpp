@@ -17,7 +17,7 @@ const std::string gContactStatusStr[] = {"INVALID_CONTACT_STATUS", "SLIDING",
                                          "STATIC", "BREAKAGE"};
 extern std::string debug_path;
 eContactStatus JudgeContactStatus(const tVector &vel,
-                                  double breakage_threshold = 0.2,
+                                  double breakage_threshold = 0.1,
                                   double sliding_threshold = 0.2)
 {
     // std::cout << "[warn] all judge are returning static\n";
@@ -587,12 +587,12 @@ void btGenFrameByFrameOptimizer::CalcTargetInternal(const tVectorXd &solution,
     }
 
     // output the ref contact forces
-    for (int i = 0; i < mTraj->mContactForce[mRefFrameId].size(); i++)
-    {
-        std::cout << "[ref] ref cartesian contact force " << i << " "
-                  << mTraj->mContactForce[mRefFrameId][i]->mForce.transpose()
-                  << std::endl;
-    }
+    // for (int i = 0; i < mTraj->mContactForce[mRefFrameId].size(); i++)
+    // {
+    //     std::cout << "[ref] ref cartesian contact force " << i << " "
+    //               << mTraj->mContactForce[mRefFrameId][i]->mForce.transpose()
+    //               << std::endl;
+    // }
     mGenControlForce.segment(6, num_of_underactuated_freedom) = control_force;
     tVectorXd QG = mModel->CalcGenGravity(mWorld->GetGravity());
     tVectorXd RHS = mGenContactForce + mGenControlForce + QG -
