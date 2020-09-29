@@ -359,6 +359,10 @@ tVectorXd btGenContactAwareAdviser::CalcControlForce(const tVectorXd &Q_contact)
     // ref_force.transpose() << std::endl; 	Q_active = ref_force;
     // }
     mCtrlForce = Q_active;
+    std::cout << "[numeric] contact force = " << Q_contact.transpose()
+              << std::endl;
+    std::cout << "[numeric] control force = " << mCtrlForce.transpose()
+              << std::endl;
     std::ofstream fout(debug_path, std::ios::app);
     std::cout << "[adviser] contact force = " << Q_contact.transpose()
               << std::endl;

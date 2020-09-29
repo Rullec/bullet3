@@ -1,7 +1,7 @@
 {
     "feature_vector_file_full": "./examples/CustomEngine/features/pos_feature_full.json",
     "feature_vector_file_oneleg": "./examples/CustomEngine/features/legs/mix_feature_legs.json",
-    "feature_vector_file": "examples/CustomEngine/features/oneleg/accel.json",
+    "feature_vector_file": "examples/CustomEngine/features/oneleg/pos.json",
     "resolve_control_tau": true,
     "draw_reference_traj_character": false,
     "draw_target_FBF_character": true,

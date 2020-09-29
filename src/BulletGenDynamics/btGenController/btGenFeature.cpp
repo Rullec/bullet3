@@ -719,7 +719,7 @@ void btGenFeatureArray::EvalConvertMatFromForceToqddot(
     tMatrixXd &ConvertMatFromTauToqddot,
     tMatrixXd &ConvertMatFromContactToqddot, tVectorXd &ResToqddot) const
 {
-    const tMatrixXd Minv = mModel->GetInvMassMatrix();
+    const tMatrixXd &Minv = mModel->GetInvMassMatrix();
     ConvertMatFromTauToqddot.noalias() = Minv * mN;
     ConvertMatFromContactToqddot.noalias() = Minv;
 
