@@ -17,8 +17,8 @@ const std::string gContactStatusStr[] = {"INVALID_CONTACT_STATUS", "SLIDING",
                                          "STATIC", "BREAKAGE"};
 extern std::string debug_path;
 eContactStatus JudgeContactStatus(const tVector &vel,
-                                  double breakage_threshold = 1.5,
-                                  double sliding_threshold = 0.5)
+                                  double breakage_threshold = 0.2,
+                                  double sliding_threshold = 0.2)
 {
     // std::cout << "[warn] all judge are returning static\n";
     // return eContactStatus::STATIC;
@@ -222,13 +222,6 @@ void btGenFrameByFrameOptimizer::CalcContactStatus()
             {
                 data->CalcCharacterInfo();
                 mContactPoints.push_back(data);
-                {
-                    int link_id = data->mCollider->mLinkId;
-                    auto link = mModel->GetLinkById(link_id);
-                    std::cout << "[debug] contact " << data->contact_id
-                              << " link " << link_id << " " << link->GetName()
-                              << std::endl;
-                }
             }
 
             else
@@ -306,10 +299,10 @@ void btGenFrameByFrameOptimizer::CalcContactStatus()
 
                 const tMatrix world_trans = link->GetGlobalTransform();
                 tVector world_pos_cur_ref = world_trans * pt->mLocalPos;
-                std::cout << "contact point " << pt->contact_id
-                          << "local pos = " << pt->mLocalPos.transpose()
-                          << "cur ref height = " << world_pos_cur_ref[1]
-                          << std::endl;
+                // std::cout << "contact point " << pt->contact_id
+                //           << "local pos = " << pt->mLocalPos.transpose()
+                //           << "cur ref height = " << world_pos_cur_ref[1]
+                //           << std::endl;
                 contact_pos_cur_ref.push_back(world_pos_cur_ref);
             }
             mModel->PopState("fbf ctrl");
@@ -324,10 +317,10 @@ void btGenFrameByFrameOptimizer::CalcContactStatus()
                 tVector cur_global_pos =
                     link->GetGlobalTransform() * pt->mLocalPos;
                 contact_pos_next_ref.push_back(cur_global_pos);
-                std::cout << "contact point " << pt->contact_id
-                          << " local pos = " << pt->mLocalPos.transpose()
-                          << " next ref height = " << cur_global_pos.transpose()
-                          << std::endl;
+                // std::cout << "contact point " << pt->contact_id
+                //           << " local pos = " << pt->mLocalPos.transpose()
+                //           << " next ref height = " << cur_global_pos.transpose()
+                //           << std::endl;
                 {
                     tMatrixXd jac;
                     mModel->ComputeJacobiByGivenPointTotalDOFWorldFrame(
@@ -350,13 +343,13 @@ void btGenFrameByFrameOptimizer::CalcContactStatus()
                 (contact_pos_next_ref[id] - contact_pos_cur_ref[id]) / mdt;
             // 2. judge contact status
             pt->mStatus = JudgeContactStatus(vel);
-            double height = contact_pos_cur_ref[id][1];
-            if (height > 0.05 && pt->mStatus == eContactStatus::STATIC)
-            {
-                std::cout << "[debug] the height of static contact pt is "
-                          << height << " , convert it to sliding\n";
-                pt->mStatus = eContactStatus::SLIDING;
-            }
+            // double height = contact_pos_cur_ref[id][1];
+            // if (height > 0.05 && pt->mStatus == eContactStatus::STATIC)
+            // {
+            //     std::cout << "[debug] the height of static contact pt is "
+            //               << height << " , convert it to sliding\n";
+            //     pt->mStatus = eContactStatus::SLIDING;
+            // }
 
             // remove it if the height if ref traj is too high
             // if (height > 0.1)
@@ -451,8 +444,8 @@ void btGenFrameByFrameOptimizer::Solve(tVectorXd &tilde_qddot,
 
     CalcTargetInternal(solution, tilde_qddot, tilde_qdot, tilde_q, tilde_tau);
     mControlForce = tilde_tau;
-    // mEnergyTerm->CheckEnergyValue(solution);
-    // mConstraint->CheckConstraint(solution);
+    mEnergyTerm->CheckEnergyValue(solution);
+    mConstraint->CheckConstraint(solution);
 
     // check accel energy term
     // if (mDynamicAccelEnergyCoeff > 0 && mContactSolutionSize == 0)
