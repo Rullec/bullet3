@@ -223,7 +223,7 @@ void btGenFrameByFrameConstraint::CheckConstraint(
             std::cout << "[error] eq constraint " << name
                       << " solved failed, the violate value = "
                       << violate.transpose() << std::endl;
-            exit(0);
+            // exit(0);
         }
     }
 }

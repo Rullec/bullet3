@@ -653,6 +653,12 @@ void btGenContactSolver::RebuildColObjData()
     {
         btGenCollisionObject *obj =
             UpcastColObj(mWorld->getCollisionObjectArray()[i]);
+        if (obj == nullptr)
+        {
+            std::cout << "[lcp] body " << i
+                      << " cannot be recognized, ignore\n";
+            continue;
+        }
         bool add_entry = false;
         switch (obj->GetType())
         {
@@ -678,6 +684,9 @@ void btGenContactSolver::RebuildColObjData()
             break;
         }
         default:
+            std::cout << "[lcp] body " << i
+                      << " cannot be recognized, ignore\n";
+            continue;
             break;
         }
 

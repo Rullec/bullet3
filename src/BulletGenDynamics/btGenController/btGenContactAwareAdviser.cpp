@@ -98,10 +98,12 @@ void btGenContactAwareAdviser::SetTraj(const std::string &ref_traj,
     {
         mModel->SetqAndqdot(mRefTraj->mq[mRefFrameId],
                             mRefTraj->mqdot[mRefFrameId]);
-        mRefTrajModel->SetqAndqdot(mRefTraj->mq[mRefFrameId],
-                                   mRefTraj->mqdot[mRefFrameId]);
-        mFBFTrajModel->SetqAndqdot(mRefTraj->mq[mRefFrameId],
-                                   mRefTraj->mqdot[mRefFrameId]);
+        if (mRefTrajModel)
+            mRefTrajModel->SetqAndqdot(mRefTraj->mq[mRefFrameId],
+                                       mRefTraj->mqdot[mRefFrameId]);
+        if (mFBFTrajModel)
+            mFBFTrajModel->SetqAndqdot(mRefTraj->mq[mRefFrameId],
+                                       mRefTraj->mqdot[mRefFrameId]);
     }
 
     // std::cout << "[adviser] init q = "
@@ -329,9 +331,8 @@ tVectorXd btGenContactAwareAdviser::CalcControlForce(const tVectorXd &Q_contact)
                      "called in only FBF model, exit\n";
         exit(0);
     }
-    // std::cout << "[adviser] contact force = " << Q_contact.norm() <<
-    // std::endl; std::cout << "mH = \n"
-    // 		  << mH << std::endl;
+    // std::cout << "[adviser] contact force = " << Q_contact.norm() << std::endl;
+    // std::cout << "mH = \n" << mH << std::endl;
     tVectorXd Q_active = mH * Q_contact + mE.inverse() * mf;
     // std::cout << "[control] contact force norm = " << Q_contact.norm() <<
     // std::endl; std::cout << "[control] mH norm = " << mH.norm() << std::endl;
@@ -357,8 +358,10 @@ tVectorXd btGenContactAwareAdviser::CalcControlForce(const tVectorXd &Q_contact)
     // }
     mCtrlForce = Q_active;
     std::ofstream fout(debug_path, std::ios::app);
-
+    std::cout << "[adviser] contact force = " << Q_contact.transpose()
+              << std::endl;
     fout << "[numeric] contact force = " << Q_contact.transpose() << std::endl;
+
     fout << "[numeric] control force = " << mCtrlForce.transpose() << std::endl;
     fout.close();
     return Q_active;
@@ -422,19 +425,6 @@ void btGenContactAwareAdviser::ReadConfig(const std::string &config)
             exit(0);
         }
     }
-    // mFBFPosCoef =
-    //     btJsonUtil::ParseAsDouble("dynamic_pos_energy_coef", ctrl_config);
-    // mFBFVelCoef =
-    //     btJsonUtil::ParseAsDouble("dynamic_vel_energy_coef", ctrl_config);
-    // mFBFAccelCoef =
-    //     btJsonUtil::ParseAsDouble("dynamic_accel_energy_coef", ctrl_config);
-    // if (mDrawTargetFBFCharacter && mDrawReferenceTrajCharacter)
-    // {
-    //     std::cout << "[error] ContactAwareAdviser::Readconfig: 2 draw
-    //     options"
-    //                  "are both turned on, exit\n";
-    //     exit(0);
-    // }
 }
 
 // void btGenContactAwareAdviser::UpdateMultibodyVelocityDebug(double dt)

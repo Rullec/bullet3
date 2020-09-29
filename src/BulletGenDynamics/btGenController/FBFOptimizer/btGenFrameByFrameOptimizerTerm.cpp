@@ -100,9 +100,13 @@ void btGenFrameByFrameOptimizer::CalcConstraints()
     if (mEnableLimitSlidingContactVel == true)
         AddLimitSlidingContactPointConstraintVel();
 
-    // add the limitattion for contact forces
+    // add the limitation for contact forces
     if (mEnableContactForceLimit == true)
         AddContactForceLimitConstraint();
+
+    // add the limitation for control forces
+    if (mEnableControlForceLimit == true)
+        AddControlForceLimitConstraint();
 
     // add the non-penetration hard constraint on each contact pointI
     if (mEnableContactNonPenetrationConstraint == true)
@@ -565,12 +569,37 @@ void btGenFrameByFrameOptimizer::AddContactForceLimitConstraint()
 
     // force >= lower_limit
     // force - lower_limit >= 0
-    mConstraint->AddIneqCon(jac, -lower_limit, 0, "lower_force_limit");
+    mConstraint->AddIneqCon(jac, -lower_limit, 0, "lower_contact_limit");
 
     // -1 * force >= -upper_limit
     // -1 * force + upper_limit  >= 0
-    mConstraint->AddIneqCon(-jac, upper_limit, 0, "upper_force_limit");
+    mConstraint->AddIneqCon(-jac, upper_limit, 0, "upper_contact_limit");
     std::cout << "[limit] set the contact force limit " << limit << std::endl;
+}
+
+void btGenFrameByFrameOptimizer::AddControlForceLimitConstraint()
+{
+    // 1. fetch and judge the contact force limit
+    double limit = mControlForceLimit;
+    if (limit <= 0)
+    {
+        std::cout << "the control force limit is <=0, illegal\n";
+        exit(0);
+    }
+    tMatrixXd jac = tMatrixXd::Identity(mCtrlSolutionSize, mCtrlSolutionSize);
+    tVectorXd upper_limit = tVectorXd::Ones(mCtrlSolutionSize) * limit,
+              lower_limit = -tVectorXd::Ones(mCtrlSolutionSize) * limit;
+
+    // force >= lower_limit
+    // force - lower_limit >= 0
+    mConstraint->AddIneqCon(jac, -lower_limit, mContactSolutionSize,
+                            "lower_control_limit");
+
+    // -1 * force >= -upper_limit
+    // -1 * force + upper_limit  >= 0
+    mConstraint->AddIneqCon(-jac, upper_limit, mContactSolutionSize,
+                            "upper_control_limit");
+    std::cout << "[limit] set the control force limit " << limit << std::endl;
 }
 /**
  * \brief           the control force tau should be close to the calculated

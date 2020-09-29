@@ -1,0 +1,72 @@
+{
+    "root_joint": {
+        "vel": 0.0
+    },
+    "root_height": {
+        "vel": 0.1
+    },
+    "root_location": {
+        "vel": 6.0
+    },
+    "Spine1_joint": {
+        "vel": 0.5
+    },
+    "vneck_joint": {
+        "vel": 0.5
+    },
+    "RightArm_joint": {
+        "vel": 0.67
+    },
+    "RightArm_height": {
+        "vel": 0.001
+    },
+    "RightArm_location": {
+        "vel": 0.5
+    },
+    "RightForeArm_joint": {
+        "vel": 0.54
+    },
+    "RightHand_joint": {
+        "vel": 0.1
+    },
+    "Neck_joint": {
+        "vel": 0.1
+    },
+    "Head_joint": {
+        "vel": 0.1
+    },
+    "LeftArm_joint": {
+        "vel": 0.67
+    },
+    "LeftArm_height": {
+        "vel": 0.001
+    },
+    "LeftArm_location": {
+        "vel": 0.5
+    },
+    "LeftForeArm_joint": {
+        "vel": 0.54
+    },
+    "LeftHand_joint": {
+        "vel": 0.1
+    },
+    "RightLeg_joint": {
+        "vel": 0.58
+    },
+    "RightFoot_joint": {
+        "vel": 0.2
+    },
+    "RFootTongue_joint": {
+        "vel": 0.09
+    },
+    "LeftLeg_joint": {
+        "vel": 0.58
+    },
+    "LeftFoot_joint": {
+        "vel": 0.2
+    },
+    "LFootTongue_joint": {
+        "vel": 0.09
+    },
+    "tau_weight": 10.0
+}

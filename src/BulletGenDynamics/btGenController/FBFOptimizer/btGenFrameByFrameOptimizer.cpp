@@ -17,13 +17,14 @@ const std::string gContactStatusStr[] = {"INVALID_CONTACT_STATUS", "SLIDING",
                                          "STATIC", "BREAKAGE"};
 extern std::string debug_path;
 eContactStatus JudgeContactStatus(const tVector &vel,
-                                  double breakage_threshold = 0.1,
+                                  double breakage_threshold = 0.15,
                                   double sliding_threshold = 0.2)
 {
     // std::cout << "[warn] all judge are returning static\n";
     // return eContactStatus::STATIC;
     double vel_n = vel[1];
     double vel_t = std::sqrt(std::pow(vel[0], 2) + std::pow(vel[2], 2));
+
     if (vel_n > breakage_threshold)
     {
         return eContactStatus::BREAKAGE;
@@ -79,6 +80,8 @@ btGenFrameByFrameOptimizer::~btGenFrameByFrameOptimizer()
         delete mConstraint;
     if (mQPSolver)
         delete mQPSolver;
+    // if (matlabQPSolver)
+    //     delete matlabQPSolver;
 }
 // void btGenFrameByFrameOptimizer::Init(const Json::Value &conf, btTraj
 // *ref_traj,
@@ -104,6 +107,9 @@ void btGenFrameByFrameOptimizer::Init(btGeneralizeWorld *world,
     mEnableContactForceLimit =
         btJsonUtil::ParseAsBool("enable_contact_force_limit", conf);
     mContactForceLimit = btJsonUtil::ParseAsDouble("contact_force_limit", conf);
+    mEnableControlForceLimit =
+        btJsonUtil::ParseAsBool("enable_control_force_limit", conf);
+    mControlForceLimit = btJsonUtil::ParseAsDouble("control_force_limit", conf);
 
     mEnableContactReduction =
         btJsonUtil::ParseAsBool("enable_contact_reduction", conf);
@@ -111,7 +117,7 @@ void btGenFrameByFrameOptimizer::Init(btGeneralizeWorld *world,
         "enable_contact_nonpenetration_constraint", conf);
     mEnableDrawContactPointsInBulletGUI = btJsonUtil::ParseAsBool(
         "enable_draw_contact_points_in_bullet_GUI", conf);
-
+    mEnableQPOptimization = btJsonUtil::ParseAsBool("do_qp_optimization", conf);
     // std::cout << "non pentation = " << mEnableContactNonPenetrationConstraint
     //           << std::endl;
     // exit(0);
@@ -165,18 +171,30 @@ void btGenFrameByFrameOptimizer::CalcTarget(double dt, int target_frame_id,
     // }
 
     // 1. judge the contact status
-    CalcContactStatus();
+    if (mEnableQPOptimization == true)
+    {
+        CalcContactStatus();
 
-    // 2. construct the optimization problem: energy terms + hard
-    // constraints for
-    CalcSolutionVector();
-    CalcEnergyTerms();
-    CalcConstraints();
+        // 2. construct the optimization problem: energy terms + hard
+        // constraints for
+        CalcSolutionVector();
+        CalcEnergyTerms();
+        CalcConstraints();
 
-    // 3. solve this problem and get the ref contact force, ref control
-    // force calculate the generalized coordinate accel qddot, and calculate
-    // the ref tau
-    Solve(tilde_qddot, tilde_qdot, tilde_q, tilde_tau);
+        // 3. solve this problem and get the ref contact force, ref control
+        // force calculate the generalized coordinate accel qddot, and calculate
+        // the ref tau
+        Solve(tilde_qddot, tilde_qdot, tilde_q, tilde_tau);
+    }
+    else
+    {
+        std::cout << "[FBF] QP Opitmization is disabled\n";
+        tilde_qddot = mTraj->mqddot[mRefFrameId];
+        tilde_qdot = mTraj->mqdot[mRefFrameId + 1];
+        tilde_q = mTraj->mq[mRefFrameId + 1];
+
+        tilde_tau = mTraj->mActiveForce[mRefFrameId];
+    }
 
     // 4. draw the contact points
     if (mEnableDrawContactPointsInBulletGUI == true)
@@ -419,23 +437,22 @@ void btGenFrameByFrameOptimizer::Solve(tVectorXd &tilde_qddot,
     //           << std::endl;
     // if (solution.hasNaN() == true)
     // {
-    //     std::cout << "[warn] use matlab solver instead = " <<
-    //     solution.transpose()
-    //               << std::endl;
-    //     // exit(0);
-    //     // try matlab solver
-    //     // matlab solver gives the same solution as quadprog
-    //     {
-    //         tVectorXd matlab_sol;
-    //         tMatrixXd new_Aeq = Aeq.transpose(), new_Aineq =
-    //         -Aineq.transpose(); tVectorXd new_beq = -beq, new_bineq = bineq;
-    //         matlabQPSolver->Solve(mTotalSolutionSize, H, f, new_Aeq, new_beq,
-    //                               new_Aineq, new_bineq, 100, matlab_sol);
+    // std::cout << "[warn] use matlab solver instead = " << solution.transpose()
+    //           << std::endl;
+    // exit(0);
+    // try matlab solver
+    // matlab solver gives the same solution as quadprog
+    // {
+    //     tVectorXd matlab_sol;
+    //     tMatrixXd new_Aeq = Aeq.transpose(), new_Aineq = -Aineq.transpose();
+    //     tVectorXd new_beq = -beq, new_bineq = bineq;
+    //     matlabQPSolver->Solve(mTotalSolutionSize, H, f, new_Aeq, new_beq,
+    //                           new_Aineq, new_bineq, 100, matlab_sol);
 
-    //         std::cout << "matlab sol = " << matlab_sol.transpose() <<
-    //         std::endl; solution = matlab_sol;
-    //         // exit(0);
-    //     }
+    //     std::cout << "matlab sol = " << matlab_sol.transpose() << std::endl;
+    //     solution = matlab_sol;
+    //     // exit(0);
+    // }
     // }
 
     // double energy = 0.5 * (solution.transpose() * H).dot(solution) +
@@ -587,12 +604,12 @@ void btGenFrameByFrameOptimizer::CalcTargetInternal(const tVectorXd &solution,
     }
 
     // output the ref contact forces
-    // for (int i = 0; i < mTraj->mContactForce[mRefFrameId].size(); i++)
-    // {
-    //     std::cout << "[ref] ref cartesian contact force " << i << " "
-    //               << mTraj->mContactForce[mRefFrameId][i]->mForce.transpose()
-    //               << std::endl;
-    // }
+    for (int i = 0; i < mTraj->mContactForce[mRefFrameId].size(); i++)
+    {
+        std::cout << "[ref] ref cartesian contact force " << i << " "
+                  << mTraj->mContactForce[mRefFrameId][i]->mForce.transpose()
+                  << std::endl;
+    }
     mGenControlForce.segment(6, num_of_underactuated_freedom) = control_force;
     tVectorXd QG = mModel->CalcGenGravity(mWorld->GetGravity());
     tVectorXd RHS = mGenContactForce + mGenControlForce + QG -
@@ -678,19 +695,7 @@ void btGenFrameByFrameOptimizer::CalcTargetInternal(const tVectorXd &solution,
     // }
 }
 
-void btGenFrameByFrameOptimizer::ParseConfig(const Json::Value &conf)
-{
-    // mEnableHardConstraintForDynamics =
-    //     btJsonUtil::ParseAsBool("enable_hard_dynamic_constraint", conf);
-    // mUseNativeRefTarget =
-    //     btJsonUtil::ParseAsBool("use_native_reference_target", conf);
-    // mDynamicPosEnergyCoeff =
-    //     btJsonUtil::ParseAsDouble("dynamic_pos_energy_coef", conf);
-    // mDynamicVelEnergyCoeff =
-    //     btJsonUtil::ParseAsDouble("dynamic_vel_energy_coef", conf);
-    // mDynamicAccelEnergyCoeff =
-    //     btJsonUtil::ParseAsDouble("dynamic_accel_energy_coef", conf);
-}
+void btGenFrameByFrameOptimizer::ParseConfig(const Json::Value &conf) {}
 
 void btGenFrameByFrameOptimizer::SetCoef(const Json::Value &conf)
 {

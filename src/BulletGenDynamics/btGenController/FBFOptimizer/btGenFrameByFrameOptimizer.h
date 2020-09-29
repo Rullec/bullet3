@@ -55,6 +55,7 @@ protected:
     void AddFixStaticContactPointConstraint();
     void AddLimitSlidingContactPointConstraintVel();
     void AddContactForceLimitConstraint();
+    void AddControlForceLimitConstraint();
     void AddNonPenetrationContactConstraint();
     void AddDynamicEnergyTerm();
     void AddDynamicEnergyTermPos();
@@ -107,7 +108,8 @@ protected:
                                         // point in solution vector
     std::vector<int> mContactSolSize;   // record the occupied "size" w.r.t each
                                         // contact pt in solution vector
-
+    bool mEnableQPOptimization;
+    
     // optimization vars
     // bool mEnableHardConstraintForDynamics;
     // bool mUseNativeRefTarget;
@@ -138,6 +140,8 @@ protected:
 
     bool mEnableContactForceLimit; // limit the contact force in [-a, a]
     double mContactForceLimit;     // the limitation of contact force
+    bool mEnableControlForceLimit; // limit the control force in [-a, a]
+    double mControlForceLimit;     // the limitation of control force
 
     bool mEnableContactReduction; // reduct the contact points at a link to a
                                   // single point (average)
