@@ -555,7 +555,7 @@ tMatrix btMathUtil::DirToRotMat(const tVector &dir, const tVector &up)
 tMatrix btMathUtil::InverseTransform(const tMatrix &raw_trans)
 {
     tMatrix inv_trans = tMatrix::Identity();
-    inv_trans.block(0, 0, 3, 3).transposeInPlace();
+    inv_trans.block(0, 0, 3, 3) = raw_trans.block(0, 0, 3, 3).transpose();
     inv_trans.block(0, 3, 3, 1) =
         -inv_trans.block(0, 0, 3, 3) * raw_trans.block(0, 3, 3, 1);
     return inv_trans;

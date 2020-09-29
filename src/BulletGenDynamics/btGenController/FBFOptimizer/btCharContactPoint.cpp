@@ -63,6 +63,17 @@ void btCharContactPt::CalcCharacterInfo()
     mLocalPos =
         btMathUtil::InverseTransform(link->GetGlobalTransform()) * mWorldPos;
 
+    tVector new_world_pos = link->GetGlobalTransform() * mLocalPos;
+    tVector diff = new_world_pos - mWorldPos;
+    if (diff.norm() > 1e-6)
+    {
+        std::cout << "[error] convert to local pos error\n";
+        std::cout << "local pos = " << mLocalPos.transpose() << std::endl;
+        std::cout << "world pos = " << mWorldPos.transpose() << std::endl;
+        std::cout << "restored world pos = " << new_world_pos.transpose()
+                  << std::endl;
+        exit(1);
+    }
     mCollider->mModel->ComputeJacobiByGivenPointTotalDOFWorldFrame(
         mCollider->mLinkId, mWorldPos.segment(0, 3), mJac);
     // std::cout << "world pos = " << mWorldPos.transpose() << std::endl;

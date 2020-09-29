@@ -222,6 +222,13 @@ void btGenFrameByFrameOptimizer::CalcContactStatus()
             {
                 data->CalcCharacterInfo();
                 mContactPoints.push_back(data);
+                {
+                    int link_id = data->mCollider->mLinkId;
+                    auto link = mModel->GetLinkById(link_id);
+                    std::cout << "[debug] contact " << data->contact_id
+                              << " link " << link_id << " " << link->GetName()
+                              << std::endl;
+                }
             }
 
             else
@@ -296,22 +303,31 @@ void btGenFrameByFrameOptimizer::CalcContactStatus()
             for (auto &pt : mContactPoints)
             {
                 auto link = mModel->GetLinkById(pt->mCollider->mLinkId);
-                contact_pos_cur_ref.push_back(link->GetGlobalTransform() *
-                                              pt->mLocalPos);
+
+                const tMatrix world_trans = link->GetGlobalTransform();
+                tVector world_pos_cur_ref = world_trans * pt->mLocalPos;
+                std::cout << "contact point " << pt->contact_id
+                          << "local pos = " << pt->mLocalPos.transpose()
+                          << "cur ref height = " << world_pos_cur_ref[1]
+                          << std::endl;
+                contact_pos_cur_ref.push_back(world_pos_cur_ref);
             }
             mModel->PopState("fbf ctrl");
         }
         {
             mModel->PushState("fbf ctrl");
             tVectorXd q_next_ref = mTraj->mq[mRefFrameId + 1];
-            mModel->Apply(q_next_ref, false);
+            mModel->Apply(q_next_ref, true);
             for (auto &pt : mContactPoints)
             {
                 auto link = mModel->GetLinkById(pt->mCollider->mLinkId);
                 tVector cur_global_pos =
                     link->GetGlobalTransform() * pt->mLocalPos;
                 contact_pos_next_ref.push_back(cur_global_pos);
-
+                std::cout << "contact point " << pt->contact_id
+                          << " local pos = " << pt->mLocalPos.transpose()
+                          << " next ref height = " << cur_global_pos.transpose()
+                          << std::endl;
                 {
                     tMatrixXd jac;
                     mModel->ComputeJacobiByGivenPointTotalDOFWorldFrame(
@@ -358,7 +374,7 @@ void btGenFrameByFrameOptimizer::CalcContactStatus()
                       << link->GetName()
                       << " cartesian vel in ref traj = " << vel.transpose()
                       << " status " << gContactStatusStr[pt->mStatus]
-                      << " height = " << contact_pos_cur_ref[id][1]
+                      << " ref height = " << contact_pos_cur_ref[id][1]
                       << std::endl;
             // std::cout << "contact " << id << " gen vel = " <<
             // contact_vel_cur_ref[id].transpose() << std::endl;
@@ -435,8 +451,8 @@ void btGenFrameByFrameOptimizer::Solve(tVectorXd &tilde_qddot,
 
     CalcTargetInternal(solution, tilde_qddot, tilde_qdot, tilde_q, tilde_tau);
     mControlForce = tilde_tau;
-    mEnergyTerm->CheckEnergyValue(solution);
-    mConstraint->CheckConstraint(solution);
+    // mEnergyTerm->CheckEnergyValue(solution);
+    // mConstraint->CheckConstraint(solution);
 
     // check accel energy term
     // if (mDynamicAccelEnergyCoeff > 0 && mContactSolutionSize == 0)
@@ -599,20 +615,20 @@ void btGenFrameByFrameOptimizer::CalcTargetInternal(const tVectorXd &solution,
     qdot = mModel->Getqdot() + qddot * mdt;
     q = mModel->Getq() + qdot * mdt;
 
-    for (auto &pt : mContactPoints)
-    {
-        tVector3d vel = pt->mJac * qdot;
-        double comp = vel.dot(pt->mNormalPointToA.segment(0, 3));
-        std::cout << "[FBF] check contact " << pt->contact_id
-                  << " after solved vel = " << vel.transpose()
-                  << " normal = " << pt->mNormalPointToA.transpose()
-                  << std::endl;
-        // if (comp < -1)
-        // {
-        //     std::cout << "[error] contact point penetration failed\n";
-        //     exit(0);
-        // }
-    }
+    // for (auto &pt : mContactPoints)
+    // {
+    //     tVector3d vel = pt->mJac * qdot;
+    //     double comp = vel.dot(pt->mNormalPointToA.segment(0, 3));
+    //     std::cout << "[FBF] check contact " << pt->contact_id
+    //               << " after solved vel = " << vel.transpose()
+    //               << " normal = " << pt->mNormalPointToA.transpose()
+    //               << std::endl;
+    //     // if (comp < -1)
+    //     // {
+    //     //     std::cout << "[error] contact point penetration failed\n";
+    //     //     exit(0);
+    //     // }
+    // }
     // check the contact point velocity should be >=0
     // if (mEnableContactNonPenetrationConstraint == true)
     // {
@@ -1003,14 +1019,16 @@ void btGenFrameByFrameOptimizer::DrawPoint(const tVector3d &pos, double radius)
     btCollisionObject *obj = new btCollisionObject();
     colShape = new btSphereShape(btScalar(radius));
     btTransform trans;
+    // trans.setOrigin(btVector3(pos[0], pos[1], pos[2]));
     trans.setOrigin(btVector3(pos[0], pos[1], pos[2]));
     obj->setWorldTransform(trans);
     obj->setCollisionShape(colShape);
     obj->setCollisionFlags(0);
     mWorld->GetInternalWorld()->addCollisionObject(obj, 0, 0);
     mDrawPointsList.push_back(obj);
-    
+
     auto inter_world = mWorld->GetInternalWorld();
+    // std::cout << "draw point " << pos.transpose() << std::endl;
     // std::cout << "num collision objs = "
     //           << inter_world->getNumCollisionObjects() << std::endl;
 }
@@ -1032,5 +1050,6 @@ void btGenFrameByFrameOptimizer::ClearDrawPoints()
         mBulletGUIHelper->removeGraphicsInstance(pt->getUserIndex());
         delete pt;
     }
+    std::cout << "[debug] clear points " << mDrawPointsList.size() << std::endl;
     mDrawPointsList.clear();
 }

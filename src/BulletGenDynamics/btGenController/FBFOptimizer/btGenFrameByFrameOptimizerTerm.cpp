@@ -540,7 +540,7 @@ void btGenFrameByFrameOptimizer::AddFixStaticContactPointConstraint()
             //           << id << ", on link " << pt->mCollider->mLinkId
             //           << std::endl;
             mConstraint->AddEquivalentEqCon(
-                pt->mJac * A_base, pt->mJac * b_base, 0, 1e-12,
+                pt->mJac * A_base, pt->mJac * b_base, 0, 1e-4,
                 "fix_static_contact_point_" + std::to_string(pt->contact_id));
         }
     }
