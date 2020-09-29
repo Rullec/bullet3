@@ -197,6 +197,8 @@ void btGenContactAwareAdviser::Update(double dt)
     // 	// std::cout << "[ref] q diff = " << q_diff.transpose() << std::endl;
     // }
     GetTargetInfo(dt, mTargetAccel, mTargetVel, mTargetPos, mTargetTau);
+    std::cout << "[adviser] get tar pos = " << mTargetPos.transpose()
+              << std::endl;
     if (mEnableOnlyFBFControl == true)
     {
         mFBFOptimizer->ControlByFBF();
@@ -634,9 +636,7 @@ void btGenContactAwareAdviser::UpdateRefChar()
     }
     if (mDrawTargetFBFCharacter)
     {
-        tVectorXd qdot_next = mTargetAccel * mCurdt + mModel->Getqdot();
-        tVectorXd q_next = qdot_next * mCurdt + mModel->Getq();
-        mFBFTrajModel->SetqAndqdot(q_next, qdot_next);
+        mFBFTrajModel->SetqAndqdot(mTargetPos, mTargetVel);
     }
 }
 

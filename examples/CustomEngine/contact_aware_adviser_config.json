@@ -1,7 +1,7 @@
 {
-    "feature_vector_file": "./examples/CustomEngine/features/pos_feature_full.json",
-    "feature_vector_file_oneleg": "./examples/CustomEngine/features/legs/accel_feature_legs.json",
-    "feature_vector_file_legs": "examples/CustomEngine/features/oneleg/order_feature_oneleg_accel.json",
+    "feature_vector_file_full": "./examples/CustomEngine/features/pos_feature_full.json",
+    "feature_vector_file_oneleg": "./examples/CustomEngine/features/legs/mix_feature_legs.json",
+    "feature_vector_file": "examples/CustomEngine/features/oneleg/accel.json",
     "resolve_control_tau": true,
     "draw_reference_traj_character": false,
     "draw_target_FBF_character": true,

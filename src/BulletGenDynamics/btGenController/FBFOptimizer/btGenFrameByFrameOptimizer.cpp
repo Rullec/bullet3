@@ -192,7 +192,8 @@ void btGenFrameByFrameOptimizer::CalcTarget(double dt, int target_frame_id,
         tilde_qddot = mTraj->mqddot[mRefFrameId];
         tilde_qdot = mTraj->mqdot[mRefFrameId + 1];
         tilde_q = mTraj->mq[mRefFrameId + 1];
-
+        std::cout << "[FBF] set target q = " << tilde_q.transpose()
+                  << std::endl;
         tilde_tau = mTraj->mActiveForce[mRefFrameId];
     }
 

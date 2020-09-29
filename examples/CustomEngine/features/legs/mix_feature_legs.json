@@ -1,38 +1,55 @@
 {
     "root_joint": {
         "pos": 1.0,
-        "vel": 1.0,
-        "accel": 1.0
+        "vel": 1.0
+    },
+    "root_height": {
+        "pos": 0.1,
+        "vel": 0.1
+    },
+    "root_location": {
+        "pos": 6.0,
+        "vel": 6.0
     },
     "RightLeg_joint": {
-        "pos": 1.0,
-        "vel": 1.0,
-        "accel": 1.0
+        "pos": 0.58,
+        "vel": 0.58
     },
     "RightFoot_joint": {
-        "pos": 1.0,
-        "vel": 1.0,
-        "accel": 1.0
+        "pos": 0.5,
+        "vel": 0.5
     },
     "RFootTongue_joint": {
-        "pos": 1.0,
-        "vel": 1.0,
-        "accel": 1.0
+        "pos": 0.5,
+        "vel": 0.5
+    },
+    "RFootTongue_location": {
+        "pos": 0.5,
+        "vel": 0.5
+    },
+    "RFootTongue_height": {
+        "pos": 0.5,
+        "vel": 0.5
     },
     "LeftLeg_joint": {
-        "pos": 1.0,
-        "vel": 1.0,
-        "accel": 1.0
+        "pos": 0.58,
+        "vel": 0.58
     },
     "LeftFoot_joint": {
-        "pos": 1.0,
-        "vel": 1.0,
-        "accel": 1.0
+        "pos": 0.5,
+        "vel": 0.5
     },
     "LFootTongue_joint": {
-        "pos": 1.0,
-        "vel": 1.0,
-        "accel": 1.0
+        "pos": 0.5,
+        "vel": 0.5
+    },
+    "LFootTongue_location": {
+        "pos": 0.5,
+        "vel": 0.5
+    },
+    "LFootTongue_height": {
+        "pos": 0.5,
+        "vel": 0.5
     },
     "tau_weight": 1.0
 }
