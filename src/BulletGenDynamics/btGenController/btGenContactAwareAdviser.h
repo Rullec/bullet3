@@ -11,6 +11,7 @@ class btGenFeatureArray;
 class btGeneralizeWorld;
 class cRobotModelDynamics;
 class btGenFrameByFrameOptimizer;
+class btCollisionObject;
 class btGenContactAwareAdviser
 {
 public:
@@ -47,6 +48,7 @@ public:
     bool IsEnd();
     void Reset();
     btGenFrameByFrameOptimizer *GetFBFOptimizer();
+    void SetBulletGUIHelperInterface(struct GUIHelperInterface *inter);
     // void GetAdviseInfo(tMatrixXd& C, tMatrixXd& D, tMatrixXd& E, tMatrixXd&
     // N, tVectorXd& b);
 
@@ -74,6 +76,8 @@ protected:
                                       // perfectly, stop the forwardness of the
                                       // ref traj and make the control target
                                       // stay at the current frame
+    bool
+        mEnableDrawContactPointsInBulletGUIAdviser; // enable drawing contact points
     int mSyncTrajPeriod; // the sync period speicifed by config file
     cRobotModelDynamics *mModel;
     btGeneralizeWorld *mWorld;
@@ -100,6 +104,10 @@ protected:
     tVectorXd mf; // convert vector, please check the Note for more details
     tVectorXd mTargetAccel, mTargetVel, mTargetPos, mTargetTau;
 
+    // draw contact points utils
+    struct GUIHelperInterface *mBulletGUIHelper;
+    std::vector<btCollisionObject *> mDrawPointsList;
+
     // ----------------------- methods
     void ReadConfig(const std::string &config);
     void ResolveActiveForce();
@@ -116,4 +124,7 @@ protected:
     void LoadInitState();
 
     void UpdateReferenceTraj();
+    void ClearDrawPoints();
+    void DrawContactPoints();
+    void DrawPoint(const tVector3d &pos, double r = 0.05);
 };

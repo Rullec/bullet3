@@ -4,9 +4,11 @@
 #include "BulletGenDynamics/btGenUtil/JsonUtil.h"
 #include "btGenFeatureUtils.h"
 #include "btTraj.h"
+#include <fstream>
 #include <iostream>
 #include <map>
 
+std::string feature_energy_path = "feature_energy.txt";
 btGenFeatureArray::btGenFeatureArray()
 {
     mModel = nullptr;
@@ -26,6 +28,9 @@ btGenFeatureArray::btGenFeatureArray()
         // 		  << mConvertPosToXZ << std::endl;
         // exit(0);
     }
+    std::ofstream fout(feature_energy_path);
+    fout << "";
+    fout.close();
 }
 
 btGenFeatureArray::~btGenFeatureArray()
@@ -115,6 +120,8 @@ void btGenFeatureArray::InitFeature(const std::string &conf)
                           << std::endl;
                 exit(0);
             }
+            feature->mFeatureName =
+                feature_name + "_" + std::to_string(iter.first);
             feature->mFeatureOrder = iter.first;
             feature->mWeight = iter.second;
             if (feature->mFeatureOrder < 0 || feature->mFeatureOrder > 2)
@@ -195,7 +202,19 @@ void btGenFeatureArray::Eval(double dt, const tVectorXd &qddot_target,
                              const tVectorXd &tau_target, tMatrixXd &H,
                              tMatrixXd &E, tVectorXd &f)
 {
+    int num_of_underactuated_freedom = mModel->GetNumOfFreedom() - 6;
+    if (tau_target.size() != num_of_underactuated_freedom)
+    {
+        std::cout << "[error] FeatureArray::eval tau_target size "
+                  << tau_target.size() << " != " << num_of_underactuated_freedom
+                  << std::endl;
+        exit(0);
+    }
     mCurTimestep = dt;
+    mTargetAccel = qddot_target;
+    mTargetVel = qdot_target;
+    mTargetPos = q_target;
+    mTargetTau = tau_target;
     // if (target_frame >= mTraj->mNumOfFrames - 2)
     // {
     // 	std::cout << "[error] void btGenFeatureArray::Eval frame " <<
@@ -227,6 +246,11 @@ void btGenFeatureArray::Eval(double dt, const tVectorXd &qddot_target,
         EvalConvertMatAndResidualFromqToFeature(
             mFeatureArrays[0]->mConvertMatFromqToFeature,
             mFeatureArrays[0]->mConvertResFromqToFeature);
+        // std::cout << "From q to feature Mat = \n"
+        //           << mFeatureArrays[0]->mConvertMatFromqToFeature << std::endl;
+        // std::cout << "From q to feature Res = "
+        //           << mFeatureArrays[0]->mConvertResFromqToFeature.transpose()
+        //           << std::endl;
     }
     // std::cout << "calculate convert mat done, begin to debug\n";
     // EvalConvertMatFromForceToqdot(mConvertFromTauToVel,
@@ -240,6 +264,9 @@ void btGenFeatureArray::Eval(double dt, const tVectorXd &qddot_target,
     mFeatureArrays[1]->mRefFeature = CalcTargetVelFeature(qdot_target);
     mFeatureArrays[0]->mRefFeature = CalcTargetPosFeature(q_target);
 
+    // std::cout << "ref q = " << q_target.transpose() << std::endl;
+    // std::cout << "ref feature = " << mFeatureArrays[0]->mRefFeature.transpose()
+    //           << std::endl;
     EvalDynamicTerms(mFeatureArrays[2]->mRefFeature,
                      mFeatureArrays[1]->mRefFeature,
                      mFeatureArrays[0]->mRefFeature, tau_target, H, E, f);
@@ -387,20 +414,20 @@ void btGenFeatureArray::PrintFeatureInfo() const
         }
 
         // check whether all dof are controlled?
-        if (cur_feature->mFeatureVector.size() != 0)
-        {
-            for (int link_id = 0; link_id < num_of_links; link_id++)
-            {
-                if (false == dof_controllable_lst[link_id])
-                {
-                    std::cout << prefix << "link " << link_id << " "
-                              << mModel->GetLinkById(link_id)->GetName()
-                              << " is not controlled\n";
-                    exit(0);
-                }
-            }
-            std::cout << prefix << "all dof are controlled\n";
-        }
+        // if (cur_feature->mFeatureVector.size() != 0)
+        // {
+        //     for (int link_id = 0; link_id < num_of_links; link_id++)
+        //     {
+        //         if (false == dof_controllable_lst[link_id])
+        //         {
+        //             std::cout << prefix << "link " << link_id << " "
+        //                       << mModel->GetLinkById(link_id)->GetName()
+        //                       << " is not controlled\n";
+        //             exit(0);
+        //         }
+        //     }
+        //     std::cout << prefix << "all dof are controlled\n";
+        // }
         std::cout << prefix
                   << "total feature size = " << cur_feature->mTotalFeatureSize
                   << std::endl;
@@ -826,6 +853,16 @@ void btGenFeatureArray::EvalDynamicTerms(const tVectorXd &ref_accel_feature,
                                          const tVectorXd &ref_tau, tMatrixXd &H,
                                          tMatrixXd &E, tVectorXd &f) const
 {
+    {
+        int num_of_underactuated_freedom = mModel->GetNumOfFreedom() - 6;
+        if (ref_tau.size() != num_of_underactuated_freedom)
+        {
+            std::cout << "[error] ref tau size " << ref_tau.size()
+                      << " != " << num_of_underactuated_freedom << std::endl;
+            exit(0);
+        }
+    }
+
     // 1. calculate D Matrix and M matrix and n
     tMatrixXd D_alpha, M_alpha, D_nu, M_nu, D_phi, M_phi;
     tVectorXd n_alpha, n_nu, n_phi;
@@ -933,6 +970,10 @@ void btGenFeatureArray::EvalDynamicTerms(const tVectorXd &ref_accel_feature,
                           + D_alpha.transpose() * W1TW1 * D_alpha +
                           D_nu.transpose() * W2TW2 * D_nu +
                           D_phi.transpose() * W3TW3 * D_phi;
+            // std::cout << "E = " << E.norm() << std::endl;
+            // std::cout << "E pos part = "
+            //           << (D_phi.transpose() * W3TW3 * D_phi).norm()
+            //           << std::endl;
         }
         // std::cout << "E = \n" << E << std::endl;
         // exit(1);
@@ -940,7 +981,6 @@ void btGenFeatureArray::EvalDynamicTerms(const tVectorXd &ref_accel_feature,
                       D_nu.transpose() * W2TW2 * M_nu +
                       D_phi.transpose() * W3TW3 * M_phi;
         // std::cout << "F = " << F << std::endl;
-
         f = WtauTWtau * ref_tau -
             D_alpha.transpose() * W1TW1 * (n_alpha - ref_accel_feature) -
             D_nu.transpose() * W2TW2 * (n_nu - ref_vel_feature) -
@@ -1021,7 +1061,7 @@ tVectorXd btGenFeatureArray::CalcTargetAccelFeature(const tVectorXd &qddot)
             tVector3d accel = tVector3d::Zero();
             accel += link->GetJKv() * qddot;
             for (int dof = 0; dof < mModel->GetNumOfFreedom(); dof++)
-                accel + link->GetTotalDofdJKv_dq(dof) * qdot;
+                accel += link->GetTotalDofdJKv_dq(dof) * qdot;
 
             switch (feature->mFeatureType)
             {
@@ -1211,4 +1251,110 @@ tVectorXd btGenFeatureArray::CalcTargetPosFeature(const tVectorXd &q)
     mModel->PopState("CalcTargetPosFeature");
     // std::cout << "pos feature = " << ref_feature.transpose() << std::endl;
     return ref_feature;
+}
+
+/**
+ * \brief               Calculate the energy 
+*/
+void btGenFeatureArray::CalcEnergy(const tVectorXd &control_force,
+                                   const tVectorXd &contact_force)
+{
+    // std::cout << "feature array: calculate energy begin\n";
+    // 1. calculate the energy term
+    int dof = mModel->GetNumOfFreedom();
+    int under_dof =
+        mModel->GetNumOfFreedom() - mModel->GetJointById(0)->GetNumOfFreedom();
+    if (control_force.size() != under_dof || contact_force.size() != dof)
+    {
+        std::cout << "[error] CalcEnergy control_size " << dof
+                  << " != " << under_dof << " or contact_size "
+                  << contact_force.size() << " != " << dof << std::endl;
+        exit(0);
+    }
+    const tVectorXd &tau_diff = mTargetTau - control_force;
+    // std::cout << "tau diff = " << tau_diff.transpose() << std::endl;
+    tEigenArr<tVectorXd> mCtrledFeature;
+    for (int i = 0; i < 3; i++)
+    {
+        // std::cout << "begin calc " << i << std::endl;
+        auto feature = mFeatureArrays[i];
+        // std::cout << feature->mConvertMatFromContactForceToq.rows() << " "
+        //           << feature->mConvertMatFromContactForceToq.cols()
+        //           << std::endl;
+        // std::cout << feature->mConvertMatFromTauToq.rows() << " "
+        //           << feature->mConvertMatFromTauToq.cols() << std::endl;
+        // std::cout << feature->mConvertResFromForceToq.rows() << " "
+        //           << feature->mConvertResFromForceToq.cols() << std::endl;
+        // std::cout << contact_force.rows() << " " << contact_force.cols()
+        //           << std::endl;
+        // std::cout << contact_force.rows() << " " << contact_force.cols()
+        //           << std::endl;
+        tVectorXd ctrl_q =
+            (feature->mConvertMatFromContactForceToq * contact_force +
+             feature->mConvertMatFromTauToq * control_force +
+             feature->mConvertResFromForceToq);
+        tVectorXd ctrl_feature = feature->mConvertMatFromqToFeature * ctrl_q +
+                                 feature->mConvertResFromqToFeature;
+        mCtrledFeature.push_back(ctrl_feature);
+    }
+
+    // const tVectorXd pos_diff =
+    //     mCtrledFeature[0] - mFeatureArrays[0]->mRefFeature;
+    // const tVectorXd vel_diff =
+    //     mCtrledFeature[1] - mFeatureArrays[1]->mRefFeature;
+    // const tVectorXd accel_diff =
+    //     mCtrledFeature[2] - mFeatureArrays[2]->mRefFeature;
+    std::ofstream fout(feature_energy_path, std::ios::app);
+    for (int i = 0; i < 3; i++)
+    {
+        // std::cout << "---------------begin order " << i << std::endl;
+        tVectorXd diff = mCtrledFeature[i] - mFeatureArrays[i]->mRefFeature;
+        tVectorXd weighted_diff = mFeatureArrays[i]->mWeight.cwiseProduct(diff);
+        // std::cout << "diff = " << diff.transpose() << std::endl;
+        // std::cout << "weighted diff = " << weighted_diff.transpose()
+        //           << std::endl;
+        // std::cout << "diff size = " << diff.size() << std::endl;
+        auto feature_array = mFeatureArrays[i];
+        std::string prefix = "";
+        switch (i)
+        {
+        case 0:
+            prefix = "[pos]";
+            break;
+        case 1:
+            prefix = "[vel]";
+            break;
+        case 2:
+            prefix = "[accel]";
+            break;
+
+        default:
+            std::cout << "[error] gen feature order " << i << " unsupported\n";
+            exit(1);
+            break;
+        }
+        for (int id = 0; id < feature_array->mNumOfFeature; id++)
+        {
+            auto cur_feature = feature_array->mFeatureVector[id];
+            int order = cur_feature->mFeatureOrder;
+            int offset = feature_array->mFeatureOffset[id];
+            int size = GetSingleFeatureSize(cur_feature);
+            std::string link_name = cur_feature->mLinkName;
+            std::string feature_name = cur_feature->mFeatureName;
+            fout << "[fea] " << feature_name
+                 << " diff = " << diff.segment(offset, size).transpose()
+                 << " weighted diff = "
+                 << weighted_diff.segment(offset, size).transpose()
+                 << std::endl;
+        }
+        fout << "[fea] " << prefix << " energy = " << weighted_diff.norm()
+             << std::endl;
+    }
+
+    // std::cout << "pos diff = " << pos_diff.transpose() << std::endl;
+    // std::cout << "vel diff = " << vel_diff.transpose() << std::endl;
+    // std::cout << "accel diff = " << accel_diff.transpose() << std::endl;
+
+    // exit(0);
+    fout.close();
 }

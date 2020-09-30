@@ -13,6 +13,7 @@ def load_info(path):
     contact_force_lst = []
     control_force_lst = []
     contact_num_lst = []
+
     with open(path, 'r') as f:
         cont = [line.strip() for line in f.readlines()]
 
@@ -74,13 +75,22 @@ prev_frames = -1
 while True:
     ref_traj_info, fbf_traj_info, ctrl_res_info, contact_force_lst, control_force_lst, contact_num_lst = load_info(
         "../numeric.log")
-    # print(contact_num_lst)
+    # print(ref_traj_info["q"])
     # exit()
+    fbf_err_lst = [np.linalg.norm(np.array(ref_traj_info["q"][i]) - np.array(fbf_traj_info["q"][i]))
+                   for i in range(len(ref_traj_info["q"]))]
+    contact_aware_err_lst = [np.linalg.norm(np.array(ctrl_res_info["q"][i]) - np.array(fbf_traj_info["q"][i]))
+                             for i in range(len(ref_traj_info["q"]))]
+    total_err_lst = [np.linalg.norm(np.array(ctrl_res_info["q"][i]) - np.array(ref_traj_info["q"][i]))
+                     for i in range(len(ref_traj_info["q"]))]
+    # print(np.linalg.norm(fbf_err_lst))
+    # print(np.linalg.norm(contact_aware_err_lst))
+    # print(np.linalg.norm(total_err_lst))
+    # exit(0)
     now_frames = len(control_force_lst)
     # if now_frames != prev_frames:
     if True:
         prev_frames = now_frames
-
 
         plt.subplot(3, 5, 1)
         plot_value(ref_traj_info["q"], "ref_q", extract_root)
@@ -103,7 +113,6 @@ while True:
         plt.subplot(3, 5, 13)
         plot_value(fbf_traj_info["qddot"], "fbf_qddot", extract_root)
 
-
         # plt.subplot(2, 5, 1)
         # plot_value(ref_traj_info["q"], "ref_q", extract_root)
 
@@ -122,7 +131,17 @@ while True:
         plt.subplot(3, 5, 14)
         plot_value(control_force_lst, "ctrl_res_control_force", extract_norm)
 
+        plt.subplot(3, 5, 5)
+        plt.cla()
+        plt.plot(fbf_err_lst, label="fbf_err")
+        plt.plot(contact_aware_err_lst, label="contact_aware_err")
+        plt.plot(total_err_lst, label="total_err")
+        plt.title("3 control err")
+        plt.legend()
+
+    # flush
     plt.draw()
-    # time.sleep(0.5)
     plt.pause(0.1)
+
+    # keep
     # plt.show()

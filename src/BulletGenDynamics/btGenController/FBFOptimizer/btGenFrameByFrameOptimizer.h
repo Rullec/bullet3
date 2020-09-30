@@ -95,6 +95,7 @@ protected:
                                tMatrixXd &convert_mat);
     int GetSolutionSizeByContactStatus(eContactStatus status);
     void ClearDrawPoints();
+    void DrawContactPoints();
     void DrawPoint(const tVector3d &pos, double r = 0.05);
     // ---------vars
     int mRefFrameId;
@@ -109,7 +110,6 @@ protected:
     std::vector<int> mContactSolSize;   // record the occupied "size" w.r.t each
                                         // contact pt in solution vector
     bool mEnableQPOptimization;
-    
     // optimization vars
     // bool mEnableHardConstraintForDynamics;
     // bool mUseNativeRefTarget;

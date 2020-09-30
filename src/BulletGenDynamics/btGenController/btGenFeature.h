@@ -25,6 +25,8 @@ public:
               const tVectorXd &qdot_target, const tVectorXd &q_target,
               const tVectorXd &tau_target, tMatrixXd &H, tMatrixXd &E,
               tVectorXd &f);
+    void CalcEnergy(const tVectorXd &control_force,
+                    const tVectorXd &contact_force);
     virtual ~btGenFeatureArray();
 
 protected:
@@ -34,8 +36,7 @@ protected:
 
     // different order of feature array is managed in (3) different structure.
     std::vector<tFeatureArraySingleOrder *> mFeatureArrays; //
-
-    tVector mGravity;      // gravity accel
+    tVector mGravity;                                       // gravity accel
     tVectorXd mWeight_tau; // mW1/2/3: accel/vel/pos feature vector
                            // weight, mWeight_tau: ref tau weight
 
@@ -43,6 +44,12 @@ protected:
     tMatrixXd mConvertPosToY,
         mConvertPosToXZ; // two convert matrix whican can convert [x, y, z] to
                          // "Y" or "X,Z"
+
+    // record the target accel which has been set in the current frame
+    // used in the calculation of energy term
+    tVectorXd mTargetAccel, mTargetVel, mTargetPos;
+    tVectorXd mTargetTau;
+
     //--------------methods
     void InitWeightTau(const std::string &conf);
     void InitFeature(const std::string &conf);

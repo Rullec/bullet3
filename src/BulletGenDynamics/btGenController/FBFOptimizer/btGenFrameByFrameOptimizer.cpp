@@ -194,7 +194,15 @@ void btGenFrameByFrameOptimizer::CalcTarget(double dt, int target_frame_id,
         tilde_q = mTraj->mq[mRefFrameId + 1];
         // std::cout << "[FBF] set target q = " << tilde_q.transpose()
         //           << std::endl;
-        tilde_tau = mTraj->mActiveForce[mRefFrameId];
+        if (mTraj->mActiveForce[mRefFrameId].size() != num_of_freedom)
+        {
+            std::cout << "[error] FBFoptimizer: we request a full dof active "
+                         "force when updated\n"
+                      << std::endl;
+            exit(0);
+        }
+        tilde_tau = mTraj->mActiveForce[mRefFrameId].segment(
+            6, num_of_underactuated_freedom);
     }
 
     // 4. draw the contact points
@@ -382,12 +390,12 @@ void btGenFrameByFrameOptimizer::CalcContactStatus()
             // pt->mStatus = eContactStatus::STATIC;
             auto link = mModel->GetLinkById(pt->mCollider->mLinkId);
 
-            std::cout << "[FBF] contact " << id << " on link "
-                      << link->GetName()
-                      << " cartesian vel in ref traj = " << vel.transpose()
-                      << " status " << gContactStatusStr[pt->mStatus]
-                      << " ref height = " << contact_pos_cur_ref[id][1]
-                      << std::endl;
+            // std::cout << "[FBF] contact " << id << " on link "
+            //           << link->GetName()
+            //           << " cartesian vel in ref traj = " << vel.transpose()
+            //           << " status " << gContactStatusStr[pt->mStatus]
+            //           << " ref height = " << contact_pos_cur_ref[id][1]
+            //           << std::endl;
             // std::cout << "contact " << id << " gen vel = " <<
             // contact_vel_cur_ref[id].transpose() << std::endl;
             // 3. calculate convert mat
@@ -436,11 +444,16 @@ void btGenFrameByFrameOptimizer::Solve(tVectorXd &tilde_qddot,
     // std::cout << "[debug] inequality num = " << Aineq.cols() << std::endl;
     // std::cout << "[FBF] quadprog solution = " << solution.transpose()
     //           << std::endl;
-    // if (solution.hasNaN() == true)
-    // {
-    // std::cout << "[warn] use matlab solver instead = " << solution.transpose()
-    //           << std::endl;
-    // exit(0);
+    if (solution.hasNaN() == true)
+    {
+        std::cout << "[error] Qp solver solved nan = " << solution.transpose()
+                  << std::endl;
+        std::cout << "[debug] equality num = " << Aeq.cols() << std::endl;
+        std::cout << "[debug] inequality num = " << Aineq.cols() << std::endl;
+        std::cout << "[FBF] quadprog solution = " << solution.transpose()
+                  << std::endl;
+        exit(0);
+    }
     // try matlab solver
     // matlab solver gives the same solution as quadprog
     // {
@@ -601,16 +614,17 @@ void btGenFrameByFrameOptimizer::CalcTargetInternal(const tVectorXd &solution,
         std::cout << "[solved] FBF cartesian contact force " << i << " "
                   << solved_force.transpose() << " status "
                   << gContactStatusStr[pt->mStatus] << std::endl;
-        mGenContactForce += pt->mJac.transpose() * solved_force;
+        mGenContactForce =
+            (mGenContactForce + pt->mJac.transpose() * solved_force).eval();
     }
 
     // output the ref contact forces
-    for (int i = 0; i < mTraj->mContactForce[mRefFrameId].size(); i++)
-    {
-        std::cout << "[ref] ref cartesian contact force " << i << " "
-                  << mTraj->mContactForce[mRefFrameId][i]->mForce.transpose()
-                  << std::endl;
-    }
+    // for (int i = 0; i < mTraj->mContactForce[mRefFrameId].size(); i++)
+    // {
+    //     std::cout << "[ref] ref cartesian contact force " << i << " "
+    //               << mTraj->mContactForce[mRefFrameId][i]->mForce.transpose()
+    //               << std::endl;
+    // }
     mGenControlForce.segment(6, num_of_underactuated_freedom) = control_force;
     tVectorXd QG = mModel->CalcGenGravity(mWorld->GetGravity());
     tVectorXd RHS = mGenContactForce + mGenControlForce + QG -

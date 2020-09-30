@@ -17,5 +17,5 @@
     "LFootTongue_joint": {
         "pos": 1.0
     },
-    "tau_weight": 0.01
+    "tau_weight": 0.0
 }

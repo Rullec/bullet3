@@ -1,4 +1,5 @@
 #include "btGenContactAwareAdviser.h"
+#include "../examples/CommonInterfaces/CommonGUIHelperInterface.h"
 #include "BulletGenDynamics/btGenController/FBFOptimizer/btGenFrameByFrameOptimizer.h"
 #include "BulletGenDynamics/btGenController/btGenFeature.h"
 #include "BulletGenDynamics/btGenController/btTraj.h"
@@ -46,6 +47,7 @@ btGenContactAwareAdviser::btGenContactAwareAdviser(btGeneralizeWorld *world)
     mRefTrajModel = nullptr;
     mFBFTrajModel = nullptr;
     mOutputControlDiff = false;
+    mBulletGUIHelper = nullptr;
 
     std::ofstream fout(debug_path);
     fout << "";
@@ -164,6 +166,12 @@ void btGenContactAwareAdviser::Update(double dt)
     //           << std::endl;
     if (mEnableStateSave)
         SaveCurrentState();
+    if (mEnableDrawContactPointsInBulletGUIAdviser == true)
+    {
+        ClearDrawPoints();
+        DrawContactPoints();
+    }
+
     mCurdt = dt;
     if (mRefTraj == nullptr)
         std::cout << "[error] adviser guide traj hasn't been set\n", exit(0);
@@ -197,8 +205,8 @@ void btGenContactAwareAdviser::Update(double dt)
     // 	// std::cout << "[ref] q diff = " << q_diff.transpose() << std::endl;
     // }
     GetTargetInfo(dt, mTargetAccel, mTargetVel, mTargetPos, mTargetTau);
-    std::cout << "[adviser] get tar pos = " << mTargetPos.transpose()
-              << std::endl;
+    // std::cout << "[adviser] get tar pos = " << mTargetPos.transpose()
+    //           << std::endl;
     if (mEnableOnlyFBFControl == true)
     {
         mFBFOptimizer->ControlByFBF();
@@ -291,7 +299,8 @@ void btGenContactAwareAdviser::ResolveActiveForce()
             mModel->ComputeJacobiByGivenPointTotalDOFWorldFrame(
                 link_id, fc->mWorldPos.segment(0, 3), jac);
 
-            Qcontact += jac.transpose() * fc->mForce.segment(0, 3);
+            Qcontact =
+                (Qcontact + jac.transpose() * fc->mForce.segment(0, 3)).eval();
         }
         mRefTraj->mActiveForce[frame_id] = LHS - G - Qcontact;
     }
@@ -364,12 +373,15 @@ tVectorXd btGenContactAwareAdviser::CalcControlForce(const tVectorXd &Q_contact)
     std::cout << "[numeric] control force = " << mCtrlForce.transpose()
               << std::endl;
     std::ofstream fout(debug_path, std::ios::app);
-    std::cout << "[adviser] contact force = " << Q_contact.transpose()
-              << std::endl;
+    // std::cout << "[adviser] contact force = " << Q_contact.transpose()
+    //           << std::endl;
     fout << "[numeric] contact force = " << Q_contact.transpose() << std::endl;
 
     fout << "[numeric] control force = " << mCtrlForce.transpose() << std::endl;
     fout.close();
+    mFeatureVector->CalcEnergy(mCtrlForce, Q_contact);
+    // when we get the control force, we can evaluate the energy term in btGenFeatureArray then evaulate the control result immediately
+
     return Q_active;
 }
 
@@ -407,6 +419,8 @@ void btGenContactAwareAdviser::ReadConfig(const std::string &config)
         btJsonUtil::ParseAsBool("enable_only_FBF_control", root);
     mEnableRefTrajDelayedUpdate =
         btJsonUtil::ParseAsBool("enable_ref_traj_delayed_update", root);
+    mEnableDrawContactPointsInBulletGUIAdviser = btJsonUtil::ParseAsBool(
+        "enable_draw_contact_points_in_bullet_GUI_adviser", root);
 
     if (mEnableOnlyFBFControl == true)
     {
@@ -499,18 +513,20 @@ void btGenContactAwareAdviser::UpdateMultibodyVelocityAndTransformDebug(
             tVectorXd q_diff = q - ref_traj_q, qdot_diff = qdot - ref_traj_qdot,
                       qddot_diff = qddot - ref_traj_qddot;
 
-            // std::cout << "[debug] ctrl_res and ref_traj q diff "
-            //           << q_diff.norm() << " qdot diff " << qdot_diff.norm()
-            //           << " qddot diff = " << qddot_diff.norm() << std::endl;
+            std::cout << "[debug] ctrl_res and ref_traj q diff "
+                      << q_diff.norm() << " qdot diff " << qdot_diff.norm()
+                      << " qddot diff = " << qddot_diff.norm() << " "
+                      << "total err" << std::endl;
         }
 
         {
             tVectorXd q_diff = q - mTargetPos, qdot_diff = qdot - mTargetVel,
                       qddot_diff = qddot - mTargetAccel;
 
-            // std::cout << "[debug] ctrl_res and target_traj q diff "
-            //           << q_diff.norm() << " qdot diff " << qdot_diff.norm()
-            //           << " qddot diff = " << qddot_diff.norm() << std::endl;
+            std::cout << "[debug] ctrl_res and target_traj q diff "
+                      << q_diff.norm() << " qdot diff " << qdot_diff.norm()
+                      << " qddot diff = " << qddot_diff.norm() << " "
+                      << "ca err" << std::endl;
         }
 
         {
@@ -518,9 +534,10 @@ void btGenContactAwareAdviser::UpdateMultibodyVelocityAndTransformDebug(
                       qdot_diff = ref_traj_qdot - mTargetVel,
                       qddot_diff = ref_traj_qddot - mTargetAccel;
 
-            // std::cout << "[debug] ref_traj and target_traj q diff "
-            //           << q_diff.norm() << " qdot diff " << qdot_diff.norm()
-            //           << " qddot diff = " << qddot_diff.norm() << std::endl;
+            std::cout << "[debug] ref_traj and target_traj q diff "
+                      << q_diff.norm() << " qdot diff " << qdot_diff.norm()
+                      << " qddot diff = " << qddot_diff.norm() << " "
+                      << "FBF err" << std::endl;
         }
     }
     // std::cout << "mEnable sync traj per = " << mEnableSyncTrajPeriodly
@@ -711,6 +728,12 @@ btGenFrameByFrameOptimizer *btGenContactAwareAdviser::GetFBFOptimizer()
     return this->mFBFOptimizer;
 }
 
+void btGenContactAwareAdviser::SetBulletGUIHelperInterface(
+    struct GUIHelperInterface *inter)
+{
+    mBulletGUIHelper = inter;
+    mFBFOptimizer->SetBulletGUIHelperInterface(inter);
+}
 btTraj *btGenContactAwareAdviser::GetRefTraj() { return this->mRefTraj; }
 
 /**
@@ -879,3 +902,62 @@ void btGenContactAwareAdviser::UpdateReferenceTraj()
 //     // mSimObjs[0]->SetAngVel(tVector(2.14574, 0.00479028, -0.277455, 0));
 //     // mSimObjs[0]->set(tVector(0, -0.607168, 0, 0));
 // }
+
+void btGenContactAwareAdviser::ClearDrawPoints()
+{
+    if (mBulletGUIHelper == nullptr)
+        return;
+    auto inter_world = mWorld->GetInternalWorld();
+    // std::cout << "clear points num = " << mDrawPointsList.size()
+    //           << " now = " << inter_world->getCollisionObjectArray().size()
+    //           << std::endl;
+
+    for (auto &pt : this->mDrawPointsList)
+    {
+        // inter_world->getCollisionObjectArray().remove(pt);
+        delete pt->getCollisionShape();
+        mWorld->GetInternalWorld()->removeCollisionObject(pt);
+        mBulletGUIHelper->removeGraphicsInstance(pt->getUserIndex());
+        delete pt;
+    }
+    std::cout << "[debug] clear points " << mDrawPointsList.size() << std::endl;
+    mDrawPointsList.clear();
+}
+
+void btGenContactAwareAdviser::DrawPoint(const tVector3d &pos,
+                                         double radius /* = 0.05*/)
+{
+    if (mBulletGUIHelper == nullptr)
+        return;
+    btCollisionShape *colShape = nullptr;
+    btCollisionObject *obj = new btCollisionObject();
+    colShape = new btSphereShape(btScalar(radius));
+    btTransform trans;
+    // trans.setOrigin(btVector3(pos[0], pos[1], pos[2]));
+    trans.setOrigin(btVector3(pos[0], pos[1], pos[2]));
+    obj->setWorldTransform(trans);
+    obj->setCollisionShape(colShape);
+    obj->setCollisionFlags(0);
+    mWorld->GetInternalWorld()->addCollisionObject(obj, 0, 0);
+    mDrawPointsList.push_back(obj);
+
+    auto inter_world = mWorld->GetInternalWorld();
+}
+
+/**
+ * \brief               Draw all contact points
+*/
+void btGenContactAwareAdviser::DrawContactPoints()
+{
+    auto manifolds = mWorld->GetContactManifolds();
+    for (auto *mani : manifolds)
+    {
+        for (int i = 0; i < mani->getNumContacts(); i++)
+        {
+
+            tVector world_point = btBulletUtil::btVectorTotVector0(
+                mani->getContactPoint(i).getPositionWorldOnA());
+            DrawPoint(world_point.segment(0, 3));
+        }
+    }
+}

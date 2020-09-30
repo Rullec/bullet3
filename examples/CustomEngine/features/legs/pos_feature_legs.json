@@ -1,13 +1,12 @@
 {
     "root_joint": {
-        "pos": 1
+        "pos": 1.0
     },
     "root_height": {
-        "pos": 10,
-        "vel": 0.01
+        "pos": 1
     },
     "root_location": {
-        "pos": 10
+        "pos": 1
     },
     "RightLeg_joint": {
         "pos": 1
@@ -18,13 +17,6 @@
     "RFootTongue_joint": {
         "pos": 1
     },
-    "RFootTongue_location": {
-        "pos": 3
-    },
-    "RFootTongue_height": {
-        "pos": 3,
-        "vel": 0.01
-    },
     "LeftLeg_joint": {
         "pos": 1
     },
@@ -33,13 +25,6 @@
     },
     "LFootTongue_joint": {
         "pos": 1
-    },
-    "LFootTongue_location": {
-        "pos": 3
-    },
-    "LFootTongue_height": {
-        "pos": 3,
-        "vel": 0.01
     },
     "tau_weight": 0.0
 }

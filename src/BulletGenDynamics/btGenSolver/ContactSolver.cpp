@@ -649,14 +649,16 @@ void btGenContactSolver::RebuildColObjData()
     // 1. build the collision group data
     int n_group = 0;
     std::map<cRobotModelDynamics *, int> model_set;
+    std::vector<int> ignored_ids(0);
     for (int i = 0; i < n_objs; i++)
     {
         btGenCollisionObject *obj =
             UpcastColObj(mWorld->getCollisionObjectArray()[i]);
         if (obj == nullptr)
         {
-            std::cout << "[lcp] body " << i
-                      << " cannot be recognized, ignore\n";
+            ignored_ids.push_back(i);
+            //  std::cout << "[lcp] body " << i
+            //                       << " cannot be recognized, ignore\n";
             continue;
         }
         bool add_entry = false;
@@ -698,6 +700,12 @@ void btGenContactSolver::RebuildColObjData()
         }
     }
 
+    {
+        std::cout << "[lcp] body ";
+        for (auto &x : ignored_ids)
+            std::cout << x << " ";
+        std::cout << "cannot be recognized, ignored\n";
+    }
     // 2. collect all multibodies
     for (auto &iter : model_set)
     {
@@ -773,19 +781,27 @@ void btGenContactSolver::CalcRelvelConvertMat()
                     ->mConvertCartesianForceToVelocityMat.block(i * 3, 0, 3,
                                                                 final_shape);
             if (mColGroupData[body1_groupid]->mBody->IsStatic() == false)
-                rel_vel_convert_mat.block(i * 3, 0, 3, final_shape) -=
+            {
+                tVectorXd res =
+                    rel_vel_convert_mat.block(i * 3, 0, 3, final_shape) -
                     mColGroupData[body1_groupid]
                         ->mConvertCartesianForceToVelocityMat.block(
                             i * 3, 0, 3, final_shape);
+                rel_vel_convert_mat.block(i * 3, 0, 3, final_shape) = res;
+            }
 
             // here vec is normally "minus", "vec0 - vec1"
             rel_vel_convert_vec.segment(3 * i, 3) =
                 mColGroupData[body0_groupid]
                     ->mConvertCartesianForceToVelocityVec.segment(i * 3, 3);
             if (mColGroupData[body1_groupid]->mBody->IsStatic() == false)
-                rel_vel_convert_vec.segment(3 * i, 3) -=
+            {
+                tVectorXd res =
+                    rel_vel_convert_vec.segment(3 * i, 3) -
                     mColGroupData[body1_groupid]
                         ->mConvertCartesianForceToVelocityVec.segment(i * 3, 3);
+                rel_vel_convert_vec.segment(3 * i, 3) = res;
+            }
         }
         else
         {

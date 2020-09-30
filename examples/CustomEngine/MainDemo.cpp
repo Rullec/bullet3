@@ -181,8 +181,7 @@ void CustomEngineMainDemo::initPhysics()
             mGenWorld->SetEnableContacrAwareControl();
             mAdviser = mGenWorld->GetContactAwareAdviser();
             mAdviser->SetTraj(gContactAwareTraj, "tmp_traj.json", true);
-            mAdviser->GetFBFOptimizer()->SetBulletGUIHelperInterface(
-                m_guiHelper);
+            mAdviser->SetBulletGUIHelperInterface(m_guiHelper);
         }
     }
 
