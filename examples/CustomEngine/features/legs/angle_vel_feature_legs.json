@@ -1,0 +1,24 @@
+{
+    "root_joint": {
+        "vel": 1.0
+    },
+    "RightLeg_joint": {
+        "vel": 1
+    },
+    "RightFoot_joint": {
+        "vel": 1
+    },
+    "RFootTongue_joint": {
+        "vel": 1
+    },
+    "LeftLeg_joint": {
+        "vel": 1
+    },
+    "LeftFoot_joint": {
+        "vel": 1
+    },
+    "LFootTongue_joint": {
+        "vel": 1
+    },
+    "tau_weight": 0.0
+}

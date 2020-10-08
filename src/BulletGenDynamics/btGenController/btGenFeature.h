@@ -27,6 +27,14 @@ public:
               tVectorXd &f);
     void CalcEnergy(const tVectorXd &control_force,
                     const tVectorXd &contact_force);
+    void DebugAccelFeatureDFdtauIsZero(const tVectorXd &control_force,
+                                       const tVectorXd &contact_force);
+    void DebugVelFeatureDFdtauIsZero(const tVectorXd &control_force,
+                                       const tVectorXd &contact_force);
+    void DebugPosFeatureDFdtauIsZero(const tVectorXd &control_force,
+                                       const tVectorXd &contact_force);
+    void DebugTauFeatureDFdtauIsZero(const tVectorXd &control_force,
+                                       const tVectorXd &contact_force);
     virtual ~btGenFeatureArray();
 
 protected:
@@ -49,7 +57,6 @@ protected:
     // used in the calculation of energy term
     tVectorXd mTargetAccel, mTargetVel, mTargetPos;
     tVectorXd mTargetTau;
-
     //--------------methods
     void InitWeightTau(const std::string &conf);
     void InitFeature(const std::string &conf);

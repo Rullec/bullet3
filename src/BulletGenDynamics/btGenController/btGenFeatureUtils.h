@@ -67,11 +67,15 @@ struct tFeatureArraySingleOrder
     std::vector<int> mFeatureOffset;
     tVectorXd mRefFeature; // reference feature, given by the
     tVectorXd mWeight;     //
-    tMatrixXd mConvertMatFromqToFeature;
-    tVectorXd mConvertResFromqToFeature;
+
+    // q/qdot/qddot = mConvertMatFromTauToq * control_force + mConvertMatFromContactForceToq * Q_chi + mConvertResFromForceToq
     tMatrixXd mConvertMatFromTauToq;
     tMatrixXd mConvertMatFromContactForceToq;
     tVectorXd mConvertResFromForceToq;
+
+    // feature = mConvertMatFromqToFeature * q/qdot/qddot + mConvertResFromqToFeature
+    tMatrixXd mConvertMatFromqToFeature;
+    tVectorXd mConvertResFromqToFeature;
 };
 
 // other utils

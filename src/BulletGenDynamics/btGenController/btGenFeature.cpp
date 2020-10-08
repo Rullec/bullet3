@@ -270,6 +270,7 @@ void btGenFeatureArray::Eval(double dt, const tVectorXd &qddot_target,
     EvalDynamicTerms(mFeatureArrays[2]->mRefFeature,
                      mFeatureArrays[1]->mRefFeature,
                      mFeatureArrays[0]->mRefFeature, tau_target, H, E, f);
+
     // std::cout << "ref feature vector " <<
     // mRefAccelFeature[target_frame].transpose() << std::endl; std::cout << "mH
     // = \n"
@@ -523,7 +524,11 @@ void btGenFeatureArray::EvalConvertMatAndResidualFromqddotToFeature(
             {
                 ConvertMatFromqddotToFeature(feature_offset + i, q_offset + i) =
                     1.0;
+                // ResFromqddotToFeature[feature_offset + i] =
+                //     accel_feature->mConvertResFromForceToq[q_offset + i];
+                ResFromqddotToFeature[feature_offset + i] = 0;
             }
+            // ResFromqddotToFeature.segment(feature_offset, feature_size)
         }
         break;
 
@@ -537,7 +542,6 @@ void btGenFeatureArray::EvalConvertMatAndResidualFromqddotToFeature(
                 mConvertPosToXZ * Jv;
             ResFromqddotToFeature.segment(feature_offset, feature_size) =
                 mConvertPosToXZ * Jv_dot * qdot;
-            // const tMatrixXd J link->GetJKv_dot
         }
         break;
         case btGenFeatureType::Height:
@@ -706,9 +710,9 @@ void btGenFeatureArray::EvalConvertMatAndResidualFromqToFeature(
             const tVector3d &link_pos = link->GetWorldPos();
             ConvertMatFromqToFeature.block(feature_offset, 0, feature_size,
                                            num_of_freedom) =
-                mCurTimestep * mConvertPosToXZ * Jv;
+                mConvertPosToXZ * Jv;
             ResFromqToFeature.segment(feature_offset, feature_size) =
-                mConvertPosToXZ * link_pos;
+                mConvertPosToXZ * (link_pos - Jv * mModel->Getq());
 
             break;
         }
@@ -719,9 +723,9 @@ void btGenFeatureArray::EvalConvertMatAndResidualFromqToFeature(
             const tVector3d &link_pos = link->GetWorldPos();
             ConvertMatFromqToFeature.block(feature_offset, 0, feature_size,
                                            num_of_freedom) =
-                mCurTimestep * mConvertPosToY * Jv;
+                mConvertPosToY * Jv;
             ResFromqToFeature.segment(feature_offset, feature_size) =
-                mConvertPosToY * link_pos;
+                mConvertPosToY * (link_pos - Jv * mModel->Getq());
             break;
         }
         default:
@@ -847,6 +851,8 @@ void btGenFeatureArray::EvalConvertMatFromForceToq(
  *      H = E^{-1} * F
  */
 
+tMatrixXd H_debug, E_debug, F_debug;
+tVectorXd f_debug;
 void btGenFeatureArray::EvalDynamicTerms(const tVectorXd &ref_accel_feature,
                                          const tVectorXd &ref_vel_feature,
                                          const tVectorXd &ref_pos_feature,
@@ -873,7 +879,8 @@ void btGenFeatureArray::EvalDynamicTerms(const tVectorXd &ref_accel_feature,
         M_alpha = alpha_feature->mConvertMatFromqToFeature *
                   alpha_feature->mConvertMatFromContactForceToq;
         n_alpha = alpha_feature->mConvertMatFromqToFeature *
-                  alpha_feature->mConvertResFromForceToq;
+                      alpha_feature->mConvertResFromForceToq +
+                  alpha_feature->mConvertResFromqToFeature;
         // std::cout << "D alpha = \n" << D_alpha << std::endl;
         // std::cout << "M alpha = \n" << M_alpha << std::endl;
         // std::cout << "n alpha = " << n_alpha << std::endl;
@@ -886,7 +893,8 @@ void btGenFeatureArray::EvalDynamicTerms(const tVectorXd &ref_accel_feature,
         M_nu = nu_feature->mConvertMatFromqToFeature *
                nu_feature->mConvertMatFromContactForceToq;
         n_nu = nu_feature->mConvertMatFromqToFeature *
-               nu_feature->mConvertResFromForceToq;
+                   nu_feature->mConvertResFromForceToq +
+               nu_feature->mConvertResFromqToFeature;
 
         // std::cout << "D nu = \n" << D_nu << std::endl;
         // std::cout << "M nu = \n" << M_nu << std::endl;
@@ -899,7 +907,8 @@ void btGenFeatureArray::EvalDynamicTerms(const tVectorXd &ref_accel_feature,
         M_phi = phi_feature->mConvertMatFromqToFeature *
                 phi_feature->mConvertMatFromContactForceToq;
         n_phi = phi_feature->mConvertMatFromqToFeature *
-                phi_feature->mConvertResFromForceToq;
+                    phi_feature->mConvertResFromForceToq +
+                phi_feature->mConvertResFromqToFeature;
 
         // std::cout << "D phi = \n" << D_phi << std::endl;
         // std::cout << "M phi = \n" << M_phi << std::endl;
@@ -970,7 +979,11 @@ void btGenFeatureArray::EvalDynamicTerms(const tVectorXd &ref_accel_feature,
                           + D_alpha.transpose() * W1TW1 * D_alpha +
                           D_nu.transpose() * W2TW2 * D_nu +
                           D_phi.transpose() * W3TW3 * D_phi;
-            // std::cout << "E = " << E.norm() << std::endl;
+            // std::cout << "[debug] E = " << E.norm() << std::endl;
+            // std::cout << "[debug] D_nu = " << D_nu.norm() << std::endl;
+            // std::cout << "[debug] D_nu.T * W2TW2 = "
+            //           << (D_nu.transpose() * W2TW2).norm() << std::endl;
+            // std::cout << "[debug] W2TW2 = " << W2TW2.norm() << std::endl;
             // std::cout << "E pos part = "
             //           << (D_phi.transpose() * W3TW3 * D_phi).norm()
             //           << std::endl;
@@ -981,14 +994,29 @@ void btGenFeatureArray::EvalDynamicTerms(const tVectorXd &ref_accel_feature,
                       D_nu.transpose() * W2TW2 * M_nu +
                       D_phi.transpose() * W3TW3 * M_phi;
         // std::cout << "F = " << F << std::endl;
+        /*
+        
+                    const tVectorXd f_local = N.transpose() * Minv.transpose() *
+                                      alpha_weight.transpose() * alpha_weight *
+                                      (Cqdot - QG + mTargetAccel);
+                                      
+                                      */
         f = WtauTWtau * ref_tau -
             D_alpha.transpose() * W1TW1 * (n_alpha - ref_accel_feature) -
             D_nu.transpose() * W2TW2 * (n_nu - ref_vel_feature) -
             D_phi.transpose() * W3TW3 * (n_phi - ref_pos_feature);
         // std::cout << "f = " << f.transpose() << std::endl;
-        H = E.inverse() * F;
+        H = -E.inverse() * F;
         // std::cout << "H = " << H << std::endl;
         // exit(0);
+
+        // save the debug vars
+        {
+            E_debug = E;
+            F_debug = F;
+            f_debug = f;
+            H_debug = H;
+        }
     }
 
     // std::cout << "finished\b";
@@ -1058,10 +1086,8 @@ tVectorXd btGenFeatureArray::CalcTargetAccelFeature(const tVectorXd &qddot)
             // for pos feature, the feture vector is d^2(p)/dt^2
             auto link =
                 dynamic_cast<Link *>(mModel->GetLinkById(feature->mLinkId));
-            tVector3d accel = tVector3d::Zero();
-            accel += link->GetJKv() * qddot;
-            for (int dof = 0; dof < mModel->GetNumOfFreedom(); dof++)
-                accel += link->GetTotalDofdJKv_dq(dof) * qdot;
+            tVector3d accel =
+                link->GetJKv() * qddot + link->GetJKv_dot() * qdot;
 
             switch (feature->mFeatureType)
             {
@@ -1357,4 +1383,772 @@ void btGenFeatureArray::CalcEnergy(const tVectorXd &control_force,
 
     // exit(0);
     fout.close();
+}
+
+extern bool gPauseSimulation;
+void btGenFeatureArray::DebugAccelFeatureDFdtauIsZero(
+    const tVectorXd &control_force, const tVectorXd &contact_force)
+{
+    // 1. confirm there is only joint accel feature, no vel & pos & control torque feature
+    auto alpha_feature = mFeatureArrays[2];
+    if (mFeatureArrays[0]->mNumOfFeature != 0)
+    {
+        std::cout << "[error] pos size is not zero\n";
+        exit(1);
+    }
+    if (mFeatureArrays[1]->mNumOfFeature != 0)
+    {
+        std::cout << "[error] vel size is not zero\n";
+        exit(1);
+    }
+    if (mWeight_tau.norm() > 0)
+    {
+        std::cout << "[error] tau weight is not zero "
+                  << mWeight_tau.transpose();
+        exit(1);
+    }
+    // for (int i = 0; i < alpha_feature->mNumOfFeature; i++)
+    // {
+    //     auto cur_feature = alpha_feature->mFeatureVector[i];
+
+    //     if (IsJointFeature(cur_feature->mFeatureType) == false)
+    //     {
+    //         std::cout << "[error] alpha feature " << i << " type "
+    //                   << cur_feature->mFeatureType << std::endl;
+    //         exit(0);
+    //     }
+    // }
+    // 2. begin to check the result
+
+    const tMatrixXd &alpha_weight = mFeatureArrays[2]->mWeight.asDiagonal();
+    const tMatrixXd &Minv = mModel->GetInvMassMatrix();
+    int num_of_freedom = mModel->GetNumOfFreedom(),
+        num_of_underactuated_freedom = mModel->GetNumOfFreedom() - 6;
+    tMatrixXd N = tMatrixXd::Zero(num_of_freedom, num_of_underactuated_freedom);
+    N.block(6, 0, num_of_underactuated_freedom, num_of_underactuated_freedom)
+        .setIdentity();
+    const tVectorXd &QG = mModel->CalcGenGravity(mGravity);
+    const tVectorXd &Cqdot = mModel->GetCoriolisMatrix() * mModel->Getqdot();
+
+    // 2.1 calculate the relationship between accel feature vector, tau and contact force
+    // qddot = M_tau_to_q * tau + M_contact_to_q * contact_force + R_force_to_q
+    // feature_alpha = M_q_to_feature * qddot + R_q_to_feature
+    // tMatrixXd A1 = tMatrixXd::Zero(alpha_feature->mTotalFeatureSize,
+    //                                num_of_underactuated_freedom),
+    //           A2 = tMatrixXd::Zero(alpha_feature->mTotalFeatureSize,
+    //                                num_of_freedom);
+    // tVectorXd b1 = tVectorXd::Zero(alpha_feature->mTotalFeatureSize);
+    tMatrixXd M_tau_to_q = Minv * N, M_contact_to_q = Minv,
+              M_q_to_feature = tMatrixXd::Zero(alpha_feature->mTotalFeatureSize,
+                                               num_of_freedom);
+    tVectorXd R_force_to_q = Minv * (QG - Cqdot),
+              R_q_to_feature =
+                  tVectorXd::Zero(alpha_feature->mTotalFeatureSize);
+    // now shape the convert mat & convert res from q to feature
+    {
+        for (int id = 0; id < alpha_feature->mNumOfFeature; id++)
+        {
+            auto sub_feature = alpha_feature->mFeatureVector[id];
+            int fea_offset = alpha_feature->mFeatureOffset[id];
+            int fea_size = GetSingleFeatureSize(sub_feature);
+            auto link = mModel->GetLinkById(sub_feature->mLinkId);
+            const tMatrixXd &Jv = link->GetJKv();
+            const tVectorXd &dJvdt_qdot =
+                link->GetJKv_dot() * mModel->Getqdot();
+
+            auto joint = link->GetParent();
+            if (IsJointFeature(sub_feature->mFeatureType))
+            {
+                int joint_offset = joint->GetFreedoms(0)->id;
+                int joint_dof = joint->GetNumOfFreedom();
+                if (joint_dof != fea_size)
+                {
+                    std::cout << "[error] debugging accel feature: joint "
+                              << sub_feature->mLinkId << " feature size "
+                              << fea_size << " != " << joint_dof << std::endl;
+                    exit(0);
+                }
+
+                for (int i = 0; i < joint_dof; i++)
+                {
+                    M_q_to_feature(fea_offset + i, joint_offset + i) = 1.0;
+                    R_q_to_feature[fea_offset + i] = 0;
+                }
+                // // fill in the A1
+                // A1.block(fea_offset, 0, fea_size,
+                //          num_of_underactuated_freedom) =
+                //     (Minv * N).block(joint_offset, 0, joint_dof,
+                //                      num_of_underactuated_freedom);
+                // // fill in the A2
+                // A2.block(fea_offset, 0, fea_size, num_of_freedom) =
+                //     Minv.block(joint_offset, 0, fea_size, num_of_freedom);
+
+                // // fill in the b1
+                // b1.segment(fea_offset, fea_size) =
+                //     (Minv * (QG - Cqdot)).segment(joint_offset, joint_dof);
+
+                // fill in vars from contact_force/control_force to q
+            }
+            else if (IsPosFeature(sub_feature->mFeatureType))
+            {
+                if (sub_feature->mFeatureType == btGenFeatureType::Height)
+                {
+                    M_q_to_feature.block(fea_offset, 0, fea_size,
+                                         num_of_freedom) = mConvertPosToY * Jv;
+                    R_q_to_feature.segment(fea_offset, fea_size) =
+                        mConvertPosToY * dJvdt_qdot;
+                    // // fill in the A1
+                    // A1.block(fea_offset, 0, fea_size,
+                    //          num_of_underactuated_freedom) =
+                    //     mConvertPosToY * (Jv * Minv * N);
+                    // // fill in the A2
+                    // A2.block(fea_offset, 0, fea_size, num_of_freedom) =
+                    //     mConvertPosToY * Jv * Minv;
+
+                    // // fill in the b1
+                    // b1.segment(fea_offset, fea_size) =
+                    //     mConvertPosToY * (Jv * Minv * (QG - Cqdot) +
+                    //                       dJvdt_qdot * mModel->Getqdot());
+                }
+                else if (sub_feature->mFeatureType ==
+                         btGenFeatureType::Location)
+                {
+                    M_q_to_feature.block(fea_offset, 0, fea_size,
+                                         num_of_freedom) = mConvertPosToXZ * Jv;
+                    R_q_to_feature.segment(fea_offset, fea_size) =
+                        mConvertPosToXZ * dJvdt_qdot;
+                    // std::cout << "[debug] qdot norm " << qdot.norm()
+                    //           << std::endl;
+                    // std::cout << "[debug] Jvdot norm " << Jv_dot.norm()
+                    //           << std::endl;
+                    // std::cout << "[debug] convert to xz norm "
+                    //           << mConvertPosToXZ.norm() << std::endl;
+                    // // fill in the A1
+                    // A1.block(fea_offset, 0, fea_size,
+                    //          num_of_underactuated_freedom) =
+                    //     mConvertPosToXZ * (Jv * Minv * N);
+                    // // fill in the A2
+                    // A2.block(fea_offset, 0, fea_size, num_of_freedom) =
+                    //     mConvertPosToXZ * Jv * Minv;
+
+                    // // fill in the b1
+                    // b1.segment(fea_offset, fea_size) =
+                    //     mConvertPosToXZ *
+                    //     (Jv * Minv * (QG - Cqdot) + dJvdt_qdot);
+                }
+                else
+                {
+                    std::cout << "[error] pos feature type is not recognized: "
+                              << sub_feature->mFeatureType << std::endl;
+                    exit(1);
+                }
+            }
+            else
+            {
+                std::cout
+                    << "[error] feature cannot be recognized in debugging\n";
+                exit(0);
+            }
+        }
+    }
+    // tMatrixXd part1 = (alpha_weight * Minv * N).transpose() * alpha_weight;
+    // tMatrixXd part2a = Minv * N;
+    // tMatrixXd part2b = Minv;
+    // tVectorXd part3 = Minv * (QG - Cqdot) - mTargetAccel;
+    tMatrixXd O = M_q_to_feature * M_contact_to_q,
+              P = M_q_to_feature * M_tau_to_q;
+    tVectorXd R = M_q_to_feature * R_force_to_q + R_q_to_feature;
+    // tMatrixXd part1 =
+    //     2 * A1.transpose() * alpha_weight.transpose() * alpha_weight;
+    // tMatrixXd part2a = A1;
+    // tMatrixXd part2b = A2;
+    // tVectorXd part3 = b1 - alpha_feature->mRefFeature;
+    // std::cout << "O norm " << O.norm() << std::endl;
+    // std::cout << "P norm " << P.norm() << std::endl;
+    // std::cout << "R norm " << R.norm() << std::endl;
+    tVectorXd res = 2 * P.transpose() * alpha_weight.transpose() *
+                    alpha_weight *
+                    (O * contact_force + P * control_force + R -
+                     alpha_feature->mRefFeature);
+    std::cout << "res = " << res.transpose() << std::endl;
+    const double eps = 1e-4;
+    if (res.norm() > eps)
+    {
+        std::cout << "[error] judge failed!\n";
+        // check convert mat from contact force to qddot
+        {
+            const tMatrixXd mat_from_contact_to_q = M_contact_to_q;
+            const tMatrixXd mat_from_contact_to_q_diff =
+                Minv - alpha_feature->mConvertMatFromContactForceToq;
+            if (mat_from_contact_to_q_diff.norm() > eps)
+            {
+                std::cout << "[error] from contact to q mat error, diff = "
+                          << mat_from_contact_to_q_diff.norm() << std::endl;
+                exit(1);
+            }
+        }
+
+        // check convert mat from control force to qddot
+        {
+            const tMatrixXd mat_from_control_force_to_q = M_tau_to_q;
+            const tMatrixXd mat_from_control_force_to_q_diff =
+                mat_from_control_force_to_q -
+                alpha_feature->mConvertMatFromTauToq;
+            if (mat_from_control_force_to_q_diff.norm() > eps)
+            {
+                std::cout << "[error] from control to q mat error, diff = "
+                          << mat_from_control_force_to_q_diff.norm()
+                          << std::endl;
+                exit(1);
+            }
+        }
+
+        // check the convert mat from q to feature
+        {
+            const tMatrixXd mat_from_q_to_feature = M_q_to_feature;
+            const tMatrixXd diff = alpha_feature->mConvertMatFromqToFeature -
+                                   mat_from_q_to_feature;
+            if (diff.norm() > eps)
+            {
+                std::cout << "[error] from q to feature mat error, diff = "
+                          << diff.norm() << std::endl;
+                exit(1);
+            }
+        }
+
+        // check the convert res from force to q
+        {
+            const tVectorXd res_from_force_to_q = R_force_to_q;
+            const tVectorXd diff =
+                res_from_force_to_q - alpha_feature->mConvertResFromForceToq;
+            if (diff.norm() > eps)
+            {
+                std::cout << "[error] from force to q res error, diff = "
+                          << diff.norm() << std::endl;
+                exit(1);
+            }
+        }
+
+        // check the convert res from qddot to feature
+        {
+            const tVectorXd res_from_q_to_feature = R_q_to_feature;
+            const tVectorXd diff = res_from_q_to_feature -
+                                   alpha_feature->mConvertResFromqToFeature;
+            if (diff.norm() > eps)
+            {
+                std::cout << "[error] from q to feature res error, diff = "
+                          << diff.norm() << std::endl;
+                std::cout
+                    << "applied var = "
+                    << alpha_feature->mConvertResFromqToFeature.transpose()
+                    << std::endl;
+                std::cout << "debug var = " << res_from_q_to_feature.transpose()
+                          << std::endl;
+                exit(1);
+            }
+            // std::cout << "convert res to feature "
+            //           << alpha_feature->mConvertResFromqToFeature.transpose()
+            //           << std::endl;
+        }
+
+        {
+            const tMatrixXd E_local =
+                P.transpose() * alpha_weight.transpose() * alpha_weight * P;
+            const tMatrixXd F_local =
+                P.transpose() * alpha_weight.transpose() * alpha_weight * O;
+            const tVectorXd f_local = -P.transpose() *
+                                      alpha_weight.transpose() * alpha_weight *
+                                      (R - alpha_feature->mRefFeature);
+            const tMatrixXd H_local = -E_local.inverse() * F_local;
+
+            const tMatrixXd H_diff = H_local - H_debug,
+                            E_diff = E_local - E_debug,
+                            F_diff = F_local - F_debug;
+            const tVectorXd f_diff = f_local - f_debug;
+            if (E_diff.norm() > eps)
+            {
+                std::cout << "[error] E error, diff = " << E_diff.norm()
+                          << std::endl;
+                exit(0);
+            }
+            if (F_diff.norm() > eps)
+            {
+                std::cout << "[error] F error, diff = " << E_diff.norm()
+                          << std::endl;
+                exit(0);
+            }
+            if (H_diff.norm() > eps)
+            {
+                std::cout << "[error] H error, diff = " << H_diff.norm()
+                          << std::endl;
+                exit(0);
+            }
+
+            if (f_diff.norm() > eps)
+            {
+                std::cout << "[error] f error, diff = " << f_diff.norm()
+                          << std::endl;
+                exit(0);
+            }
+        }
+        gPauseSimulation = true;
+    }
+    // alpha_feature->mConvertMatFromContactForceToq;
+    // alpha_feature->mConvertMatFromqToFeature;
+    // alpha_feature->mConvertMatFromTauToq;
+    // alpha_feature->mConvertResFromqToFeature;
+    // alpha_feature->mConvertResFromForceToq;
+}
+
+void btGenFeatureArray::DebugTauFeatureDFdtauIsZero(
+    const tVectorXd &control_force, const tVectorXd &contact_force)
+{
+    for (int i = 0; i < 3; i++)
+    {
+        if (mFeatureArrays[i]->mNumOfFeature != 0)
+        {
+            std::cout << "[error] tau feature verified is enable but there is "
+                         "other feature, order "
+                      << i << std::endl;
+            exit(0);
+        }
+    }
+    tMatrixXd tau_weight = mWeight_tau.asDiagonal();
+    tVectorXd res =
+        2 * tau_weight.transpose() * tau_weight * (control_force - mTargetTau);
+
+    std::cout << "res = " << res.transpose() << std::endl;
+    if (res.norm() > 1e-8)
+    {
+        tVectorXd diff = control_force - mTargetTau;
+        std::cout << "[error] tau feature verified failed, diff "
+                  << diff.transpose() << std::endl;
+        exit(1);
+    }
+}
+
+void btGenFeatureArray::DebugVelFeatureDFdtauIsZero(
+    const tVectorXd &control_force, const tVectorXd &contact_force)
+{
+    // 1. make sure that pos and accel feature is disabled
+    if (mFeatureArrays[0]->mNumOfFeature != 0 ||
+        mFeatureArrays[2]->mNumOfFeature != 0)
+    {
+        std::cout << "[error] debug vel: pos & accel feature num is not zero: "
+                  << mFeatureArrays[0]->mNumOfFeature << " "
+                  << mFeatureArrays[2]->mNumOfFeature << std::endl;
+        exit(0);
+    }
+
+    // 2. make sure that tau weight is disable
+    if (mWeight_tau.norm() > 1e-10)
+    {
+        std::cout << "[error] debug vel: weight tau is zero\n";
+        exit(0);
+    }
+
+    // 3. begin to form the convert matrices
+
+    auto vel_feature = mFeatureArrays[1];
+    const tMatrixXd &Minv = mModel->GetInvMassMatrix();
+    int num_of_freedom = mModel->GetNumOfFreedom(),
+        num_of_underactuated_freedom = mModel->GetNumOfFreedom() - 6;
+    tMatrixXd N = tMatrixXd::Zero(num_of_freedom, num_of_underactuated_freedom);
+    N.block(6, 0, num_of_underactuated_freedom, num_of_underactuated_freedom)
+        .setIdentity();
+    const tVectorXd &QG = mModel->CalcGenGravity(mGravity);
+    const tVectorXd &Cqdot = mModel->GetCoriolisMatrix() * mModel->Getqdot();
+
+    tMatrixXd M_tau_to_q = mCurTimestep * Minv * N,
+              M_contact_to_q = mCurTimestep * Minv,
+              M_q_to_feature = tMatrixXd::Zero(vel_feature->mTotalFeatureSize,
+                                               num_of_freedom);
+    tVectorXd R_force_to_q =
+                  mCurTimestep * Minv * (QG - Cqdot) + mModel->Getqdot(),
+              R_q_to_feature = tVectorXd::Zero(vel_feature->mTotalFeatureSize);
+
+    for (int id = 0; id < vel_feature->mNumOfFeature; id++)
+    {
+        auto cur_feature = vel_feature->mFeatureVector[id];
+        int feature_offset = vel_feature->mFeatureOffset[id];
+        int feature_size = GetSingleFeatureSize(cur_feature);
+        auto link = mModel->GetLinkById(cur_feature->mLinkId);
+        if (IsJointFeature(cur_feature->mFeatureType))
+        {
+            auto joint = link->GetParent();
+            int joint_offset = joint->GetFreedoms(0)->id;
+            if (joint->GetNumOfFreedom() != feature_size)
+            {
+                std::cout << "[error] vel feature check: feature " << id
+                          << " link " << cur_feature->mLinkId
+                          << " dof inconsisitent\n";
+                exit(0);
+            }
+            for (int i = 0; i < joint->GetNumOfFreedom(); i++)
+            {
+                M_q_to_feature(feature_offset + i, joint_offset + i) = 1.0;
+                R_q_to_feature[feature_offset + i] = 0;
+            }
+        }
+        else if (IsPosFeature(cur_feature->mFeatureType))
+        {
+            if (cur_feature->mFeatureType == btGenFeatureType::Height)
+            {
+                M_q_to_feature.block(feature_offset, 0, feature_size,
+                                     num_of_freedom) =
+                    mConvertPosToY * link->GetJKv();
+                R_q_to_feature.segment(feature_offset, feature_size).setZero();
+            }
+            else if (cur_feature->mFeatureType == btGenFeatureType::Location)
+            {
+                M_q_to_feature.block(feature_offset, 0, feature_size,
+                                     num_of_freedom) =
+                    mConvertPosToXZ * link->GetJKv();
+                R_q_to_feature.segment(feature_offset, feature_size).setZero();
+            }
+
+            // std::cout << "[error] Vel feature check, unsupported pos feature\n";
+            // exit(0);
+        }
+        else
+        {
+            std::cout << "[error] Vel feature check, unsupported feature type "
+                      << cur_feature->mFeatureType << std::endl;
+            exit(0);
+        }
+    }
+
+    // 4. shape the dF/d\tau formula
+    tMatrixXd vel_weight = vel_feature->mWeight.asDiagonal();
+    tMatrixXd part1 = M_tau_to_q.transpose() * M_q_to_feature.transpose() *
+                      vel_weight.transpose() * vel_weight;
+    tMatrixXd part2_1 = M_q_to_feature * M_contact_to_q;
+    tMatrixXd part2_2 = M_q_to_feature * M_tau_to_q;
+    tVectorXd part3 = M_q_to_feature * R_force_to_q + R_q_to_feature -
+                      vel_feature->mRefFeature;
+    tVectorXd vel_res =
+        part1 * (part2_1 * contact_force + part2_2 * control_force + part3);
+    std::cout << "[log] vel res = " << vel_res.transpose() << std::endl;
+    double eps = 1e-5;
+    if (vel_res.norm() > eps)
+    {
+        std::cout << "[error] vel feature verified failed\n";
+
+        // 1. check the convert matrices
+        {
+            tMatrixXd diff = M_tau_to_q - vel_feature->mConvertMatFromTauToq;
+
+            if (diff.norm() > eps)
+            {
+                std::cout << "[error] M tau to q diff = " << diff.norm()
+                          << std::endl;
+                exit(0);
+            }
+        }
+        {
+            tMatrixXd diff =
+                M_contact_to_q - vel_feature->mConvertMatFromContactForceToq;
+
+            if (diff.norm() > eps)
+            {
+                std::cout << "[error] M contact to q diff = " << diff.norm()
+                          << std::endl;
+                exit(0);
+            }
+        }
+        {
+            tMatrixXd diff =
+                M_q_to_feature - vel_feature->mConvertMatFromqToFeature;
+
+            if (diff.norm() > eps)
+            {
+                std::cout << "[error] M q to feature diff = " << diff.norm()
+                          << std::endl;
+                exit(0);
+            }
+        }
+        {
+            tMatrixXd diff =
+                R_q_to_feature - vel_feature->mConvertResFromqToFeature;
+
+            if (diff.norm() > eps)
+            {
+                std::cout << "[error] R q to feature diff = " << diff.norm()
+                          << std::endl;
+                exit(0);
+            }
+        }
+        {
+            tMatrixXd diff =
+                R_force_to_q - vel_feature->mConvertResFromForceToq;
+
+            if (diff.norm() > eps)
+            {
+                std::cout << "[error] R force to q diff = " << diff.norm()
+                          << std::endl;
+                exit(0);
+            }
+        }
+
+        // verify H,
+        {
+            const tMatrixXd E_local = part1 * part2_2;
+            const tMatrixXd F_local = part1 * part2_1;
+            const tVectorXd f_local = -part1 * part3;
+            const tMatrixXd H_local = -E_local.inverse() * F_local;
+
+            const tMatrixXd H_diff = H_local - H_debug,
+                            E_diff = E_local - E_debug,
+                            F_diff = F_local - F_debug;
+            const tVectorXd f_diff = f_local - f_debug;
+            if (E_diff.norm() > eps)
+            {
+                std::cout << "[error] E error, diff = " << E_diff.norm()
+                          << std::endl;
+                std::cout << "[verify] E = " << E_local.norm() << std::endl;
+                std::cout << "[verify] D_nu = " << part2_2.norm() << std::endl;
+                std::cout << "[verify] D_nu.T * W2TW2 legacy = " << part1.norm()
+                          << std::endl;
+                // std::cout << "[verify] D_nu.T * W2TW2 new = " << (part2_2.transpose() * ).norm() << std::endl;
+                std::cout << "[verify] W2TW2 = "
+                          << (vel_weight.transpose() * vel_weight).norm()
+                          << std::endl;
+
+                exit(0);
+            }
+            if (F_diff.norm() > eps)
+            {
+                std::cout << "[error] F error, diff = " << E_diff.norm()
+                          << std::endl;
+                exit(0);
+            }
+            if (H_diff.norm() > eps)
+            {
+                std::cout << "[error] H error, diff = " << H_diff.norm()
+                          << std::endl;
+                exit(0);
+            }
+
+            if (f_diff.norm() > eps)
+            {
+                std::cout << "[error] f error, diff = " << f_diff.norm()
+                          << std::endl;
+                exit(0);
+            }
+        }
+        exit(0);
+    }
+}
+
+void btGenFeatureArray::DebugPosFeatureDFdtauIsZero(
+    const tVectorXd &control_force, const tVectorXd &contact_force)
+{
+    // 1. judge that the vel & accel feature is empty
+    if (mFeatureArrays[1]->mNumOfFeature != 0 ||
+        mFeatureArrays[2]->mNumOfFeature != 0)
+    {
+        std::cout
+            << "[error] pos feature debug: vel || accel feature isn't empty\n";
+        exit(0);
+    }
+
+    // 2. make sure that tau weight is disabled
+    if (mWeight_tau.norm() > 1e-10)
+    {
+        std::cout << "[error] pos feature debug: weight tau is zero\n";
+        exit(0);
+    }
+
+    // 3. begin to from the convert matrix
+    auto pos_feature = mFeatureArrays[0];
+    const tMatrixXd &Minv = mModel->GetInvMassMatrix();
+    int num_of_freedom = mModel->GetNumOfFreedom(),
+        num_of_underactuated_freedom = mModel->GetNumOfFreedom() - 6;
+    tMatrixXd N = tMatrixXd::Zero(num_of_freedom, num_of_underactuated_freedom);
+    N.block(6, 0, num_of_underactuated_freedom, num_of_underactuated_freedom)
+        .setIdentity();
+    const tVectorXd &QG = mModel->CalcGenGravity(mGravity);
+    const tVectorXd &Cqdot = mModel->GetCoriolisMatrix() * mModel->Getqdot();
+    double dt = mCurTimestep;
+    double dt2 = mCurTimestep * mCurTimestep;
+
+    tMatrixXd M_tau_to_q = dt2 * Minv * N, M_contact_to_q = dt2 * Minv,
+              M_q_to_feature = tMatrixXd::Zero(pos_feature->mTotalFeatureSize,
+                                               num_of_freedom);
+    tVectorXd R_force_to_q = dt2 * Minv * (QG - Cqdot) +
+                             dt * mModel->Getqdot() + mModel->Getq(),
+              R_q_to_feature = tVectorXd::Zero(pos_feature->mTotalFeatureSize);
+
+    // from q to feature, mat & res
+    tMatrixXd pos_weight = pos_feature->mWeight.asDiagonal();
+
+    for (int id = 0; id < pos_feature->mNumOfFeature; id++)
+    {
+        auto &cur_feature = pos_feature->mFeatureVector[id];
+        auto link = mModel->GetLinkById(cur_feature->mLinkId);
+        auto joint = link->GetParent();
+        const tMatrixXd &Jv = link->GetJKv();
+        int fea_offset = pos_feature->mFeatureOffset[id];
+        int fea_size = GetSingleFeatureSize(cur_feature);
+
+        if (IsJointFeature(cur_feature->mFeatureType))
+        {
+            int joint_dof = joint->GetNumOfFreedom();
+            int joint_offset = joint->GetFreedoms(0)->id;
+            for (int i = 0; i < joint_dof; i++)
+            {
+                M_q_to_feature(fea_offset + i, joint_offset + i) = 1.0;
+                R_q_to_feature[fea_offset + i] = 0;
+            }
+        }
+        else if (IsPosFeature(cur_feature->mFeatureType))
+        {
+            tVector3d link_pos = link->GetWorldPos();
+            if (cur_feature->mFeatureType == btGenFeatureType::Height)
+            {
+                M_q_to_feature.block(fea_offset, 0, fea_size, num_of_freedom) =
+                    mConvertPosToY * Jv;
+                R_q_to_feature.segment(fea_offset, fea_size) =
+                    mConvertPosToY * (link_pos - Jv * mModel->Getq());
+                // std::cout << "[veri] link pos " << link_pos.transpose() << std::endl;
+            }
+            else if (cur_feature->mFeatureType == btGenFeatureType::Location)
+            {
+                M_q_to_feature.block(fea_offset, 0, fea_size, num_of_freedom) =
+                    mConvertPosToXZ * Jv;
+                R_q_to_feature.segment(fea_offset, fea_size) =
+                    mConvertPosToXZ * (link_pos - Jv * mModel->Getq());
+                        }
+            else
+            {
+                std::cout << "[error] pos verify, type "
+                          << cur_feature->mFeatureType << " unsupported\n";
+                exit(0);
+            }
+        }
+        else
+        {
+            std::cout << "[error] unrecognized feature type "
+                      << cur_feature->mFeatureType << std::endl;
+            exit(0);
+        }
+    }
+
+    // 4. begin to form the dFdtau convert matrices
+    tMatrixXd part1 = M_tau_to_q.transpose() * M_q_to_feature.transpose() *
+                      pos_weight.transpose() * pos_weight,
+              part21 = M_q_to_feature * M_tau_to_q,
+              part22 = M_q_to_feature * M_contact_to_q;
+    tVectorXd part3 = M_q_to_feature * R_force_to_q + R_q_to_feature -
+                      pos_feature->mRefFeature;
+
+    tVectorXd res =
+        part1 * (part21 * control_force + part22 * contact_force + part3);
+    std::cout << "pos res = " << res.transpose() << std::endl;
+    double eps = 1e-8;
+    if (res.norm() > eps)
+    {
+        std::cout << "[error] pos feature verified failed\n";
+        // 1. check the convert matrices
+        {
+            tMatrixXd diff = M_tau_to_q - pos_feature->mConvertMatFromTauToq;
+
+            if (diff.norm() > eps)
+            {
+                std::cout << "[error] M tau to q diff = " << diff.norm()
+                          << std::endl;
+                exit(0);
+            }
+        }
+        {
+            tMatrixXd diff =
+                M_contact_to_q - pos_feature->mConvertMatFromContactForceToq;
+
+            if (diff.norm() > eps)
+            {
+                std::cout << "[error] M contact to q diff = " << diff.norm()
+                          << std::endl;
+                exit(0);
+            }
+        }
+        {
+            tMatrixXd diff =
+                M_q_to_feature - pos_feature->mConvertMatFromqToFeature;
+
+            if (diff.norm() > eps)
+            {
+                std::cout << "[error] M q to feature diff = " << diff.norm()
+                          << std::endl;
+                exit(0);
+            }
+        }
+        {
+            tMatrixXd diff =
+                R_q_to_feature - pos_feature->mConvertResFromqToFeature;
+
+            if (diff.norm() > eps)
+            {
+                std::cout << "[error] R q to feature diff = " << diff.norm()
+                          << std::endl;
+                std::cout << "[veri] Res q to feature = "
+                          << R_q_to_feature.transpose() << std::endl;
+                std::cout << "[raw] Res q to feature = "
+                          << pos_feature->mConvertResFromqToFeature.transpose()
+                          << std::endl;
+
+                exit(0);
+            }
+        }
+        {
+            tMatrixXd diff =
+                R_force_to_q - pos_feature->mConvertResFromForceToq;
+
+            if (diff.norm() > eps)
+            {
+                std::cout << "[error] R force to q diff = " << diff.norm()
+                          << std::endl;
+                exit(0);
+            }
+        }
+
+        // verify H,
+        {
+            const tMatrixXd E_local = part1 * part21;
+            const tMatrixXd F_local = part1 * part22;
+            const tVectorXd f_local = -part1 * part3;
+            const tMatrixXd H_local = -E_local.inverse() * F_local;
+
+            const tMatrixXd H_diff = H_local - H_debug,
+                            E_diff = E_local - E_debug,
+                            F_diff = F_local - F_debug;
+            const tVectorXd f_diff = f_local - f_debug;
+            if (E_diff.norm() > eps)
+            {
+                std::cout << "[error] E error, diff = " << E_diff.norm()
+                          << std::endl;
+
+                exit(0);
+            }
+            if (F_diff.norm() > eps)
+            {
+                std::cout << "[error] F error, diff = " << E_diff.norm()
+                          << std::endl;
+                exit(0);
+            }
+            if (H_diff.norm() > eps)
+            {
+                std::cout << "[error] H error, diff = " << H_diff.norm()
+                          << std::endl;
+                exit(0);
+            }
+
+            if (f_diff.norm() > eps)
+            {
+                std::cout << "[error] f error, diff = " << f_diff.norm()
+                          << std::endl;
+                exit(0);
+            }
+        }
+        exit(0);
+    }
 }

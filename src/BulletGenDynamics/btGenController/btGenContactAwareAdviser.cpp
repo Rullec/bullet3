@@ -150,6 +150,45 @@ void btGenContactAwareAdviser::Init(cRobotModelDynamics *model_,
     PostProcess();
 }
 
+void btGenContactAwareAdviser::PreUpdate(double dt)
+{
+    mCurdt = dt;
+
+    // 1. save the current state
+    if (mEnableStateSave)
+        SaveCurrentState();
+
+    // 2. draw the contact points
+    if (mEnableDrawContactPointsInBulletGUIAdviser == true)
+    {
+        ClearDrawPoints();
+        DrawContactPoints();
+    }
+
+    // 3. judge the preliminary
+    if (mRefTraj == nullptr)
+        std::cout << "[error] adviser guide traj hasn't been set\n", exit(0);
+
+    // 4. protect the timestep
+    if (std::fabs(mRefTraj->mTimestep - dt) > 1e-8)
+    {
+        std::cout << "[error] btGenContactAwareAdviser ref motion dt "
+                  << mRefTraj->mTimestep << " != sim dt " << dt << std::endl;
+        exit(0);
+    }
+
+    // 5. judge the end
+    if (IsEnd() == true)
+    {
+        std::cout << "[error] The contact-aware adviser has terminated, it "
+                     "shouldn't be updated anymore\n";
+        exit(0);
+    }
+
+    // 6. record the current state into the save trajectory
+    RecordTraj();
+}
+
 /**
  * \brief               update the adviser
  *  calculate and offer new action guidence for the character
@@ -158,78 +197,31 @@ void btGenContactAwareAdviser::Update(double dt)
 {
     std::cout << "---------------------frame " << mSimFrameId << " ref "
               << mRefFrameId << std::endl;
-    // std::cout << "[debug] model q = " << mModel->Getq().transpose()
-    //           << std::endl;
-    // std::cout << "[debug] ref q = "
-    //           << this->mRefTraj->mq[mRefFrameId].transpose() << std::endl;
-    // std::cout << "[debug] model qdot = " << mModel->Getqdot().transpose()
-    //           << std::endl;
-    if (mEnableStateSave)
-        SaveCurrentState();
-    if (mEnableDrawContactPointsInBulletGUIAdviser == true)
-    {
-        ClearDrawPoints();
-        DrawContactPoints();
-    }
 
-    mCurdt = dt;
-    if (mRefTraj == nullptr)
-        std::cout << "[error] adviser guide traj hasn't been set\n", exit(0);
-    // std::cout << "contact aware ref traj dt = " << mRefTraj->mTimestep << " "
-    //           << dt << std::endl;
-    if (std::fabs(mRefTraj->mTimestep - dt) > 1e-8)
-    {
-        std::cout << "[error] btGenContactAwareAdviser ref motion dt "
-                  << mRefTraj->mTimestep << " != sim dt " << dt << std::endl;
-        exit(0);
-    }
-    if (IsEnd() == true)
-    {
-        std::cout << "[error] The contact-aware adviser has terminated, it "
-                     "shouldn't be updated anymore\n";
-        exit(0);
-    }
+    // 1. pre update, check the preliminary
+    PreUpdate(dt);
 
-    RecordTraj();
-    // // check the current q difference
-    // {
-    // 	tVectorXd q_cur = mModel->Getq(),
-    // 			  qdot_cur = mModel->Getqdot();
+    // 2. calculate the control target from the FBF optimzier
+    FetchControlTarget(dt, mTargetAccel, mTargetVel, mTargetPos, mTargetTau);
 
-    // 	tVectorXd q_ref = mRefTraj->mq[mInternalFrameId],
-    // 			  qdot_ref = mRefTraj->mqdot[mInternalFrameId];
-    // 	tVectorXd q_diff = q_cur - q_ref,
-    // 			  qdot_diff = qdot_cur - qdot_ref;
-    // 	// std::cout << "[ref] qdot diff = " << qdot_diff.transpose() <<
-    // std::endl;
-    // 	// std::cout << "[ref] q diff = " << q_diff.transpose() << std::endl;
-    // }
-    GetTargetInfo(dt, mTargetAccel, mTargetVel, mTargetPos, mTargetTau);
-    // std::cout << "[adviser] get tar pos = " << mTargetPos.transpose()
-    //           << std::endl;
+    // 3. Calculate the convert matrix and residual used in the contact-aware jointed LCP
+    //      If we only use Frame by frame to do control (which means the LCP is disable), call the ControlByFBF method
     if (mEnableOnlyFBFControl == true)
-    {
         mFBFOptimizer->ControlByFBF();
-    }
     else
-    {
         mFeatureVector->Eval(dt, mTargetAccel, mTargetVel, mTargetPos,
                              mTargetTau, mH, mE, mf);
-    }
 
-    UpdateRefChar();
-    // std::cout << "[debug] [new] frame " << mInternalFrameId << " N norm = "
-    // << mN.norm() << std::endl; std::cout << "[debug] [new] frame " <<
-    // mInternalFrameId << " H norm = " << mH.norm() << std::endl; std::cout <<
-    // "[debug] [new] frame " << mInternalFrameId << " E norm = " << mE.norm()
-    // << std::endl; std::cout << "[debug] [new] frame " << mInternalFrameId <<
-    // " f norm = " << mf.norm() << std::endl;
-    // mInternalFrameId++;
-    UpdateReferenceTraj();
-    mSimFrameId++;
-    // if (mInternalFrameId == 3) exit(0);
+    // 4. update
+    PostUpdate();
 }
 
+void btGenContactAwareAdviser::PostUpdate()
+{
+    UpdateDrawingChar();
+    UpdateReferenceTraj();
+    mSimFrameId++;
+}
 /**
  * \brief               load the guidence trajectory
  */
@@ -380,6 +372,10 @@ tVectorXd btGenContactAwareAdviser::CalcControlForce(const tVectorXd &Q_contact)
     fout << "[numeric] control force = " << mCtrlForce.transpose() << std::endl;
     fout.close();
     mFeatureVector->CalcEnergy(mCtrlForce, Q_contact);
+    // mFeatureVector->DebugPosFeatureDFdtauIsZero(mCtrlForce, Q_contact);
+    // mFeatureVector->DebugVelFeatureDFdtauIsZero(mCtrlForce, Q_contact);
+    // mFeatureVector->DebugAccelFeatureDFdtauIsZero(mCtrlForce, Q_contact);
+    // mFeatureVector->DebugTauFeatureDFdtauIsZero(mCtrlForce, Q_contact);
     // when we get the control force, we can evaluate the energy term in btGenFeatureArray then evaulate the control result immediately
 
     return Q_active;
@@ -554,6 +550,9 @@ void btGenContactAwareAdviser::UpdateMultibodyVelocityAndTransformDebug(
     }
 }
 
+/**
+ * 
+ */
 tVectorXd btGenContactAwareAdviser::CalcLCPResidual(double dt) const
 {
     if (mEnableOnlyFBFControl == true)
@@ -605,10 +604,11 @@ bool btGenContactAwareAdviser::IsEnd()
  * \brief					Get current reference gen accel
  * "qddot_target" and "tau_target"
  */
-void btGenContactAwareAdviser::GetTargetInfo(double dt, tVectorXd &qddot_target,
-                                             tVectorXd &qdot_target,
-                                             tVectorXd &q_target,
-                                             tVectorXd &tau_target)
+void btGenContactAwareAdviser::FetchControlTarget(double dt,
+                                                  tVectorXd &qddot_target,
+                                                  tVectorXd &qdot_target,
+                                                  tVectorXd &q_target,
+                                                  tVectorXd &tau_target)
 {
     mFBFOptimizer->CalcTarget(dt, mRefFrameId, qddot_target, qdot_target,
                               q_target, tau_target);
@@ -648,7 +648,7 @@ void btGenContactAwareAdviser::CreateRefChar()
 /**
  * \brief					update the reference character
  */
-void btGenContactAwareAdviser::UpdateRefChar()
+void btGenContactAwareAdviser::UpdateDrawingChar()
 {
     if (mDrawReferenceTrajCharacter)
     {
@@ -920,7 +920,7 @@ void btGenContactAwareAdviser::ClearDrawPoints()
         mBulletGUIHelper->removeGraphicsInstance(pt->getUserIndex());
         delete pt;
     }
-    std::cout << "[debug] clear points " << mDrawPointsList.size() << std::endl;
+    // std::cout << "[debug] clear points " << mDrawPointsList.size() << std::endl;
     mDrawPointsList.clear();
 }
 

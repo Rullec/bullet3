@@ -1,0 +1,9 @@
+{
+    "root_joint": {
+        "accel": 1.0
+    },
+    "LeftLeg_joint": {
+        "accel": 1.0
+    },
+    "tau_weight": 0.0
+}

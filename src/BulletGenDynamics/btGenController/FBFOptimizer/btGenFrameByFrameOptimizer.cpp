@@ -1055,7 +1055,7 @@ void btGenFrameByFrameOptimizer::ClearDrawPoints()
     //           << " now = " << inter_world->getCollisionObjectArray().size()
     //           << std::endl;
 
-    for (auto &pt : this->mDrawPointsList)
+    for (auto &pt : mDrawPointsList)
     {
         // inter_world->getCollisionObjectArray().remove(pt);
         delete pt->getCollisionShape();
@@ -1063,6 +1063,6 @@ void btGenFrameByFrameOptimizer::ClearDrawPoints()
         mBulletGUIHelper->removeGraphicsInstance(pt->getUserIndex());
         delete pt;
     }
-    std::cout << "[debug] clear points " << mDrawPointsList.size() << std::endl;
+    // std::cout << "[debug] clear points " << mDrawPointsList.size() << std::endl;
     mDrawPointsList.clear();
 }

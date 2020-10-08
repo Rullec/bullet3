@@ -1,15 +1,15 @@
 {
     "root_joint": {
-        "vel": 0.0
+        "accel": 0.0
     },
     "LeftLeg_joint": {
-        "vel": 1.0
+        "accel": 1.0
     },
     "LeftFoot_joint": {
-        "vel": 1.0
+        "accel": 1.0
     },
     "LFootTongue_joint": {
-        "vel": 1.0
+        "accel": 1.0
     },
-    "tau_weight": 0.0
+    "tau_weight": 0
 }

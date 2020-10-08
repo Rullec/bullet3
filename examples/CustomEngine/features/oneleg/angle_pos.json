@@ -1,15 +1,15 @@
 {
     "root_joint": {
-        "vel": 0.0
+        "pos": 1.0
     },
     "LeftLeg_joint": {
-        "vel": 1.0
+        "pos": 1.0
     },
     "LeftFoot_joint": {
-        "vel": 1.0
+        "pos": 1.0
     },
     "LFootTongue_joint": {
-        "vel": 1.0
+        "pos": 1.0
     },
     "tau_weight": 0.0
 }

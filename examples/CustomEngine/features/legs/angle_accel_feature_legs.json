@@ -2,12 +2,6 @@
     "root_joint": {
         "accel": 1.0
     },
-    "root_height": {
-        "accel": 0.1
-    },
-    "root_location": {
-        "accel": 0.1
-    },
     "RightLeg_joint": {
         "accel": 0.58
     },
@@ -17,12 +11,6 @@
     "RFootTongue_joint": {
         "accel": 0.1
     },
-    "RFootTongue_location": {
-        "accel": 1
-    },
-    "RFootTongue_height": {
-        "accel": 1
-    },
     "LeftLeg_joint": {
         "accel": 0.58
     },
@@ -31,12 +19,6 @@
     },
     "LFootTongue_joint": {
         "accel": 0.1
-    },
-    "LFootTongue_location": {
-        "accel": 1
-    },
-    "LFootTongue_height": {
-        "accel": 1
     },
     "tau_weight": 0.0
 }

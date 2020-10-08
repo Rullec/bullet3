@@ -6,6 +6,10 @@ import matplotlib.pyplot as plt
 # 1. load current info
 
 
+# suffix = "_oneleg_revo"
+suffix = "_root_y"
+
+
 def load_info(path):
     ref_traj_info = {"q": [], "qdot": [], "qddot": []}
     fbf_traj_info = {"q": [], "qdot": [], "qddot": []}
@@ -17,9 +21,15 @@ def load_info(path):
     with open(path, 'r') as f:
         cont = [line.strip() for line in f.readlines()]
 
+    # def extract_numbers(line):
+    #     return [float(i) for i in line.split()[4:]]
     def extract_numbers(line):
-        return [float(i) for i in line.split()[4:]]
+        global suffix
+        cont = [float(i) for i in line.split()[4:]]
+        return cont
     for line in cont:
+        # print(line)
+        # exit()
         if line.find("[numeric] ref q =") != -1:
             ref_traj_info["q"].append(extract_numbers(line))
         elif line.find("[numeric] ref qdot =") != -1:
@@ -56,6 +66,7 @@ def plot_value(content, title, func):
     val_lst = []
     for line in content:
         # norm_lst.append(np.linalg.norm(line[0:3]))
+        # print(f"line {line}")
         val_lst.append(func(line))
     # print(val_lst)
     plt.plot(val_lst)
@@ -66,7 +77,9 @@ def plot_value(content, title, func):
 # 2. disply & calculate
 
 
-def extract_root(x): return x[1]
+def extract_root_y_value(x): return x[1]
+def extract_oneleg_revolute_dof_value(x): return x[6]
+def extract_oneleg_revolute_control_force(x): return x[0]
 def extract_norm(x): return np.linalg.norm(x)
 
 
@@ -93,26 +106,34 @@ while True:
         prev_frames = now_frames
 
         plt.subplot(3, 5, 1)
-        plot_value(ref_traj_info["q"], "ref_q", extract_root)
+        plot_value(ref_traj_info["q"], "ref_q" + suffix,
+                   extract_root_y_value)
         plt.subplot(3, 5, 6)
-        plot_value(ctrl_res_info["q"], "ctrl_res_q", extract_root)
+        plot_value(fbf_traj_info["q"], "fbf_q" + suffix,
+                   extract_root_y_value)
         plt.subplot(3, 5, 11)
-        plot_value(fbf_traj_info["q"], "fbf_q", extract_root)
+        plot_value(ctrl_res_info["q"], "ctrl_res_q" +
+                   suffix, extract_root_y_value)
 
         plt.subplot(3, 5, 2)
-        plot_value(ref_traj_info["qdot"], "ref_qdot", extract_root)
+        plot_value(ref_traj_info["qdot"], "ref_qdot" +
+                   suffix, extract_root_y_value)
         plt.subplot(3, 5, 7)
-        plot_value(ctrl_res_info["qdot"], "ctrl_res_qdot", extract_root)
+        plot_value(fbf_traj_info["qdot"], "fbf_qdot" +
+                   suffix, extract_root_y_value)
         plt.subplot(3, 5, 12)
-        plot_value(fbf_traj_info["qdot"], "fbf_qdot", extract_root)
+        plot_value(ctrl_res_info["qdot"],
+                   "ctrl_res_qdot" + suffix, extract_root_y_value)
 
         plt.subplot(3, 5, 3)
-        plot_value(ref_traj_info["qddot"], "ref_qddot", extract_root)
+        plot_value(ref_traj_info["qddot"], "ref_qddot" +
+                   suffix, extract_root_y_value)
         plt.subplot(3, 5, 8)
-        plot_value(ctrl_res_info["qddot"], "ctrl_res_qddot", extract_root)
+        plot_value(fbf_traj_info["qddot"], "fbf_qddot" +
+                   suffix, extract_root_y_value)
         plt.subplot(3, 5, 13)
-        plot_value(fbf_traj_info["qddot"], "fbf_qddot", extract_root)
-
+        plot_value(ctrl_res_info["qddot"],
+                   "ctrl_res_qddot" + suffix, extract_root_y_value)
         # plt.subplot(2, 5, 1)
         # plot_value(ref_traj_info["q"], "ref_q", extract_root)
 
@@ -129,7 +150,8 @@ while True:
         plt.subplot(3, 5, 9)
         plot_value(contact_force_lst, "ctrl_res_contact_force", extract_norm)
         plt.subplot(3, 5, 14)
-        plot_value(control_force_lst, "ctrl_res_control_force", extract_norm)
+        plot_value(control_force_lst, "ctrl_res_control_force",
+                   extract_oneleg_revolute_control_force)
 
         plt.subplot(3, 5, 5)
         plt.cla()

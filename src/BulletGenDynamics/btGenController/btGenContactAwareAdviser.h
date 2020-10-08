@@ -109,16 +109,18 @@ protected:
     std::vector<btCollisionObject *> mDrawPointsList;
 
     // ----------------------- methods
+    void PreUpdate(double dt);
+    void PostUpdate();
     void ReadConfig(const std::string &config);
     void ResolveActiveForce();
     void LoadTraj(const std::string &traj);
-    void GetTargetInfo(double dt, tVectorXd &qddot_target,
-                       tVectorXd &qdot_target, tVectorXd &q_target,
-                       tVectorXd &tau_target);
+    void FetchControlTarget(double dt, tVectorXd &qddot_target,
+                            tVectorXd &qdot_target, tVectorXd &q_target,
+                            tVectorXd &tau_target);
     void CreateFeatureVector();
     void PostProcess();
     void CreateRefChar();
-    void UpdateRefChar();
+    void UpdateDrawingChar();
     void RecordTraj();
     void SaveCurrentState();
     void LoadInitState();

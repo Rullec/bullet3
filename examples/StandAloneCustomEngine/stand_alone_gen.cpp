@@ -40,7 +40,7 @@ btGeneralizeWorld *mGenWorld;
 btGenContactAwareAdviser *mAdviser;
 btDiscreteDynamicsWorld *m_dynamicsWorld;
 double mTimestep;
-
+bool gPauseSimulation;
 void stepSimulation(float dt);
 void initPhysics();
 void setFBFOptimizerCoefAndRefTraj(int argc, char *argv[]);
