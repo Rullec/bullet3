@@ -63,31 +63,31 @@ SET(
 	./btGenController/FBFOptimizer/btGenFrameByFrameOptimizer.cpp
 	./btGenController/FBFOptimizer/btGenFrameByFrameOptimizerTerm.cpp
 	./btGenController/FBFOptimizer/btCharContactPoint.cpp
-	./btGenController/QPSolver/MatlabQPSolver.cpp
+	# ./btGenController/QPSolver/MatlabQPSolver.cpp
 	./btGenController/QPSolver/QuadProgQPSolver.cpp
 	./btGenController/QPSolver/eiquadprog.hpp
 	./btGenController/btTraj.cpp
 )
 
-if (UNIX)
-    find_package(Matlab REQUIRED)
-    if(Matlab_FOUND)
-        include_directories(${Matlab_INCLUDE_DIRS})
-    endif()
+# if (UNIX)
+#     find_package(Matlab REQUIRED)
+#     if(Matlab_FOUND)
+#         include_directories(${Matlab_INCLUDE_DIRS})
+#     endif()
 
-    # add matlab QP solver
-    find_library(qp_lib
-                NAMES libQUADASSINPROG.so libQUADASSINPROG.dylib
-				PATHS "./btGenController/QPSolver/SQPMatlab/"
+#     # add matlab QP solver
+#     find_library(qp_lib
+#                 NAMES libQUADASSINPROG.so libQUADASSINPROG.dylib
+# 				PATHS "./btGenController/QPSolver/SQPMatlab/"
 				
-				# /home/xudong/Projects/bullet3/src/BulletGenDynamics
+# 				# /home/xudong/Projects/bullet3/src/BulletGenDynamics
 				
 
-    )
+#     )
 
-    # mwmclmcrrt就是matlab的runtime
-    set(matlab_lib ${qp_lib} mwmclmcrrt)
-endif()
+#     # mwmclmcrrt就是matlab的runtime
+#     set(matlab_lib ${qp_lib} mwmclmcrrt)
+# endif()
 
 SET(BulletGenDynamics_SRCS
 	btGenWorld.cpp
