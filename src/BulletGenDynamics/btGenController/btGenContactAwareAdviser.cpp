@@ -243,7 +243,6 @@ void btGenContactAwareAdviser::LoadTraj(const std::string &path)
     }
     mRefTraj->LoadTraj(path, mModel, mMaxFrame);
     // resolve the active force
-
     if (mResolveControlToruqe)
         ResolveActiveForce();
 
@@ -360,25 +359,50 @@ tVectorXd btGenContactAwareAdviser::CalcControlForce(const tVectorXd &Q_contact)
     // ref_force.transpose() << std::endl; 	Q_active = ref_force;
     // }
     mCtrlForce = Q_active;
-    std::cout << "[numeric] contact force = " << Q_contact.transpose()
-              << std::endl;
-    std::cout << "[numeric] control force = " << mCtrlForce.transpose()
-              << std::endl;
+    // std::cout << "[numeric] contact force = " << Q_contact.transpose()
+    //           << std::endl;
+    // std::cout << "[numeric] control force = " << mCtrlForce.transpose()
+    //           << std::endl;
+    if (mCtrlForce.cwiseAbs().maxCoeff() > 1e6)
+    {
+        std::cout << "[error] control force abs max > 1e6\n";
+        exit(0);
+    }
     std::ofstream fout(debug_path, std::ios::app);
     // std::cout << "[adviser] contact force = " << Q_contact.transpose()
     //           << std::endl;
     fout << "[numeric] contact force = " << Q_contact.transpose() << std::endl;
 
     fout << "[numeric] control force = " << mCtrlForce.transpose() << std::endl;
-    fout.close();
+
     mFeatureVector->CalcEnergy(mCtrlForce, Q_contact);
 
-    mFeatureVector->DebugFullMinimiumIsTheSameAsTheRefTraj(mCtrlForce,
-                                                           Q_contact);
+    // mFeatureVector->DebugFullMinimiumIsTheSameAsTheRefTraj(mCtrlForce,
+    //                                                        Q_contact);
     tVectorXd mocap_contact_force =
         mRefTraj->GetGenContactForce(mRefFrameId - 1, mModel);
-    std::cout << "mocap contact force = " << mocap_contact_force.transpose()
+    tVectorXd mocap_control_force =
+        mRefTraj->GetGenControlForce(mRefFrameId - 1, mModel);
+    // std::cout << "[mocap] contact force = " << mocap_contact_force.transpose()
+    //           << std::endl;
+    // std::cout << "[mocap] control force = " << mocap_control_force.transpose()
+    //           << std::endl;
+
+    tVectorXd contact_force_diff = mocap_contact_force - Q_contact;
+    tVectorXd control_force_diff = mocap_control_force - Q_active;
+    std::cout << "[log] contact_force diff_percent = "
+              << contact_force_diff.norm() / mocap_contact_force.norm() * 100
               << std::endl;
+    std::cout << "[log] control_force diff_percent = "
+              << control_force_diff.norm() / mocap_control_force.norm() * 100
+              << std::endl;
+    fout << "[log] contact_force diff_percent = "
+         << contact_force_diff.norm() / mocap_contact_force.norm() * 100
+         << std::endl;
+    fout << "[log] control_force diff_percent = "
+         << control_force_diff.norm() / mocap_control_force.norm() * 100
+         << std::endl;
+    fout.close();
     // check the contact force & control force that is calculated by the full minimium of optimization problem
     // it should be the same as the contact force in the ref traj
     // but, it will be different from the new LCP solved result
@@ -521,20 +545,20 @@ void btGenContactAwareAdviser::UpdateMultibodyVelocityAndTransformDebug(
             tVectorXd q_diff = q - ref_traj_q, qdot_diff = qdot - ref_traj_qdot,
                       qddot_diff = qddot - ref_traj_qddot;
 
-            std::cout << "[debug] ctrl_res and ref_traj q diff "
-                      << q_diff.norm() << " qdot diff " << qdot_diff.norm()
-                      << " qddot diff = " << qddot_diff.norm() << " "
-                      << "total err" << std::endl;
+            // std::cout << "[debug] ctrl_res and ref_traj q diff "
+            //           << q_diff.norm() << " qdot diff " << qdot_diff.norm()
+            //           << " qddot diff = " << qddot_diff.norm() << " "
+            //           << "total err" << std::endl;
         }
 
         {
             tVectorXd q_diff = q - mTargetPos, qdot_diff = qdot - mTargetVel,
                       qddot_diff = qddot - mTargetAccel;
 
-            std::cout << "[debug] ctrl_res and target_traj q diff "
-                      << q_diff.norm() << " qdot diff " << qdot_diff.norm()
-                      << " qddot diff = " << qddot_diff.norm() << " "
-                      << "ca err" << std::endl;
+            // std::cout << "[debug] ctrl_res and target_traj q diff "
+            //           << q_diff.norm() << " qdot diff " << qdot_diff.norm()
+            //           << " qddot diff = " << qddot_diff.norm() << " "
+            //           << "ca err" << std::endl;
         }
 
         {
@@ -542,10 +566,10 @@ void btGenContactAwareAdviser::UpdateMultibodyVelocityAndTransformDebug(
                       qdot_diff = ref_traj_qdot - mTargetVel,
                       qddot_diff = ref_traj_qddot - mTargetAccel;
 
-            std::cout << "[debug] ref_traj and target_traj q diff "
-                      << q_diff.norm() << " qdot diff " << qdot_diff.norm()
-                      << " qddot diff = " << qddot_diff.norm() << " "
-                      << "FBF err" << std::endl;
+            // std::cout << "[debug] ref_traj and target_traj q diff "
+            //           << q_diff.norm() << " qdot diff " << qdot_diff.norm()
+            //           << " qddot diff = " << qddot_diff.norm() << " "
+            //           << "FBF err" << std::endl;
         }
     }
     // std::cout << "mEnable sync traj per = " << mEnableSyncTrajPeriodly
@@ -582,6 +606,21 @@ tVectorXd btGenContactAwareAdviser::CalcLCPResidual(double dt) const
         dt * Minv *
             (QG + mN * mE.inverse() * mf - mModel->GetCoriolisMatrix() * qdot) +
         qdot;
+    tVectorXd Gen_force = mModel->GetGeneralizedForce();
+    tVectorXd diff = QG - Gen_force;
+    if (diff.norm() > 1e-8)
+    {
+        std::cout << "[error] btGenContactAwareAdviser::CalcLCPResidual: "
+                     "GenForce should be the same as QG, but now the diff "
+                     "is too big "
+                  << diff.transpose() << std::endl;
+        std::cout << "[error] cur total gen force = " << Gen_force.transpose()
+                  << std::endl;
+        std::cout << "[error] cur QG = " << QG.transpose() << std::endl;
+        std::cout << "[error] cur pure = "
+                  << mModel->DebugGetGeneralizedForce().transpose() << std::endl;
+        exit(0);
+    }
     // std::cout << "[debug] [new] frame " << mInternalFrameId << " residual = "
     // << residual.transpose() << std::endl;
     return residual;

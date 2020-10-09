@@ -88,6 +88,7 @@ protected:
     // bool mMBEnableRk4;
     double mMBEpsDiagnoalMassMat;
     double mMBMaxVel;
+    bool mDebugThreeContactForces;
     bool mMBEnableContactAwareLCP;
     // bool mMBEnableGuideAction;
     // std::string mGuidedActionTrajFile;
@@ -140,8 +141,15 @@ protected:
     void CollisionResposeSI(double dt);
     void PushStatePreCollision();
     void PopStatePostColliison();
-    void ApplyCollisionForce();
-
+    std::vector<btGenContactForce *>
+    DebugGetContactForces(double dt, const tVectorXd &control_force);
+    std::vector<btGenContactForce *> DebugGetContactForces(
+        double dt,
+        const std::vector<btGenConstraintGeneralizedForce *> &gen_forces);
+    void DebugPrintContactForce(const std::vector<btGenContactForce *> &fs);
+    tVectorXd DebugConvertCartesianContactForceToGenForce(
+        const tVectorXd &new_q, const std::vector<btGenContactForce *> &fs);
+    tVectorXd DebugGetGenControlForce(int ref_frameid);
     void Update(double dt);
     // void UpdateTransform(double dt);
     void UpdateVelocityInternal(double dt);

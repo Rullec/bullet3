@@ -456,12 +456,10 @@ void btGenCollisionObjData::SetupRobotCollider()
     damping_mat = model->GetDampingMatrix();
     const tMatrixXd I = tMatrixXd::Identity(n_dof, n_dof);
 
-    // tMatrixXd residual_part = (I - dt * inv_M * (coriolis_mat + damping_mat))
-    // * model->Getqdot();  // used as the last part of residual as shown below
-    // tVectorXd residual_part = (I - dt * inv_M * (coriolis_mat + damping_mat))
-    // * model->Getqdot() + 						  dt * inv_M * model->GetGeneralizedForce(); the
-    // computation of residual part is different when the contact-aware LCP is
-    // enabled, so we extract it as an API
+    // tMatrixXd residual_part = (I - dt * inv_M * (coriolis_mat + damping_mat)) * model->Getqdot();
+    // used as the last part of residual as shown below
+    // tVectorXd residual_part = (I - dt * inv_M * (coriolis_mat + damping_mat)) * model->Getqdot() + dt * inv_M * model->GetGeneralizedForce();
+    // the computation of residual part is different when the contact-aware LCP is enabled, so we extract it as an API
     tVectorXd residual_part = CalcRobotColliderResidual(dt);
 
     // 2. begin to form the ultimate velocity convert mat, handle the contact

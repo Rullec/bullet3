@@ -6,6 +6,18 @@
 #include <fstream>
 #include <iostream>
 
+cRobotModelDynamics ::tStateRecord::tStateRecord()
+{
+    only_vel_and_force_recorded = false;
+    q.resize(0);
+    qdot.resize(0);
+    generalized_force.resize(0);
+    link_forces.clear();
+    link_torques.clear();
+    mass_matrix.resize(0, 0);
+    coriolis_matrix.resize(0, 0);
+    damping_matrix.resize(0, 0);
+}
 extern bool gEnablePauseWhenSolveError;
 extern bool gEnableResolveWhenSolveError;
 
@@ -582,6 +594,7 @@ void cRobotModelDynamics::ApplyJointTorque(int joint_id, const tVector &torque)
     mLinkTorques[joint_id] += torque;
 }
 
+tVectorXd cRobotModelDynamics::DebugGetGeneralizedForce() { return mGenForce; }
 tVectorXd cRobotModelDynamics::GetGeneralizedForce()
 {
     tVectorXd Q = tVectorXd::Zero(GetNumOfFreedom());
@@ -880,7 +893,6 @@ void cRobotModelDynamics::PushState(const std::string &tag,
     state->damping_matrix = mDampingMatrix;
     state->coriolis_matrix = coriolis_matrix;
     state->generalized_force = mGenForce;
-
     if (only_vel_and_force == false)
     {
         state->q = mq;
@@ -921,7 +933,6 @@ void cRobotModelDynamics::PopState(const std::string &tag,
     mLinkForces = state->link_forces;
     mLinkTorques = state->link_torques;
     mGenForce = state->generalized_force;
-
     coriolis_matrix = state->coriolis_matrix;
     mDampingMatrix = state->damping_matrix;
 

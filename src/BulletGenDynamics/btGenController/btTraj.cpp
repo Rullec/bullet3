@@ -205,6 +205,7 @@ btTraj::btTraj()
     mqddot.clear();
     mActiveForce.clear();
     mContactForce.clear();
+    mTruthJointForce.clear();
     mTimestep = 0;
 }
 btTraj::~btTraj()
@@ -229,6 +230,7 @@ bool btTraj::LoadTraj(const std::string &path, cRobotModelDynamics *model,
         mqddot.clear();
         mActiveForce.clear();
         mContactForce.clear();
+        mTruthJointForce.clear();
     }
 
     Json::Value root;
@@ -249,6 +251,9 @@ bool btTraj::LoadTraj(const std::string &path, cRobotModelDynamics *model,
     mqddot.resize(mNumOfFrames);
     mActiveForce.resize(mNumOfFrames);
     mContactForce.resize(mNumOfFrames);
+    mTruthJointForce.resize(mNumOfFrames);
+    for (auto &f : mTruthJointForce)
+        f.resize(model->GetNumOfJoint() - 1, tVector::Zero());
     // mContactLocaPos.resize(mNumOfFrames);
 
     for (auto &x : mContactForce)
@@ -310,7 +315,26 @@ bool btTraj::LoadTraj(const std::string &path, cRobotModelDynamics *model,
                 new btGenContactForce(obj, force_value.segment(0, 4),
                                       pos.segment(0, 4), is_self_collision);
         }
-        // calculate
+        // truth joint forces
+        tVectorXd joint_forces;
+        btJsonUtil::ReadVectorJson(
+            btJsonUtil::ParseAsValue("truth_joint_force", cur_data),
+            joint_forces);
+        // std::cout << "frame " << frame_id
+        //           << " joint force = " << joint_forces.transpose() << std::endl;
+        int num_of_actuated_joint = model->GetNumOfJoint() - 1;
+        if (num_of_actuated_joint * 4 != joint_forces.size())
+        {
+            std::cout << "[error] bt load traj v2 requsted joint force length "
+                      << num_of_actuated_joint << " != " << joint_forces.size()
+                      << std::endl;
+            exit(0);
+        }
+        for (int i = 0; i < num_of_actuated_joint; i++)
+        {
+            for (int j = 0; j < 4; j++)
+                mTruthJointForce[frame_id][i][j] = joint_forces[i * 4 + j];
+        }
     }
 
     // calcualte qdot and qddot
@@ -426,7 +450,7 @@ void btTraj::Reshape(int num_of_frame_new)
     mContactForce.resize(num_of_frame_new);
 }
 
-double btTraj::GetTimeLength() const { return mTimestep * mNumOfFrames; }
+double btTraj::GetTimeLength() const { return mTimestep * (mNumOfFrames - 1); }
 
 tVectorXd btTraj::GetGenContactForce(int frame_id, cRobotModelDynamics *model)
 
@@ -451,4 +475,30 @@ tVectorXd btTraj::GetGenContactForce(int frame_id, cRobotModelDynamics *model)
     }
     model->PopState("calc contact force");
     return Q;
+}
+
+tVectorXd btTraj::GetGenControlForce(int frame_id, cRobotModelDynamics *model)
+{
+    tVectorXd legacy_active_force = tVectorXd::Zero(model->GetNumOfFreedom());
+    int num_of_actuated_joint = model->GetNumOfJoint() - 1;
+    auto truth_joint_forces = mTruthJointForce[frame_id];
+    if (truth_joint_forces.size() != num_of_actuated_joint)
+    {
+
+        std::cout << "[error] the num of actuated joints is different "
+                  << num_of_actuated_joint
+                  << " != " << truth_joint_forces.size() << std::endl;
+        exit(0);
+    }
+    for (int joint_id = 1; joint_id < model->GetNumOfJoint(); joint_id++)
+    {
+        auto joint = model->GetJointById(joint_id);
+        int offset = joint->GetFreedoms(0)->id;
+        int dof = joint->GetNumOfFreedom();
+        legacy_active_force.segment(offset, dof) =
+            truth_joint_forces[joint_id - 1].segment(0, dof);
+    }
+    legacy_active_force =
+        legacy_active_force.segment(6, legacy_active_force.size() - 6);
+    return legacy_active_force;
 }

@@ -1,13 +1,13 @@
 {
     "feature_vector_file_full": "./examples/CustomEngine/features/pos_feature_full.json",
     "feature_vector_file": "examples/CustomEngine/features/legs/accel_feature_legs.json",
-    "feature_vector_file_oneleg": "examples/CustomEngine/features/oneleg/angle_pos.json",
-    "feature_vector_file_legs": "examples/CustomEngine/features/2links/pos.json",
+    "feature_vector_file_legs": "examples/CustomEngine/features/oneleg/accel.json",
+    "feature_vector_file_oneleg": "examples/CustomEngine/features/2links/accel.json",
     "resolve_control_tau": true,
     "draw_reference_traj_character": true,
     "draw_target_FBF_character": false,
-    "max_frame": 520,
-    "start_frame": 150,
+    "max_frame": 1500,
+    "start_frame": 2,
     "output_diff": true,
     "output_diff_path": "build_cmake/contact_aware.log",
     "enable_record_ctrled_traj": true,
@@ -19,7 +19,7 @@
     "enable_init_state_load": false,
     "init_state_file": "/tmp/bullet/states/0",
     "enable_only_FBF_control": false,
-    "enable_draw_contact_points_in_bullet_GUI_adviser": true,
+    "enable_draw_contact_points_in_bullet_GUI_adviser": false,
     "ctrl_config": {
         "do_qp_optimization": false,
         "dynamic_pos_energy_coef": 1,
@@ -53,6 +53,6 @@
         "eps_diagnoal_A_matrix_FBF": 1e-05,
         "enable_contact_nonpenetration_constraint": false,
         "enable_contact_reduction": false,
-        "enable_draw_contact_points_in_bullet_GUI": true
+        "enable_draw_contact_points_in_bullet_GUI": false
     }
 }

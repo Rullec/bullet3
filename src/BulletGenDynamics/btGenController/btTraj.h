@@ -13,9 +13,11 @@ struct btTraj
     void Reshape(int num_of_frame_new);
     double GetTimeLength() const;
     tVectorXd GetGenContactForce(int frame_id, cRobotModelDynamics *model);
+    tVectorXd GetGenControlForce(int frame_id, cRobotModelDynamics *model);
     int mNumOfFrames;
     tEigenArr<tVectorXd> mq, mqdot, mqddot;
     tEigenArr<tVectorXd> mActiveForce;
+    std::vector<tEigenArr<tVector>> mTruthJointForce;
     std::vector<std::vector<btGenContactForce *>> mContactForce;
     double mTimestep;
 

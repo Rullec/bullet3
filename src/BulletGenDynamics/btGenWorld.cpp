@@ -173,6 +173,8 @@ void btGeneralizeWorld::Init(const std::string &config_path)
             // btJsonUtil::ParseAsString("controller_path", config_js);
             mLCPConfigPath =
                 btJsonUtil::ParseAsString("lcp_config_path", config_js);
+            mDebugThreeContactForces = btJsonUtil::ParseAsBool(
+                "debug_three_contact_forces", config_js);
         }
 
         mLCPContactSolver = nullptr;
@@ -688,55 +690,81 @@ void btGeneralizeWorld::CollisionResponse(double dt)
         break;
     }
 
-    if (mMBEnableContactAwareLCP == true && mContactForces.size() != 0)
+    if (mMBEnableContactAwareLCP == true && mContactForces.size() != 0 &&
+        mDebugThreeContactForces == true)
     {
+        std::cout << "[debug] begin to debug three contact forces\n";
         // 1. save the contact force and control force
-        std::vector<btGenContactForce *> mContactForces_old = mContactForces;
+
+        std::vector<btGenContactForce *> mContactForces_old(0);
+        for (auto &x : mContactForces)
+            mContactForces_old.push_back(new btGenContactForce(*x));
+
         std::vector<btGenConstraintGeneralizedForce *>
-            mConstraintGenalizedForce_old = mConstraintGenalizedForce;
+            mConstraintGenalizedForce_old(0);
+        for (auto &x : mConstraintGenalizedForce)
+            mConstraintGenalizedForce_old.push_back(
+                new btGenConstraintGeneralizedForce(*x));
+
         std::vector<btGenConstraintGeneralizedForce *>
-            mContactAwareControlForce_old = mContactAwareControlForce;
+            mContactAwareControlForce_old(0);
+
+        for (auto &x : mContactAwareControlForce)
+            mContactAwareControlForce_old.push_back(
+                new btGenConstraintGeneralizedForce(*x));
+
         // 2. apply the control force, resolve the contact force
         // 3. compare the contact force
         std::cout
             << "------------------contact aware contact forces-------------\n";
-        for (auto &f : mContactForces)
-        {
-            std::cout << f->mForce.transpose() << std::endl;
-        }
-        // apply contact aware control force
-        tVectorXd control_force =
-            tVectorXd::Zero(mMultibody->GetNumOfFreedom());
-        for (auto &t : mContactAwareControlForce)
-        {
-            t->model->ApplyGeneralizedForce(t->dof_id, t->value);
-            control_force[t->dof_id] += t->value;
-        }
-        this->mMultibody->SetEnableContactAwareAdviser(false);
-        mMBEnableContactAwareLCP = false;
+        DebugPrintContactForce(mContactForces);
 
-        CollisionResponseLCP(dt);
-
+        // CollisionResponseLCP(dt);
+        auto active_applied_contact_forces =
+            DebugGetContactForces(dt, mContactAwareControlForce);
         std::cout
             << "------------------active applied contact forces-------------\n";
-        for (auto &f : mContactForces)
+        std::cout << "now apply force = ";
+        for (auto &x : mContactAwareControlForce)
         {
-            std::cout << f->mForce.transpose() << std::endl;
+            std::cout << x->value << " ";
         }
+        std::cout << std::endl;
+        DebugPrintContactForce(active_applied_contact_forces);
 
         // output the legacy contact forces
         std::cout
-            << "------------------legacy applied contact forces-------------\n";
-        int ref_frameid = mControlAdviser->GetRefFrameId();
+            << "------------------contact forces from ref traj-------------\n";
+        int ref_frameid = mControlAdviser->GetRefFrameId() - 1;
+        // std::cout << "ref frame id = " << ref_frameid << std::endl;
         auto traj = mControlAdviser->GetRefTraj();
-        for (auto &f : traj->mContactForce[ref_frameid])
-        {
-            std::cout << f->mForce.transpose() << std::endl;
-        }
+        DebugPrintContactForce(traj->mContactForce[ref_frameid]);
+        tVectorXd legacy_gen_contact_force =
+            DebugConvertCartesianContactForceToGenForce(
+                traj->mq[ref_frameid], traj->mContactForce[ref_frameid]);
+        // std::cout << "gen = " << legacy_gen_contact_force.transpose()
+        //           << std::endl;
 
-        // 4. exit
+        tVectorXd legacy_active_force = DebugGetGenControlForce(ref_frameid);
+        std::cout << "truth joint forces = " << legacy_active_force.transpose()
+                  << std::endl;
+
+        std::cout << "-------------contact force after applying the control "
+                     "force from ref traj--------------\n";
+        auto contact_forces_after_applying_the_ref_control =
+            DebugGetContactForces(dt, legacy_active_force);
+        DebugPrintContactForce(contact_forces_after_applying_the_ref_control);
+
+        std::cout << "q = " << mMultibody->Getq().norm() << std::endl;
+        std::cout << "qdot = " << mMultibody->Getqdot().norm() << std::endl;
+        // 4. restore the adviser state, and the old contact forces
         this->mMultibody->SetEnableContactAwareAdviser(true);
         mMBEnableContactAwareLCP = true;
+
+        // apply the old contact forces, then return
+        mContactForces = mContactForces_old;
+        mConstraintGenalizedForce = mConstraintGenalizedForce_old;
+        mContactAwareControlForce = mContactAwareControlForce_old;
     }
     // btTimeUtil::End("LCP total");
     // tVectorXd qnew = mMultibody->Getq();
@@ -797,7 +825,6 @@ void btGeneralizeWorld::CollisionResponse(double dt)
     // mMultibody->GetGeneralizedForce().transpose() << std::endl; fout.close();
 }
 
-void btGeneralizeWorld::ApplyCollisionForce() {}
 extern btGenRigidBody *UpcastRigidBody(const btCollisionObject *col);
 extern btGenRobotCollider *UpcastRobotCollider(const btCollisionObject *col);
 
@@ -874,6 +901,8 @@ void btGeneralizeWorld::CollisionResponseLCP(double dt)
     // mMultibody->PushState("second");
     mLCPContactSolver->ConstraintProcess(dt);
     mContactForces = mLCPContactSolver->GetContactForces();
+    // std::cout << "[bt] contact forces num = " << mContactForces.size()
+    //           << std::endl;
     mConstraintGenalizedForce =
         mLCPContactSolver->GetConstraintGeneralizedForces();
 
@@ -1096,6 +1125,115 @@ void btGeneralizeWorld::PopStatePostColliison()
     {
         mMultibody->PopState(name, false);
     }
+}
+
+/**
+ * \brief               Given the control force, calculate the current contact forces 
+ *  Note that these contact forces are calculated in non-contact-aware environmentI
+*/
+std::vector<btGenContactForce *> btGeneralizeWorld::DebugGetContactForces(
+    double dt, const std::vector<btGenConstraintGeneralizedForce *> &gen_forces)
+{
+    // 2. save the current model state, save the env setting (contact aware or not)
+    bool world_enable_contact_aware = mMBEnableContactAwareLCP;
+    bool model_enable_contact_aware =
+        mMultibody->GetEnableContactAwareAdviser();
+    mMultibody->PushState("debug_get_contact_force");
+    // 3. apply the control force
+    for (auto &f : gen_forces)
+    {
+        mMultibody->ApplyGeneralizedForce(f->dof_id, f->value);
+    }
+
+    // 4. change the env to non-contact-aware environment, collect the reaction contact force,
+    mMultibody->SetEnableContactAwareAdviser(false);
+    mMBEnableContactAwareLCP = false;
+
+    // 5. record the reaction contact force
+    mLCPContactSolver->ConstraintProcess(dt);
+    std::vector<btGenContactForce *> contact_forces =
+        mLCPContactSolver->GetContactForces();
+
+    // 6. resotre the model state, and the env setting
+    mMultibody->PopState("debug_get_contact_force");
+    mMultibody->SetEnableContactAwareAdviser(model_enable_contact_aware);
+    mMBEnableContactAwareLCP = world_enable_contact_aware;
+    // 7. return the contact forces
+    return contact_forces;
+}
+
+std::vector<btGenContactForce *>
+btGeneralizeWorld::DebugGetContactForces(double dt,
+                                         const tVectorXd &control_force)
+{
+    // 1. make sure the length of control for = actuated dof
+    int num_of_freedom = mMultibody->GetNumOfFreedom();
+    int num_of_actuated_freedom = num_of_freedom - 6;
+
+    if (control_force.size() != num_of_actuated_freedom)
+    {
+        std::cout << "[error] DebugGetContactForces: control force length "
+                     "inconsistent "
+                  << control_force << " != " << num_of_actuated_freedom
+                  << std::endl;
+        exit(0);
+    }
+
+    // 1. convert the gen forces to a single control force vector
+    std::vector<btGenConstraintGeneralizedForce *> gen_forces(0);
+    for (int i = 0; i < control_force.size(); i++)
+    {
+        gen_forces.push_back(new btGenConstraintGeneralizedForce(
+            mMultibody, i + 6, control_force[i]));
+    }
+
+    // 2. call another API, return
+    return DebugGetContactForces(dt, gen_forces);
+}
+
+tVectorXd btGeneralizeWorld::DebugConvertCartesianContactForceToGenForce(
+    const tVectorXd &new_q, const std::vector<btGenContactForce *> &fs)
+{
+    // 1. save state
+    mMultibody->PushState("debug_convert_cartesian_contact_force");
+    // set new state
+    mMultibody->SetqAndqdot(new_q, mMultibody->Getqdot());
+
+    // calc the gen force
+    tVectorXd Q = tVectorXd::Zero(mMultibody->GetNumOfFreedom());
+    // std::cout << "----------begin to convert the cartesian contact "
+    //              "forces----------\n";
+    for (auto f : fs)
+    {
+        if (f->mObj->GetType() == eColObjType::RobotCollder)
+        {
+            auto collider = dynamic_cast<btGenRobotCollider *>(f->mObj);
+            tMatrixXd jac;
+            mMultibody->ComputeJacobiByGivenPointTotalDOFWorldFrame(
+                collider->mLinkId, f->mWorldPos.segment(0, 3), jac);
+            Q += jac.transpose() * f->mForce.segment(0, 3);
+        }
+    }
+    // restore state
+    mMultibody->PopState("debug_convert_cartesian_contact_force");
+
+    // return the gen force
+    return Q;
+}
+
+void btGeneralizeWorld::DebugPrintContactForce(
+    const std::vector<btGenContactForce *> &fs)
+{
+    for (auto &x : fs)
+    {
+        if (x->mObj->GetType() == eColObjType::RobotCollder)
+            std::cout << x->mForce.transpose() << std::endl;
+    }
+}
+tVectorXd btGeneralizeWorld::DebugGetGenControlForce(int ref_frameid)
+{
+    return mControlAdviser->GetRefTraj()->GetGenControlForce(ref_frameid,
+                                                             mMultibody);
 }
 
 void btGeneralizeWorld::CollectFrameInfo(double dt)

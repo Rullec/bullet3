@@ -29,6 +29,7 @@ public:
     void ApplyLinkTorque(int link_id, const tVector &torque);
     void ApplyJointTorque(int joint_id, const tVector &torque);
     tVectorXd GetGeneralizedForce();
+    tVectorXd DebugGetGeneralizedForce();
     btGenRobotCollider *GetLinkCollider(int link_id);
     void ClearForce();
     tVectorXd Getqddot();
@@ -77,6 +78,7 @@ protected:
     struct tStateRecord
     {
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+        tStateRecord();
         bool only_vel_and_force_recorded;
         tVectorXd q, qdot;
         tVectorXd generalized_force;

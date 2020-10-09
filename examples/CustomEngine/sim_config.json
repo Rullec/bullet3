@@ -22,5 +22,6 @@
     "enable_pause_when_max_vel": false,
     "lcp_config_path": "./examples/CustomEngine/lcp_config.json",
     "mb_enable_guide_action": false,
-    "guided_action_traj_file": "./tmp/new_trajs/new_traj_full.json"
+    "guided_action_traj_file": "./tmp/new_trajs/new_traj_full.json",
+    "debug_three_contact_forces": false
 }

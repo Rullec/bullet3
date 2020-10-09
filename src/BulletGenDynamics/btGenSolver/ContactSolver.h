@@ -17,6 +17,13 @@ struct btGenContactForce
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
     btGenContactForce(btGenCollisionObject *mObj, const tVector &mForce,
                       const tVector &mWorldPos, bool);
+    btGenContactForce(const btGenContactForce &old_obj)
+    {
+        mObj = old_obj.mObj;
+        mForce = old_obj.mForce;
+        mWorldPos = old_obj.mWorldPos;
+        mIsSelfCollision = old_obj.mIsSelfCollision;
+    }
     btGenCollisionObject *mObj;
     tVector mForce, mWorldPos; // position in world and force in world frame
     bool mIsSelfCollision;
@@ -29,7 +36,13 @@ struct btGenConstraintGeneralizedForce
         : model(_model), dof_id(_dof_id), value(_val)
     {
     }
-
+    btGenConstraintGeneralizedForce(
+        const btGenConstraintGeneralizedForce &old_obj)
+    {
+        model = old_obj.model;
+        dof_id = old_obj.dof_id;
+        value = old_obj.value;
+    }
     cRobotModelDynamics *model;
     double dof_id;
     double value;

@@ -359,6 +359,7 @@ void btGenFeatureArray::PrintFeatureInfo() const
 {
     std::cout << "-----------------PrintFeatureInfo begin-----------------\n";
     int num_of_links = mModel->GetNumOfLinks();
+    std::vector<bool> dof_controllable_lst(num_of_links, false);
     for (int i = 0; i < 3; i++)
     {
         auto cur_feature = mFeatureArrays[i];
@@ -379,7 +380,6 @@ void btGenFeatureArray::PrintFeatureInfo() const
             exit(1);
             break;
         }
-        std::vector<bool> dof_controllable_lst(num_of_links, false);
         for (const auto &x : cur_feature->mFeatureVector)
         {
             // std::cout << "feature " << x->mLinkName << " type " <<
@@ -433,6 +433,18 @@ void btGenFeatureArray::PrintFeatureInfo() const
                   << "total feature size = " << cur_feature->mTotalFeatureSize
                   << std::endl;
     }
+    // check control dof
+    for (int link_id = 0; link_id < num_of_links; link_id++)
+    {
+        if (false == dof_controllable_lst[link_id])
+        {
+            std::cout << "link " << link_id << " "
+                      << mModel->GetLinkById(link_id)->GetName()
+                      << " is not controlled\n";
+            exit(0);
+        }
+    }
+
     std::cout << "model dof = " << mModel->GetNumOfFreedom() << std::endl;
     std::cout << "-----------------PrintFeatureInfo end-----------------\n";
 }

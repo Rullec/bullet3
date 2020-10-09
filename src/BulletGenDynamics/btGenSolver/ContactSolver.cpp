@@ -270,7 +270,6 @@ void btGenContactSolver::ConstraintSetup()
     {
         btDispatcher *dispatcher = mWorld->getDispatcher();
         int n_manifolds = dispatcher->getNumManifolds();
-        // std::cout << "manifold numbers = " << n_manifolds << std::endl;
         for (int i = 0; i < n_manifolds; i++)
         {
             const auto &manifold = dispatcher->getManifoldByIndexInternal(i);
@@ -476,7 +475,7 @@ void btGenContactSolver::SolveByLCP()
     // fout.close();
     if (ret != 0)
     {
-        std::cout << "solved failed\n";
+        std::cout << "[error] bt LCP solved failed, ret !=0 \n";
     }
 
     // Convert LCP result vector to cartesian forces
@@ -895,7 +894,8 @@ void btGenContactSolver::AddManifold(btPersistentManifold *manifold)
         }
         else
         {
-            if (mEnableMultibodySelfCol == true)
+            if (mEnableMultibodySelfCol == true &&
+                mMultibodyArray[0]->GetEnableContactAwareAdviser() == false)
             {
                 if (mEnableDebugOutput)
                 {
@@ -908,6 +908,13 @@ void btGenContactSolver::AddManifold(btPersistentManifold *manifold)
 
                 // only add once for self-collisoin contact point
                 mColGroupData[data->mbody0GroupId]->AddContactPoint(data, true);
+            }
+            else if (mMultibodyArray[0]->GetEnableContactAwareAdviser() == true)
+            {
+                std::cout << "[warn] self collision is ignored in contact "
+                             "aware control\n";
+                delete data;
+                continue;
             }
             else
             {
