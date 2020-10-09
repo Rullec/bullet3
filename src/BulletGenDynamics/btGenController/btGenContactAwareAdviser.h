@@ -49,6 +49,7 @@ public:
     void Reset();
     btGenFrameByFrameOptimizer *GetFBFOptimizer();
     void SetBulletGUIHelperInterface(struct GUIHelperInterface *inter);
+    int GetRefFrameId() const { return mRefFrameId; }
     // void GetAdviseInfo(tMatrixXd& C, tMatrixXd& D, tMatrixXd& E, tMatrixXd&
     // N, tVectorXd& b);
 

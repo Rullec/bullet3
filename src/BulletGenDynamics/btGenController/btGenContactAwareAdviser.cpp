@@ -372,6 +372,18 @@ tVectorXd btGenContactAwareAdviser::CalcControlForce(const tVectorXd &Q_contact)
     fout << "[numeric] control force = " << mCtrlForce.transpose() << std::endl;
     fout.close();
     mFeatureVector->CalcEnergy(mCtrlForce, Q_contact);
+
+    mFeatureVector->DebugFullMinimiumIsTheSameAsTheRefTraj(mCtrlForce,
+                                                           Q_contact);
+    tVectorXd mocap_contact_force =
+        mRefTraj->GetGenContactForce(mRefFrameId - 1, mModel);
+    std::cout << "mocap contact force = " << mocap_contact_force.transpose()
+              << std::endl;
+    // check the contact force & control force that is calculated by the full minimium of optimization problem
+    // it should be the same as the contact force in the ref traj
+    // but, it will be different from the new LCP solved result
+    {
+    }
     // mFeatureVector->DebugPosFeatureDFdtauIsZero(mCtrlForce, Q_contact);
     // mFeatureVector->DebugVelFeatureDFdtauIsZero(mCtrlForce, Q_contact);
     // mFeatureVector->DebugAccelFeatureDFdtauIsZero(mCtrlForce, Q_contact);

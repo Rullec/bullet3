@@ -30,11 +30,13 @@ public:
     void DebugAccelFeatureDFdtauIsZero(const tVectorXd &control_force,
                                        const tVectorXd &contact_force);
     void DebugVelFeatureDFdtauIsZero(const tVectorXd &control_force,
-                                       const tVectorXd &contact_force);
+                                     const tVectorXd &contact_force);
     void DebugPosFeatureDFdtauIsZero(const tVectorXd &control_force,
-                                       const tVectorXd &contact_force);
+                                     const tVectorXd &contact_force);
     void DebugTauFeatureDFdtauIsZero(const tVectorXd &control_force,
-                                       const tVectorXd &contact_force);
+                                     const tVectorXd &contact_force);
+    void DebugFullMinimiumIsTheSameAsTheRefTraj(const tVectorXd &control_force,
+                                                const tVectorXd &contact_force);
     virtual ~btGenFeatureArray();
 
 protected:

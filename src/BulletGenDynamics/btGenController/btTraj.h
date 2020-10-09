@@ -12,6 +12,7 @@ struct btTraj
     bool SaveTraj(const std::string &path, cRobotModelDynamics *model);
     void Reshape(int num_of_frame_new);
     double GetTimeLength() const;
+    tVectorXd GetGenContactForce(int frame_id, cRobotModelDynamics *model);
     int mNumOfFrames;
     tEigenArr<tVectorXd> mq, mqdot, mqddot;
     tEigenArr<tVectorXd> mActiveForce;

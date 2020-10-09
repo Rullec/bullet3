@@ -113,6 +113,8 @@ protected:
     std::vector<btPersistentManifold *> mManifolds;
     std::vector<btGenContactForce *> mContactForces;
     std::vector<btGenConstraintGeneralizedForce *> mConstraintGenalizedForce;
+    std::vector<btGenConstraintGeneralizedForce *> mContactAwareControlForce;
+
     std::vector<btCollisionShape *> mCollisionShapeArray;
     void createRigidBody(double mass, const btTransform &startTransform,
                          btCollisionShape *shape, const std::string &name,
@@ -138,6 +140,7 @@ protected:
     void CollisionResposeSI(double dt);
     void PushStatePreCollision();
     void PopStatePostColliison();
+    void ApplyCollisionForce();
 
     void Update(double dt);
     // void UpdateTransform(double dt);

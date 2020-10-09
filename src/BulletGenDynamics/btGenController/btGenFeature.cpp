@@ -2018,7 +2018,7 @@ void btGenFeatureArray::DebugPosFeatureDFdtauIsZero(
                     mConvertPosToXZ * Jv;
                 R_q_to_feature.segment(fea_offset, fea_size) =
                     mConvertPosToXZ * (link_pos - Jv * mModel->Getq());
-                        }
+            }
             else
             {
                 std::cout << "[error] pos verify, type "
@@ -2151,4 +2151,54 @@ void btGenFeatureArray::DebugPosFeatureDFdtauIsZero(
         }
         exit(0);
     }
+}
+
+void btGenFeatureArray::DebugFullMinimiumIsTheSameAsTheRefTraj(
+    const tVectorXd &control_force, const tVectorXd &contact_force)
+{
+    if (mFeatureArrays[0]->mNumOfFeature != 0 ||
+        mFeatureArrays[1]->mNumOfFeature != 0)
+    {
+        std::cout << "[error] pos and vel feature is illegal in "
+                     "DebugFullMinimiumIsTheSameAsTheRefTraj\n";
+        exit(0);
+    }
+    // 1. calculate the O, P, R in : feature = O * \tau + P * \chi + R.
+    const auto &accel_feature = mFeatureArrays[2];
+    tMatrixXd O = accel_feature->mConvertMatFromqToFeature *
+                  accel_feature->mConvertMatFromTauToq,
+              P = accel_feature->mConvertMatFromqToFeature *
+                  accel_feature->mConvertMatFromContactForceToq;
+    tVectorXd R = accel_feature->mConvertMatFromqToFeature *
+                      accel_feature->mConvertResFromForceToq +
+                  accel_feature->mConvertResFromqToFeature;
+    if (contact_force.norm() < 1e-10)
+        P.resize(O.rows(), 0);
+
+    tMatrixXd S = tMatrixXd::Zero(O.rows(), O.cols() + P.cols());
+    S.block(0, 0, O.rows(), O.cols()) = O;
+    S.block(0, O.cols(), P.rows(), P.cols()) = P;
+
+    tMatrixXd accel_weight = accel_feature->mWeight.asDiagonal();
+
+    tMatrixXd A = S.transpose() * accel_weight.transpose() * accel_weight * S;
+    tVectorXd res = S.transpose() * accel_weight.transpose() * accel_weight *
+                    (R - accel_feature->mRefFeature);
+
+    // std::cout << "part1 = \n" << part1 << std::endl;
+    // std::cout << "part1 inv = \n" << part1.inverse() << std::endl;
+    // tMatrixXd part2 = S.transpose() * accel_weight.transpose() * accel_weight;
+    // tVectorXd X = part1.inverse() * part2 * (accel_feature->mRefFeature - R);
+    Eigen::FullPivLU<tMatrixXd> lu(A);
+    tVectorXd X_new = lu.solve(-res);
+    tVectorXd min_tau = X_new.segment(0, mModel->GetNumOfFreedom() - 6);
+    tVectorXd min_fc = X_new.segment(mModel->GetNumOfFreedom() - 6,
+                                     X_new.size() - min_tau.size());
+    std::cout << "LSQ min tau = " << min_tau.transpose() << std::endl;
+    std::cout << "LSQ min contact force = " << min_fc.transpose() << std::endl;
+    std::cout << "LCP contact force = " << contact_force.transpose()
+              << std::endl;
+    // std::cout << "X new = " << X_new.transpose() << std::endl;
+    // std::cout << "control force = " << control_force.transpose() << std::endl;
+    // exit(0);
 }

@@ -427,3 +427,28 @@ void btTraj::Reshape(int num_of_frame_new)
 }
 
 double btTraj::GetTimeLength() const { return mTimestep * mNumOfFrames; }
+
+tVectorXd btTraj::GetGenContactForce(int frame_id, cRobotModelDynamics *model)
+
+{
+    if (frame_id >= mNumOfFrames)
+    {
+        std::cout << "[error] btTraj::GetGenContactForce for frame " << frame_id
+                  << " illegal\n";
+        exit(0);
+    }
+    model->PushState("calc contact force");
+    model->SetqAndqdot(this->mq[frame_id], mqdot[frame_id]);
+    auto contact_forces = this->mContactForce[frame_id];
+    tVectorXd Q = tVectorXd::Zero(model->GetNumOfFreedom());
+    for (auto fc : contact_forces)
+    {
+        auto link = dynamic_cast<btGenRobotCollider *>(fc->mObj);
+        tMatrixXd jac;
+        model->ComputeJacobiByGivenPointTotalDOFWorldFrame(
+            link->mLinkId, fc->mWorldPos.segment(0, 3), jac);
+        Q += jac.transpose() * fc->mForce.segment(0, 3);
+    }
+    model->PopState("calc contact force");
+    return Q;
+}
