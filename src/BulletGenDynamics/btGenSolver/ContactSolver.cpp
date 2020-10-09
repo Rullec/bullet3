@@ -700,6 +700,7 @@ void btGenContactSolver::RebuildColObjData()
         }
     }
 
+    if (ignored_ids.size())
     {
         std::cout << "[lcp] body ";
         for (auto &x : ignored_ids)
@@ -782,7 +783,7 @@ void btGenContactSolver::CalcRelvelConvertMat()
                                                                 final_shape);
             if (mColGroupData[body1_groupid]->mBody->IsStatic() == false)
             {
-                tVectorXd res =
+                tMatrixXd res =
                     rel_vel_convert_mat.block(i * 3, 0, 3, final_shape) -
                     mColGroupData[body1_groupid]
                         ->mConvertCartesianForceToVelocityMat.block(

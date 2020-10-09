@@ -1385,7 +1385,7 @@ void btGenFeatureArray::CalcEnergy(const tVectorXd &control_force,
     fout.close();
 }
 
-extern bool gPauseSimulation;
+// extern bool gPauseSimulation;
 void btGenFeatureArray::DebugAccelFeatureDFdtauIsZero(
     const tVectorXd &control_force, const tVectorXd &contact_force)
 {
@@ -1691,7 +1691,7 @@ void btGenFeatureArray::DebugAccelFeatureDFdtauIsZero(
                 exit(0);
             }
         }
-        gPauseSimulation = true;
+        // gPauseSimulation = true;
     }
     // alpha_feature->mConvertMatFromContactForceToq;
     // alpha_feature->mConvertMatFromqToFeature;
