@@ -497,7 +497,7 @@ void cIDSolver::GetContactForces()
 	}
 }
 
-void cIDSolver::RecordMultibodyInfo(std::vector<tMatrix>& local_to_world_rot, std::vector<tVector>& link_pos_world, std::vector<tVector> & link_vel_world, std::vector<tVector> & link_omega_world) const
+void cIDSolver::RecordMultibodyInfo(tEigenArr<tMatrix>& local_to_world_rot, tEigenArr<tVector>& link_pos_world, tEigenArr<tVector> & link_vel_world, tEigenArr<tVector> & link_omega_world) const
 {
 	// std::cout <<"begin info \n";
 	assert(local_to_world_rot.size() == mNumLinks);

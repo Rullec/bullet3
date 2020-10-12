@@ -122,7 +122,7 @@ void cRobotModel::ResetPose()
     this->Apply(zeros, 0);
 }
 
-void cRobotModel::GetAllLinksRotation(std::vector<tMatrix> &r)
+void cRobotModel::GetAllLinksRotation(tEigenArr<tMatrix> &r)
 {
     for (auto &child : children_chain)
     {
@@ -133,7 +133,7 @@ void cRobotModel::GetAllLinksRotation(std::vector<tMatrix> &r)
     }
 }
 
-void cRobotModel::GetAllRotation(std::vector<tMatrix> &r)
+void cRobotModel::GetAllRotation(tEigenArr<tMatrix> &r)
 {
     for (auto &child : children_chain)
     {

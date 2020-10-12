@@ -120,7 +120,7 @@ void cIDSolver::VerifyMomentum()
 void cIDSolver::VerifyLinkVel()
 {
     // now calculate the vel of link COM by myself
-    std::vector<tVector> compute_link_vel(mNumLinks), compute_link_omega(mNumLinks);
+    tEigenArr<tVector> compute_link_vel(mNumLinks), compute_link_omega(mNumLinks);
     {
         // set up for base link
         btVector3 base_omega_world = btVector3(mMultibody->getRealBuf()[0], mMultibody->getRealBuf()[1], mMultibody->getRealBuf()[2]),

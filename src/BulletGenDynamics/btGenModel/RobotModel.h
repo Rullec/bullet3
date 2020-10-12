@@ -111,8 +111,8 @@ public:
     std::vector<std::string> GetJointNames();
     void ResetPose();
 
-    void GetAllLinksRotation(std::vector<tMatrix> &r);
-    void GetAllRotation(std::vector<tMatrix> &r);
+    void GetAllLinksRotation(tEigenArr<tMatrix> &r);
+    void GetAllRotation(tEigenArr<tMatrix> &r);
     void GetAllLinksPos(EIGEN_V_tVector3d &r);
 
     void GetAllLinksPosTimesMass(tMatrixXd &x);
