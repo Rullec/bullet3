@@ -47,12 +47,13 @@ enum JointType
 {
     INVALID_JOINT = -1,
     NONE_JOINT,
+    LIMIT_NONE_JOINT,
     SPHERICAL_JOINT,
     REVOLUTE_JOINT,
     FIXED_JOINT,
     TOTAL_JOINT_TYPE
 };
-const std::string joint_type_keys[TOTAL_JOINT_TYPE] = {"none", "spherical",
+const std::string joint_type_keys[TOTAL_JOINT_TYPE] = {"none", "limit_none", "spherical",
                                                        "revolute", "fixed"};
 struct BaseObjectParams
 {
@@ -287,9 +288,9 @@ protected:
     EIGEN_V_tMatrixD mTq;     // \partial local  transform over \partial q
     EIGEN_V_tMatrixD mWq;     // \partial global transform over \partial q
     int total_freedoms;       // total_freedom = prev_freedom + local_freedom
-    int prev_freedoms;
+    int prev_freedoms;        // the freedoms owned by my parent joints
     std::vector<int> dependent_dof_id;
-    int local_freedom;
+    int local_freedom; // the freedom owned by myself
     tMatrix local_transform;
     tMatrix global_transform;
 

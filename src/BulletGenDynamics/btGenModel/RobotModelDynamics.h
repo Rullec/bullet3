@@ -23,8 +23,13 @@ public:
     void ApplyGravity(const tVector &g); // apply force
     tVectorXd CalcGenGravity(
         const tVector &g) const; // calculate the generalized gravity, sometimes
-                                 // useful in external calculationI
+                                 // useful in external calculation
+    tMatrixXd CalcdGenGravitydq(const tVector &g) const;
+    void TestdGenGravitydq(const tVector &g);
+
     void ApplyForce(int link_id, const tVector &f, const tVector &applied_pos);
+    void ApplyForce3d(int link_id, const tVector3d &f,
+                      const tVector3d &applied_pos);
     void ApplyGeneralizedForce(int dof_id, double value);
     void ApplyLinkTorque(int link_id, const tVector &torque);
     void ApplyJointTorque(int joint_id, const tVector &torque);

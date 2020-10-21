@@ -22,6 +22,7 @@ public:
 
     //===============For RigidBody Dynamics===============
     void ComputeMassMatrix() override;
+    void ComputedMdq(tEigenArr<tMatrixXd> &dMdq);
     void ComputeJKv_dot(tVectorXd &q_dot, tVector3d &p) override;
     void ComputeJKw_dot(tVectorXd &q_dot) override;
     void ComputeDJkvdq(tVector3d &p) override;
@@ -37,6 +38,7 @@ public:
     int GetColGroup() const;
     void SetColGroup(int);
     tMatrixXd GetTotalDofdJKv_dq(int target_dof_id) const;
+    tMatrixXd GetTotalDofdJKw_dq(int target_dof_id) const;
 
 protected:
     tVector3d link_vel, link_omega; // the lin vel and ang vel w.r.t the COM of

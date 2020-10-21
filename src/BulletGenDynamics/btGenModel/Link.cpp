@@ -401,32 +401,50 @@ tMatrixXd Link::GetTotalDofdJKv_dq(int target_dof_id) const
             dJkv_dq(i, j) = GetJKv_dq(i)(j, target_dof_id);
         }
     return dJkv_dq;
-    // int local_id = -1;
-    // for (int i = 0; i < total_freedoms; i++)
-    // {
-    // 	if (target_dof_id == dependent_dof_id[i])
-    // 	{
-    // 		local_id = i;
-    // 		break;
-    // 	}
-    // }
+}
 
-    // // 2. if not, return an zero matrix
-    // // 3. if it effects, get the local_dof_id accordly, get the dJkv_dq, and
-    // reassign it to an global map if (local_id != -1)
-    // {
-    // 	std::cout << "full dof " << num_of_full_freedom << std::endl;
-    // 	std::cout << "total local dof " << total_freedoms << std::endl;
-    // 	const tMatrixXd& dJkv_dq_local = GetJKv_dq(local_id);
-    // 	std::cout << "local dJkvdq size = " << dJkv_dq_local.rows() << " " <<
-    // dJkv_dq_local.cols() << std::endl; 	for (int i = 0; i < total_freedoms;
-    // i++)
-    // 	{
-    // 		int g_id = dependent_dof_id[i];
-    // 		std::cout << "local dof " << i << " global dof " << g_id <<
-    // std::endl; 		dJkv_dq_global.col(g_id) = dJkv_dq_local.col(i);
-    // 	}
-    // }
+tMatrixXd Link::GetTotalDofdJKw_dq(int target_dof_id) const
+{
+    tMatrixXd dJkw_dq = tMatrixXd::Zero(3, global_freedom);
+    for (int i = 0; i < 3; i++)
+        for (int j = 0; j < global_freedom; j++)
+        {
+            dJkw_dq(i, j) = GetJKw_dq(i)(j, target_dof_id);
+        }
+    return dJkw_dq;
+}
+/**
+ * \brief           Compute dM/dq, M is the mass matrix
+ * M =  [ I3m  0 ]
+ *      [ 0   RI0RT]
+ * 
+ * dMdq = [ 0  0 ]
+ *      [ 0   d(RI0RT)/dq]
+ * dRI0RTdq = dRdq I0RT + R*I0d(RT)dq
+*/
+void Link::ComputedMdq(tEigenArr<tMatrixXd> &dMdq)
+{
+    // std::cout << "[log] link " << GetId() << " dmdq begin\n";
+    int dMdq_shape = 6;
+    dMdq.resize(global_freedom, tMatrixXd::Zero(dMdq_shape, dMdq_shape));
+    tMatrix3d R = global_transform.topLeftCorner<3, 3>();
+    // 1. shape the dRdq
+    tEigenArr<tMatrix3d> dRdq(global_freedom, tMatrix3d::Zero());
+    for (int local_dof_id = 0; local_dof_id < total_freedoms; local_dof_id++)
+    {
+        auto parent_joint = this->GetParent();
+        // std::cout << "[log] joint " << parent_joint->GetId() << std::endl;
 
-    // return dJkv_dq_global;
+        int global_dof_id = GetPrevFreedomIds()[local_dof_id];
+
+        dRdq[global_dof_id] = GetMWQ(local_dof_id).topLeftCorner<3, 3>();
+    }
+
+    // 2. shape the final result
+    for (int global_dof_id = 0; global_dof_id < global_freedom; global_dof_id++)
+    {
+        dMdq[global_dof_id].block(3, 3, 3, 3) =
+            dRdq[global_dof_id] * Ibody * R.transpose() +
+            R * Ibody * dRdq[global_dof_id].transpose();
+    }
 }

@@ -49,6 +49,14 @@ void RootJoint::InitTerms()
     InitMatrix();
 }
 
+/**
+ * \brief           Calculate the rotation matrices for root joint
+ * 
+ * the root joint has 6 freedoms, so the "r_m" member has 6 elements
+ * 
+ * r_m[0, 1, 2] = translate mat of freedom "x, y, z"
+ * r_m[3, 4, 5] = rotation mat of freedom "x, y, z"
+*/
 void RootJoint::GetRotations(tMatrix3d &m)
 {
     for (int i = TRANSLATE_X; i < REVOLUTE_X; i++)
@@ -58,6 +66,9 @@ void RootJoint::GetRotations(tMatrix3d &m)
     }
     m.setIdentity();
 
+
+    // calculate theta_x, theta_y, theta_z rotation matrices, and their first order derivation, 
+    // Note that it is dR/dq, but not dR/dt
     xconventionTransform(r_m[REVOLUTE_X], freedoms[REVOLUTE_X].v);
     xconventionRotation_dx(r_m_first_deriv[REVOLUTE_X], freedoms[REVOLUTE_X].v);
 
@@ -67,15 +78,22 @@ void RootJoint::GetRotations(tMatrix3d &m)
     zconventionTransform(r_m[REVOLUTE_Z], freedoms[REVOLUTE_Z].v);
     zconventionRotation_dz(r_m_first_deriv[REVOLUTE_Z], freedoms[REVOLUTE_Z].v);
 
+    // col major, the 12th elements is (0, 3) which stands for X translate in homogeneous coordinate
+    // r_m[TRANSLATE_X] = r_m[0], it is the translate matrix for x translation freedom
     r_m[TRANSLATE_X].setIdentity();
     r_m[TRANSLATE_X].data()[12] = local_pos[0];
 
+    // col major, the 13th elements is (1, 3) which stands for Y translate in homogeneous coordinate
+    // r_m[TRANSLATE_Y] = r_m[1], the translation matrix for y freedom
     r_m[TRANSLATE_Y].setIdentity();
     r_m[TRANSLATE_Y].data()[13] = local_pos[1];
 
+    // col major, the 14th elements is (2, 3) which stands for Z translate in homogeneous coordinate
+    // r_m[TRANSLATE_Z] = r_m[1], the translation matrix for Z freedom
     r_m[TRANSLATE_Z].setIdentity();
     r_m[TRANSLATE_Z].data()[14] = local_pos[2];
 
+    // d(translate_mat)/d[x, y, z] has only one nonzero element
     r_m_first_deriv[TRANSLATE_X].setZero();
     r_m_first_deriv[TRANSLATE_X].data()[12] = 1;
 
@@ -84,6 +102,9 @@ void RootJoint::GetRotations(tMatrix3d &m)
 
     r_m_first_deriv[TRANSLATE_Z].setZero();
     r_m_first_deriv[TRANSLATE_Z].data()[14] = 1;
+
+
+    // the final rotation matrix, without translation, is simple = Rz * Ry * Rx
     m = r_m[REVOLUTE_Z].topLeftCorner<3, 3>() *
         r_m[REVOLUTE_Y].topLeftCorner<3, 3>() *
         r_m[REVOLUTE_X].topLeftCorner<3, 3>();
@@ -105,8 +126,22 @@ void RootJoint::Tell()
     std::cout << name << ":\nprev_freedom: " << total_freedoms << std::endl;
 }
 
+/**
+ * \brief               Compute the d(local_transform)/dq
+ * 
+ *  For floating root joint, it has 6 freedoms, q = [x, y, z, theta_x, theta_y, theta_z]
+ *  And the final local transform 
+ *      T = Rz * Ry * Rx * Trans_z * Trans_y * Trans_x
+ *      T \in R^{4 x 4}
+ * 
+ * 
+ * dT/dn = M1 * M2 * ... * d(Mn)dn * M_{n+1} * ... * M_last
+*/
 void RootJoint::ComputeTransformFirstDerive()
 {
+    /*
+        dT/dx = rm[2] * rm[1] * drm/dx * rm[5] * rm[4] * rm[3]
+    */
     Tools::AVX4x4v1_6mat(r_m[2], r_m[1], r_m_first_deriv[TRANSLATE_X], r_m[5],
                          r_m[4], r_m[3], mTq[TRANSLATE_X]);
     Tools::AVX4x4v1_6mat(r_m[2], r_m_first_deriv[TRANSLATE_Y], r_m[0], r_m[5],

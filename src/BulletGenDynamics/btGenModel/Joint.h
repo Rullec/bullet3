@@ -70,7 +70,7 @@ protected:
     std::vector<Freedom>
         freedoms; // self freedom. For revolute it is 1, for spherical it is 3.
 
-    EIGEN_V_tMatrixD r_m;
+    EIGEN_V_tMatrixD r_m;   // rotation/translation(only for root) matrices for the local freedoms in this joint, size = freeomds
     EIGEN_V_tMatrixD r_m_first_deriv;
     EIGEN_V_tMatrixD r_m_second_deriv;
 

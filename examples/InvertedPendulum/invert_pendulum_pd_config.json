@@ -1,0 +1,8 @@
+{
+    "control_type_bak": "pd",
+    "control_type": "lqr",
+    "lqr_conf": {
+        "lqr_type1": "zero_point_lagragian",
+        "lqr_type": "simple"
+    }
+}

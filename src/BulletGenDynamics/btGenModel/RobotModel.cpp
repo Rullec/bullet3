@@ -1,5 +1,6 @@
 #include "RobotModel.h"
 #include "Joint.h"
+#include "LimitRootJoint.h"
 #include "Link.h"
 #include "Printer.h"
 #include "RootJoint.h"
@@ -317,7 +318,7 @@ void cRobotModel::Load(const char *model_file)
         }
     }
     //============================================================================
-    AddRootJoint();
+    AddRootJoint("root", JointType::NONE_JOINT);
 
     //==================================����joint=================================
     for (TiXmlElement *joint = robot_model->FirstChildElement("joint"); joint;
@@ -407,7 +408,7 @@ void cRobotModel::InsertFreedomMap(BaseObject *joint)
 {
     for (int i = 0; i < joint->GetNumOfFreedom(); i++)
     {
-        auto *p = joint->GetFreedoms(i);
+        Freedom *p = joint->GetFreedoms(i);
         freedoms.insert(std::make_pair(p->id, p));
     }
 }
@@ -415,7 +416,7 @@ void cRobotModel::InsertFreedomMap(BaseObject *joint)
 /**
  * \brif						����Root Joint
  */
-void cRobotModel::AddRootJoint(const char *root_name)
+void cRobotModel::AddRootJoint(const char *root_name, JointType root_joint_type)
 {
     BaseObjectParams param;
     // param.mesh = BaseRender::mesh_map.find("ball")->second;
@@ -429,9 +430,22 @@ void cRobotModel::AddRootJoint(const char *root_name)
     param.mass = 0;
     if (root == nullptr)
     {
-        root = new RootJoint(param, num_of_freedom);
+        if (root_joint_type == JointType::NONE_JOINT)
+        {
+            root = new RootJoint(param, num_of_freedom);
+        }
+        else if (root_joint_type == JointType::LIMIT_NONE_JOINT)
+        {
+            root = new LimitRootJoint(param, num_of_freedom);
+        }
+        else
+        {
+            std::cout << "[error] unsupported root joint type "
+                      << root_joint_type << std::endl;
+            exit(0);
+        }
     }
-    if (!links.empty())
+    if (false == links.empty())
     {
         auto *p = links.begin()->second;
         while (p->GetParent())
@@ -607,7 +621,7 @@ void cRobotModel::AddRevoluteJointFreedoms(BaseObject *joint, double lb,
 
 void cRobotModel::UpdateFreedomId()
 {
-    int freedom_order = 6;
+    int freedom_order = root->GetNumOfFreedom();
 
     for (int id = 1; id <= joint_id_map.size(); ++id)
     {
@@ -829,7 +843,7 @@ void cRobotModel::LoadAsf(const char *file_path)
     }
 
     // add root
-    AddRootJoint();
+    AddRootJoint("root", JointType::NONE_JOINT);
     AddRootLink("root");
     num_of_freedom = static_cast<int>(freedoms.size());
     joint_id_map.insert(std::make_pair(0, root));
@@ -966,6 +980,7 @@ void cRobotModel::LoadJsonModel(const char *file_path, double model_scale)
 
     // load joint
     double root_diff_weight = 0;
+    JointType root_joint_type = JointType::INVALID_JOINT;
     for (auto itr = joint_node.begin(); itr != joint_node.end(); ++itr)
     {
         param.name = (*itr)["Name"].asString() + "_joint";
@@ -998,6 +1013,7 @@ void cRobotModel::LoadJsonModel(const char *file_path, double model_scale)
         if (param.name == "root_joint")
         {
             root_diff_weight = diff_weight;
+            root_joint_type = static_cast<JointType>(joint_type);
             continue;
         }
 
@@ -1028,7 +1044,7 @@ void cRobotModel::LoadJsonModel(const char *file_path, double model_scale)
     }
     // std::cout << "before add root joint, joint num = " << joint_node.size()
     // << std::endl;
-    AddRootJoint("root");
+    AddRootJoint("root", root_joint_type);
     AddRootLink("root");
     UpdateFreedomId();
     joint_id_map.insert({root->GetId(), root});
@@ -1163,7 +1179,7 @@ void cRobotModel::LoadJsonModel(const char *file_path, double model_scale)
                 const tMatrix &m1 = link_on_parent_joint->GetLocalTransform();
                 const tMatrix &m2 =
                     itr.second->GetLocalTransform(); // ��ʱ joint �� local_pos
-                                                     // �������?? parent_joint
+                // �������?? parent_joint
                 tMatrix m = m1.inverse() * m2;
                 tVector3d joint_local_pos;
                 joint_local_pos[0] = m.data()[12];
@@ -1259,7 +1275,11 @@ void cRobotModel::Apply(const std::vector<double> &ang, int st,
                         bool compute_gradient)
 {
     for (int i = 0; i < num_of_freedom; i++)
-        freedoms[i]->v = ang[st + i];
+    {
+        auto fre = freedoms[i];
+        fre->v = ang[st + i];
+    }
+
     Update(compute_gradient);
 }
 
@@ -2153,8 +2173,6 @@ void cRobotModel::ComputeMassMatrix()
         // 		  << jk << std::endl;
     }
     inv_mass_matrix.noalias() = mass_matrix.inverse();
-    // std::cout << "M = \n"
-    // 		  << mass_matrix << std::endl;
     // std::cout << "------end to calc mass mat------\n";
 }
 
@@ -2247,3 +2265,145 @@ void cRobotModel::ComputeDCdqdot(tVectorXd &q_dot, tMatrixXd &dcdqdot)
 std::string cRobotModel::GetCharFile() const { return char_file; }
 
 double cRobotModel::GetScale() const { return scale; }
+
+/**
+ * \brief               Calculate dM/dq, M is the mass matrix
+ * 
+ * M = \sum_i J_vi^T * link_i_massmat * J_vi
+ * link_i_massmat = diag(I3 * mass, R * Ibody * R_T)
+ * 
+ * dMdq = \sum_i (dJ_{i}^Tdq Mi Ji + JiT dMidq Ji + JiT Mi dJidq)
+*/
+void cRobotModel::ComputedMassMatrixdq(EIGEN_V_MATXD &dMdq) const
+{
+    // 1. begin to test link's dMdq by numerical gradient
+    int dof = GetNumOfFreedom();
+    EIGEN_V_MATXD dJkvdq(dof);
+    EIGEN_V_MATXD dJkwdq(dof);
+
+    EIGEN_V_MATXD dMidq;
+    dMdq.resize(dof, tMatrixXd::Zero(dof, dof));
+    for (int id = 0; id < GetNumOfLinks(); id++)
+    {
+        auto link = static_cast<Link *>(GetLinkById(id));
+        // 1. compuate dJdq
+        for (int dof = 0; dof < GetNumOfFreedom(); dof++)
+        {
+            dJkvdq[dof] = link->GetTotalDofdJKv_dq(dof);
+            dJkwdq[dof] = link->GetTotalDofdJKw_dq(dof);
+        }
+
+        // 2. compute dMdq
+        link->ComputedMdq(dMidq);
+
+        // 3. compute final result
+        // dJvi dq: 3xn3n
+        // dMidq: 6xnxn
+        const tMatrixXd link_massmat = link->GetMassMatrix();
+        for (int i = 0; i < dof; i++)
+        {
+            tMatrixXd dJdqi = tMatrixXd::Zero(6, dof);
+            dJdqi.block(0, 0, 3, dof) = dJkvdq[i];
+            dJdqi.block(3, 0, 3, dof) = dJkwdq[i];
+
+            tMatrixXd Ji = tMatrixXd::Zero(6, dof);
+            Ji.block(0, 0, 3, dof) = link->GetJKv();
+            Ji.block(3, 0, 3, dof) = link->GetJKw();
+            dMdq[i] += dJdqi.transpose() * link_massmat * Ji;
+            dMdq[i] += Ji.transpose() * dMidq[i] * Ji;
+            dMdq[i] += Ji.transpose() * link_massmat * dJdqi;
+        }
+    }
+}
+
+/**
+ * \brief               Calculate d(M)/dq numerically and verify
+*/
+void cRobotModel::TestLinkdMassMatrixdq()
+{
+    // 1. calculate the dMdq and M_old in old conf
+    tVectorXd q_old = this->mq;
+
+    EIGEN_VV_MATXD dMidq(GetNumOfLinks());
+    EIGEN_V_MATXD Mi_old(GetNumOfLinks());
+    for (int id = 0; id < GetNumOfLinks(); id++)
+    {
+        auto link = static_cast<Link *>(GetLinkById(id));
+        // 1. analytic solution of dMidq
+        link->ComputedMdq(dMidq[id]);
+
+        // 2. old dMdq
+        Mi_old[id] = link->GetMassMatrix();
+    }
+
+    // 2. calculate the numerical dMdq, then compare
+    tVectorXd q_new = q_old;
+    double eps = 1e-5;
+    for (int i = 0; i < GetNumOfFreedom(); i++)
+    {
+        // 2.1 apply new q
+        q_new[i] += eps;
+        Apply(q_new, true);
+
+        // 2.2 get the new mass mat
+        EIGEN_V_MATXD Mi_new(GetNumOfLinks());
+        for (int id = 0; id < GetNumOfLinks(); id++)
+        {
+            auto link = static_cast<Link *>(GetLinkById(id));
+
+            Mi_new[id] = link->GetMassMatrix();
+
+            // 2.3 compare
+            tMatrixXd dMdq_num = (Mi_new[id] - Mi_old[id]) / eps;
+            tMatrixXd diff = dMidq[id][i] - dMdq_num;
+            std::cout << "link " << id << " dof " << i
+                      << " diff = " << diff.norm() << std::endl;
+            if (diff.norm() > eps)
+            {
+                std::cout << "dMdq num = \n" << dMdq_num << std::endl;
+                std::cout << "dMdq analytic = \n" << dMidq[id][i] << std::endl;
+                std::cout << "error! exit\n";
+                exit(1);
+            }
+        }
+
+        q_new[i] -= eps;
+    }
+    Apply(q_old, true);
+    std::cout << "dMdq verified succ\n";
+    exit(0);
+}
+
+/**
+ * \brief               Test d(mass_matrix)/dq
+ * 
+ * 
+*/
+
+void cRobotModel::TestdMassMatrixdq()
+{
+    tVectorXd q = mq;
+    int dof = this->GetNumOfFreedom();
+    double eps = 1e-8;
+    tMatrixXd old_mass_mat = GetMassMatrix();
+    tEigenArr<tMatrixXd> dMassdq;
+    ComputedMassMatrixdq(dMassdq);
+    for (int i = 0; i < dof; i++)
+    {
+        q[i] += eps;
+        Apply(q, true);
+        tMatrixXd new_mass_mat = GetMassMatrix();
+        tMatrixXd dMassdq_num = (new_mass_mat - old_mass_mat) / eps;
+        tMatrixXd diff = dMassdq_num - dMassdq[i];
+        std::cout << "dof " << i << " norm = " << diff.norm() << std::endl;
+        if (diff.norm() > 1e-6)
+        {
+            std::cout << "[error] dMassdq failed\n";
+            std::cout << "diff = \n" << diff << std::endl;
+            exit(0);
+        }
+        q[i] -= eps;
+    }
+    std::cout << "test dmass dq succ\n";
+    exit(0);
+}

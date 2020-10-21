@@ -384,55 +384,13 @@ SET(BulletExampleBrowser_SRCS
   ./ID_test/cIDSolver.cpp
   ./ID_test/cIDSolver.h
   ./ID_test/cIDSolver_Verify.cpp
-#   ./ID_test/MathUtil.cpp
-#   ./ID_test/JsonUtil.cpp
-#   ./ID_test/MathUtil.h
-#   ./ID_test/BulletUtil.h
-#   ./ID_test/TimeUtil.cpp
   ../CustomEngine/MainDemo.cpp
   ../CustomEngine/MainDemo.h
-#   ../CustomEngine/Simulator.cpp
-#   ../CustomEngine/SimObj.cpp
-#   ../CustomEngine/ColObjBase.cpp
-#   ../CustomEngine/ContactSolver/ContactSolver.cpp
-#   ../CustomEngine/ContactSolver/ContactSolverTest.cpp
-#   ../CustomEngine/ContactSolver/SequentialImpulsePlugin.cpp
-#   ../CustomEngine/ContactSolver/ConstraintData.cpp
-#   ../CustomEngine/ContactSolver/LCPSolver/LCPSolverBase.cpp
-#   ../CustomEngine/ContactSolver/LCPSolver/LCPSolverBuilder.hpp
-#   ../CustomEngine/ContactSolver/LCPSolver/NativeLemke/error.cpp
-#   ../CustomEngine/ContactSolver/LCPSolver/NativeLemke/fastdot.cpp
-#   ../CustomEngine/ContactSolver/LCPSolver/NativeLemke/fastldlt.cpp
-#   ../CustomEngine/ContactSolver/LCPSolver/NativeLemke/fastlsolve.cpp
-#   ../CustomEngine/ContactSolver/LCPSolver/NativeLemke/fastltsolve.cpp
-#   ../CustomEngine/ContactSolver/LCPSolver/NativeLemke/lcp.cpp
-#   ../CustomEngine/ContactSolver/LCPSolver/NativeLemke/NativeLemkeLCPSolver.cpp
-#   ../CustomEngine/ContactSolver/LCPSolver/NativeLemke/Lemke.cpp
-#   ../CustomEngine/ContactSolver/LCPSolver/NativeLemke/matrix.cpp
-#   ../CustomEngine/ContactSolver/LCPSolver/NativeLemke/misc.cpp
-#   ../CustomEngine/ContactSolver/LCPSolver/btLemke/btLemke.cpp
-#   ../CustomEngine/ContactSolver/LCPSolver/btDantzig/btDantzig.cpp
-#   ../CustomEngine/ContactSolver/LCPSolver/btPath/btPath.cpp
-#   ../CustomEngine/ContactSolver/QPSolver/EigenQP.cpp
-#   ../CustomEngine/ContactSolver/MatlabQPSolver/MatlabQPSolver.cpp
-#   ../CustomEngine/ContactSolver/MatlabQPSolver/libQUADASSINPROG.cpp
-	# ../CustomEngine/ContactSolver/QPSolver/uQuadProg++.cc
-	# ../CustomEngine/ContactSolver/QPSolver/QPSolver.cpp
-	# ../CustomEngine/Model/BaseObject.cpp
-	# ../CustomEngine/Model/EulerAngelRotationMatrix.cpp
-	# ../CustomEngine/Model/Joint.cpp
-	# ../CustomEngine/Model/Link.cpp
-	# ../CustomEngine/Model/Printer.cpp
-	# ../CustomEngine/Model/RobotModel.cpp
-	# ../CustomEngine/Model/RobotModelDynamics.cpp
-	# ../CustomEngine/Model/RootJoint.cpp
-	# ../CustomEngine/Model/tools.cpp
-	# ../CustomEngine/Model/Tinyxml/tinystr.cpp
-	# ../CustomEngine/Model/RobotCollider.cpp
-# ../CustomEngine/Model/Tinyxml/tinyxml.cpp
-# ../CustomEngine/Model/Tinyxml/tinyxmlerror.cpp
-# ../CustomEngine/Model/Tinyxml/tinyxmlparser.cpp
-
+  ../InvertedPendulum/InvertedPendulum.cpp
+  ../InvertedPendulum/Controller/CartPDController.cpp
+  ../InvertedPendulum/Controller/Controller.cpp
+  ../InvertedPendulum/Controller/LQRController.cpp
+  ../InvertedPendulum/Controller/riccati_solver.cpp
 
   ../RigidBody/RigidBodySoftContact.cpp
   ../Constraints/TestHingeTorque.cpp

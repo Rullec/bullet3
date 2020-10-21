@@ -81,7 +81,9 @@ public:
     void SetOmega(EIGEN_V_tVector &omega, int st_joint);
     const tMatrixXd &GetMassMatrix() const { return mass_matrix; }
     const tMatrixXd &GetCoriolisMatrix() const { return coriolis_matrix; }
-
+    void ComputedMassMatrixdq(EIGEN_V_MATXD &dMdq) const;
+    void TestLinkdMassMatrixdq();
+    void TestdMassMatrixdq();
     void InitModel();
     void InitChildrenChain();
     void InitDofidToJointMap();
@@ -175,7 +177,7 @@ protected:
                  tVector3d &local_rotation, const char *mesh_path,
                  tVector3f &mesh_rotation, tVector3f &mesh_scale, double mass);
 
-    void AddRootJoint(const char *root_name = "root");
+    void AddRootJoint(const char *root_name, JointType root_type);
     void AddRootLink(const char *root_name = "root");
 
     void AddJoint(std::string joint_name, std::string father_name,

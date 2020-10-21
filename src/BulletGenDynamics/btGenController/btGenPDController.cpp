@@ -10,7 +10,8 @@ btGenPDController::btGenPDController(const std::string &config)
     mTorqueLim = btJsonUtil::ParseAsDouble("torque_lim", root);
     mKpConstant = btJsonUtil::ParseAsDouble("kp", root);
     mKdConstant = btJsonUtil::ParseAsDouble("kd", root);
-
+    mTargetq.resize(0);
+    mTargetqdot.resize(0);
     mKp.resize(0);
     mKd.resize(0);
 }
@@ -46,14 +47,18 @@ void btGenPDController::SetPDTargetqdot(const tVectorXd &qdot)
 void btGenPDController::ApplyGeneralizedTau(double timestep)
 {
     int dof = mModel->GetNumOfFreedom();
-    assert(dof == mTargetq.size());
-    assert(dof == mTargetqdot.size());
+    if (dof != mTargetq.size() || dof != mTargetqdot.size())
+    {
+        std::cout << "[error] btGenPDController::ApplyGeneralizedTau target q "
+                     "and qdot hasn't been set\n";
+        exit(0);
+    }
     tVectorXd tau = tVectorXd::Zero(dof);
 
     tVectorXd q = mModel->Getq(), qdot = mModel->Getqdot(),
               qddot = mModel->Getqddot();
     std::cout << "qdot = " << qdot.transpose() << std::endl;
-    std::cout << "qddot = " << qdot.transpose() << std::endl;
+    std::cout << "qddot = " << qddot.transpose() << std::endl;
     for (int i = 0; i < dof; i++)
     {
         // std::cout << "qdot " << i << " = " << qdot[i] << ", max vel = " <<

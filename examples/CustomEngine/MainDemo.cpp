@@ -78,32 +78,39 @@ void CustomEngineMainDemo::stepSimulation(float dt)
 {
     if (global_frame_id == 0)
         m_guiHelper->resetCamera(1.64, -267.6, 13.4, 0.0078, 0.4760, 0.4799);
-    if (physics_param->mPauseFrame == global_frame_id)
+    int num_substep = 0;
+    while (dt > 0)
     {
-        // std::cout << "[pre pause] q = "
-        //           << mGenWorld->GetMultibody()->Getq().segment(0, 3).transpose()
-        //           << std::endl;
-        gPauseSimulation = true;
-        global_frame_id++;
-    }
-    else
-    {
-        dt = physics_param->mDefaultTimestep;
-        CALLGRIND_START_INSTRUMENTATION;
-        if (physics_param->mEnableContactAwareControl && mAdviser->IsEnd())
+        if (physics_param->mPauseFrame == global_frame_id)
         {
-            std::cout << "traj terminated without save\n";
-            exit(0);
-            mAdviser->Reset();
-            mAdviser->SetTraj(gContactAwareTraj, "tmp_traj.json", true);
+            gPauseSimulation = true;
+            global_frame_id++;
+            break;
         }
-        mGenWorld->ClearForce();
-        mGenWorld->StepSimulation(
-            static_cast<float>(physics_param->mDefaultTimestep));
+        else
+        {
 
-        global_frame_id++;
-        CALLGRIND_STOP_INSTRUMENTATION;
+            double elasped_time = physics_param->mDefaultTimestep;
+            if (dt <= elasped_time)
+                elasped_time = dt;
+            dt -= elasped_time;
+
+            if (physics_param->mEnableContactAwareControl && mAdviser->IsEnd())
+            {
+                std::cout << "traj terminated without save\n";
+                exit(0);
+                mAdviser->Reset();
+                mAdviser->SetTraj(gContactAwareTraj, "tmp_traj.json", true);
+            }
+            mGenWorld->ClearForce();
+            mGenWorld->StepSimulation(
+                static_cast<float>(physics_param->mDefaultTimestep));
+
+            global_frame_id++;
+        }
+        num_substep++;
     }
+    std::cout << "[log] num of substeps = " << num_substep << std::endl;
 
     // CommonRigidBodyBase::stepSimulation(dt);
     // if (mTime > 1)
