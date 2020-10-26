@@ -25,7 +25,7 @@ public:
     void ComputedMdq(tEigenArr<tMatrixXd> &dMdq);
     void ComputeJKv_dot(tVectorXd &q_dot, tVector3d &p) override;
     void ComputeJKw_dot(tVectorXd &q_dot) override;
-    void ComputeDJkvdq(tVector3d &p) override;
+    void ComputeDJkvdq(const tVector3d &p) override;
     void ComputeDJkwdq() override;
     //====================================================
 

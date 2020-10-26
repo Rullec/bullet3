@@ -95,7 +95,7 @@ void InvertedPendulum::initPhysics()
     m_guiHelper->setUpAxis(1);
 
     mGenWorld = new btGeneralizeWorld();
-    mGenWorld->Init("examples/CustomEngine/sim_config.json");
+    mGenWorld->Init("examples/CustomEngine/sim_configs/sim_config.json");
     // mGenWorld->SetGravity(tVector::Zero());
     // mGenWorld->AddGround(0);
 

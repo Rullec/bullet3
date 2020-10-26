@@ -90,7 +90,8 @@ void stepSimulation(float dt)
 
 void initPhysics()
 {
-    physics_param = new tParams("./examples/CustomEngine/config.json");
+    physics_param =
+        new tParams("./examples/CustomEngine/sim_configs/config.json");
 
     mGenWorld = new btGeneralizeWorld();
     mGenWorld->Init(physics_param->mSimulatorConfigPath);
@@ -189,7 +190,7 @@ void setFBFCalculatorCoefAndRefTraj(int argc, char *argv[])
     std::cout << "[log] set ref traj " << ref_traj << std::endl;
     std::cout << "[log] set coef " << root << std::endl;
 
-    mController->GetFBFCalculator()->SetCoef(root);
+    mController->GetTargetCalculator()->SetCoef(root);
     mController->SetTraj(ref_traj, "tmp.traj", true);
 }
 

@@ -21,6 +21,7 @@ public:
                           bool indent = true);
     static bool ReadVectorJson(const Json::Value &root,
                                Eigen::VectorXd &out_vec);
+    static Eigen::VectorXd ReadVectorJson(const Json::Value &root);
     static int ParseAsInt(const std::string &data_field_name,
                           const Json::Value &root);
     static std::string ParseAsString(const std::string &data_field_name,

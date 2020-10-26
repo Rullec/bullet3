@@ -615,7 +615,7 @@ void btGenFBFTargetCalculator::AddControlForceLimitConstraint()
 void btGenFBFTargetCalculator::AddTauCloseToOriginEnergyTerm()
 {
     // // std::cout << "active force = " <<
-    // mTraj->mActiveForce[mCurFrameId].size()
+    // mTraj->mAction[mCurFrameId].size()
     // //           << std::endl;
 
     // // std::cout << "underactuated dof = " << num_of_underactuated_freedom
@@ -627,7 +627,7 @@ void btGenFBFTargetCalculator::AddTauCloseToOriginEnergyTerm()
     // num_of_underactuated_freedom,
     //         num_of_underactuated_freedom)
     //     .setIdentity();
-    // tVectorXd b = -mTraj->mActiveForce[mCurFrameId];
+    // tVectorXd b = -mTraj->mAction[mCurFrameId];
     // // std::cout << "A = \n" << A << std::endl;
     // // std::cout << "b = " << b.transpose() << std::endl;
     // mEnergyTerm->AddEnergy(A, b, mControlForceCloseToOriginCoef,

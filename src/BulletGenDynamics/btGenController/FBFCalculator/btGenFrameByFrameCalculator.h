@@ -18,15 +18,16 @@ class btGenFBFTargetCalculator : public btGenTargetCalculator
 public:
     btGenFBFTargetCalculator();
     ~btGenFBFTargetCalculator();
-    virtual void Init(btGeneralizeWorld *mWorld, const Json::Value &conf);
-    virtual void SetTraj(btTraj *traj_);
-    virtual void SetCoef(const Json::Value &conf);
+    virtual void Init(btGeneralizeWorld *mWorld,
+                      const std::string conf) override;
+    virtual void SetTraj(btTraj *traj_) override;
+    virtual void SetCoef(const Json::Value &conf) override;
     virtual void CalcTarget(double dt, int target_frame_id,
                             tVectorXd &tilde_qddot, tVectorXd &tilde_qdot,
-                            tVectorXd &tilde_q, tVectorXd &tilde_tau);
-    virtual int GetCalculatedNumOfContact() const;
-    virtual void ControlByAdaptionController();
-    virtual void Reset();
+                            tVectorXd &tilde_q, tVectorXd &tilde_tau) override;
+    virtual int GetCalculatedNumOfContact() const override;
+    virtual void ControlByAdaptionController() override;
+    virtual void Reset() override;
 
 protected:
     // ---------methods
@@ -87,9 +88,9 @@ protected:
     void CalcContactConvertMat(btCharContactPt *contact,
                                tMatrixXd &convert_mat);
     int GetSolutionSizeByContactStatus(eContactStatus status);
-    void ClearDrawPoints();
-    void DrawContactPoints();
-    void DrawPoint(const tVector3d &pos, double r = 0.05);
+    // void ClearDrawPoints();
+    // void DrawContactPoints();
+    // void DrawPoint(const tVector3d &pos, double r = 0.05);
     // ---------vars
     QuadProgQPSolver *mQPSolver;
 
@@ -160,6 +161,4 @@ protected:
     std::vector<tEigenArr<tVector3d>> mRefContactLocalPos;
     tVectorXd
         mControlForce; // used in the tvcg control force close to prev energy term
-
-    std::vector<btCollisionObject *> mDrawPointsList;
 };

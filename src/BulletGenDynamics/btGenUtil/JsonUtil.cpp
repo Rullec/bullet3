@@ -243,3 +243,15 @@ bool btJsonUtil::ReadVectorJson(const Json::Value &root,
 
     return succ;
 }
+
+Eigen::VectorXd btJsonUtil::ReadVectorJson(const Json::Value &root)
+{
+    tVectorXd vec;
+    if (false == ReadVectorJson(root, vec))
+    {
+        std::cout << "[error] btJsonUtil readvector json failed for value "
+                  << root << std::endl;
+        exit(1);
+    }
+    return vec;
+}

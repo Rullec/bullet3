@@ -1,5 +1,4 @@
 #include "btGenFrameByFrameCalculator.h"
-#include "../examples/CommonInterfaces/CommonGUIHelperInterface.h"
 #include "BulletGenDynamics/btGenController/FBFCalculator/btGenFBFConstraint.h"
 #include "BulletGenDynamics/btGenController/FBFCalculator/btGenFBFEnergyTerm.h"
 #include "BulletGenDynamics/btGenController/QPSolver/MatlabQPSolver.h"
@@ -88,10 +87,13 @@ btGenFBFTargetCalculator::~btGenFBFTargetCalculator()
 //                      btGeneralizeWorld *world)
 
 void btGenFBFTargetCalculator::Init(btGeneralizeWorld *world,
-                                          const Json::Value &conf)
+                                    const std::string conf_path)
 {
-    btGenTargetCalculator::Init(world, conf);
-    SetCoef(conf);
+    btGenTargetCalculator::Init(world, conf_path);
+    Json::Value conf;
+    btJsonUtil::LoadJson(conf_path, conf);
+
+        SetCoef(conf);
 
     mEnableFixStaticContactPoint =
         btJsonUtil::ParseAsBool("fix_the_static_contact_point", conf);
@@ -130,13 +132,13 @@ void btGenFBFTargetCalculator::Init(btGeneralizeWorld *world,
  * by frame-by-frame control
  */
 void btGenFBFTargetCalculator::CalcTarget(double dt, int target_frame_id,
-                                                tVectorXd &tilde_qddot,
-                                                tVectorXd &tilde_qdot,
-                                                tVectorXd &tilde_q,
-                                                tVectorXd &tilde_tau)
+                                          tVectorXd &tilde_qddot,
+                                          tVectorXd &tilde_qdot,
+                                          tVectorXd &tilde_q,
+                                          tVectorXd &tilde_tau)
 {
     PreCalcTarget(dt, target_frame_id);
-    
+
     // 1. judge the contact status
     if (mEnableQPOptimization == true)
     {
@@ -161,14 +163,14 @@ void btGenFBFTargetCalculator::CalcTarget(double dt, int target_frame_id,
         tilde_q = mTraj->mq[mRefFrameId + 1];
         // std::cout << "[FBF] set target q = " << tilde_q.transpose()
         //           << std::endl;
-        if (mTraj->mActiveForce[mRefFrameId].size() != num_of_freedom)
+        if (mTraj->mTruthJointForceVec[mRefFrameId].size() != num_of_freedom)
         {
             std::cout << "[error] FBFcalculator: we request a full dof active "
                          "force when updated\n"
                       << std::endl;
             exit(0);
         }
-        tilde_tau = mTraj->mActiveForce[mRefFrameId].segment(
+        tilde_tau = mTraj->mTruthJointForceVec[mRefFrameId].segment(
             6, num_of_underactuated_freedom);
     }
 
@@ -184,7 +186,7 @@ void btGenFBFTargetCalculator::CalcTarget(double dt, int target_frame_id,
         ClearDrawPoints();
         for (auto &pt : mContactPoints)
         {
-            DrawPoint(pt->mWorldPos.segment(0, 3));
+            DrawPoint(pt->mWorldPos.segment(0, 3), 0.05);
         }
     }
 }
@@ -378,9 +380,8 @@ void btGenFBFTargetCalculator::CalcContactStatus()
  * \brief                   Calculate the reference qddot and control forces
  */
 void btGenFBFTargetCalculator::Solve(tVectorXd &tilde_qddot,
-                                           tVectorXd &tilde_qdot,
-                                           tVectorXd &tilde_q,
-                                           tVectorXd &tilde_tau)
+                                     tVectorXd &tilde_qdot, tVectorXd &tilde_q,
+                                     tVectorXd &tilde_tau)
 {
     // std::cout << "q, qdot solve hasn't been supported\n";
     // exit(1);
@@ -535,7 +536,7 @@ void btGenFBFTargetCalculator::Solve(tVectorXd &tilde_qddot,
     //     else
     //         std::cout << "pos diff lsq verified succ\n";
     // }
-    // tVectorXd ref_tau = mTraj->mActiveForce[mCurFrameId].segment(
+    // tVectorXd ref_tau = mTraj->mAction[mCurFrameId].segment(
     //     6, num_of_underactuated_freedom);
     // std::cout << "[solved] tau = " << tilde_tau.transpose() << std::endl;
     // std::cout << "[ref] tau = " << ref_tau.transpose() << std::endl;
@@ -550,9 +551,10 @@ void btGenFBFTargetCalculator::Solve(tVectorXd &tilde_qddot,
  * \param tau           4. and the control force (tau) according to the dynamics
  * equation
  */
-void btGenFBFTargetCalculator::CalcTargetInternal(
-    const tVectorXd &solution, tVectorXd &qddot, tVectorXd &qdot, tVectorXd &q,
-    tVectorXd &tau)
+void btGenFBFTargetCalculator::CalcTargetInternal(const tVectorXd &solution,
+                                                  tVectorXd &qddot,
+                                                  tVectorXd &qdot, tVectorXd &q,
+                                                  tVectorXd &tau)
 {
     if (solution.size() != mTotalSolutionSize)
     {
@@ -822,8 +824,8 @@ tMatrixXd CalcFrictionCone(int friction_num)
  * \brief               Given a contact point, calculate the convert matrix from
  * solution to cartesian force
  */
-void btGenFBFTargetCalculator::CalcContactConvertMat(
-    btCharContactPt *contact, tMatrixXd &convert_mat)
+void btGenFBFTargetCalculator::CalcContactConvertMat(btCharContactPt *contact,
+                                                     tMatrixXd &convert_mat)
 {
     // 1. confirm this contact point is not self collision
     if (true == contact->mIsSelfCollision)
@@ -977,47 +979,3 @@ int btGenFBFTargetCalculator::GetCalculatedNumOfContact() const
     return mContactPoints.size();
 }
 
-// struct GUIHelperInterface *gGUIHelper;
-void btGenFBFTargetCalculator::DrawPoint(const tVector3d &pos,
-                                               double radius)
-{
-    if (mBulletGUIHelper == nullptr)
-        return;
-    btCollisionShape *colShape = nullptr;
-    btCollisionObject *obj = new btCollisionObject();
-    colShape = new btSphereShape(btScalar(radius));
-    btTransform trans;
-    // trans.setOrigin(btVector3(pos[0], pos[1], pos[2]));
-    trans.setOrigin(btVector3(pos[0], pos[1], pos[2]));
-    obj->setWorldTransform(trans);
-    obj->setCollisionShape(colShape);
-    obj->setCollisionFlags(0);
-    mWorld->GetInternalWorld()->addCollisionObject(obj, 0, 0);
-    mDrawPointsList.push_back(obj);
-
-    auto inter_world = mWorld->GetInternalWorld();
-    // std::cout << "draw point " << pos.transpose() << std::endl;
-    // std::cout << "num collision objs = "
-    //           << inter_world->getNumCollisionObjects() << std::endl;
-}
-
-void btGenFBFTargetCalculator::ClearDrawPoints()
-{
-    if (mBulletGUIHelper == nullptr)
-        return;
-    auto inter_world = mWorld->GetInternalWorld();
-    // std::cout << "clear points num = " << mDrawPointsList.size()
-    //           << " now = " << inter_world->getCollisionObjectArray().size()
-    //           << std::endl;
-
-    for (auto &pt : mDrawPointsList)
-    {
-        // inter_world->getCollisionObjectArray().remove(pt);
-        delete pt->getCollisionShape();
-        mWorld->GetInternalWorld()->removeCollisionObject(pt);
-        mBulletGUIHelper->removeGraphicsInstance(pt->getUserIndex());
-        delete pt;
-    }
-    // std::cout << "[debug] clear points " << mDrawPointsList.size() << std::endl;
-    mDrawPointsList.clear();
-}

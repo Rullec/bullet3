@@ -591,3 +591,16 @@ tMatrixXd btMathUtil::JacobPreconditioner(const tMatrixXd &A)
 
     return diagonal.cwiseInverse().asDiagonal();
 }
+
+bool btMathUtil::IsHomogeneousPos(const tVector &pos, bool exit_if_not/* = true*/)
+{
+    bool is_homogeneous = std::fabs(pos[3] - 1) < 1e-10;
+    if (exit_if_not == true && is_homogeneous == false)
+    {
+        std::cout << "[error] pos " << pos.transpose()
+                  << " is not homogeneous\n";
+        assert(false);
+        exit(1);
+    }
+    return is_homogeneous;
+}

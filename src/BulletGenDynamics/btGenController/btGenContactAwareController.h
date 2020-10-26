@@ -12,6 +12,7 @@ class btGeneralizeWorld;
 class cRobotModelDynamics;
 class btGenFBFTargetCalculator;
 class btCollisionObject;
+class btGenTargetCalculator;
 class btGenContactAwareController
 {
 public:
@@ -47,7 +48,7 @@ public:
     tMatrixXd CalcLCPPartBPrefix() const;
     bool IsEnd();
     void Reset();
-    btGenFBFTargetCalculator *GetFBFCalculator();
+    btGenTargetCalculator *GetTargetCalculator();
     void SetBulletGUIHelperInterface(struct GUIHelperInterface *inter);
     int GetRefFrameId() const { return mRefFrameId; }
     // void GetAdviseInfo(tMatrixXd& C, tMatrixXd& D, tMatrixXd& E, tMatrixXd&
@@ -66,13 +67,13 @@ protected:
     tVectorXd mCtrlForce;
     bool mResolveControlToruqe; // given the mocap data (ref traj), re solve the
                                 // control torque
-    Json::Value mTargetControllerConfig;
+    std::string mTargetCalculatorConfigFile;
     bool mOutputControlDiff;
-    bool mEnableSyncTrajPeriodly; // sync the ref traj to the simulation
-                                  // character periodly
-    bool mEnableOnlyTargetController;   // use the contact force and control force
-                                  // calculated by the FBF optimzier, apply them
-                                  // to the model directly and check the result
+    bool mEnableSyncTrajPeriodly;     // sync the ref traj to the simulation
+                                      // character periodly
+    bool mEnableOnlyTargetController; // use the contact force and control force
+        // calculated by the FBF optimzier, apply them
+        // to the model directly and check the result
     bool mEnableRefTrajDelayedUpdate; // when the ref traj hasn't been exetucted
                                       // perfectly, stop the forwardness of the
                                       // ref traj and make the control target
@@ -83,7 +84,7 @@ protected:
     cRobotModelDynamics *mModel;
     btGeneralizeWorld *mWorld;
     btGenFeatureArray *mFeatureVector;
-    btGenFBFTargetCalculator *mFBFOptController;
+    btGenTargetCalculator *mTargetCalculator;
     bool mEnableStateSave;
     bool mEnableInitStateLoad;
     std::string mInitStateFile;
@@ -110,6 +111,8 @@ protected:
     std::vector<btCollisionObject *> mDrawPointsList;
 
     // ----------------------- methods
+
+    btGenTargetCalculator *CreateTargetCalculator(const std::string path) const;
     void PreUpdate(double dt);
     void PostUpdate();
     void ReadConfig(const std::string &config);

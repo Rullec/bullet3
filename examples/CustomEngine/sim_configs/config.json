@@ -1,5 +1,5 @@
 {
-    "simulator_path": "./examples/CustomEngine/sim_config.json",
+    "simulator_path": "./examples/CustomEngine/sim_configs/sim_config.json",
     "add_multibody": true,
     "add_obj": false,
     "enable_ground": true,
@@ -13,7 +13,7 @@
     "multibody_path": "/home/xudong/Projects/DeepMimic/data/0908/characters/skeleton_legs.json",
     "enable_contact_aware_control": true,
     "contact_aware_ref_traj_legsbad": "/home/xudong/Projects/DeepMimic/data/id_test/sample_legs_nogravity/traj_legs_1672724862.json",
-    "contact_aware_ref_traj": "/home/xudong/Projects/DeepMimic/data/id_test/sample_legs/traj_legs_692002593.json",
+    "contact_aware_ref_traj": "/home/xudong/Projects/DeepMimic/data/id_test/sample_legs/traj_legs_611991407.json",
     "contact_aware_ref_traj_oneleg": "/home/xudong/Projects/DeepMimic/data/id_test/sample_leftleg_bak/traj_fix.json",
     "contact_aware_ref_traj_bigsucc1": "/home/xudong/Projects/DeepMimic/data/id_test/sample_fullbody_bigfoot/traj_fullbody_1008458387.json",
     "contact_aware_ref_traj_smallsucc0": "/home/xudong/Projects/DeepMimic/data/id_test/sample_fullbody_bigfoot/traj_fullbody_1236633474.json",
