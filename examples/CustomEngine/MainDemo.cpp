@@ -44,6 +44,7 @@ struct CustomEngineMainDemo : public CommonRigidBodyBase
         double mDefaultTimestep;
         int mPauseFrame;
         bool mEnableContactAwareControl;
+        bool mRealTimeSim;
         tParams(const std::string &path);
     };
 
@@ -66,6 +67,8 @@ struct CustomEngineMainDemo : public CommonRigidBodyBase
     }
 
 protected:
+    void MultistepSim(float dt);
+    void SinglestepSim(float dt);
     btGeneralizeWorld *mGenWorld;
     btGenContactAwareAdviser *mAdviser;
     double mTimestep;
@@ -78,54 +81,16 @@ void CustomEngineMainDemo::stepSimulation(float dt)
 {
     if (global_frame_id == 0)
         m_guiHelper->resetCamera(1.64, -267.6, 13.4, 0.0078, 0.4760, 0.4799);
-    int num_substep = 0;
-    while (dt > 0)
+
+    if (physics_param->mRealTimeSim == true)
     {
-        if (physics_param->mPauseFrame == global_frame_id)
-        {
-            gPauseSimulation = true;
-            global_frame_id++;
-            break;
-        }
-        else
-        {
-
-            double elasped_time = physics_param->mDefaultTimestep;
-            if (dt <= elasped_time)
-                elasped_time = dt;
-            dt -= elasped_time;
-
-            if (physics_param->mEnableContactAwareControl && mAdviser->IsEnd())
-            {
-                std::cout << "traj terminated without save\n";
-                exit(0);
-                mAdviser->Reset();
-                mAdviser->SetTraj(gContactAwareTraj, "tmp_traj.json", true);
-            }
-            mGenWorld->ClearForce();
-            mGenWorld->StepSimulation(
-                static_cast<float>(physics_param->mDefaultTimestep));
-
-            global_frame_id++;
-        }
-        num_substep++;
+        MultistepSim(dt);
     }
-    std::cout << "[log] num of substeps = " << num_substep << std::endl;
-
-    // CommonRigidBodyBase::stepSimulation(dt);
-    // if (mTime > 1)
-    // {
-    // 	m_dynamicsWorld->removeCollisionObject(target_rigidbody);
-    // 	m_collisionShapes.pop_back();
-    // }
-    // std::cout <<"collision shapes = " << m_collisionShapes.size() <<
-    // std::endl;
-    // std::cout << "[before draw] q = "
-    //           << mGenWorld->GetMultibody()->Getq().segment(0, 3).transpose()
-    //           << std::endl;
-    // m_guiHelper->removeAllGraphicsInstances();
-
-    // m_guiHelper->removeAllInstances();
+    else
+    {
+        dt = physics_param->mDefaultTimestep;
+        SinglestepSim(dt);
+    }
     m_guiHelper->autogenerateGraphicsObjects(m_dynamicsWorld);
 }
 
@@ -140,43 +105,8 @@ void CustomEngineMainDemo::initPhysics()
 
     m_guiHelper->setUpAxis(1);
 
-    // cSimulator::tParams simulator_params;
-    // if (physics_param->mEnableGravity)
-    // 	simulator_params.mGravity = tVector(0, -9.8, 0, 0);
-    // else
-    // 	simulator_params.mGravity = tVector(0, 0, 0, 0);
-
-    // simulator_params.mb_damping1 = physics_param->mMBDamping1;
-    // simulator_params.mb_damping2 = physics_param->mMBDamping2;
-    // simulator_params.mb_scale = physics_param->mMBScale;
-    // simulator_params.mb_enable_rk4 = physics_param->mEnableRK4MB;
-    // simulator_params.rigid_damping = physics_param->mRigidDamping;
-
-    // if (physics_param->mEnableLCP == true)
-    // {
-    // 	simulator_params.Mode = cSimulator::eContactResponseMode::LCPMode;
-    // 	simulator_params.mLCPConfigPath = physics_param->mLCPSolverConfigPath;
-    // }
-
-    // else
-    // 	simulator_params.Mode = cSimulator::eContactResponseMode::PenaltyMode;
-
     mGenWorld = new btGeneralizeWorld();
     mGenWorld->Init(physics_param->mSimulatorConfigPath);
-    /*
-        "reference_traj_long":
-"/home/xudong/Projects/DeepMimic/data/batch_trajs/0827/traj_fullbody_799585164_1500_to_3000.json",
-"reference_traj":
-"/home/xudong/Projects/DeepMimic/data/batch_trajs/0827/traj_fullbody_799585164.json",
-"reference_traj_walk":
-"/home/xudong/Projects/DeepMimic/logs/tmp/test_traj_full.json",
-"reference_traj_bak1":
-"/home/xudong/Projects/DeepMimic/logs/tmp/test_traj_legs.json",
-"reference_traj_legs":
-"/home/xudong/Projects/DeepMimic/logs/tmp/test_traj_3links.json",
-"reference_traj_stand":
-"/home/xudong/Projects/DeepMimic/logs/tmp/test_traj_2links.json",
-    */
 
     m_dynamicsWorld = mGenWorld->GetInternalWorld();
 
@@ -256,6 +186,7 @@ CustomEngineMainDemo::tParams::tParams(const std::string &path)
     gEnableResolveWhenSolveError =
         json_root["enable_resolve_when_solved_wrong"].asBool();
     gContactAwareTraj = json_root["contact_aware_ref_traj"].asString();
+    mRealTimeSim = btJsonUtil::ParseAsBool("real_time_sim", json_root);
     // gOutputLogPath = json_root["output_log_path"].asString();
 }
 
@@ -278,4 +209,63 @@ CustomEngineMainDemo::CustomEngineMainDemo(struct GUIHelperInterface *helper)
     // mTime = 0;
     physics_param = nullptr;
     mGenWorld = nullptr;
+}
+
+void CustomEngineMainDemo::MultistepSim(float dt)
+{
+    int num_substep = 0;
+    while (dt > 0)
+    {
+        if (physics_param->mPauseFrame == global_frame_id)
+        {
+            gPauseSimulation = true;
+            global_frame_id++;
+            break;
+        }
+        else
+        {
+
+            double elasped_time = physics_param->mDefaultTimestep;
+            if (dt <= elasped_time)
+                elasped_time = dt;
+            dt -= elasped_time;
+
+            if (physics_param->mEnableContactAwareControl && mAdviser->IsEnd())
+            {
+                std::cout << "traj terminated without save\n";
+                exit(0);
+                mAdviser->Reset();
+                mAdviser->SetTraj(gContactAwareTraj, "tmp_traj.json", true);
+            }
+            mGenWorld->ClearForce();
+            mGenWorld->StepSimulation(
+                static_cast<float>(physics_param->mDefaultTimestep));
+
+            global_frame_id++;
+        }
+        num_substep++;
+    }
+    std::cout << "[log] num of substeps = " << num_substep << std::endl;
+}
+void CustomEngineMainDemo::SinglestepSim(float dt)
+{
+    if (std::fabs(dt - physics_param->mDefaultTimestep) > 1e-10)
+    {
+        std::cout << "[error] single step sim " << dt << " != default dt "
+                  << physics_param->mDefaultTimestep << std::endl;
+        exit(0);
+    }
+    if (physics_param->mPauseFrame == global_frame_id)
+    {
+        gPauseSimulation = true;
+    }
+    else
+    {
+        mGenWorld->ClearForce();
+        mGenWorld->StepSimulation(
+            static_cast<float>(physics_param->mDefaultTimestep));
+    }
+
+    global_frame_id++;
+    return;
 }
