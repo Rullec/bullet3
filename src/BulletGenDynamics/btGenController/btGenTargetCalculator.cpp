@@ -16,7 +16,7 @@ btGenTargetCalculator::~btGenTargetCalculator() {}
 void btGenTargetCalculator::SetTraj(btTraj *traj_) { mTraj = traj_; }
 
 void btGenTargetCalculator::Init(btGeneralizeWorld *world,
-                                 const Json::Value &conf)
+                                 const std::string conf)
 {
     mWorld = world;
     mModel = mWorld->GetMultibody();

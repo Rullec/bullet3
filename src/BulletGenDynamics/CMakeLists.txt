@@ -65,6 +65,7 @@ SET(
 	./btGenController/FBFCalculator/btGenFrameByFrameCalculator.cpp
 	./btGenController/FBFCalculator/btGenFrameByFrameCalculatorTerm.cpp
 	./btGenController/FBFCalculator/btCharContactPoint.cpp
+	./btGenController/NQRCalculator/btGenNQRCalculator.cpp
 	# ./btGenController/QPSolver/MatlabQPSolver.cpp
 	./btGenController/QPSolver/QuadProgQPSolver.cpp
 	./btGenController/QPSolver/eiquadprog.hpp

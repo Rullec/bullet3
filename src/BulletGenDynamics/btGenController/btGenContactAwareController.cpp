@@ -2,6 +2,7 @@
 #include "../examples/CommonInterfaces/CommonGUIHelperInterface.h"
 #include "BulletGenDynamics/btGenController/ContactAdaptionFeature/btGenFeature.h"
 #include "BulletGenDynamics/btGenController/FBFCalculator/btGenFrameByFrameCalculator.h"
+#include "BulletGenDynamics/btGenController/NQRCalculator/btGenNQRCalculator.h"
 #include "BulletGenDynamics/btGenController/btTraj.h"
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
 #include "BulletGenDynamics/btGenSolver/ContactSolver.h"
@@ -15,7 +16,8 @@ tVectorXd ConvertPoseToq(const tVectorXd &pose, cRobotModelDynamics *model);
 // const std::string& path, double W, double Wm) : mW(W), mWm(Wm) std::string
 // new_path = "new.out";
 std::string debug_path = "numeric.log";
-btGenContactAwareController::btGenContactAwareController(btGeneralizeWorld *world)
+btGenContactAwareController::btGenContactAwareController(
+    btGeneralizeWorld *world)
 {
     mCurdt = 0;
     mHasRefTraj = false;
@@ -37,7 +39,7 @@ btGenContactAwareController::btGenContactAwareController(btGeneralizeWorld *worl
     mModel = nullptr;
     mWorld = world;
     mFeatureVector = new btGenFeatureArray();
-    mFBFOptController = nullptr;
+    mTargetCalculator = nullptr;
     mOutputTraj = nullptr;
     mRefTraj = nullptr;
     mRefTrajPath = "";
@@ -74,8 +76,8 @@ btGenContactAwareController::~btGenContactAwareController()
  * \param enable_output     output or not, default not (false)
  */
 void btGenContactAwareController::SetTraj(const std::string &ref_traj,
-                                       const std::string &output_traj,
-                                       bool enable_output /*= false*/)
+                                          const std::string &output_traj,
+                                          bool enable_output /*= false*/)
 {
     mEnableOutput = enable_output;
     mRefTrajPath = ref_traj;
@@ -113,7 +115,7 @@ void btGenContactAwareController::SetTraj(const std::string &ref_traj,
     //           << std::endl;
     // std::cout << "[controller] init qdot = "
     //           << mRefTraj->mqdot[mRefFrameId].transpose() << std::endl;
-    mFBFOptController->SetTraj(mRefTraj);
+    mTargetCalculator->SetTraj(mRefTraj);
     mHasRefTraj = true;
 
     if (mEnableInitStateLoad == true)
@@ -127,7 +129,7 @@ void btGenContactAwareController::SetTraj(const std::string &ref_traj,
     //           << mRefTraj->mqdot[mRefFrameId].transpose() << std::endl;
 }
 void btGenContactAwareController::Init(cRobotModelDynamics *model_,
-                                    const std::string &contact_aware_config)
+                                       const std::string &contact_aware_config)
 {
     ReadConfig(contact_aware_config);
     mModel = model_;
@@ -135,15 +137,8 @@ void btGenContactAwareController::Init(cRobotModelDynamics *model_,
     num_of_freedom = mModel->GetNumOfFreedom();
     num_of_underactuated_freedom = num_of_freedom - 6;
 
-    mFBFOptController = new btGenFBFTargetCalculator();
+    mTargetCalculator = CreateTargetCalculator(mTargetCalculatorConfigFile);
 
-    // btGenFrameByFrameCalculator::tParams FBFCalculator_params;
-    // FBFCalculator_params.mWorld = mWorld;
-    // FBFCalculator_params.mFBFEnergyCoeffPos = mFBFPosCoef;
-    // FBFCalculator_params.mFBFEnergyCoeffVel = mFBFVelCoef;
-    // FBFCalculator_params.mFBFEnergyCoeffAccel = mFBFAccelCoef;
-
-    mFBFOptController->Init(mWorld, mTargetControllerConfig);
     mFeatureVector->Init(mFeatureVectorFile, mModel, mWorld->GetGravity());
 
     CreateRefChar();
@@ -207,7 +202,7 @@ void btGenContactAwareController::Update(double dt)
     // 3. Calculate the convert matrix and residual used in the contact-aware jointed LCP
     //      If we only use Frame by frame to do control (which means the LCP is disable), call the ControlByFBF method
     if (mEnableOnlyTargetController == true)
-        mFBFOptController->ControlByAdaptionController();
+        mTargetCalculator->ControlByAdaptionController();
     else
         mFeatureVector->Eval(dt, mTargetAccel, mTargetVel, mTargetPos,
                              mTargetTau, mH, mE, mf);
@@ -325,7 +320,8 @@ void btGenContactAwareController::PostProcess()
  * \brief					input the contact forces
  * (generalized), calculate and apply the active control torque
  */
-tVectorXd btGenContactAwareController::CalcControlForce(const tVectorXd &Q_contact)
+tVectorXd
+btGenContactAwareController::CalcControlForce(const tVectorXd &Q_contact)
 {
     if (mEnableOnlyTargetController == true)
     {
@@ -421,13 +417,17 @@ tVectorXd btGenContactAwareController::CalcControlForce(const tVectorXd &Q_conta
     return Q_active;
 }
 
-tVectorXd btGenContactAwareController::GetPrevControlForce() { return mCtrlForce; }
+tVectorXd btGenContactAwareController::GetPrevControlForce()
+{
+    return mCtrlForce;
+}
 /**
  * \brief					Load config
  */
 void btGenContactAwareController::ReadConfig(const std::string &config)
 {
-    std::cout << "[debug] read config of controller from " << config << std::endl;
+    std::cout << "[debug] read config of controller from " << config
+              << std::endl;
     Json::Value root;
     btJsonUtil::LoadJson(config, root);
     mResolveControlToruqe =
@@ -444,8 +444,8 @@ void btGenContactAwareController::ReadConfig(const std::string &config)
     mEnableSyncTrajPeriodly =
         btJsonUtil::ParseAsBool("enable_sync_traj_periodly", root);
     mSyncTrajPeriod = btJsonUtil::ParseAsInt("sync_traj_period", root);
-
-    mTargetControllerConfig = btJsonUtil::ParseAsValue("ctrl_config", root);
+    mTargetCalculatorConfigFile =
+        btJsonUtil::ParseAsString("target_calculator_config", root);
     mEnableStateSave = btJsonUtil::ParseAsBool("enable_state_save", root);
     mEnableInitStateLoad =
         btJsonUtil::ParseAsBool("enable_init_state_load", root);
@@ -661,12 +661,12 @@ bool btGenContactAwareController::IsEnd()
  * "qddot_target" and "tau_target"
  */
 void btGenContactAwareController::FetchControlTarget(double dt,
-                                                  tVectorXd &qddot_target,
-                                                  tVectorXd &qdot_target,
-                                                  tVectorXd &q_target,
-                                                  tVectorXd &tau_target)
+                                                     tVectorXd &qddot_target,
+                                                     tVectorXd &qdot_target,
+                                                     tVectorXd &q_target,
+                                                     tVectorXd &tau_target)
 {
-    mFBFOptController->CalcTarget(dt, mRefFrameId, qddot_target, qdot_target,
+    mTargetCalculator->CalcTarget(dt, mRefFrameId, qddot_target, qdot_target,
                                   q_target, tau_target);
     // std::ofstream fout(debug_path, std::ios::app);
     // fout << "[numeric] FBF q = " << q_target.transpose() << std::endl;
@@ -776,19 +776,19 @@ void btGenContactAwareController::Reset()
     mHasRefTraj = false;
     mRefTrajPath.clear();
     mOutputTrajPath.clear();
-    mFBFOptController->Reset();
+    mTargetCalculator->Reset();
 }
 
-btGenFBFTargetCalculator *btGenContactAwareController::GetFBFCalculator()
+btGenTargetCalculator *btGenContactAwareController::GetTargetCalculator()
 {
-    return this->mFBFOptController;
+    return this->mTargetCalculator;
 }
 
 void btGenContactAwareController::SetBulletGUIHelperInterface(
     struct GUIHelperInterface *inter)
 {
     mBulletGUIHelper = inter;
-    mFBFOptController->SetBulletGUIHelperInterface(inter);
+    mTargetCalculator->SetBulletGUIHelperInterface(inter);
 }
 btTraj *btGenContactAwareController::GetRefTraj() { return this->mRefTraj; }
 
@@ -872,7 +872,7 @@ void btGenContactAwareController::UpdateReferenceTraj()
         // get ref contact num
         // get current contact num
         int ref_contact_num = mRefTraj->mContactForce[mRefFrameId].size();
-        int cur_contact_num = mFBFOptController->GetCalculatedNumOfContact();
+        int cur_contact_num = mTargetCalculator->GetCalculatedNumOfContact();
         std::cout << "[controller] ref contact num " << ref_contact_num
                   << " cur contact num " << cur_contact_num << std::endl;
         if (cur_contact_num >= ref_contact_num)
@@ -981,7 +981,7 @@ void btGenContactAwareController::ClearDrawPoints()
 }
 
 void btGenContactAwareController::DrawPoint(const tVector3d &pos,
-                                         double radius /* = 0.05*/)
+                                            double radius /* = 0.05*/)
 {
     if (mBulletGUIHelper == nullptr)
         return;
@@ -1016,4 +1016,34 @@ void btGenContactAwareController::DrawContactPoints()
             DrawPoint(world_point.segment(0, 3));
         }
     }
+}
+
+btGenTargetCalculator *btGenContactAwareController::CreateTargetCalculator(
+    const std::string conf_path) const
+{
+    btGenTargetCalculator *calc = nullptr;
+    // 1. load the config, recognize the type
+    Json::Value root;
+    btJsonUtil::LoadJson(conf_path, root);
+    std::string type =
+        btJsonUtil::ParseAsString("target_calculator_type", root);
+
+    if ("FBF" == type)
+    {
+        calc = new btGenFBFTargetCalculator();
+    }
+    else if ("NQR" == type)
+    {
+        calc = new btGenNQRCalculator();
+    }
+    else
+    {
+        std::cout << "unrecognized target calculator type = " << type
+                  << std::endl;
+        exit(1);
+    }
+    std::cout << "[log] build " << type << " target calculator\n";
+
+    calc->Init(mWorld, conf_path);
+    return calc;
 }

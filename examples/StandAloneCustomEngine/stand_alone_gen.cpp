@@ -190,7 +190,7 @@ void setFBFCalculatorCoefAndRefTraj(int argc, char *argv[])
     std::cout << "[log] set ref traj " << ref_traj << std::endl;
     std::cout << "[log] set coef " << root << std::endl;
 
-    mController->GetFBFCalculator()->SetCoef(root);
+    mController->GetTargetCalculator()->SetCoef(root);
     mController->SetTraj(ref_traj, "tmp.traj", true);
 }
 

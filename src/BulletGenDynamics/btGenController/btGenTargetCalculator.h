@@ -18,7 +18,7 @@ class btGenTargetCalculator
 public:
     btGenTargetCalculator();
     virtual ~btGenTargetCalculator();
-    virtual void Init(btGeneralizeWorld *mWorld, const Json::Value &conf);
+    virtual void Init(btGeneralizeWorld *mWorld, const std::string conf);
     virtual void SetTraj(btTraj *traj_);
     virtual void SetCoef(const Json::Value &conf) = 0;
     virtual void CalcTarget(double dt, int target_frame_id,

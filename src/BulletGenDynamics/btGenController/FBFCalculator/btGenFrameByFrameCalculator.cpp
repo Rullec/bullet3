@@ -88,10 +88,13 @@ btGenFBFTargetCalculator::~btGenFBFTargetCalculator()
 //                      btGeneralizeWorld *world)
 
 void btGenFBFTargetCalculator::Init(btGeneralizeWorld *world,
-                                          const Json::Value &conf)
+                                    const std::string conf_path)
 {
-    btGenTargetCalculator::Init(world, conf);
-    SetCoef(conf);
+    btGenTargetCalculator::Init(world, conf_path);
+    Json::Value conf;
+    btJsonUtil::LoadJson(conf_path, conf);
+
+        SetCoef(conf);
 
     mEnableFixStaticContactPoint =
         btJsonUtil::ParseAsBool("fix_the_static_contact_point", conf);
@@ -130,13 +133,13 @@ void btGenFBFTargetCalculator::Init(btGeneralizeWorld *world,
  * by frame-by-frame control
  */
 void btGenFBFTargetCalculator::CalcTarget(double dt, int target_frame_id,
-                                                tVectorXd &tilde_qddot,
-                                                tVectorXd &tilde_qdot,
-                                                tVectorXd &tilde_q,
-                                                tVectorXd &tilde_tau)
+                                          tVectorXd &tilde_qddot,
+                                          tVectorXd &tilde_qdot,
+                                          tVectorXd &tilde_q,
+                                          tVectorXd &tilde_tau)
 {
     PreCalcTarget(dt, target_frame_id);
-    
+
     // 1. judge the contact status
     if (mEnableQPOptimization == true)
     {
@@ -378,9 +381,8 @@ void btGenFBFTargetCalculator::CalcContactStatus()
  * \brief                   Calculate the reference qddot and control forces
  */
 void btGenFBFTargetCalculator::Solve(tVectorXd &tilde_qddot,
-                                           tVectorXd &tilde_qdot,
-                                           tVectorXd &tilde_q,
-                                           tVectorXd &tilde_tau)
+                                     tVectorXd &tilde_qdot, tVectorXd &tilde_q,
+                                     tVectorXd &tilde_tau)
 {
     // std::cout << "q, qdot solve hasn't been supported\n";
     // exit(1);
@@ -550,9 +552,10 @@ void btGenFBFTargetCalculator::Solve(tVectorXd &tilde_qddot,
  * \param tau           4. and the control force (tau) according to the dynamics
  * equation
  */
-void btGenFBFTargetCalculator::CalcTargetInternal(
-    const tVectorXd &solution, tVectorXd &qddot, tVectorXd &qdot, tVectorXd &q,
-    tVectorXd &tau)
+void btGenFBFTargetCalculator::CalcTargetInternal(const tVectorXd &solution,
+                                                  tVectorXd &qddot,
+                                                  tVectorXd &qdot, tVectorXd &q,
+                                                  tVectorXd &tau)
 {
     if (solution.size() != mTotalSolutionSize)
     {
@@ -822,8 +825,8 @@ tMatrixXd CalcFrictionCone(int friction_num)
  * \brief               Given a contact point, calculate the convert matrix from
  * solution to cartesian force
  */
-void btGenFBFTargetCalculator::CalcContactConvertMat(
-    btCharContactPt *contact, tMatrixXd &convert_mat)
+void btGenFBFTargetCalculator::CalcContactConvertMat(btCharContactPt *contact,
+                                                     tMatrixXd &convert_mat)
 {
     // 1. confirm this contact point is not self collision
     if (true == contact->mIsSelfCollision)
@@ -978,8 +981,7 @@ int btGenFBFTargetCalculator::GetCalculatedNumOfContact() const
 }
 
 // struct GUIHelperInterface *gGUIHelper;
-void btGenFBFTargetCalculator::DrawPoint(const tVector3d &pos,
-                                               double radius)
+void btGenFBFTargetCalculator::DrawPoint(const tVector3d &pos, double radius)
 {
     if (mBulletGUIHelper == nullptr)
         return;
