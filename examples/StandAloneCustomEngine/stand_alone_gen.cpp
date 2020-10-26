@@ -90,7 +90,8 @@ void stepSimulation(float dt)
 
 void initPhysics()
 {
-    physics_param = new tParams("./examples/CustomEngine/config.json");
+    physics_param =
+        new tParams("./examples/CustomEngine/sim_configs/config.json");
 
     mGenWorld = new btGeneralizeWorld();
     mGenWorld->Init(physics_param->mSimulatorConfigPath);

@@ -101,7 +101,7 @@ void CustomEngineMainDemo::exitPhysics()
 void CustomEngineMainDemo::initPhysics()
 {
     srand(0);
-    physics_param = new tParams("./examples/CustomEngine/config.json");
+    physics_param = new tParams("./examples/CustomEngine/sim_configs/config.json");
 
     m_guiHelper->setUpAxis(1);
 

@@ -452,7 +452,7 @@ void btGenContactAwareController::ReadConfig(const std::string &config)
     mInitStateFile = btJsonUtil::ParseAsString("init_state_file", root);
     mStateSaveDir = btJsonUtil::ParseAsString("save_dir", root);
     mEnableOnlyTargetController =
-        btJsonUtil::ParseAsBool("enable_only_FBF_control", root);
+        btJsonUtil::ParseAsBool("enable_only_target_calculator", root);
     mEnableRefTrajDelayedUpdate =
         btJsonUtil::ParseAsBool("enable_ref_traj_delayed_update", root);
     mEnableDrawContactPointsInBulletGUIController = btJsonUtil::ParseAsBool(
