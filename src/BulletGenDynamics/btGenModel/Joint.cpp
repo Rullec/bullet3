@@ -7,12 +7,12 @@
 // buffer used in jacobian calculation
 static tMatrixXd local_jac_buf;
 
-Joint::Joint(BaseObjectParams &param)
+Joint::Joint(const BaseObjectParams &param)
     : BaseObject(param), mTorqueLim(0), mDiffWeight(0)
 {
 }
 
-Joint::Joint(BaseObjectJsonParam &param)
+Joint::Joint(const BaseObjectJsonParam &param)
     : BaseObject(param), mTorqueLim(0), mDiffWeight(0)
 {
 }

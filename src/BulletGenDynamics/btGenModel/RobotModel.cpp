@@ -976,13 +976,13 @@ void cRobotModel::LoadJsonModel(const char *file_path, double model_scale)
     auto joint_node = json_root["Skeleton"]["Joints"];
     auto mesh_node = json_root["DrawShapeDefs"];
     auto bodydefs_node = json_root["BodyDefs"];
-    BaseObjectJsonParam param;
 
     // load joint
     double root_diff_weight = 0;
     JointType root_joint_type = JointType::INVALID_JOINT;
     for (auto itr = joint_node.begin(); itr != joint_node.end(); ++itr)
     {
+        BaseObjectJsonParam param;
         param.name = (*itr)["Name"].asString() + "_joint";
         // std::cout << "add " << param.name << std::endl;
         param.id = (*itr)["ID"].asInt();
@@ -1056,8 +1056,11 @@ void cRobotModel::LoadJsonModel(const char *file_path, double model_scale)
     // load link
     for (auto itr = bodydefs_node.begin(); itr != bodydefs_node.end(); ++itr)
     {
+        BaseObjectJsonParam param;
         param.name = (*itr)["Name"].asString();
         param.id = (*itr)["ID"].asInt();
+        param.parent_id =
+            param.id; // link's parent is joint which has the same id
         // param.mesh = BaseRender::mesh_map["box"];
         param.mass = (*itr)["Mass"].asDouble();
 

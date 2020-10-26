@@ -3,14 +3,14 @@
 #include "tools.h"
 //#define OLD_VERSION_JDOT
 
-Link::Link(BaseObjectParams &param) : BaseObject(param)
+Link::Link(const BaseObjectParams &param) : BaseObject(param)
 {
     link_omega.setZero();
     link_vel.setZero();
     col_group = 1;
 }
 
-Link::Link(BaseObjectJsonParam &param) : BaseObject(param)
+Link::Link(const BaseObjectJsonParam &param) : BaseObject(param)
 {
     ComputeIbody();
     link_omega.setZero();

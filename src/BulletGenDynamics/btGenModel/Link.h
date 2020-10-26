@@ -7,8 +7,8 @@ class Link : public BaseObject
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-    explicit Link(BaseObjectParams &param);
-    explicit Link(BaseObjectJsonParam &param);
+    explicit Link(const BaseObjectParams &param);
+    explicit Link(const BaseObjectJsonParam &param);
 
     void Tell() override;
 

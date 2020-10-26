@@ -3,6 +3,32 @@
 #include "tools.h"
 #include <iostream>
 
+BaseObjectParams::BaseObjectParams()
+{
+    name = "uninitedc_base_object_name";
+    mesh = nullptr;
+    local_pos.setZero();
+    local_rotation.setZero();
+    mesh_scale.setZero();
+    mesh_rotation.setZero();
+    mass = 0;
+}
+BaseObjectJsonParam::BaseObjectJsonParam()
+{
+    id = -1;
+    parent_id = -1;
+    name = " uninited_base_object_json_name ";
+    local_pos.setZero();
+    local_rot.setZero();
+    mesh_scale.setZero();
+    mesh_rot.setZero();
+    mesh = nullptr;
+    mass = 0;
+    inertia.setZero();
+    type = -1;
+    shape_type = -1;
+}
+
 // \frac{ \partial Jw_k } { \partial q_i}, dim=(3, n_freedoms)
 const tMatrixXd &BaseObject::GetJKv_dq(int i) const { return jkv_dq[i]; }
 
@@ -212,12 +238,13 @@ void BaseObject::ComputeJKw()
 void BaseObject::ComputeJKv()
 {
     JK_v.setZero();
-    const tVector &p = tVector(0, 0, 0, 1);
+    tVector p = tVector(0, 0, 0, 1);
     tVector r;
     for (int i = 0; i < total_freedoms; ++i)
     {
         Tools::MatMul4x1(mWq[i], p, r);
-        JK_v.col(dependent_dof_id[i]) = Tools::GettVector3d(r);
+        int dependent_id = dependent_dof_id[i];
+        JK_v.col(dependent_id) = Tools::GettVector3d(r);
     }
 }
 
@@ -240,7 +267,7 @@ BaseObject *BaseObject::GetFirstChild()
     return children[0];
 }
 
-BaseObject::BaseObject(BaseObjectParams &param)
+BaseObject::BaseObject(const BaseObjectParams &param)
     : id(0), parent_id(-1), name(param.name), local_pos(param.local_pos),
       parent(nullptr), mesh_scale(param.mesh_scale),
       mesh_rotation(param.mesh_rotation), mesh(param.mesh),
@@ -282,7 +309,7 @@ BaseObject::BaseObject(BaseObjectParams &param)
     local_transform.data()[15] = 1.0;
 }
 
-BaseObject::BaseObject(BaseObjectJsonParam &param)
+BaseObject::BaseObject(const BaseObjectJsonParam &param)
     : id(param.id), parent_id(param.parent_id), name(param.name),
       local_pos(param.local_pos), parent(nullptr), mesh_scale(param.mesh_scale),
       mesh_rotation(param.mesh_rot), mesh(param.mesh), render_struct(nullptr),

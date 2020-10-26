@@ -53,8 +53,8 @@ enum JointType
     FIXED_JOINT,
     TOTAL_JOINT_TYPE
 };
-const std::string joint_type_keys[TOTAL_JOINT_TYPE] = {"none", "limit_none", "spherical",
-                                                       "revolute", "fixed"};
+const std::string joint_type_keys[TOTAL_JOINT_TYPE] = {
+    "none", "limit_none", "spherical", "revolute", "fixed"};
 struct BaseObjectParams
 {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
@@ -65,6 +65,7 @@ struct BaseObjectParams
     tVector3f mesh_scale;
     tVector3f mesh_rotation;
     double mass;
+    BaseObjectParams();
 };
 
 struct BaseObjectJsonParam
@@ -82,6 +83,7 @@ struct BaseObjectJsonParam
     tMatrix3d inertia;
     int type;
     int shape_type;
+    BaseObjectJsonParam();
 };
 
 struct BaseObjectShapeParam
@@ -127,9 +129,9 @@ class BaseObject
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
     virtual ~BaseObject() = default;
-    BaseObject(BaseObjectParams &param);
+    BaseObject(const BaseObjectParams &param);
 
-    BaseObject(BaseObjectJsonParam &param);
+    BaseObject(const BaseObjectJsonParam &param);
 
     void InitObject();
 

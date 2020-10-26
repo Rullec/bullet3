@@ -8,8 +8,8 @@ class Joint : public BaseObject
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-    explicit Joint(BaseObjectParams &param);
-    explicit Joint(BaseObjectJsonParam &param);
+    explicit Joint(const BaseObjectParams &param);
+    explicit Joint(const BaseObjectJsonParam &param);
 
     void Tell() override;
     Freedom *AddFreedom(Freedom &f) override;

@@ -73,7 +73,7 @@ protected:
     // float mTime;
 };
 extern bool gPauseSimulation;
-#include "valgrind/callgrind.h"
+// #include "valgrind/callgrind.h"
 void CustomEngineMainDemo::stepSimulation(float dt)
 {
     if (global_frame_id == 0)
@@ -129,7 +129,10 @@ void CustomEngineMainDemo::stepSimulation(float dt)
     m_guiHelper->autogenerateGraphicsObjects(m_dynamicsWorld);
 }
 
-void CustomEngineMainDemo::exitPhysics() { CALLGRIND_DUMP_STATS; }
+void CustomEngineMainDemo::exitPhysics()
+{
+    // CALLGRIND_DUMP_STATS;
+}
 void CustomEngineMainDemo::initPhysics()
 {
     srand(0);
