@@ -304,7 +304,7 @@ bool btTraj::LoadTraj(const std::string &path, cRobotModelDynamics *model,
                 "is_self_collision", cur_contact_value_json);
             // if (is_self_collision == true)
             // {
-            // 	std::cout << "[error] btGenContactAdviser: self collision hasn't
+            // 	std::cout << "[error] btGenContactController: self collision hasn't
             // been supported\n"; 	exit(0);
             // }
             btGenCollisionObject *obj = model->GetLinkCollider(link_id);

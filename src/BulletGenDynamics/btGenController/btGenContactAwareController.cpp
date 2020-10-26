@@ -1,7 +1,7 @@
-#include "btGenContactAwareAdviser.h"
+#include "btGenContactAwareController.h"
 #include "../examples/CommonInterfaces/CommonGUIHelperInterface.h"
-#include "BulletGenDynamics/btGenController/FBFOptimizer/btGenFrameByFrameOptimizer.h"
-#include "BulletGenDynamics/btGenController/btGenFeature.h"
+#include "BulletGenDynamics/btGenController/ContactAdaptionFeature/btGenFeature.h"
+#include "BulletGenDynamics/btGenController/FBFCalculator/btGenFrameByFrameCalculator.h"
 #include "BulletGenDynamics/btGenController/btTraj.h"
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
 #include "BulletGenDynamics/btGenSolver/ContactSolver.h"
@@ -11,11 +11,11 @@
 #include <iostream>
 tVectorXd ConvertPoseToq(const tVectorXd &pose, cRobotModelDynamics *model);
 
-// btGenContactAwareAdviser::btGenContactAwareAdviser(btGeneralizeWorld* world,
+// btGenContactAwareController::btGenContactAwareController(btGeneralizeWorld* world,
 // const std::string& path, double W, double Wm) : mW(W), mWm(Wm) std::string
 // new_path = "new.out";
 std::string debug_path = "numeric.log";
-btGenContactAwareAdviser::btGenContactAwareAdviser(btGeneralizeWorld *world)
+btGenContactAwareController::btGenContactAwareController(btGeneralizeWorld *world)
 {
     mCurdt = 0;
     mHasRefTraj = false;
@@ -37,7 +37,7 @@ btGenContactAwareAdviser::btGenContactAwareAdviser(btGeneralizeWorld *world)
     mModel = nullptr;
     mWorld = world;
     mFeatureVector = new btGenFeatureArray();
-    mFBFOptimizer = nullptr;
+    mFBFOptController = nullptr;
     mOutputTraj = nullptr;
     mRefTraj = nullptr;
     mRefTrajPath = "";
@@ -49,12 +49,12 @@ btGenContactAwareAdviser::btGenContactAwareAdviser(btGeneralizeWorld *world)
     mOutputControlDiff = false;
     mBulletGUIHelper = nullptr;
 
-    std::ofstream fout(debug_path);
-    fout << "";
-    fout.close();
+    // std::ofstream fout(debug_path);
+    // fout << "";
+    // fout.close();
 }
 
-btGenContactAwareAdviser::~btGenContactAwareAdviser()
+btGenContactAwareController::~btGenContactAwareController()
 {
     delete mRefTrajModel;
     delete mFBFTrajModel;
@@ -62,7 +62,7 @@ btGenContactAwareAdviser::~btGenContactAwareAdviser()
     delete mRefTraj;
 }
 
-// int btGenContactAwareAdviser::GetInternalFrameId() const
+// int btGenContactAwareController::GetInternalFrameId() const
 // {
 //     return this->mInternalFrameId;
 // }
@@ -73,7 +73,7 @@ btGenContactAwareAdviser::~btGenContactAwareAdviser()
  * \param output_traj       set the output trajectory path
  * \param enable_output     output or not, default not (false)
  */
-void btGenContactAwareAdviser::SetTraj(const std::string &ref_traj,
+void btGenContactAwareController::SetTraj(const std::string &ref_traj,
                                        const std::string &output_traj,
                                        bool enable_output /*= false*/)
 {
@@ -84,13 +84,13 @@ void btGenContactAwareAdviser::SetTraj(const std::string &ref_traj,
 
     if (mModel->GetNumOfFreedom() != mRefTraj->mq[mRefFrameId].size())
     {
-        std::cout << "btGenContactAwareAdviser::SetTraj the model is "
+        std::cout << "btGenContactAwareController::SetTraj the model is "
                      "inconsistent with the given motion\n";
         exit(0);
     }
     if (mRefFrameId >= mRefTraj->mNumOfFrames - 2)
     {
-        std::cout << "btGenContactAwareAdviser::SetTraj the traj has "
+        std::cout << "btGenContactAwareController::SetTraj the traj has "
                   << mRefTraj->mNumOfFrames << " frames but the start frame is "
                   << mRefFrameId << ", doesn't match\n";
         exit(0);
@@ -108,25 +108,25 @@ void btGenContactAwareAdviser::SetTraj(const std::string &ref_traj,
                                        mRefTraj->mqdot[mRefFrameId]);
     }
 
-    // std::cout << "[adviser] init q = "
+    // std::cout << "[controller] init q = "
     //           << mRefTraj->mq[mRefFrameId].segment(0, 3).transpose()
     //           << std::endl;
-    // std::cout << "[adviser] init qdot = "
+    // std::cout << "[controller] init qdot = "
     //           << mRefTraj->mqdot[mRefFrameId].transpose() << std::endl;
-    mFBFOptimizer->SetTraj(mRefTraj);
+    mFBFOptController->SetTraj(mRefTraj);
     mHasRefTraj = true;
 
     if (mEnableInitStateLoad == true)
     {
         LoadInitState();
     }
-    // std::cout << "[adviser] final init q = "
+    // std::cout << "[controller] final init q = "
     //           << mRefTraj->mq[mRefFrameId].segment(0, 3).transpose()
     //           << std::endl;
-    // std::cout << "[adviser] final init qdot = "
+    // std::cout << "[controller] final init qdot = "
     //           << mRefTraj->mqdot[mRefFrameId].transpose() << std::endl;
 }
-void btGenContactAwareAdviser::Init(cRobotModelDynamics *model_,
+void btGenContactAwareController::Init(cRobotModelDynamics *model_,
                                     const std::string &contact_aware_config)
 {
     ReadConfig(contact_aware_config);
@@ -135,22 +135,22 @@ void btGenContactAwareAdviser::Init(cRobotModelDynamics *model_,
     num_of_freedom = mModel->GetNumOfFreedom();
     num_of_underactuated_freedom = num_of_freedom - 6;
 
-    mFBFOptimizer = new btGenFrameByFrameOptimizer();
+    mFBFOptController = new btGenFBFTargetCalculator();
 
-    // btGenFrameByFrameOptimizer::tParams FBFOptimizer_params;
-    // FBFOptimizer_params.mWorld = mWorld;
-    // FBFOptimizer_params.mFBFEnergyCoeffPos = mFBFPosCoef;
-    // FBFOptimizer_params.mFBFEnergyCoeffVel = mFBFVelCoef;
-    // FBFOptimizer_params.mFBFEnergyCoeffAccel = mFBFAccelCoef;
+    // btGenFrameByFrameCalculator::tParams FBFCalculator_params;
+    // FBFCalculator_params.mWorld = mWorld;
+    // FBFCalculator_params.mFBFEnergyCoeffPos = mFBFPosCoef;
+    // FBFCalculator_params.mFBFEnergyCoeffVel = mFBFVelCoef;
+    // FBFCalculator_params.mFBFEnergyCoeffAccel = mFBFAccelCoef;
 
-    mFBFOptimizer->Init(mWorld, mFrameByFrameConfig);
+    mFBFOptController->Init(mWorld, mTargetControllerConfig);
     mFeatureVector->Init(mFeatureVectorFile, mModel, mWorld->GetGravity());
 
     CreateRefChar();
     PostProcess();
 }
 
-void btGenContactAwareAdviser::PreUpdate(double dt)
+void btGenContactAwareController::PreUpdate(double dt)
 {
     mCurdt = dt;
 
@@ -159,7 +159,7 @@ void btGenContactAwareAdviser::PreUpdate(double dt)
         SaveCurrentState();
 
     // 2. draw the contact points
-    if (mEnableDrawContactPointsInBulletGUIAdviser == true)
+    if (mEnableDrawContactPointsInBulletGUIController == true)
     {
         ClearDrawPoints();
         DrawContactPoints();
@@ -167,12 +167,12 @@ void btGenContactAwareAdviser::PreUpdate(double dt)
 
     // 3. judge the preliminary
     if (mRefTraj == nullptr)
-        std::cout << "[error] adviser guide traj hasn't been set\n", exit(0);
+        std::cout << "[error] controller guide traj hasn't been set\n", exit(0);
 
     // 4. protect the timestep
     if (std::fabs(mRefTraj->mTimestep - dt) > 1e-8)
     {
-        std::cout << "[error] btGenContactAwareAdviser ref motion dt "
+        std::cout << "[error] btGenContactAwareController ref motion dt "
                   << mRefTraj->mTimestep << " != sim dt " << dt << std::endl;
         exit(0);
     }
@@ -180,7 +180,7 @@ void btGenContactAwareAdviser::PreUpdate(double dt)
     // 5. judge the end
     if (IsEnd() == true)
     {
-        std::cout << "[error] The contact-aware adviser has terminated, it "
+        std::cout << "[error] The contact-aware controller has terminated, it "
                      "shouldn't be updated anymore\n";
         exit(0);
     }
@@ -190,10 +190,10 @@ void btGenContactAwareAdviser::PreUpdate(double dt)
 }
 
 /**
- * \brief               update the adviser
+ * \brief               update the controller
  *  calculate and offer new action guidence for the character
  */
-void btGenContactAwareAdviser::Update(double dt)
+void btGenContactAwareController::Update(double dt)
 {
     std::cout << "---------------------frame " << mSimFrameId << " ref "
               << mRefFrameId << std::endl;
@@ -206,8 +206,8 @@ void btGenContactAwareAdviser::Update(double dt)
 
     // 3. Calculate the convert matrix and residual used in the contact-aware jointed LCP
     //      If we only use Frame by frame to do control (which means the LCP is disable), call the ControlByFBF method
-    if (mEnableOnlyFBFControl == true)
-        mFBFOptimizer->ControlByFBF();
+    if (mEnableOnlyTargetController == true)
+        mFBFOptController->ControlByAdaptionController();
     else
         mFeatureVector->Eval(dt, mTargetAccel, mTargetVel, mTargetPos,
                              mTargetTau, mH, mE, mf);
@@ -216,7 +216,7 @@ void btGenContactAwareAdviser::Update(double dt)
     PostUpdate();
 }
 
-void btGenContactAwareAdviser::PostUpdate()
+void btGenContactAwareController::PostUpdate()
 {
     UpdateDrawingChar();
     UpdateReferenceTraj();
@@ -226,7 +226,7 @@ void btGenContactAwareAdviser::PostUpdate()
  * \brief               load the guidence trajectory
  */
 
-void btGenContactAwareAdviser::LoadTraj(const std::string &path)
+void btGenContactAwareController::LoadTraj(const std::string &path)
 {
     if (mRefTraj != nullptr)
         delete mRefTraj, mRefTraj = nullptr;
@@ -238,7 +238,7 @@ void btGenContactAwareAdviser::LoadTraj(const std::string &path)
         mOutputTraj = new btTraj();
     if (mModel == nullptr)
     {
-        std::cout << "adviser LoadTraj but mModel is empty\n";
+        std::cout << "controller LoadTraj but mModel is empty\n";
         exit(0);
     }
     mRefTraj->LoadTraj(path, mModel, mMaxFrame);
@@ -255,7 +255,7 @@ void btGenContactAwareAdviser::LoadTraj(const std::string &path)
  * \brief					Resolve the active force by the
  * qddot and contact forces
  */
-void btGenContactAwareAdviser::ResolveActiveForce()
+void btGenContactAwareController::ResolveActiveForce()
 {
     /*
                     Mqddot + Cqdot = QG + Qcontrol + Qcontact
@@ -302,7 +302,7 @@ void btGenContactAwareAdviser::ResolveActiveForce()
  * \brief					Init the pose of guided
  * character by the input trajectory
  */
-void btGenContactAwareAdviser::PostProcess()
+void btGenContactAwareController::PostProcess()
 {
     if (mStartFrame < 1)
     {
@@ -312,8 +312,8 @@ void btGenContactAwareAdviser::PostProcess()
     }
     mSimFrameId = mStartFrame;
     mRefFrameId = mStartFrame;
-    mModel->SetContactAwareAdviser(this);
-    mModel->SetEnableContactAwareAdviser(true);
+    mModel->SetContactAwareController(this);
+    mModel->SetEnableContactAwareController(true);
 
     // create the N matrix
     mN = tMatrixXd::Zero(num_of_freedom, num_of_underactuated_freedom);
@@ -325,15 +325,15 @@ void btGenContactAwareAdviser::PostProcess()
  * \brief					input the contact forces
  * (generalized), calculate and apply the active control torque
  */
-tVectorXd btGenContactAwareAdviser::CalcControlForce(const tVectorXd &Q_contact)
+tVectorXd btGenContactAwareController::CalcControlForce(const tVectorXd &Q_contact)
 {
-    if (mEnableOnlyFBFControl == true)
+    if (mEnableOnlyTargetController == true)
     {
         std::cout << "[error] This function CalcControlForce should not be "
                      "called in only FBF model, exit\n";
         exit(0);
     }
-    // std::cout << "[adviser] contact force = " << Q_contact.norm() << std::endl;
+    // std::cout << "[controller] contact force = " << Q_contact.norm() << std::endl;
     // std::cout << "mH = \n" << mH << std::endl;
     tVectorXd Q_active = mH * Q_contact + mE.inverse() * mf;
     // std::cout << "[control] contact force norm = " << Q_contact.norm() <<
@@ -345,8 +345,8 @@ tVectorXd btGenContactAwareAdviser::CalcControlForce(const tVectorXd &Q_contact)
         mRefTraj->mActiveForce[mRefFrameId - 1].transpose().segment(
             6, mModel->GetNumOfFreedom() - 6);
     // std::cout << "q = " << mModel->Getq().segment(0, 3).transpose() <<
-    // std::endl; std::cout << "[adviser] ref ctrl force = " <<
-    // ref_force.transpose() << std::endl; std::cout << "[adviser] calced ctrl
+    // std::endl; std::cout << "[controller] ref ctrl force = " <<
+    // ref_force.transpose() << std::endl; std::cout << "[controller] calced ctrl
     // force = " << Q_active.transpose() << std::endl;
 
     mOutputTraj->mActiveForce[mRefFrameId - 1] =
@@ -368,12 +368,12 @@ tVectorXd btGenContactAwareAdviser::CalcControlForce(const tVectorXd &Q_contact)
         std::cout << "[error] control force abs max > 1e6\n";
         exit(0);
     }
-    std::ofstream fout(debug_path, std::ios::app);
-    // std::cout << "[adviser] contact force = " << Q_contact.transpose()
+    // std::ofstream fout(debug_path, std::ios::app);
+    // std::cout << "[controller] contact force = " << Q_contact.transpose()
     //           << std::endl;
-    fout << "[numeric] contact force = " << Q_contact.transpose() << std::endl;
+    // fout << "[numeric] contact force = " << Q_contact.transpose() << std::endl;
 
-    fout << "[numeric] control force = " << mCtrlForce.transpose() << std::endl;
+    // fout << "[numeric] control force = " << mCtrlForce.transpose() << std::endl;
 
     mFeatureVector->CalcEnergy(mCtrlForce, Q_contact);
 
@@ -391,18 +391,22 @@ tVectorXd btGenContactAwareAdviser::CalcControlForce(const tVectorXd &Q_contact)
     tVectorXd contact_force_diff = mocap_contact_force - Q_contact;
     tVectorXd control_force_diff = mocap_control_force - Q_active;
     std::cout << "[log] contact_force diff_percent = "
-              << contact_force_diff.norm() / mocap_contact_force.norm() * 100
+              << contact_force_diff.norm() /
+                     (mocap_contact_force.norm() + 1e-8) * 100
               << std::endl;
     std::cout << "[log] control_force diff_percent = "
-              << control_force_diff.norm() / mocap_control_force.norm() * 100
+              << control_force_diff.norm() /
+                     (mocap_control_force.norm() + 1e-8) * 100
               << std::endl;
-    fout << "[log] contact_force diff_percent = "
-         << contact_force_diff.norm() / mocap_contact_force.norm() * 100
-         << std::endl;
-    fout << "[log] control_force diff_percent = "
-         << control_force_diff.norm() / mocap_control_force.norm() * 100
-         << std::endl;
-    fout.close();
+    // fout << "[log] contact_force diff_percent = "
+    //      << contact_force_diff.norm() / (mocap_contact_force.norm() + 1e-8) *
+    //             100
+    //      << std::endl;
+    // fout << "[log] control_force diff_percent = "
+    //      << control_force_diff.norm() / (mocap_control_force.norm() + 1e-8) *
+    //             100
+    //      << std::endl;
+    // fout.close();
     // check the contact force & control force that is calculated by the full minimium of optimization problem
     // it should be the same as the contact force in the ref traj
     // but, it will be different from the new LCP solved result
@@ -417,13 +421,13 @@ tVectorXd btGenContactAwareAdviser::CalcControlForce(const tVectorXd &Q_contact)
     return Q_active;
 }
 
-tVectorXd btGenContactAwareAdviser::GetPrevControlForce() { return mCtrlForce; }
+tVectorXd btGenContactAwareController::GetPrevControlForce() { return mCtrlForce; }
 /**
  * \brief					Load config
  */
-void btGenContactAwareAdviser::ReadConfig(const std::string &config)
+void btGenContactAwareController::ReadConfig(const std::string &config)
 {
-    std::cout << "[debug] read config of adviser from " << config << std::endl;
+    std::cout << "[debug] read config of controller from " << config << std::endl;
     Json::Value root;
     btJsonUtil::LoadJson(config, root);
     mResolveControlToruqe =
@@ -441,20 +445,20 @@ void btGenContactAwareAdviser::ReadConfig(const std::string &config)
         btJsonUtil::ParseAsBool("enable_sync_traj_periodly", root);
     mSyncTrajPeriod = btJsonUtil::ParseAsInt("sync_traj_period", root);
 
-    mFrameByFrameConfig = btJsonUtil::ParseAsValue("ctrl_config", root);
+    mTargetControllerConfig = btJsonUtil::ParseAsValue("ctrl_config", root);
     mEnableStateSave = btJsonUtil::ParseAsBool("enable_state_save", root);
     mEnableInitStateLoad =
         btJsonUtil::ParseAsBool("enable_init_state_load", root);
     mInitStateFile = btJsonUtil::ParseAsString("init_state_file", root);
     mStateSaveDir = btJsonUtil::ParseAsString("save_dir", root);
-    mEnableOnlyFBFControl =
+    mEnableOnlyTargetController =
         btJsonUtil::ParseAsBool("enable_only_FBF_control", root);
     mEnableRefTrajDelayedUpdate =
         btJsonUtil::ParseAsBool("enable_ref_traj_delayed_update", root);
-    mEnableDrawContactPointsInBulletGUIAdviser = btJsonUtil::ParseAsBool(
-        "enable_draw_contact_points_in_bullet_GUI_adviser", root);
+    mEnableDrawContactPointsInBulletGUIController = btJsonUtil::ParseAsBool(
+        "enable_draw_contact_points_in_bullet_GUI_controller", root);
 
-    if (mEnableOnlyFBFControl == true)
+    if (mEnableOnlyTargetController == true)
     {
         // we must check, the contact mode of gen world is exactly "No"
         if (btGeneralizeWorld::eContactResponseMode::NoMode !=
@@ -479,7 +483,7 @@ void btGenContactAwareAdviser::ReadConfig(const std::string &config)
     }
 }
 
-// void btGenContactAwareAdviser::UpdateMultibodyVelocityDebug(double dt)
+// void btGenContactAwareController::UpdateMultibodyVelocityDebug(double dt)
 // {
 //     // tVectorXd cur_qddot = mModel->Getqddot();
 //     // tVectorXd ref_qddot = mRefTraj->mqddot[mInternalFrameId - 1];
@@ -512,7 +516,7 @@ void btGenContactAwareAdviser::ReadConfig(const std::string &config)
  * \brief					Update the multibody velocity,
  * used in debug mode
  */
-void btGenContactAwareAdviser::UpdateMultibodyVelocityAndTransformDebug(
+void btGenContactAwareController::UpdateMultibodyVelocityAndTransformDebug(
     double dt)
 {
     tVectorXd qddot = mModel->Getqddot();
@@ -531,15 +535,15 @@ void btGenContactAwareAdviser::UpdateMultibodyVelocityAndTransformDebug(
         const tVectorXd &ref_traj_q = mRefTraj->mq[mRefFrameId],
                         ref_traj_qdot = mRefTraj->mqdot[mRefFrameId],
                         ref_traj_qddot = mRefTraj->mqddot[mRefFrameId - 1];
-        std::ofstream fout(debug_path, std::ios::app);
-        fout << "[numeric] ref q = " << ref_traj_q.transpose() << std::endl;
-        fout << "[numeric] ref qdot = " << ref_traj_qdot.transpose()
-             << std::endl;
-        fout << "[numeric] ref qddot = " << ref_traj_qddot.transpose()
-             << std::endl;
-        fout << "[numeric] ctrl_res q = " << q.transpose() << std::endl;
-        fout << "[numeric] ctrl_res qdot = " << qdot.transpose() << std::endl;
-        fout << "[numeric] ctrl_res qddot = " << qddot.transpose() << std::endl;
+        // std::ofstream fout(debug_path, std::ios::app);
+        // fout << "[numeric] ref q = " << ref_traj_q.transpose() << std::endl;
+        // fout << "[numeric] ref qdot = " << ref_traj_qdot.transpose()
+        //      << std::endl;
+        // fout << "[numeric] ref qddot = " << ref_traj_qddot.transpose()
+        //      << std::endl;
+        // fout << "[numeric] ctrl_res q = " << q.transpose() << std::endl;
+        // fout << "[numeric] ctrl_res qdot = " << qdot.transpose() << std::endl;
+        // fout << "[numeric] ctrl_res qddot = " << qddot.transpose() << std::endl;
 
         {
             tVectorXd q_diff = q - ref_traj_q, qdot_diff = qdot - ref_traj_qdot,
@@ -589,15 +593,15 @@ void btGenContactAwareAdviser::UpdateMultibodyVelocityAndTransformDebug(
 /**
  * 
  */
-tVectorXd btGenContactAwareAdviser::CalcLCPResidual(double dt) const
+tVectorXd btGenContactAwareController::CalcLCPResidual(double dt) const
 {
-    if (mEnableOnlyFBFControl == true)
+    if (mEnableOnlyTargetController == true)
     {
         std::cout << "[error] This function CalcLCPResidual should not be "
                      "called in only FBF model, exit\n";
         exit(0);
     }
-    // std::cout << "Adviser Residual hasn't been implemented\n", exit(0);
+    // std::cout << "Controller Residual hasn't been implemented\n", exit(0);
     const tMatrixXd &Minv = mModel->GetInvMassMatrix();
     // mModel
     const tVectorXd &QG = mModel->CalcGenGravity(mWorld->GetGravity());
@@ -610,7 +614,7 @@ tVectorXd btGenContactAwareAdviser::CalcLCPResidual(double dt) const
     tVectorXd diff = QG - Gen_force;
     if (diff.norm() > 1e-8)
     {
-        std::cout << "[error] btGenContactAwareAdviser::CalcLCPResidual: "
+        std::cout << "[error] btGenContactAwareController::CalcLCPResidual: "
                      "GenForce should be the same as QG, but now the diff "
                      "is too big "
                   << diff.transpose() << std::endl;
@@ -618,22 +622,23 @@ tVectorXd btGenContactAwareAdviser::CalcLCPResidual(double dt) const
                   << std::endl;
         std::cout << "[error] cur QG = " << QG.transpose() << std::endl;
         std::cout << "[error] cur pure = "
-                  << mModel->DebugGetGeneralizedForce().transpose() << std::endl;
+                  << mModel->DebugGetGeneralizedForce().transpose()
+                  << std::endl;
         exit(0);
     }
     // std::cout << "[debug] [new] frame " << mInternalFrameId << " residual = "
     // << residual.transpose() << std::endl;
     return residual;
 }
-tMatrixXd btGenContactAwareAdviser::CalcLCPPartBPrefix() const
+tMatrixXd btGenContactAwareController::CalcLCPPartBPrefix() const
 {
-    if (mEnableOnlyFBFControl == true)
+    if (mEnableOnlyTargetController == true)
     {
         std::cout << "[error] This function CalcLCPPartBPrefix should not be "
                      "called in only FBF model, exit\n";
         exit(0);
     }
-    // std::cout << "Adviser PartB hasn't been implemented\n", exit(0);
+    // std::cout << "Controller PartB hasn't been implemented\n", exit(0);
     int num_of_freedom = mModel->GetNumOfFreedom();
     tMatrixXd partb =
         tMatrixXd::Identity(num_of_freedom, num_of_freedom) + mN * mH;
@@ -646,7 +651,7 @@ tMatrixXd btGenContactAwareAdviser::CalcLCPPartBPrefix() const
     // return tMatrixXd::Zero(0, 0);
 }
 
-bool btGenContactAwareAdviser::IsEnd()
+bool btGenContactAwareController::IsEnd()
 {
     return mRefFrameId >= (mRefTraj->mq.size() - 2);
 }
@@ -655,25 +660,25 @@ bool btGenContactAwareAdviser::IsEnd()
  * \brief					Get current reference gen accel
  * "qddot_target" and "tau_target"
  */
-void btGenContactAwareAdviser::FetchControlTarget(double dt,
+void btGenContactAwareController::FetchControlTarget(double dt,
                                                   tVectorXd &qddot_target,
                                                   tVectorXd &qdot_target,
                                                   tVectorXd &q_target,
                                                   tVectorXd &tau_target)
 {
-    mFBFOptimizer->CalcTarget(dt, mRefFrameId, qddot_target, qdot_target,
-                              q_target, tau_target);
-    std::ofstream fout(debug_path, std::ios::app);
-    fout << "[numeric] FBF q = " << q_target.transpose() << std::endl;
-    fout << "[numeric] FBF qdot = " << qdot_target.transpose() << std::endl;
-    fout << "[numeric] FBF qddot = " << qddot_target.transpose() << std::endl;
+    mFBFOptController->CalcTarget(dt, mRefFrameId, qddot_target, qdot_target,
+                                  q_target, tau_target);
+    // std::ofstream fout(debug_path, std::ios::app);
+    // fout << "[numeric] FBF q = " << q_target.transpose() << std::endl;
+    // fout << "[numeric] FBF qdot = " << qdot_target.transpose() << std::endl;
+    // fout << "[numeric] FBF qddot = " << qddot_target.transpose() << std::endl;
 }
 
 /**
  * \brief					Create the reference character
  * in ref trajectory
  */
-void btGenContactAwareAdviser::CreateRefChar()
+void btGenContactAwareController::CreateRefChar()
 {
     if (mDrawReferenceTrajCharacter)
     {
@@ -699,7 +704,7 @@ void btGenContactAwareAdviser::CreateRefChar()
 /**
  * \brief					update the reference character
  */
-void btGenContactAwareAdviser::UpdateDrawingChar()
+void btGenContactAwareController::UpdateDrawingChar()
 {
     if (mDrawReferenceTrajCharacter)
     {
@@ -716,7 +721,7 @@ void btGenContactAwareAdviser::UpdateDrawingChar()
  * \brief					record the current contact info
  * and motion status into the mSaveTraj
  */
-void btGenContactAwareAdviser::RecordTraj()
+void btGenContactAwareController::RecordTraj()
 {
     // record motion
     mOutputTraj->mq[mSimFrameId] = mModel->Getq();
@@ -731,7 +736,7 @@ void btGenContactAwareAdviser::RecordTraj()
             delete x;
         rec_contacts.clear();
         int num_of_contact_forces = mWorld->GetContactForces().size();
-        // std::cout << "[adviser] contact num = " << num_of_contact_forces
+        // std::cout << "[controller] contact num = " << num_of_contact_forces
         //           << std::endl;
         for (int id = 0; id < num_of_contact_forces; id++)
         {
@@ -748,22 +753,22 @@ void btGenContactAwareAdviser::RecordTraj()
 }
 
 /**
- * \brief               Reset the contact aware adviser, which means the current
+ * \brief               Reset the contact aware controller, which means the current
  * trajectory should be deleted and cannot be used to do tracking
  */
-void btGenContactAwareAdviser::Reset()
+void btGenContactAwareController::Reset()
 {
-    std::cout << "[adviser] adviser reset!\n";
+    std::cout << "[controller] controller reset!\n";
     // exit(0);
     if (mEnableOutput == true)
     {
-        std::cout << "[adviser] Save traj v2 to " << mOutputTrajPath
+        std::cout << "[controller] Save traj v2 to " << mOutputTrajPath
                   << std::endl;
         mOutputTraj->SaveTraj(mOutputTrajPath, mModel);
     }
     else
     {
-        std::cout << "[adviser] Save traj is diabled\n";
+        std::cout << "[controller] Save traj is diabled\n";
     }
 
     mSimFrameId = mStartFrame;
@@ -771,26 +776,26 @@ void btGenContactAwareAdviser::Reset()
     mHasRefTraj = false;
     mRefTrajPath.clear();
     mOutputTrajPath.clear();
-    mFBFOptimizer->Reset();
+    mFBFOptController->Reset();
 }
 
-btGenFrameByFrameOptimizer *btGenContactAwareAdviser::GetFBFOptimizer()
+btGenFBFTargetCalculator *btGenContactAwareController::GetFBFCalculator()
 {
-    return this->mFBFOptimizer;
+    return this->mFBFOptController;
 }
 
-void btGenContactAwareAdviser::SetBulletGUIHelperInterface(
+void btGenContactAwareController::SetBulletGUIHelperInterface(
     struct GUIHelperInterface *inter)
 {
     mBulletGUIHelper = inter;
-    mFBFOptimizer->SetBulletGUIHelperInterface(inter);
+    mFBFOptController->SetBulletGUIHelperInterface(inter);
 }
-btTraj *btGenContactAwareAdviser::GetRefTraj() { return this->mRefTraj; }
+btTraj *btGenContactAwareController::GetRefTraj() { return this->mRefTraj; }
 
 /**
  * \brief               Save current state to the path speicifed by "SaveDir"
  */
-void btGenContactAwareAdviser::SaveCurrentState()
+void btGenContactAwareController::SaveCurrentState()
 {
     /**
      * 1. trajectory path
@@ -806,11 +811,11 @@ void btGenContactAwareAdviser::SaveCurrentState()
     root["qdot"] = btJsonUtil::BuildVectorJsonValue(mModel->Getqdot());
     root["sim_frame_id"] = mSimFrameId;
     root["ref_frame_id"] = mRefFrameId;
-    std::cout << "write adviser state to " << filename << std::endl;
+    std::cout << "write controller state to " << filename << std::endl;
     btJsonUtil::WriteJson(filename, root, true);
 }
 
-void btGenContactAwareAdviser::LoadInitState()
+void btGenContactAwareController::LoadInitState()
 {
     std::cout << "[load] begin to load init state file " << mInitStateFile
               << std::endl;
@@ -858,7 +863,7 @@ void btGenContactAwareAdviser::LoadInitState()
 /**
  * \brief                   Update the frame id of reference trajectory
  */
-void btGenContactAwareAdviser::UpdateReferenceTraj()
+void btGenContactAwareController::UpdateReferenceTraj()
 {
     // std::cout << "[debug] update ref traj begin\n";
     if (mEnableRefTrajDelayedUpdate == true)
@@ -867,8 +872,8 @@ void btGenContactAwareAdviser::UpdateReferenceTraj()
         // get ref contact num
         // get current contact num
         int ref_contact_num = mRefTraj->mContactForce[mRefFrameId].size();
-        int cur_contact_num = mFBFOptimizer->GetCalculatedNumOfContact();
-        std::cout << "[adviser] ref contact num " << ref_contact_num
+        int cur_contact_num = mFBFOptController->GetCalculatedNumOfContact();
+        std::cout << "[controller] ref contact num " << ref_contact_num
                   << " cur contact num " << cur_contact_num << std::endl;
         if (cur_contact_num >= ref_contact_num)
             mRefFrameId++;
@@ -954,7 +959,7 @@ void btGenContactAwareAdviser::UpdateReferenceTraj()
 //     // mSimObjs[0]->set(tVector(0, -0.607168, 0, 0));
 // }
 
-void btGenContactAwareAdviser::ClearDrawPoints()
+void btGenContactAwareController::ClearDrawPoints()
 {
     if (mBulletGUIHelper == nullptr)
         return;
@@ -975,7 +980,7 @@ void btGenContactAwareAdviser::ClearDrawPoints()
     mDrawPointsList.clear();
 }
 
-void btGenContactAwareAdviser::DrawPoint(const tVector3d &pos,
+void btGenContactAwareController::DrawPoint(const tVector3d &pos,
                                          double radius /* = 0.05*/)
 {
     if (mBulletGUIHelper == nullptr)
@@ -998,7 +1003,7 @@ void btGenContactAwareAdviser::DrawPoint(const tVector3d &pos,
 /**
  * \brief               Draw all contact points
 */
-void btGenContactAwareAdviser::DrawContactPoints()
+void btGenContactAwareController::DrawContactPoints()
 {
     auto manifolds = mWorld->GetContactManifolds();
     for (auto *mani : manifolds)

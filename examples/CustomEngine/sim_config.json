@@ -15,7 +15,7 @@
     "mb_calc_generalized_force_only_by_jv": false,
     "mb_angle_clamp": false,
     "mb_max_vel": 100,
-    "contact_aware_lcp_config": "./examples/CustomEngine/contact_aware_adviser_config.json",
+    "contact_aware_lcp_config": "./examples/CustomEngine/contact_aware_controller_config.json",
     "enable_perturb": false,
     "enable_pd_control": false,
     "controller_path": "./examples/CustomEngine/pd_config.json",

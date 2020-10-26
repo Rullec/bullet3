@@ -1,10 +1,5 @@
 #pragma once
-#include "BulletGenDynamics/btGenUtil/JsonUtil.h"
-#include "BulletGenDynamics/btGenUtil/MathUtil.h"
-
-class btTraj;
-class btGeneralizeWorld;
-class cRobotModelDynamics;
+#include "BulletGenDynamics/btGenController/btGenTargetCalculator.h"
 class QuadProgQPSolver;
 class btCharContactPt;
 class btGenFrameByFrameConstraint;
@@ -18,26 +13,24 @@ enum eContactStatus
     BREAKAGE
 };
 class btCollisionObject;
-class btGenFrameByFrameOptimizer
+class btGenFBFTargetCalculator : public btGenTargetCalculator
 {
 public:
-    btGenFrameByFrameOptimizer();
-    ~btGenFrameByFrameOptimizer();
-    void Init(btGeneralizeWorld *mWorld, const Json::Value &conf);
-    void SetTraj(btTraj *traj_);
-    void SetCoef(const Json::Value &conf);
-    void CalcTarget(double dt, int target_frame_id, tVectorXd &tilde_qddot,
-                    tVectorXd &tilde_qdot, tVectorXd &tilde_q,
-                    tVectorXd &tilde_tau);
-    int GetCalculatedNumOfContact() const;
-    void ControlByFBF();
-    void Reset();
-    void SetBulletGUIHelperInterface(struct GUIHelperInterface *inter);
+    btGenFBFTargetCalculator();
+    ~btGenFBFTargetCalculator();
+    virtual void Init(btGeneralizeWorld *mWorld, const Json::Value &conf);
+    virtual void SetTraj(btTraj *traj_);
+    virtual void SetCoef(const Json::Value &conf);
+    virtual void CalcTarget(double dt, int target_frame_id,
+                            tVectorXd &tilde_qddot, tVectorXd &tilde_qdot,
+                            tVectorXd &tilde_q, tVectorXd &tilde_tau);
+    virtual int GetCalculatedNumOfContact() const;
+    virtual void ControlByAdaptionController();
+    virtual void Reset();
 
 protected:
     // ---------methods
     void ParseConfig(const Json::Value &conf);
-    void InitModelInfo();
     void InitQPSolver();
     void CalcContactStatus();
     void CalcSolutionVector();
@@ -98,12 +91,8 @@ protected:
     void DrawContactPoints();
     void DrawPoint(const tVector3d &pos, double r = 0.05);
     // ---------vars
-    int mRefFrameId;
-    double mdt;
     QuadProgQPSolver *mQPSolver;
-    cRobotModelDynamics *mModel;
-    btTraj *mTraj;
-    btGeneralizeWorld *mWorld;
+
     std::vector<btCharContactPt *> mContactPoints;
     std::vector<int> mContactSolOffset; // record the offset of each contact
                                         // point in solution vector
@@ -171,12 +160,6 @@ protected:
     std::vector<tEigenArr<tVector3d>> mRefContactLocalPos;
     tVectorXd
         mControlForce; // used in the tvcg control force close to prev energy term
-    // model buffer vars
-    int num_of_freedom;
-    int num_of_underactuated_freedom;
-
-    // draw contact points utils
-    struct GUIHelperInterface *mBulletGUIHelper;
 
     std::vector<btCollisionObject *> mDrawPointsList;
 };

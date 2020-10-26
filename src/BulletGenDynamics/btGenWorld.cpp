@@ -1,9 +1,9 @@
 #include "btGenWorld.h"
-#include "BulletGenDynamics/btGenController/btGenPDController.h"
+#include "BulletGenDynamics/btGenController/PDController/btGenPDController.h"
 #include "BulletGenDynamics/btGenController/btTraj.h"
 #include "BulletGenDynamics/btGenModel/EulerAngelRotationMatrix.h"
 #include "BulletGenDynamics/btGenUtil/TimeUtil.hpp"
-#include "btGenController/btGenContactAwareAdviser.h"
+#include "btGenController/btGenContactAwareController.h"
 #include "btGenModel/RobotModelDynamics.h"
 #include "btGenModel/SimObj.h"
 #include "btGenSolver/ContactSolver.h"
@@ -69,7 +69,7 @@ btGeneralizeWorld::~btGeneralizeWorld()
 
     delete mLCPContactSolver;
     delete mGuideTraj;
-    delete mControlAdviser;
+    delete mControlController;
 }
 
 void btGeneralizeWorld::Init(const std::string &config_path)
@@ -205,8 +205,8 @@ void btGeneralizeWorld::Init(const std::string &config_path)
     // {
     // 	mPDController = new btGenPDController(mPDControllerPath);
     // }
-    mControlAdviser = nullptr;
-    // mControlAdviser = new btGenContactAwareAdviser();
+    mControlController = nullptr;
+    // mControlController = new btGenContactAwareController();
     // SetEnableContacrAwareControl();
 }
 
@@ -425,7 +425,7 @@ void btGeneralizeWorld::StepSimulation(double dt)
     {
         ApplyGravity();
         CollisionDetect();
-        UpdateAdviser(dt);
+        UpdateController(dt);
         // ApplyGuideAction();
         CollisionResponse(dt);
         // CheckGuideTraj();
@@ -447,9 +447,9 @@ std::vector<btGenContactForce *> btGeneralizeWorld::GetContactForces() const
     return mContactForces;
 }
 
-btGenContactAwareAdviser *btGeneralizeWorld::GetContactAwareAdviser()
+btGenContactAwareController *btGeneralizeWorld::GetContactAwareController()
 {
-    return mControlAdviser;
+    return mControlController;
 }
 std::vector<btPersistentManifold *>
 btGeneralizeWorld::GetContactManifolds() const
@@ -607,14 +607,14 @@ void btGeneralizeWorld::ApplyGravity()
 }
 
 /**
- * \brief				Update the contact-aware LCP adviser
+ * \brief				Update the contact-aware LCP controller
  *
  */
-void btGeneralizeWorld::UpdateAdviser(double dt)
+void btGeneralizeWorld::UpdateController(double dt)
 {
     if (mMBEnableContactAwareLCP)
     {
-        mControlAdviser->Update(dt);
+        mControlController->Update(dt);
     }
 }
 
@@ -735,9 +735,9 @@ void btGeneralizeWorld::CollisionResponse(double dt)
         // output the legacy contact forces
         std::cout
             << "------------------contact forces from ref traj-------------\n";
-        int ref_frameid = mControlAdviser->GetRefFrameId() - 1;
+        int ref_frameid = mControlController->GetRefFrameId() - 1;
         // std::cout << "ref frame id = " << ref_frameid << std::endl;
-        auto traj = mControlAdviser->GetRefTraj();
+        auto traj = mControlController->GetRefTraj();
         DebugPrintContactForce(traj->mContactForce[ref_frameid]);
         tVectorXd legacy_gen_contact_force =
             DebugConvertCartesianContactForceToGenForce(
@@ -757,8 +757,8 @@ void btGeneralizeWorld::CollisionResponse(double dt)
 
         std::cout << "q = " << mMultibody->Getq().norm() << std::endl;
         std::cout << "qdot = " << mMultibody->Getqdot().norm() << std::endl;
-        // 4. restore the adviser state, and the old contact forces
-        this->mMultibody->SetEnableContactAwareAdviser(true);
+        // 4. restore the controller state, and the old contact forces
+        this->mMultibody->SetEnableContactAwareController(true);
         mMBEnableContactAwareLCP = true;
 
         // apply the old contact forces, then return
@@ -909,16 +909,16 @@ void btGeneralizeWorld::CollisionResponseLCP(double dt)
     // restore the active force when contact-aware LCP is enabled
 
     if (mMultibody != nullptr &&
-        mMultibody->GetEnableContactAwareAdviser() == true)
+        mMultibody->GetEnableContactAwareController() == true)
     {
         mContactAwareControlForce.clear();
         // std::cout << "[log] restore active force by contact-aware LCP is
         // enabled\n";
         auto model = mMultibody;
-        auto adviser = model->GetContactAwareAdviser();
-        // tMatrixXd E = adviser->GetE();
-        // tMatrixXd Dinv = adviser->GetD().inverse();
-        // tVectorXd b = adviser->Getb();
+        auto controller = model->GetContactAwareController();
+        // tMatrixXd E = controller->GetE();
+        // tMatrixXd Dinv = controller->GetD().inverse();
+        // tVectorXd b = controller->Getb();
         int num_of_freedom = model->GetNumOfFreedom();
         tVectorXd Q = tVectorXd::Zero(num_of_freedom);
         for (auto &force : mContactForces)
@@ -945,7 +945,7 @@ void btGeneralizeWorld::CollisionResponseLCP(double dt)
                 Q += Q_single;
             }
         }
-        tVectorXd control_force_underactuated = adviser->CalcControlForce(Q);
+        tVectorXd control_force_underactuated = controller->CalcControlForce(Q);
         for (int dof = 6; dof < num_of_freedom; dof++)
         {
             mContactAwareControlForce.push_back(
@@ -1047,7 +1047,7 @@ void btGeneralizeWorld::Update(double dt)
         // 	}
         // 	else
         // 	{
-        // 		mMultibody->GetContactAwareAdviser()->UpdateMultibodyVelocityDebug(dt);
+        // 		mMultibody->GetContactAwareController()->UpdateMultibodyVelocityDebug(dt);
         // 	}
         // 	mMultibody->UpdateTransform(dt);
         // }
@@ -1060,7 +1060,7 @@ void btGeneralizeWorld::Update(double dt)
             }
             else
             {
-                mMultibody->GetContactAwareAdviser()
+                mMultibody->GetContactAwareController()
                     ->UpdateMultibodyVelocityAndTransformDebug(dt);
             }
             // mMultibody->UpdateTransform(dt);
@@ -1137,7 +1137,7 @@ std::vector<btGenContactForce *> btGeneralizeWorld::DebugGetContactForces(
     // 2. save the current model state, save the env setting (contact aware or not)
     bool world_enable_contact_aware = mMBEnableContactAwareLCP;
     bool model_enable_contact_aware =
-        mMultibody->GetEnableContactAwareAdviser();
+        mMultibody->GetEnableContactAwareController();
     mMultibody->PushState("debug_get_contact_force");
     // 3. apply the control force
     for (auto &f : gen_forces)
@@ -1146,7 +1146,7 @@ std::vector<btGenContactForce *> btGeneralizeWorld::DebugGetContactForces(
     }
 
     // 4. change the env to non-contact-aware environment, collect the reaction contact force,
-    mMultibody->SetEnableContactAwareAdviser(false);
+    mMultibody->SetEnableContactAwareController(false);
     mMBEnableContactAwareLCP = false;
 
     // 5. record the reaction contact force
@@ -1156,7 +1156,7 @@ std::vector<btGenContactForce *> btGeneralizeWorld::DebugGetContactForces(
 
     // 6. resotre the model state, and the env setting
     mMultibody->PopState("debug_get_contact_force");
-    mMultibody->SetEnableContactAwareAdviser(model_enable_contact_aware);
+    mMultibody->SetEnableContactAwareController(model_enable_contact_aware);
     mMBEnableContactAwareLCP = world_enable_contact_aware;
     // 7. return the contact forces
     return contact_forces;
@@ -1232,7 +1232,7 @@ void btGeneralizeWorld::DebugPrintContactForce(
 }
 tVectorXd btGeneralizeWorld::DebugGetGenControlForce(int ref_frameid)
 {
-    return mControlAdviser->GetRefTraj()->GetGenControlForce(ref_frameid,
+    return mControlController->GetRefTraj()->GetGenControlForce(ref_frameid,
                                                              mMultibody);
 }
 
@@ -1416,14 +1416,14 @@ void btGeneralizeWorld::Reset()
 void btGeneralizeWorld::SetEnableContacrAwareControl()
 {
     std::cout << "btGeneralizeWorld::SetEnableContacrAwareControl is called\n";
-    if (mControlAdviser != nullptr || mMBEnableContactAwareLCP == true)
+    if (mControlController != nullptr || mMBEnableContactAwareLCP == true)
     {
-        std::cout << "[error] control adviser exists, exit...\n";
+        std::cout << "[error] control controller exists, exit...\n";
         exit(0);
     }
     mMBEnableContactAwareLCP = true;
-    mControlAdviser = new btGenContactAwareAdviser(this);
-    mControlAdviser->Init(this->mMultibody, mContactAwareConfig);
+    mControlController = new btGenContactAwareController(this);
+    mControlController->Init(this->mMultibody, mContactAwareConfig);
 }
 
 // /**

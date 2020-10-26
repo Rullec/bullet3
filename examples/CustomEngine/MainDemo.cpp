@@ -11,8 +11,8 @@
 #include "../CommonInterfaces/CommonRigidBodyBase.h"
 #include "BulletDynamics/MLCPSolvers/btMLCPSolver.h"
 #include "BulletDynamics/MLCPSolvers/btSolveProjectedGaussSeidel.h"
-#include "BulletGenDynamics/btGenController/FBFOptimizer/btGenFrameByFrameOptimizer.h"
-#include "BulletGenDynamics/btGenController/btGenContactAwareAdviser.h"
+#include "BulletGenDynamics/btGenController/FBFCalculator/btGenFrameByFrameCalculator.h"
+#include "BulletGenDynamics/btGenController/btGenContactAwareController.h"
 #include "BulletGenDynamics/btGenUtil/JsonUtil.h"
 #include "BulletGenDynamics/btGenWorld.h"
 #include <fstream>
@@ -70,7 +70,7 @@ protected:
     void MultistepSim(float dt);
     void SinglestepSim(float dt);
     btGeneralizeWorld *mGenWorld;
-    btGenContactAwareAdviser *mAdviser;
+    btGenContactAwareController *mController;
     double mTimestep;
     // btRigidBody* target_rigidbody;
     // float mTime;
@@ -119,9 +119,9 @@ void CustomEngineMainDemo::initPhysics()
         if (physics_param->mEnableContactAwareControl)
         {
             mGenWorld->SetEnableContacrAwareControl();
-            mAdviser = mGenWorld->GetContactAwareAdviser();
-            mAdviser->SetTraj(gContactAwareTraj, "tmp_traj.json", true);
-            mAdviser->SetBulletGUIHelperInterface(m_guiHelper);
+            mController = mGenWorld->GetContactAwareController();
+            mController->SetTraj(gContactAwareTraj, "tmp_traj.json", true);
+            mController->SetBulletGUIHelperInterface(m_guiHelper);
         }
     }
 
@@ -230,12 +230,12 @@ void CustomEngineMainDemo::MultistepSim(float dt)
                 elasped_time = dt;
             dt -= elasped_time;
 
-            if (physics_param->mEnableContactAwareControl && mAdviser->IsEnd())
+            if (physics_param->mEnableContactAwareControl && mController->IsEnd())
             {
                 std::cout << "traj terminated without save\n";
                 exit(0);
-                mAdviser->Reset();
-                mAdviser->SetTraj(gContactAwareTraj, "tmp_traj.json", true);
+                mController->Reset();
+                mController->SetTraj(gContactAwareTraj, "tmp_traj.json", true);
             }
             mGenWorld->ClearForce();
             mGenWorld->StepSimulation(

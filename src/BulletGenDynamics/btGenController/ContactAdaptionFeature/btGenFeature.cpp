@@ -3,12 +3,12 @@
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
 #include "BulletGenDynamics/btGenUtil/JsonUtil.h"
 #include "btGenFeatureUtils.h"
-#include "btTraj.h"
+#include "BulletGenDynamics/btGenController/btTraj.h"
 #include <fstream>
 #include <iostream>
 #include <map>
 
-std::string feature_energy_path = "feature_energy.txt";
+// std::string feature_energy_path = "feature_energy.txt";
 btGenFeatureArray::btGenFeatureArray()
 {
     mModel = nullptr;
@@ -28,9 +28,9 @@ btGenFeatureArray::btGenFeatureArray()
         // 		  << mConvertPosToXZ << std::endl;
         // exit(0);
     }
-    std::ofstream fout(feature_energy_path);
-    fout << "";
-    fout.close();
+    // std::ofstream fout(feature_energy_path);
+    // fout << "";
+    // fout.close();
 }
 
 btGenFeatureArray::~btGenFeatureArray()
@@ -823,7 +823,7 @@ void btGenFeatureArray::EvalConvertMatFromForceToq(
 /**
  * \brief						The core functionality
  * of GenFeature, is to calculate three control matrix H, E, f and then offer
- * them to the outsider control-adviser. They are calculated in this function.
+ * them to the outsider control-controller. They are calculated in this function.
  *
  * For more details, please check the note.
  *
@@ -1342,7 +1342,7 @@ void btGenFeatureArray::CalcEnergy(const tVectorXd &control_force,
     //     mCtrledFeature[1] - mFeatureArrays[1]->mRefFeature;
     // const tVectorXd accel_diff =
     //     mCtrledFeature[2] - mFeatureArrays[2]->mRefFeature;
-    std::ofstream fout(feature_energy_path, std::ios::app);
+    // std::ofstream fout(feature_energy_path, std::ios::app);
     for (int i = 0; i < 3; i++)
     {
         // std::cout << "---------------begin order " << i << std::endl;
@@ -1379,14 +1379,14 @@ void btGenFeatureArray::CalcEnergy(const tVectorXd &control_force,
             int size = GetSingleFeatureSize(cur_feature);
             std::string link_name = cur_feature->mLinkName;
             std::string feature_name = cur_feature->mFeatureName;
-            fout << "[fea] " << feature_name
-                 << " diff = " << diff.segment(offset, size).transpose()
-                 << " weighted diff = "
-                 << weighted_diff.segment(offset, size).transpose()
-                 << std::endl;
+            // fout << "[fea] " << feature_name
+            //      << " diff = " << diff.segment(offset, size).transpose()
+            //      << " weighted diff = "
+            //      << weighted_diff.segment(offset, size).transpose()
+            //      << std::endl;
         }
-        fout << "[fea] " << prefix << " energy = " << weighted_diff.norm()
-             << std::endl;
+        // fout << "[fea] " << prefix << " energy = " << weighted_diff.norm()
+        //      << std::endl;
     }
 
     // std::cout << "pos diff = " << pos_diff.transpose() << std::endl;
@@ -1394,7 +1394,7 @@ void btGenFeatureArray::CalcEnergy(const tVectorXd &control_force,
     // std::cout << "accel diff = " << accel_diff.transpose() << std::endl;
 
     // exit(0);
-    fout.close();
+    // fout.close();
 }
 
 // extern bool gPauseSimulation;

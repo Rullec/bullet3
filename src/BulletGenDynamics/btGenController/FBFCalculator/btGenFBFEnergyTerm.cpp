@@ -1,7 +1,7 @@
 #include "btGenFBFEnergyTerm.h"
 #include <fstream>
 #include <iostream>
-std::string energy_file = "energy.txt";
+// std::string energy_file = "energy.txt";
 btGenFrameByFrameEnergyTerm::btGenFrameByFrameEnergyTerm()
 {
     mAList.resize(0);
@@ -15,9 +15,9 @@ btGenFrameByFrameEnergyTerm::btGenFrameByFrameEnergyTerm()
     mRows = 0;
     mSolutionSize = -1;
 
-    std::ofstream fout(energy_file);
-    fout << "";
-    fout.close();
+    // std::ofstream fout(energy_file);
+    // fout << "";
+    // fout.close();
 }
 int btGenFrameByFrameEnergyTerm::GetNumOfEnergy() const
 {
@@ -66,7 +66,7 @@ void btGenFrameByFrameEnergyTerm::GetEnergyTerm(tMatrixXd &A, tVectorXd &b)
 void btGenFrameByFrameEnergyTerm::CheckEnergyValue(const tVectorXd &sol)
 {
     // std::cout << "check energy term value begin\n";
-    std::ofstream fout(energy_file, std::ios::app);
+    // std::ofstream fout(energy_file, std::ios::app);
     for (int id = 0; id < mAList.size(); id++)
     {
         double coef = mCoefList[id];
@@ -86,10 +86,10 @@ void btGenFrameByFrameEnergyTerm::CheckEnergyValue(const tVectorXd &sol)
 
         std::cout << "[energy] FBF " << mNameList[id] << " energy is " << energy
                   << ", coef = " << coef << std::endl;
-        fout << "[energy] FBF " << mNameList[id] << " energy is " << energy
-             << ", coef = " << coef << std::endl;
+        // fout << "[energy] FBF " << mNameList[id] << " energy is " << energy
+        //      << ", coef = " << coef << std::endl;
     }
-    fout.close();
+    // fout.close();
 
     // if there is not contact point, test whether the solution is the same as
     // the least-square sol?

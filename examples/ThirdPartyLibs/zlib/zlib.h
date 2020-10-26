@@ -683,7 +683,7 @@ ZEXTERN int ZEXPORT deflateInit2 OF((z_streamp strm,
      Fine tune deflate's internal compression parameters.  This should only be
    used by someone who understands the algorithm used by zlib's deflate for
    searching for the best matching string, and even then only by the most
-   fanatic optimizer trying to squeeze out the last compressed bit for their
+   fanatic calculator trying to squeeze out the last compressed bit for their
    specific input data.  Read the deflate.c source code for the meaning of the
    max_lazy, good_length, nice_length, and max_chain parameters.
 

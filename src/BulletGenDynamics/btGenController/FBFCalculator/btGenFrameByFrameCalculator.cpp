@@ -1,7 +1,7 @@
-#include "btGenFrameByFrameOptimizer.h"
+#include "btGenFrameByFrameCalculator.h"
 #include "../examples/CommonInterfaces/CommonGUIHelperInterface.h"
-#include "BulletGenDynamics/btGenController/FBFOptimizer/btGenFBFConstraint.h"
-#include "BulletGenDynamics/btGenController/FBFOptimizer/btGenFBFEnergyTerm.h"
+#include "BulletGenDynamics/btGenController/FBFCalculator/btGenFBFConstraint.h"
+#include "BulletGenDynamics/btGenController/FBFCalculator/btGenFBFEnergyTerm.h"
 #include "BulletGenDynamics/btGenController/QPSolver/MatlabQPSolver.h"
 #include "BulletGenDynamics/btGenController/QPSolver/QuadProgQPSolver.h"
 #include "BulletGenDynamics/btGenController/btTraj.h"
@@ -43,7 +43,7 @@ eContactStatus JudgeContactStatus(const tVector &vel,
 }
 
 // static QuadProgQPSolver *matlabQPSolver = nullptr;
-btGenFrameByFrameOptimizer::btGenFrameByFrameOptimizer()
+btGenFBFTargetCalculator::btGenFBFTargetCalculator()
 {
     mRefFrameId = -1;
     mModel = nullptr;
@@ -74,7 +74,7 @@ btGenFrameByFrameOptimizer::btGenFrameByFrameOptimizer()
     mBulletGUIHelper = nullptr;
 }
 
-btGenFrameByFrameOptimizer::~btGenFrameByFrameOptimizer()
+btGenFBFTargetCalculator::~btGenFBFTargetCalculator()
 {
     if (mConstraint)
         delete mConstraint;
@@ -83,15 +83,14 @@ btGenFrameByFrameOptimizer::~btGenFrameByFrameOptimizer()
     // if (matlabQPSolver)
     //     delete matlabQPSolver;
 }
-// void btGenFrameByFrameOptimizer::Init(const Json::Value &conf, btTraj
+// void btGenFrameByFrameCalculator::Init(const Json::Value &conf, btTraj
 // *ref_traj,
 //                      btGeneralizeWorld *world)
 
-void btGenFrameByFrameOptimizer::Init(btGeneralizeWorld *world,
-                                      const Json::Value &conf)
+void btGenFBFTargetCalculator::Init(btGeneralizeWorld *world,
+                                          const Json::Value &conf)
 {
-    mWorld = world;
-    mModel = mWorld->GetMultibody();
+    btGenTargetCalculator::Init(world, conf);
     SetCoef(conf);
 
     mEnableFixStaticContactPoint =
@@ -122,7 +121,7 @@ void btGenFrameByFrameOptimizer::Init(btGeneralizeWorld *world,
     //           << std::endl;
     // exit(0);
     // ParseConfig(conf);
-    InitModelInfo();
+    mControlForce = tVectorXd::Zero(num_of_underactuated_freedom);
     InitQPSolver();
 }
 
@@ -130,46 +129,14 @@ void btGenFrameByFrameOptimizer::Init(btGeneralizeWorld *world,
  * \brief                   Calculate the reference qddot and the reference tau
  * by frame-by-frame control
  */
-void btGenFrameByFrameOptimizer::CalcTarget(double dt, int target_frame_id,
-                                            tVectorXd &tilde_qddot,
-                                            tVectorXd &tilde_qdot,
-                                            tVectorXd &tilde_q,
-                                            tVectorXd &tilde_tau)
+void btGenFBFTargetCalculator::CalcTarget(double dt, int target_frame_id,
+                                                tVectorXd &tilde_qddot,
+                                                tVectorXd &tilde_qdot,
+                                                tVectorXd &tilde_q,
+                                                tVectorXd &tilde_tau)
 {
-    // if (mBulletGUIHelper != nullptr)
-    // {
-    //     if (this->mRefFrameId % 2 == 0)
-    //     {
-    //         DrawPoint(tVector3d::Random(), 1);
-    //     }
-
-    //     if (this->mRefFrameId % 10 == 0)
-    //     {
-    //         // DrawPoint(tVector3d::Random(), 1);
-    //         ClearDrawPoints();
-    //     }
-    // }
-
-    if (mTraj == nullptr)
-    {
-        std::cout
-            << "[error] the traj hasn't been set in the FBFOptimizer, exit";
-        exit(0);
-    }
-    mRefFrameId = target_frame_id;
-    mdt = dt;
-
-    // if (mUseNativeRefTarget == true)
-    // {
-    //     std::cout << "[warn] use native ref target in FBF optimizer\n";
-    //     tilde_qddot = mTraj->mqddot[mCurFrameId];
-    //     tilde_tau = mTraj->mActiveForce[mCurFrameId].segment(
-    //         6, num_of_underactuated_freedom);
-    // }
-    // else
-    // {
-    // }
-
+    PreCalcTarget(dt, target_frame_id);
+    
     // 1. judge the contact status
     if (mEnableQPOptimization == true)
     {
@@ -196,7 +163,7 @@ void btGenFrameByFrameOptimizer::CalcTarget(double dt, int target_frame_id,
         //           << std::endl;
         if (mTraj->mActiveForce[mRefFrameId].size() != num_of_freedom)
         {
-            std::cout << "[error] FBFoptimizer: we request a full dof active "
+            std::cout << "[error] FBFcalculator: we request a full dof active "
                          "force when updated\n"
                       << std::endl;
             exit(0);
@@ -226,13 +193,13 @@ void btGenFrameByFrameOptimizer::CalcTarget(double dt, int target_frame_id,
  * \brief                   Get the contact points, determine the contact
  * constraint
  */
-void btGenFrameByFrameOptimizer::CalcContactStatus()
+void btGenFBFTargetCalculator::CalcContactStatus()
 {
     ClearContactPoints();
     // 1. get contact points & link id, calc point positions in local frame
     std::vector<btPersistentManifold *> manifolds =
         mWorld->GetContactManifolds();
-    // std::cout << "[debug] adviser get manifold " << manifolds.size()
+    // std::cout << "[debug] controller get manifold " << manifolds.size()
     //           << std::endl;
     tEigenArr<tVector> ContactLocalPos(0);
     std::vector<int> ContactLinkId(0);
@@ -410,9 +377,10 @@ void btGenFrameByFrameOptimizer::CalcContactStatus()
 /**
  * \brief                   Calculate the reference qddot and control forces
  */
-void btGenFrameByFrameOptimizer::Solve(tVectorXd &tilde_qddot,
-                                       tVectorXd &tilde_qdot,
-                                       tVectorXd &tilde_q, tVectorXd &tilde_tau)
+void btGenFBFTargetCalculator::Solve(tVectorXd &tilde_qddot,
+                                           tVectorXd &tilde_qdot,
+                                           tVectorXd &tilde_q,
+                                           tVectorXd &tilde_tau)
 {
     // std::cout << "q, qdot solve hasn't been supported\n";
     // exit(1);
@@ -582,11 +550,9 @@ void btGenFrameByFrameOptimizer::Solve(tVectorXd &tilde_qddot,
  * \param tau           4. and the control force (tau) according to the dynamics
  * equation
  */
-void btGenFrameByFrameOptimizer::CalcTargetInternal(const tVectorXd &solution,
-                                                    tVectorXd &qddot,
-                                                    tVectorXd &qdot,
-                                                    tVectorXd &q,
-                                                    tVectorXd &tau)
+void btGenFBFTargetCalculator::CalcTargetInternal(
+    const tVectorXd &solution, tVectorXd &qddot, tVectorXd &qdot, tVectorXd &q,
+    tVectorXd &tau)
 {
     if (solution.size() != mTotalSolutionSize)
     {
@@ -710,11 +676,11 @@ void btGenFrameByFrameOptimizer::CalcTargetInternal(const tVectorXd &solution,
     // }
 }
 
-void btGenFrameByFrameOptimizer::ParseConfig(const Json::Value &conf) {}
+void btGenFBFTargetCalculator::ParseConfig(const Json::Value &conf) {}
 
-void btGenFrameByFrameOptimizer::SetCoef(const Json::Value &conf)
+void btGenFBFTargetCalculator::SetCoef(const Json::Value &conf)
 {
-    std::cout << "[FBF] FBFOptimizer set coeff begin\n";
+    std::cout << "[FBF] FBFCalculator set coeff begin\n";
     mDynamicPosEnergyCoeff =
         btJsonUtil::ParseAsDouble("dynamic_pos_energy_coef", conf);
     mDynamicVelEnergyCoeff =
@@ -768,17 +734,11 @@ void btGenFrameByFrameOptimizer::SetCoef(const Json::Value &conf)
     mTrackRefContactMaxCoef = coef[1];
 }
 
-void btGenFrameByFrameOptimizer::InitModelInfo()
-{
-    num_of_freedom = mModel->GetNumOfFreedom();
-    num_of_underactuated_freedom = num_of_freedom - 6;
-    mControlForce = tVectorXd::Zero(num_of_underactuated_freedom);
-}
 /**
  * \brief					Constrcut the Frame by frame
  * optimization problem
  */
-void btGenFrameByFrameOptimizer::InitQPSolver()
+void btGenFBFTargetCalculator::InitQPSolver()
 {
     mQPSolver = new QuadProgQPSolver();
     // matlabQPSolver = new MatlabQPSolver();
@@ -787,7 +747,7 @@ void btGenFrameByFrameOptimizer::InitQPSolver()
     // exit(0);
 }
 
-void btGenFrameByFrameOptimizer::ClearContactPoints()
+void btGenFBFTargetCalculator::ClearContactPoints()
 {
     for (auto &data : mContactPoints)
         delete data;
@@ -802,7 +762,7 @@ void btGenFrameByFrameOptimizer::ClearContactPoints()
  *
  * 		solution vector = [contact_force_vector, active_ctrl_force]
  */
-void btGenFrameByFrameOptimizer::CalcSolutionVector()
+void btGenFBFTargetCalculator::CalcSolutionVector()
 {
     mContactSolutionSize = 0;
     mCtrlSolutionSize = 0;
@@ -862,8 +822,8 @@ tMatrixXd CalcFrictionCone(int friction_num)
  * \brief               Given a contact point, calculate the convert matrix from
  * solution to cartesian force
  */
-void btGenFrameByFrameOptimizer::CalcContactConvertMat(btCharContactPt *contact,
-                                                       tMatrixXd &convert_mat)
+void btGenFBFTargetCalculator::CalcContactConvertMat(
+    btCharContactPt *contact, tMatrixXd &convert_mat)
 {
     // 1. confirm this contact point is not self collision
     if (true == contact->mIsSelfCollision)
@@ -925,7 +885,7 @@ void btGenFrameByFrameOptimizer::CalcContactConvertMat(btCharContactPt *contact,
 /**
  * \brief               Given the contact status, return the solution size
  */
-int btGenFrameByFrameOptimizer::GetSolutionSizeByContactStatus(
+int btGenFBFTargetCalculator::GetSolutionSizeByContactStatus(
     eContactStatus status)
 {
     if (status == eContactStatus::SLIDING)
@@ -946,23 +906,17 @@ int btGenFrameByFrameOptimizer::GetSolutionSizeByContactStatus(
 }
 
 /**
- * \brief               If the optimizer's guide trajectory has finished, we
+ * \brief               If the calculator's guide trajectory has finished, we
  * need to reset it and give another traj
  */
-void btGenFrameByFrameOptimizer::Reset()
+void btGenFBFTargetCalculator::Reset()
 {
-    // std::cout << "FBF optimizer reset\n";
+    // std::cout << "FBF calculator reset\n";
 }
 
-void btGenFrameByFrameOptimizer::SetBulletGUIHelperInterface(
-    struct GUIHelperInterface *inter)
+void btGenFBFTargetCalculator::SetTraj(btTraj *traj)
 {
-    mBulletGUIHelper = inter;
-}
-
-void btGenFrameByFrameOptimizer::SetTraj(btTraj *traj)
-{
-    mTraj = traj;
+    btGenTargetCalculator::SetTraj(traj);
 
     // if the track ref contact energy term is enabled, we needs to calculate
     // the local pos of contact points in the ref trajectory
@@ -1003,7 +957,7 @@ void btGenFrameByFrameOptimizer::SetTraj(btTraj *traj)
  * \brief               Apply the contact force and control force calculatred by
  * the frame by frame optimzier
  */
-void btGenFrameByFrameOptimizer::ControlByFBF()
+void btGenFBFTargetCalculator::ControlByAdaptionController()
 {
     std::cout << "[log] control by frame by frame begin\n";
     std::cout << "[fbf] control force = norm "
@@ -1018,13 +972,14 @@ void btGenFrameByFrameOptimizer::ControlByFBF()
     }
 }
 
-int btGenFrameByFrameOptimizer::GetCalculatedNumOfContact() const
+int btGenFBFTargetCalculator::GetCalculatedNumOfContact() const
 {
     return mContactPoints.size();
 }
 
 // struct GUIHelperInterface *gGUIHelper;
-void btGenFrameByFrameOptimizer::DrawPoint(const tVector3d &pos, double radius)
+void btGenFBFTargetCalculator::DrawPoint(const tVector3d &pos,
+                                               double radius)
 {
     if (mBulletGUIHelper == nullptr)
         return;
@@ -1046,7 +1001,7 @@ void btGenFrameByFrameOptimizer::DrawPoint(const tVector3d &pos, double radius)
     //           << inter_world->getNumCollisionObjects() << std::endl;
 }
 
-void btGenFrameByFrameOptimizer::ClearDrawPoints()
+void btGenFBFTargetCalculator::ClearDrawPoints()
 {
     if (mBulletGUIHelper == nullptr)
         return;

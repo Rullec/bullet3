@@ -4,7 +4,7 @@
 #include "btCharContactPoint.h"
 #include "btGenFBFConstraint.h"
 #include "btGenFBFEnergyTerm.h"
-#include "btGenFrameByFrameOptimizer.h"
+#include "btGenFrameByFrameCalculator.h"
 #include <set>
 extern int mNumOfFrictionDirs;
 extern double mu;
@@ -17,7 +17,7 @@ extern double mu;
  *  2. min control force
  *  3. min contact forces norm
  */
-void btGenFrameByFrameOptimizer::CalcEnergyTerms()
+void btGenFBFTargetCalculator::CalcEnergyTerms()
 {
     if (mEnergyTerm == nullptr)
         std::cout << "[error] energy term hasn't been inited\n", exit(0);
@@ -58,7 +58,7 @@ void btGenFrameByFrameOptimizer::CalcEnergyTerms()
 /**
  * \brief					Construct the constraints
  */
-void btGenFrameByFrameOptimizer::CalcConstraints()
+void btGenFBFTargetCalculator::CalcConstraints()
 {
     if (nullptr != mConstraint)
         delete mConstraint;
@@ -116,7 +116,7 @@ void btGenFrameByFrameOptimizer::CalcConstraints()
 /**
  * \brief				Add sliding contact point constraint
  */
-void btGenFrameByFrameOptimizer::AddSlidingConstraint(btCharContactPt *pt)
+void btGenFBFTargetCalculator::AddSlidingConstraint(btCharContactPt *pt)
 {
     int contact_id = pt->contact_id;
     int offset = mContactSolOffset[contact_id];
@@ -144,7 +144,7 @@ void btGenFrameByFrameOptimizer::AddSlidingConstraint(btCharContactPt *pt)
  * \brief               Given one contact point info, add the "static" contact
  * constraint into the opt problem
  */
-void btGenFrameByFrameOptimizer::AddStaticConstraint(btCharContactPt *pt)
+void btGenFBFTargetCalculator::AddStaticConstraint(btCharContactPt *pt)
 {
     // add static constraint on the contact force
     int static_size = mContactSolSize[pt->contact_id];
@@ -165,7 +165,7 @@ void btGenFrameByFrameOptimizer::AddStaticConstraint(btCharContactPt *pt)
  * \brief               Given one contact point info, add the "breakage" contact
  * constraint into the opt problem
  */
-void btGenFrameByFrameOptimizer::AddBreakageConstraint(btCharContactPt *pt)
+void btGenFBFTargetCalculator::AddBreakageConstraint(btCharContactPt *pt)
 {
     int offset = mContactSolOffset[pt->contact_id];
     tMatrixXd jac = tMatrix3d::Identity();
@@ -178,7 +178,7 @@ void btGenFrameByFrameOptimizer::AddBreakageConstraint(btCharContactPt *pt)
  * \brief				Close to Origin energy term in this
  * frame by frame control q, qdot, qddot
  */
-void btGenFrameByFrameOptimizer::AddDynamicEnergyTerm()
+void btGenFBFTargetCalculator::AddDynamicEnergyTerm()
 {
     if (mDynamicPosEnergyCoeff > 0)
         AddDynamicEnergyTermPos();
@@ -194,7 +194,7 @@ void btGenFrameByFrameOptimizer::AddDynamicEnergyTerm()
  * \brief               Add the hard constraint of lagragian equation in order
  * to keep the physical-feasible property
  */
-void btGenFrameByFrameOptimizer::AddDynamicConstraint()
+void btGenFBFTargetCalculator::AddDynamicConstraint()
 {
     // int num_of_freedom = mModel->GetNumOfFreedom();
     // int num_of_underactuated_freedom = num_of_freedom - 6;
@@ -233,7 +233,7 @@ void btGenFrameByFrameOptimizer::AddDynamicConstraint()
         .noalias() = A2;
     mConstraint->AddEquivalentEqCon(A, b, 0, 1e-12, "dynamic_hard_constraint");
 }
-void btGenFrameByFrameOptimizer::AddMinTauEnergyTerm()
+void btGenFBFTargetCalculator::AddMinTauEnergyTerm()
 {
     // int num_of_underactuated_freedom = mModel->GetNumOfFreedom() - 6;
     tMatrixXd A = tMatrixXd::Identity(num_of_underactuated_freedom,
@@ -246,7 +246,7 @@ void btGenFrameByFrameOptimizer::AddMinTauEnergyTerm()
 /**
  * \brief           Minimize the contact force value (in solved contact forces)
  */
-void btGenFrameByFrameOptimizer::AddMinContactForceEnergyTerm()
+void btGenFBFTargetCalculator::AddMinContactForceEnergyTerm()
 {
     if (mContactSolutionSize == 0)
         return;
@@ -261,7 +261,7 @@ void btGenFrameByFrameOptimizer::AddMinContactForceEnergyTerm()
  * gen pos w.r.t ref traj in next frame the optimizaiton vec is contact force
  * and control forces
  */
-void btGenFrameByFrameOptimizer::AddDynamicEnergyTermPos()
+void btGenFBFTargetCalculator::AddDynamicEnergyTermPos()
 {
     tMatrixXd A = tMatrixXd::Zero(num_of_freedom, mTotalSolutionSize);
     tVectorXd b = tVectorXd::Zero(num_of_freedom);
@@ -330,7 +330,7 @@ void btGenFrameByFrameOptimizer::AddDynamicEnergyTermPos()
  * gen vel w.r.t ref traj in next frame the optimizaiton vec is contact force
  * and control forces
  */
-void btGenFrameByFrameOptimizer::AddDynamicEnergyTermVel()
+void btGenFBFTargetCalculator::AddDynamicEnergyTermVel()
 {
     tMatrixXd A = tMatrixXd::Zero(num_of_freedom, mTotalSolutionSize);
     tVectorXd b = tVectorXd::Zero(num_of_freedom);
@@ -382,7 +382,7 @@ void btGenFrameByFrameOptimizer::AddDynamicEnergyTermVel()
  * accel w.r.t ref traj in next frame the optimizaiton vec is contact force and
  * control forces
  */
-void btGenFrameByFrameOptimizer::AddDynamicEnergyTermAccel()
+void btGenFBFTargetCalculator::AddDynamicEnergyTermAccel()
 {
     tMatrixXd A = tMatrixXd::Zero(num_of_freedom, mTotalSolutionSize);
     tVectorXd b = tVectorXd::Zero(num_of_freedom);
@@ -435,7 +435,7 @@ void btGenFrameByFrameOptimizer::AddDynamicEnergyTermAccel()
     mEnergyTerm->AddEnergy(A, b, mDynamicAccelEnergyCoeff, 0, "accel");
 }
 
-void btGenFrameByFrameOptimizer::AddDynamicEnergyTermMinAccel()
+void btGenFBFTargetCalculator::AddDynamicEnergyTermMinAccel()
 {
     tMatrixXd A = tMatrixXd::Zero(num_of_freedom, mTotalSolutionSize);
     tVectorXd b = tVectorXd::Zero(num_of_freedom);
@@ -504,7 +504,7 @@ void btGenFrameByFrameOptimizer::AddDynamicEnergyTermMinAccel()
  *
  *  solution vector = [contact_foce_vector, active_ctrl_force]
  */
-void btGenFrameByFrameOptimizer::AddFixStaticContactPointConstraint()
+void btGenFBFTargetCalculator::AddFixStaticContactPointConstraint()
 {
     // 1. calculate the assemble Jacobian
     tMatrixXd J_assemble = tMatrixXd::Zero(num_of_freedom, mTotalSolutionSize);
@@ -553,7 +553,7 @@ void btGenFrameByFrameOptimizer::AddFixStaticContactPointConstraint()
 /**
  * \brief                   Constraint the contact forces inside some range
  */
-void btGenFrameByFrameOptimizer::AddContactForceLimitConstraint()
+void btGenFBFTargetCalculator::AddContactForceLimitConstraint()
 {
     // 1. fetch and judge the contact force limit
     double limit = mContactForceLimit;
@@ -577,7 +577,7 @@ void btGenFrameByFrameOptimizer::AddContactForceLimitConstraint()
     std::cout << "[limit] set the contact force limit " << limit << std::endl;
 }
 
-void btGenFrameByFrameOptimizer::AddControlForceLimitConstraint()
+void btGenFBFTargetCalculator::AddControlForceLimitConstraint()
 {
     // 1. fetch and judge the contact force limit
     double limit = mControlForceLimit;
@@ -612,7 +612,7 @@ void btGenFrameByFrameOptimizer::AddControlForceLimitConstraint()
  *  b = -\tau_ref
  *  Don't forget to add the coefficient
  */
-void btGenFrameByFrameOptimizer::AddTauCloseToOriginEnergyTerm()
+void btGenFBFTargetCalculator::AddTauCloseToOriginEnergyTerm()
 {
     // // std::cout << "active force = " <<
     // mTraj->mActiveForce[mCurFrameId].size()
@@ -648,7 +648,7 @@ void btGenFrameByFrameOptimizer::AddTauCloseToOriginEnergyTerm()
  *
  *  Don't forget to add the coefficient
  */
-void btGenFrameByFrameOptimizer::AddContactForceCloseToOriginEnergyTerm()
+void btGenFBFTargetCalculator::AddContactForceCloseToOriginEnergyTerm()
 {
     // if (mContactSolutionSize == 0)
     // {
@@ -699,7 +699,7 @@ void btGenFrameByFrameOptimizer::AddContactForceCloseToOriginEnergyTerm()
  * \brief                   Add an energy term to control the world position of
  * end effector (enforcement)
  */
-void btGenFrameByFrameOptimizer::AddEndEffectorPosEnergyTerm()
+void btGenFBFTargetCalculator::AddEndEffectorPosEnergyTerm()
 {
 
     // 1. get end effector id and their target pos
@@ -753,7 +753,7 @@ void btGenFrameByFrameOptimizer::AddEndEffectorPosEnergyTerm()
  * \brief                   Add an energt term to control the velocity of end
  * effectorsI
  */
-void btGenFrameByFrameOptimizer::AddEndEffectorVelEnergyTerm()
+void btGenFBFTargetCalculator::AddEndEffectorVelEnergyTerm()
 {
     // 1. get all end effector and the target link vel in next frame
     mModel->PushState("end_effector_vel_energy");
@@ -788,7 +788,7 @@ void btGenFrameByFrameOptimizer::AddEndEffectorVelEnergyTerm()
 /**
  * \brief                   Control the world orientation of end effector
  */
-void btGenFrameByFrameOptimizer::AddEndEffectorOrientationEnergyTerm()
+void btGenFBFTargetCalculator::AddEndEffectorOrientationEnergyTerm()
 {
     // 1. get end effector id and their target pos
     mModel->PushState("end_effector_pos_energy");
@@ -823,7 +823,7 @@ void btGenFrameByFrameOptimizer::AddEndEffectorOrientationEnergyTerm()
 /**
  * \brief                       Control the root position
  */
-void btGenFrameByFrameOptimizer::AddRootPosEnergyTerm()
+void btGenFBFTargetCalculator::AddRootPosEnergyTerm()
 {
     mModel->PushState("root_pos_energy");
 
@@ -838,7 +838,7 @@ void btGenFrameByFrameOptimizer::AddRootPosEnergyTerm()
 /**
  * \brief                       Control the root vel
  */
-void btGenFrameByFrameOptimizer::AddRootVelEnergyTerm()
+void btGenFBFTargetCalculator::AddRootVelEnergyTerm()
 {
     mModel->PushState("root_vel_energy");
 
@@ -853,7 +853,7 @@ void btGenFrameByFrameOptimizer::AddRootVelEnergyTerm()
 /**
  * \brief                       Control the orientation of root link
  */
-void btGenFrameByFrameOptimizer::AddRootOrientationEnergyTerm()
+void btGenFBFTargetCalculator::AddRootOrientationEnergyTerm()
 {
     mModel->PushState("root_ori_energy");
 
@@ -873,7 +873,7 @@ void btGenFrameByFrameOptimizer::AddRootOrientationEnergyTerm()
  *
  *          min || coef * (Jv_i * qdot_{t+1} + P_t - P_{t+1})||^2
  */
-void btGenFrameByFrameOptimizer::AddLinkPosEnergyTerm(
+void btGenFBFTargetCalculator::AddLinkPosEnergyTerm(
     int link_id, double coef, const tVector3d &target_pos)
 {
     if (link_id < 0 || link_id >= mModel->GetNumOfLinks())
@@ -924,7 +924,7 @@ void btGenFrameByFrameOptimizer::AddLinkPosEnergyTerm(
  * \brief                   Only Constraint the relative pos wrt the root link
  * for the end effector
  */
-void btGenFrameByFrameOptimizer::AddLinkPosEnergyTermIgnoreRoot(
+void btGenFBFTargetCalculator::AddLinkPosEnergyTermIgnoreRoot(
     int link_id, double coef, const tVector3d &target_link_local_pos_wrt_root)
 {
     std::cout << "add AddLinkPosEnergyTermIgnoreRoot for link " << link_id
@@ -996,7 +996,7 @@ void btGenFrameByFrameOptimizer::AddLinkPosEnergyTermIgnoreRoot(
  *          = dt2 * dFdq * Minv * Q_ext + dFdq * (dt2 * (Qg - Cqdot) + dt*qdot)
  *              + F_{t} - F_target
  */
-void btGenFrameByFrameOptimizer::AddLinkOrientationEnergyTerm(
+void btGenFBFTargetCalculator::AddLinkOrientationEnergyTerm(
     int link_id, double coef, const tMatrix3d &target_orientation)
 {
     auto Flatten = [](const tMatrix3d &mat) -> tVectorXd {
@@ -1094,7 +1094,7 @@ void btGenFrameByFrameOptimizer::AddLinkOrientationEnergyTerm(
  *          A = dt * Jv * Minv * convert_mat
  *          b = Jv * (dt * Minv * (QG - Cqdot) + qdot) - v_target
  */
-void btGenFrameByFrameOptimizer::AddLinkVelEnergyTerm(
+void btGenFBFTargetCalculator::AddLinkVelEnergyTerm(
     int link_id, double coef, const tVector3d &target_vel)
 {
     // 1. shape the convert mat
@@ -1137,7 +1137,7 @@ void btGenFrameByFrameOptimizer::AddLinkVelEnergyTerm(
  * \brief                   enforce that the contact point cannot be penetrated
  * in next frame
  */
-void btGenFrameByFrameOptimizer::AddNonPenetrationContactConstraint()
+void btGenFBFTargetCalculator::AddNonPenetrationContactConstraint()
 {
     // std::cout << "added !\n ";
     // exit(1);
@@ -1215,7 +1215,7 @@ void btGenFrameByFrameOptimizer::AddNonPenetrationContactConstraint()
  * b1 = dt2 * Minv * (QG - C*qdot) + dt * qdot
  * b2 = pt - ptar
  */
-void btGenFrameByFrameOptimizer::AddTrackRefContactEnergyTerm()
+void btGenFBFTargetCalculator::AddTrackRefContactEnergyTerm()
 {
     // std::cout << "begin to add track ref contact energy term\n";
     std::cout << "[log] contact num = " << mContactPoints.size()
@@ -1326,7 +1326,7 @@ double blend(double max_coef, double min_coef, int control_frame_range,
     return cur_coef;
 }
 
-void btGenFrameByFrameOptimizer::CalcTrackRefContactRef(
+void btGenFBFTargetCalculator::CalcTrackRefContactRef(
     tEigenArr<tMatrixXd> &jac_lst, std::vector<double> &coeff_lst,
     tEigenArr<tVector3d> &next_target_pos_lst,
     tEigenArr<tVector3d> &cur_pos_lst)
@@ -1413,7 +1413,7 @@ void btGenFrameByFrameOptimizer::CalcTrackRefContactRef(
 /**
  * \brief               control the supporting foot position should be close to the last end effector
 */
-void btGenFrameByFrameOptimizer::AddtvcgSupportFootSlidingPenaltyEnergyTerm()
+void btGenFBFTargetCalculator::AddtvcgSupportFootSlidingPenaltyEnergyTerm()
 {
     // 1. recorgnize the supported end effecotor (which end effector is contact with the ground in the ref traj)
     auto &contact_forces = mTraj->mContactForce[mRefFrameId + 1];
@@ -1448,7 +1448,7 @@ void btGenFrameByFrameOptimizer::AddtvcgSupportFootSlidingPenaltyEnergyTerm()
 /**
  * \brief               the control force should be close to the previous control force
 */
-void btGenFrameByFrameOptimizer::AddtvcgControlForceCloseToPrevEnergyTerm()
+void btGenFBFTargetCalculator::AddtvcgControlForceCloseToPrevEnergyTerm()
 {
 
     // for the first frame, the control force is zero and have no reference value
@@ -1464,7 +1464,7 @@ void btGenFrameByFrameOptimizer::AddtvcgControlForceCloseToPrevEnergyTerm()
                            "tvcg_control_force_close_prev");
 }
 
-void btGenFrameByFrameOptimizer::AddLimitSlidingContactPointConstraintVel()
+void btGenFBFTargetCalculator::AddLimitSlidingContactPointConstraintVel()
 {
     // 1. find the sliding points
     std::vector<btCharContactPt *> sliding_ids(0);

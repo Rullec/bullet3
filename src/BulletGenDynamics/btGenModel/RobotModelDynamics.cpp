@@ -32,7 +32,7 @@ cRobotModelDynamics::cRobotModelDynamics()
     mGenForce.resize(0);
     mDampingMatrix.resize(0, 0);
     mStateStack.clear();
-    mAdviser = nullptr;
+    mController = nullptr;
 
     mEnableCollision = true;
     mDampingCoef1 = 0;
@@ -40,7 +40,7 @@ cRobotModelDynamics::cRobotModelDynamics()
     mEpsDiagnoal = 0;
     mEnableEulerAngleClamp = true;
     mMaxVel = 100.0;
-    mEnableContactAwareAdviser = false;
+    mEnableContactAwareController = false;
     // std::ofstream fout(path);
     // fout << "";
     // fout.close();
@@ -1227,32 +1227,32 @@ void cRobotModelDynamics::TestRotationChar()
 }
 
 /**
- * \brief					Contact aware adviser, used in
+ * \brief					Contact aware controller, used in
  * "contact-aware nonlienar dynamics controller". This pointer will be used when
  * the LCP constraints are handled in ConstraintData.cpp
  */
-void cRobotModelDynamics::SetContactAwareAdviser(btGenContactAwareAdviser *ptr)
+void cRobotModelDynamics::SetContactAwareController(btGenContactAwareController *ptr)
 {
-    mAdviser = ptr;
+    mController = ptr;
 }
 
-btGenContactAwareAdviser *cRobotModelDynamics::GetContactAwareAdviser() const
+btGenContactAwareController *cRobotModelDynamics::GetContactAwareController() const
 {
-    return mAdviser;
+    return mController;
 }
 
 /***
  * \brief					Check whether the contact aware
- * adviser are enabled
+ * controller are enabled
  */
-bool cRobotModelDynamics::GetEnableContactAwareAdviser() const
+bool cRobotModelDynamics::GetEnableContactAwareController() const
 {
-    return mEnableContactAwareAdviser;
+    return mEnableContactAwareController;
 }
 
-void cRobotModelDynamics::SetEnableContactAwareAdviser(bool val)
+void cRobotModelDynamics::SetEnableContactAwareController(bool val)
 {
-    mEnableContactAwareAdviser = val;
+    mEnableContactAwareController = val;
 }
 
 bool cRobotModelDynamics::GetCollisionEnabled() const

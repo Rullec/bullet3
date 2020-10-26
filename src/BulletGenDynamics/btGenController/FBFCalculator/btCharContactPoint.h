@@ -1,5 +1,5 @@
 #include "BulletGenDynamics/btGenSolver/ContactSolver.h"
-#include "btGenFrameByFrameOptimizer.h"
+#include "btGenFrameByFrameCalculator.h"
 struct btCharContactPt : public btGenContactPointData
 {
 public:

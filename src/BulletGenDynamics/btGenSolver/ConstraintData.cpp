@@ -1,5 +1,5 @@
 #include "ConstraintData.h"
-#include "BulletGenDynamics/btGenController/btGenContactAwareAdviser.h"
+#include "BulletGenDynamics/btGenController/btGenContactAwareController.h"
 #include "BulletGenDynamics/btGenModel/RobotCollider.h"
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
 #include "BulletGenDynamics/btGenModel/SimObj.h"
@@ -817,26 +817,26 @@ tVectorXd btGenCollisionObjData::CalcRobotColliderResidual(double dt) const
         int n_dof = model->GetNumOfFreedom();
         const tMatrixXd I = tMatrixXd::Identity(n_dof, n_dof);
 
-        if (false == model->GetEnableContactAwareAdviser())
+        if (false == model->GetEnableContactAwareController())
         {
-            // std::cout << "contact aware adviser is disabled\n";
+            // std::cout << "contact aware controller is disabled\n";
             residual = (I - dt * inv_M * (coriolis_mat + damping_mat)) *
                            model->Getqdot() +
                        dt * inv_M * model->GetGeneralizedForce();
         }
         else
         {
-            btGenContactAwareAdviser *adviser = model->GetContactAwareAdviser();
-            // tMatrixXd N = adviser->GetN(),
-            // 		  D = adviser->GetD();
-            // tVectorXd b = adviser->Getb();
-            // std::cout << "[warn] contact aware adviser is enabled, but the
+            btGenContactAwareController *controller = model->GetContactAwareController();
+            // tMatrixXd N = controller->GetN(),
+            // 		  D = controller->GetD();
+            // tVectorXd b = controller->Getb();
+            // std::cout << "[warn] contact aware controller is enabled, but the
             // code hasn't been revised\n";
             if (damping_mat.norm() > 0)
                 std::cout << "[error] contact aware control didn't support "
                              "damping cuz the absence of formulas\n",
                     exit(0);
-            residual = adviser->CalcLCPResidual(dt);
+            residual = controller->CalcLCPResidual(dt);
         }
     }
     return residual;
@@ -863,18 +863,18 @@ btGenCollisionObjData::CalcRobotColliderJacPartBPrefix(double dt) const
         int n_dof = model->GetNumOfFreedom();
         const tMatrixXd I = tMatrixXd::Identity(n_dof, n_dof);
 
-        if (false == model->GetEnableContactAwareAdviser())
+        if (false == model->GetEnableContactAwareController())
         {
-            // std::cout << "contact aware adviser is disabled\n";
+            // std::cout << "contact aware controller is disabled\n";
             prefix.noalias() = tMatrixXd::Identity(n_dof, n_dof);
         }
         else
         {
-            btGenContactAwareAdviser *adviser = model->GetContactAwareAdviser();
-            // tMatrixXd E = adviser->GetE(), N = adviser->GetN();
-            // std::cout << "[warn] contact aware adviser is enabled, but the
+            btGenContactAwareController *controller = model->GetContactAwareController();
+            // tMatrixXd E = controller->GetE(), N = controller->GetN();
+            // std::cout << "[warn] contact aware controller is enabled, but the
             // code hasn't been revised\n";
-            prefix.noalias() = adviser->CalcLCPPartBPrefix();
+            prefix.noalias() = controller->CalcLCPPartBPrefix();
         }
     }
     return prefix;

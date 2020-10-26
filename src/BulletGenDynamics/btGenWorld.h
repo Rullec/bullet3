@@ -9,7 +9,7 @@ class cRobotModelDynamics;
 class btGenContactForce;
 class btGenConstraintGeneralizedForce;
 // class btGenPDController;
-class btGenContactAwareAdviser;
+class btGenContactAwareController;
 class btTraj;
 class btGeneralizeWorld
 {
@@ -60,7 +60,7 @@ public:
     // get & set method
     std::vector<btGenContactForce *> GetContactForces() const;
     std::vector<btPersistentManifold *> GetContactManifolds() const;
-    btGenContactAwareAdviser *GetContactAwareAdviser();
+    btGenContactAwareController *GetContactAwareController();
     btDiscreteDynamicsWorld *GetInternalWorld();
     btBroadphaseInterface *GetBroadphase();
     btCollisionDispatcher *GetDispatcher();
@@ -109,7 +109,7 @@ protected:
     double mMBScale;
     eContactResponseMode mContactMode;
     btGenContactSolver *mLCPContactSolver;
-    btGenContactAwareAdviser *mControlAdviser;
+    btGenContactAwareController *mControlController;
     std::string mLCPConfigPath;
     std::vector<btPersistentManifold *> mManifolds;
     std::vector<btGenContactForce *> mContactForces;
@@ -128,8 +128,8 @@ protected:
     // 1. add gravity
     void ApplyGravity();
 
-    // 1.1 update the contact aware LCP adviser
-    void UpdateAdviser(double dt);
+    // 1.1 update the contact aware LCP controller
+    void UpdateController(double dt);
 
     // 2. collision detect
     void CollisionDetect();

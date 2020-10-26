@@ -10,8 +10,8 @@
 #include "../CommonInterfaces/CommonRigidBodyBase.h"
 #include "BulletDynamics/MLCPSolvers/btMLCPSolver.h"
 #include "BulletDynamics/MLCPSolvers/btSolveProjectedGaussSeidel.h"
-#include "BulletGenDynamics/btGenController/FBFOptimizer/btGenFrameByFrameOptimizer.h"
-#include "BulletGenDynamics/btGenController/btGenContactAwareAdviser.h"
+#include "BulletGenDynamics/btGenController/FBFCalculator/btGenFrameByFrameCalculator.h"
+#include "BulletGenDynamics/btGenController/btGenContactAwareController.h"
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
 #include "BulletGenDynamics/btGenUtil/JsonUtil.h"
 #include "BulletGenDynamics/btGenWorld.h"
@@ -37,21 +37,21 @@ struct tParams
 };
 struct tParams *physics_param;
 btGeneralizeWorld *mGenWorld;
-btGenContactAwareAdviser *mAdviser;
+btGenContactAwareController *mController;
 btDiscreteDynamicsWorld *m_dynamicsWorld;
 double mTimestep;
 bool gPauseSimulation;
 void stepSimulation(float dt);
 void initPhysics();
-void setFBFOptimizerCoefAndRefTraj(int argc, char *argv[]);
-// void setAdviserRefTraj(int argc, char *argv[]);
+void setFBFCalculatorCoefAndRefTraj(int argc, char *argv[]);
+// void setControllerRefTraj(int argc, char *argv[]);
 int global_frame_id = 0;
 
 int main(int argc, char *argv[])
 {
     srand(0);
     initPhysics();
-    setFBFOptimizerCoefAndRefTraj(argc, argv);
+    setFBFCalculatorCoefAndRefTraj(argc, argv);
     mTimestep = 1.0 / 600;
     while (true)
     {
@@ -62,11 +62,11 @@ int main(int argc, char *argv[])
 
 void stepSimulation(float dt)
 {
-    if (mAdviser->IsEnd())
+    if (mController->IsEnd())
     {
         std::cout << "traj terminated without save\n";
-        mAdviser->Reset();
-        mAdviser->SetTraj(gContactAwareTraj, "tmp_traj.json", true);
+        mController->Reset();
+        mController->SetTraj(gContactAwareTraj, "tmp_traj.json", true);
     }
     if (mGenWorld->GetMultibody()->IsCartesianMaxVel() == true)
     {
@@ -104,8 +104,8 @@ void initPhysics()
     {
         mGenWorld->AddMultibody(physics_param->mMultibodyPath);
         mGenWorld->SetEnableContacrAwareControl();
-        mAdviser = mGenWorld->GetContactAwareAdviser();
-        mAdviser->SetTraj(gContactAwareTraj, "tmp_traj.json", true);
+        mController = mGenWorld->GetContactAwareController();
+        mController->SetTraj(gContactAwareTraj, "tmp_traj.json", true);
     }
 
     if (physics_param->mEnableGround)
@@ -132,9 +132,9 @@ tParams::tParams(const std::string &path)
     // gOutputLogPath = json_root["output_log_path"].asString();
 }
 
-void setFBFOptimizerCoefAndRefTraj(int argc, char *argv[])
+void setFBFCalculatorCoefAndRefTraj(int argc, char *argv[])
 {
-    std::cout << "main begin set fbf optimizer coeff, argc = " << argc
+    std::cout << "main begin set fbf calculator coeff, argc = " << argc
               << std::endl;
     Json::Value root;
     std::string ref_traj = "";
@@ -189,12 +189,12 @@ void setFBFOptimizerCoefAndRefTraj(int argc, char *argv[])
     std::cout << "[log] set ref traj " << ref_traj << std::endl;
     std::cout << "[log] set coef " << root << std::endl;
 
-    mAdviser->GetFBFOptimizer()->SetCoef(root);
-    mAdviser->SetTraj(ref_traj, "tmp.traj", true);
+    mController->GetFBFCalculator()->SetCoef(root);
+    mController->SetTraj(ref_traj, "tmp.traj", true);
 }
 
-void setAdviserRefTraj(int argc, char *argv[])
+void setControllerRefTraj(int argc, char *argv[])
 {
-    std::cout << "[main] begin to set adviser ref traj\n";
+    std::cout << "[main] begin to set controller ref traj\n";
     exit(0);
 }

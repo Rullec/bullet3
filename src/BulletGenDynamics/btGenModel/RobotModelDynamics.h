@@ -2,7 +2,7 @@
 #include "RobotModel.h"
 
 class btDynamicsWorld;
-class btGenContactAwareAdviser;
+class btGenContactAwareController;
 class cRobotModelDynamics : public cRobotModel
 {
 public:
@@ -59,10 +59,10 @@ public:
     tMatrixXd GetInvMassMatrix();
     void GetEffectInfo(tEigenArr<tVector> &force_array,
                        tEigenArr<tVector> &torque_array);
-    void SetContactAwareAdviser(btGenContactAwareAdviser *ptr);
-    btGenContactAwareAdviser *GetContactAwareAdviser() const;
-    bool GetEnableContactAwareAdviser() const;
-    void SetEnableContactAwareAdviser(bool);
+    void SetContactAwareController(btGenContactAwareController *ptr);
+    btGenContactAwareController *GetContactAwareController() const;
+    bool GetEnableContactAwareController() const;
+    void SetEnableContactAwareController(bool);
     bool GetCollisionEnabled() const;
 
 protected:
@@ -95,8 +95,8 @@ protected:
 
     const int mStackCapacity = 10;
     tEigenArr<std::pair<std::string, tStateRecord *>> mStateStack;
-    bool mEnableContactAwareAdviser;
-    btGenContactAwareAdviser *mAdviser;
+    bool mEnableContactAwareController;
+    btGenContactAwareController *mController;
     // --------------------------configuration---------------------------
     bool mEnableCollision;
     double mDampingCoef1,

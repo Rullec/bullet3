@@ -10,9 +10,9 @@ struct btTraj;
 class btGenFeatureArray;
 class btGeneralizeWorld;
 class cRobotModelDynamics;
-class btGenFrameByFrameOptimizer;
+class btGenFBFTargetCalculator;
 class btCollisionObject;
-class btGenContactAwareAdviser
+class btGenContactAwareController
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
@@ -29,10 +29,10 @@ public:
     //     int mStartFrame;
     //     double mFBFPosCoef, mFBFVelCoef, mFBFAccelCoef;
     // };
-    // btGenContactAwareAdviser(btGeneralizeWorld* world, const std::string&
+    // btGenContactAwareController(btGeneralizeWorld* world, const std::string&
     // guide_traj, double W, double Wm);
-    btGenContactAwareAdviser(btGeneralizeWorld *world);
-    ~btGenContactAwareAdviser();
+    btGenContactAwareController(btGeneralizeWorld *world);
+    ~btGenContactAwareController();
     void Init(cRobotModelDynamics *mModel, const std::string &config_file);
     // int GetInternalFrameId() const;
     void SetTraj(const std::string &mRefTrajPath,
@@ -47,7 +47,7 @@ public:
     tMatrixXd CalcLCPPartBPrefix() const;
     bool IsEnd();
     void Reset();
-    btGenFrameByFrameOptimizer *GetFBFOptimizer();
+    btGenFBFTargetCalculator *GetFBFCalculator();
     void SetBulletGUIHelperInterface(struct GUIHelperInterface *inter);
     int GetRefFrameId() const { return mRefFrameId; }
     // void GetAdviseInfo(tMatrixXd& C, tMatrixXd& D, tMatrixXd& E, tMatrixXd&
@@ -66,11 +66,11 @@ protected:
     tVectorXd mCtrlForce;
     bool mResolveControlToruqe; // given the mocap data (ref traj), re solve the
                                 // control torque
-    Json::Value mFrameByFrameConfig;
+    Json::Value mTargetControllerConfig;
     bool mOutputControlDiff;
     bool mEnableSyncTrajPeriodly; // sync the ref traj to the simulation
                                   // character periodly
-    bool mEnableOnlyFBFControl;   // use the contact force and control force
+    bool mEnableOnlyTargetController;   // use the contact force and control force
                                   // calculated by the FBF optimzier, apply them
                                   // to the model directly and check the result
     bool mEnableRefTrajDelayedUpdate; // when the ref traj hasn't been exetucted
@@ -78,12 +78,12 @@ protected:
                                       // ref traj and make the control target
                                       // stay at the current frame
     bool
-        mEnableDrawContactPointsInBulletGUIAdviser; // enable drawing contact points
+        mEnableDrawContactPointsInBulletGUIController; // enable drawing contact points
     int mSyncTrajPeriod; // the sync period speicifed by config file
     cRobotModelDynamics *mModel;
     btGeneralizeWorld *mWorld;
     btGenFeatureArray *mFeatureVector;
-    btGenFrameByFrameOptimizer *mFBFOptimizer;
+    btGenFBFTargetCalculator *mFBFOptController;
     bool mEnableStateSave;
     bool mEnableInitStateLoad;
     std::string mInitStateFile;

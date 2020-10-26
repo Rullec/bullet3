@@ -1,7 +1,7 @@
 #include "ContactSolver.h"
 // #include "QPSolver/QPSolver.h"
 // #include "MatlabQPSolver/MatlabQPSolver.h"
-#include "BulletGenDynamics/btGenController/btGenContactAwareAdviser.h"
+#include "BulletGenDynamics/btGenController/btGenContactAwareController.h"
 #include "BulletGenDynamics/btGenModel/RobotCollider.h"
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
 #include "BulletGenDynamics/btGenModel/SimObj.h"
@@ -895,7 +895,7 @@ void btGenContactSolver::AddManifold(btPersistentManifold *manifold)
         else
         {
             if (mEnableMultibodySelfCol == true &&
-                mMultibodyArray[0]->GetEnableContactAwareAdviser() == false)
+                mMultibodyArray[0]->GetEnableContactAwareController() == false)
             {
                 if (mEnableDebugOutput)
                 {
@@ -909,7 +909,7 @@ void btGenContactSolver::AddManifold(btPersistentManifold *manifold)
                 // only add once for self-collisoin contact point
                 mColGroupData[data->mbody0GroupId]->AddContactPoint(data, true);
             }
-            else if (mMultibodyArray[0]->GetEnableContactAwareAdviser() == true)
+            else if (mMultibodyArray[0]->GetEnableContactAwareController() == true)
             {
                 std::cout << "[warn] self collision is ignored in contact "
                              "aware control\n";

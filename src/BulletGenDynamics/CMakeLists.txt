@@ -55,15 +55,16 @@ SET(
 
 SET(
 	BulletGenPDControler_SRCS
-	./btGenController/btGenContactAwareAdviser.cpp
-	./btGenController/btGenFeature.cpp
-	./btGenController/btGenFeatureUtils.cpp
-	./btGenController/btGenPDController.cpp
-	./btGenController/FBFOptimizer/btGenFBFConstraint.cpp
-	./btGenController/FBFOptimizer/btGenFBFEnergyTerm.cpp
-	./btGenController/FBFOptimizer/btGenFrameByFrameOptimizer.cpp
-	./btGenController/FBFOptimizer/btGenFrameByFrameOptimizerTerm.cpp
-	./btGenController/FBFOptimizer/btCharContactPoint.cpp
+	./btGenController/btGenContactAwareController.cpp
+	./btGenController/btGenTargetCalculator.cpp
+	./btGenController/ContactAdaptionFeature/btGenFeature.cpp
+	./btGenController/ContactAdaptionFeature/btGenFeatureUtils.cpp
+	./btGenController/PDController/btGenPDController.cpp
+	./btGenController/FBFCalculator/btGenFBFConstraint.cpp
+	./btGenController/FBFCalculator/btGenFBFEnergyTerm.cpp
+	./btGenController/FBFCalculator/btGenFrameByFrameCalculator.cpp
+	./btGenController/FBFCalculator/btGenFrameByFrameCalculatorTerm.cpp
+	./btGenController/FBFCalculator/btCharContactPoint.cpp
 	# ./btGenController/QPSolver/MatlabQPSolver.cpp
 	./btGenController/QPSolver/QuadProgQPSolver.cpp
 	./btGenController/QPSolver/eiquadprog.hpp
