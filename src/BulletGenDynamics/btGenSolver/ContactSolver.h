@@ -1,3 +1,4 @@
+#pragma once
 #include "BulletGenDynamics/btGenUtil/BulletUtil.h"
 #include "BulletGenDynamics/btGenUtil/MathUtil.h"
 #include "ConstraintData.h"
@@ -12,18 +13,12 @@ class cLCPSolverBase;
 struct btGenRobotCollider;
 struct btGenCollisionObjData;
 class cRobotModelDynamics;
-struct btGenContactForce
+class btGenContactForce
 {
+public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
     btGenContactForce(btGenCollisionObject *mObj, const tVector &mForce,
-                      const tVector &mWorldPos, bool);
-    btGenContactForce(const btGenContactForce &old_obj)
-    {
-        mObj = old_obj.mObj;
-        mForce = old_obj.mForce;
-        mWorldPos = old_obj.mWorldPos;
-        mIsSelfCollision = old_obj.mIsSelfCollision;
-    }
+                      const tVector &mWorldPos, bool is_self_collision);
     btGenCollisionObject *mObj;
     tVector mForce, mWorldPos; // position in world and force in world frame
     bool mIsSelfCollision;

@@ -288,7 +288,7 @@ void btGenContactAwareController::ResolveActiveForce()
             Qcontact =
                 (Qcontact + jac.transpose() * fc->mForce.segment(0, 3)).eval();
         }
-        mRefTraj->mActiveForce[frame_id] = LHS - G - Qcontact;
+        mRefTraj->mTruthJointForceVec[frame_id] = LHS - G - Qcontact;
     }
     mModel->PopState("resolve");
 }
@@ -338,16 +338,16 @@ btGenContactAwareController::CalcControlForce(const tVectorXd &Q_contact)
     // std::cout << "[control] mf norm = " << mf.norm() << std::endl;
     // std::cout << "[control] mf = " << mf.transpose() << std::endl;
     tVectorXd ref_force =
-        mRefTraj->mActiveForce[mRefFrameId - 1].transpose().segment(
+        mRefTraj->mTruthJointForceVec[mRefFrameId - 1].transpose().segment(
             6, mModel->GetNumOfFreedom() - 6);
     // std::cout << "q = " << mModel->Getq().segment(0, 3).transpose() <<
     // std::endl; std::cout << "[controller] ref ctrl force = " <<
     // ref_force.transpose() << std::endl; std::cout << "[controller] calced ctrl
     // force = " << Q_active.transpose() << std::endl;
 
-    mOutputTraj->mActiveForce[mRefFrameId - 1] =
+    mOutputTraj->mTruthJointForceVec[mRefFrameId - 1] =
         tVectorXd::Zero(num_of_freedom);
-    mOutputTraj->mActiveForce[mRefFrameId - 1].segment(
+    mOutputTraj->mTruthJointForceVec[mRefFrameId - 1].segment(
         6, num_of_underactuated_freedom) = Q_active;
     // if (Q_active.norm() > 1e8)
     // {

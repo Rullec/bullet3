@@ -29,7 +29,7 @@ btGenNQRCalculator::btGenNQRCalculator()
 {
     std::cout << "nqr build begin\n";
     mNQRFrameInfos.clear();
-    mSupposedContactPt.clear();
+    // mSupposedContactPt.clear();
 }
 btGenNQRCalculator::~btGenNQRCalculator(){};
 
@@ -43,7 +43,8 @@ void btGenNQRCalculator::Init(btGeneralizeWorld *mWorld, const std::string conf)
     btJsonUtil::LoadJson(conf, conf_json);
     std::string sup_pt_conf =
         btJsonUtil::ParseAsString("supposed_contact_pt_conf", conf_json);
-    InitSupposdedContactPoints(sup_pt_conf);
+    // InitSupposdedContactPoints(sup_pt_conf);
+    // InitSupposdedContactPoints(sup_pt_conf);
 }
 void btGenNQRCalculator::SetTraj(btTraj *traj_)
 {
@@ -85,7 +86,7 @@ void btGenNQRCalculator::ControlByAdaptionController()
               << ", ptr = " << this->mBulletGUIHelper << std::endl;
 
     // draw the contact points
-    DrawSupposedContactPoints();
+    // DrawSupposedContactPoints();
 }
 void btGenNQRCalculator::Reset() {}
 
@@ -114,22 +115,26 @@ void btGenNQRCalculator::CalcNQR()
 
     // 2. var size
     mStateSize = 2 * num_of_freedom;
-    mContactForceSize = 3 * mSupposedContactPt.size();
+    // mContactForceSize = 3 * mSupposedContactPt.size();
     auto root = mModel->GetRoot();
-    mJointControlForceSize = num_of_freedom - root->GetNumOfFreedom();
-    mTotalControlForceSize = mJointControlForceSize + mContactForceSize;
+    // mJointControlForceSize = num_of_freedom - root->GetNumOfFreedom();
+    // mTotalControlForceSize = mJointControlForceSize + mContactForceSize;
 
-    // 3. coef
+    // 3. coef and variable size setting
     for (int i = 0; i < mTraj->mNumOfFrames; i++)
     {
-        auto info = mNQRFrameInfos[i];
-        info.Q_coef = tVectorXd::Ones(mStateSize);
-        info.R_coef = tVectorXd::Ones(mTotalControlForceSize);
-        info.P_coef = tVectorXd::Ones(mTotalControlForceSize);
-    }
+        auto &info = mNQRFrameInfos[i];
+        info.mContactForceSize = 3 * mTraj->mContactForce[i].size();
+        info.mJointControlForceSize = num_of_underactuated_freedom;
+        info.mTotalControlForceSize =
+            info.mContactForceSize + info.mJointControlForceSize;
 
+        info.Q_coef = tVectorXd::Ones(mStateSize);
+        info.R_coef = tVectorXd::Ones(info.mTotalControlForceSize);
+        info.P_coef = tVectorXd::Ones(info.mTotalControlForceSize);
+    }
     // 4. begin the main iter
-    for (int frame_id = mTraj->mNumOfFrames - 1; frame_id >= 0; frame_id--)
+    for (int frame_id = mTraj->mNumOfFrames - 1; frame_id >= 1; frame_id--)
     {
         // set q and qdot
         std::cout << "--------------- frame " << frame_id << " -------------\n";
@@ -139,45 +144,13 @@ void btGenNQRCalculator::CalcNQR()
 
         mModel->SetqAndqdot(q, qdot);
 
-        // calc the contact and control
         CalcNQRContactAndControlForce(frame_id);
+        CalcNQRSystemLinearzation(frame_id);
     }
 
     // 3. solve the ARE (algebraic riccati equation) recursively, inversely
     CalcNQRRiccati();
     mModel->PopState("calc_nqr");
-}
-
-void btGenNQRCalculator::CalcNQRContactAndControlForce(int frame_id)
-{
-    int num_of_supposed_contact_pt = mSupposedContactPt.size();
-    // 1. contorl force
-    tVectorXd control_force = mTraj->GetGenControlForce(frame_id, mModel);
-
-    // 2. contact force:
-    // legacy Q_contact, current total Jacobian, generalized inverse solution
-    tVectorXd legacy_contact_force =
-        mTraj->GetGenContactForce(frame_id, mModel);
-    tMatrixXd supposed_jacobian =
-        tMatrixXd::Zero(num_of_supposed_contact_pt * 3, num_of_freedom);
-    for (int c_id = 0; c_id < num_of_supposed_contact_pt; c_id++)
-    {
-        auto pt = mSupposedContactPt[c_id];
-        tMatrixXd jac;
-        mModel->ComputeJacobiByGivenPointTotalDOFWorldFrame(
-            pt->mLinkId, pt->GetGlobalPos().segment(0, 3), jac);
-        supposed_jacobian.block(c_id * 3, 0, 3, num_of_freedom) = jac;
-    }
-
-    tMatrixXd supposed_jacobian_inv =
-        (supposed_jacobian * supposed_jacobian.transpose()).inverse() *
-        supposed_jacobian;
-
-    tVectorXd solved_contact_force =
-        supposed_jacobian_inv * legacy_contact_force;
-    std::cout << "solved contact force = " << solved_contact_force.transpose()
-              << std::endl;
-    exit(0);
 }
 
 /**
@@ -198,88 +171,88 @@ void btGenNQRCalculator::CalcNQRRiccati()
     }
 }
 
-/**
- * \brief       calculate contact points
-*/
-void btGenNQRCalculator::DrawSupposedContactPoints()
-{
-    std::cout << "suppose contact pts num = " << mSupposedContactPt.size()
-              << std::endl;
-    if (mDrawPointsList.size() == 0)
-    {
-        for (auto &pt : this->mSupposedContactPt)
-        {
-            DrawPoint(pt->GetGlobalPos().segment(0, 3));
-        }
-    }
-    else
-    {
-        for (int i = 0; i < mSupposedContactPt.size(); i++)
-        {
-            btTransform trans = mDrawPointsList[i]->getWorldTransform();
-            trans.setOrigin(btBulletUtil::tVectorTobtVector(
-                mSupposedContactPt[i]->GetGlobalPos()));
-            std::cout << "pt " << i << " global pos = "
-                      << mSupposedContactPt[i]->GetGlobalPos().transpose()
-                      << std::endl;
-            mDrawPointsList[i]->setWorldTransform(trans);
-        }
-    }
-}
+// /**
+//  * \brief       calculate contact points
+// */
+// void btGenNQRCalculator::DrawSupposedContactPoints()
+// {
+//     std::cout << "suppose contact pts num = " << mSupposedContactPt.size()
+//               << std::endl;
+//     if (mDrawPointsList.size() == 0)
+//     {
+//         for (auto &pt : this->mSupposedContactPt)
+//         {
+//             DrawPoint(pt->GetGlobalPos().segment(0, 3));
+//         }
+//     }
+//     else
+//     {
+//         for (int i = 0; i < mSupposedContactPt.size(); i++)
+//         {
+//             btTransform trans = mDrawPointsList[i]->getWorldTransform();
+//             trans.setOrigin(btBulletUtil::tVectorTobtVector(
+//                 mSupposedContactPt[i]->GetGlobalPos()));
+//             std::cout << "pt " << i << " global pos = "
+//                       << mSupposedContactPt[i]->GetGlobalPos().transpose()
+//                       << std::endl;
+//             mDrawPointsList[i]->setWorldTransform(trans);
+//         }
+//     }
+// }
 
-/**
- * \brief           Load the supposed contact points from file
-*/
-void btGenNQRCalculator::InitSupposdedContactPoints(
-    const std::string &conf_path)
-{
-    mSupposedContactPt.clear();
-    Json::Value root;
-    btJsonUtil::LoadJson(conf_path, root);
-    std::string skeleton_path =
-        btJsonUtil::ParseAsString("skeleton_path", root);
-    int num = btJsonUtil::ParseAsInt("num_of_supposed_contact_points", root);
-    const Json::Value &lst =
-        btJsonUtil::ParseAsValue("supposed_contact_point_lst", root);
+// /**
+//  * \brief           Load the supposed contact points from file
+// */
+// void btGenNQRCalculator::InitSupposdedContactPoints(
+//     const std::string &conf_path)
+// {
+//     mSupposedContactPt.clear();
+//     Json::Value root;
+//     btJsonUtil::LoadJson(conf_path, root);
+//     std::string skeleton_path =
+//         btJsonUtil::ParseAsString("skeleton_path", root);
+//     int num = btJsonUtil::ParseAsInt("num_of_supposed_contact_points", root);
+//     const Json::Value &lst =
+//         btJsonUtil::ParseAsValue("supposed_contact_point_lst", root);
 
-    if (skeleton_path != this->mModel->GetCharFile())
-    {
-        std::cout << "[error] nqr supposed contact skeleton file inconsistent "
-                  << skeleton_path << " != " << mModel->GetCharFile()
-                  << std::endl;
-        exit(0);
-    }
-    if (num != lst.size())
-    {
-        std::cout << "[error] the supposed contact points num is "
-                     "consistent "
-                  << num << " != " << lst.size() << std::endl;
-        exit(1);
-    }
+//     if (skeleton_path != this->mModel->GetCharFile())
+//     {
+//         std::cout << "[error] nqr supposed contact skeleton file inconsistent "
+//                   << skeleton_path << " != " << mModel->GetCharFile()
+//                   << std::endl;
+//         exit(0);
+//     }
+//     if (num != lst.size())
+//     {
+//         std::cout << "[error] the supposed contact points num is "
+//                      "consistent "
+//                   << num << " != " << lst.size() << std::endl;
+//         exit(1);
+//     }
 
-    for (int i = 0; i < num; i++)
-    {
-        auto cur_pt = lst[i];
-        std::string link_name = btJsonUtil::ParseAsString("link_name", cur_pt);
-        int link_id = btJsonUtil::ParseAsInt("link_id", cur_pt);
-        tVector3d local_pos = btJsonUtil::ReadVectorJson(
-                                  btJsonUtil::ParseAsValue("local_pos", cur_pt))
-                                  .segment(0, 3);
+//     for (int i = 0; i < num; i++)
+//     {
+//         auto cur_pt = lst[i];
+//         std::string link_name = btJsonUtil::ParseAsString("link_name", cur_pt);
+//         int link_id = btJsonUtil::ParseAsInt("link_id", cur_pt);
+//         tVector3d local_pos = btJsonUtil::ReadVectorJson(
+//                                   btJsonUtil::ParseAsValue("local_pos", cur_pt))
+//                                   .segment(0, 3);
 
-        // check link id and link name
-        auto link = mModel->GetLinkById(link_id);
-        if (link->GetName() != link_name)
-        {
-            std::cout << "[error] nqr supposed pt: the given link name "
-                      << link_name << " != "
-                      << " model link name " << link->GetName() << std::endl;
-            exit(1);
-        }
+//         // check link id and link name
+//         auto link = mModel->GetLinkById(link_id);
+//         if (link->GetName() != link_name)
+//         {
+//             std::cout << "[error] nqr supposed pt: the given link name "
+//                       << link_name << " != "
+//                       << " model link name " << link->GetName() << std::endl;
+//             exit(1);
+//         }
 
-        mSupposedContactPt.push_back(new tSupposedContactPt(
-            this->mModel, link_id, btMathUtil::Expand(local_pos, 1)));
-    }
-}
+//         mSupposedContactPt.push_back(new tSupposedContactPt(
+//             this->mModel, link_id, btMathUtil::Expand(local_pos, 1)));
+//     }
+// }
 
 /**
  * \brief       Check the solution of riccati equation in each frame
@@ -311,12 +284,153 @@ void btGenNQRCalculator::VerifyNQRRiccati()
 */
 void btGenNQRCalculator::CalcNQRSystemLinearzation(int frame)
 {
-    // 1. validate the frame id
+    // 1. validate the frame id, and assume the model has been set before
+    CheckModelState(frame, "system_linearize");
 
-    // 2.
+    // 2. get the A
+    /*
+        A = \frac{dG}{dx} * u + \frac{dh}{dx}
+    */
+
+    // 3. get the B
+    /*
+    B = G
+    */
 }
 
 /**
  * \brief           
 */
 void btGenNQRCalculator::VerifyNQRSystemLinearzation(int frame) {}
+
+/**
+ * \brief       calculate the contact jacobian, and mocap ground truth vector 
+ *  the control vecotr u = [joint_torque \in R^{n-6}, contact_forces \in R^3k]. so u \in R^{3k + n-6}
+ *  control_jacobian = [joint_torque_jacobian(0;I): contact_force_jacobian(Jvc^T)] \in R^{n \times 3k + n - 6}
+ *  d(control_jacobian)/dq  =   [[d(joint_torque_jacobian)/dq: dJvc^T/dq]]
+ *                          =   [0: dJvc^T/dq]
+*/
+void btGenNQRCalculator::CalcNQRContactAndControlForce(int frame_id)
+{
+    CheckModelState(frame_id, "contact and control force");
+
+    // 1. contact jacobian
+    tMatrixXd contact_jacobian =
+        mTraj->GetGenContactJacobianNoSet(frame_id, mModel);
+
+    // 2. joint torque jacobian
+    tMatrixXd joint_force_jacobian =
+        tMatrixXd::Zero(num_of_freedom, num_of_underactuated_freedom);
+    int root_dof = num_of_freedom - num_of_underactuated_freedom;
+    joint_force_jacobian
+        .block(root_dof, 0, num_of_underactuated_freedom,
+               num_of_underactuated_freedom)
+        .setIdentity();
+
+    // 3. total jacobian = [joint_force_jacobian, contact_force_jacobian]
+    auto &info = mNQRFrameInfos[frame_id];
+    info.mTotalControlJacobian =
+        tMatrixXd::Zero(num_of_freedom, info.mTotalControlForceSize);
+    info.mTotalControlJacobian.block(0, 0, num_of_freedom,
+                                     num_of_underactuated_freedom) =
+        joint_force_jacobian;
+    info.mTotalControlJacobian.block(0, num_of_underactuated_freedom,
+                                     num_of_freedom, info.mContactForceSize) =
+        contact_jacobian.transpose();
+
+    /*
+        4. calculate d(total_jacobian)/dq
+        d(control_jacobian)/dq  =   [[d(joint_torque_jacobian)/dq: dJvc/dq]]
+                                =   [0: dJvc^T/dq]
+    */
+    info.mdJacdq.resize(
+        num_of_freedom,
+        tMatrixXd::Zero(num_of_freedom, info.mTotalControlForceSize));
+    tEigenArr<tMatrixXd> dContactJacdq;
+    mTraj->GetGen_dContactJacobian_dq_NoSet(frame_id, mModel, dContactJacdq);
+    for (int dof = 0; dof < num_of_freedom; dof++)
+    {
+        info.mdJacdq[dof].block(0, info.mJointControlForceSize, num_of_freedom,
+                                info.mContactForceSize) =
+            dContactJacdq[dof].transpose();
+    }
+
+    // 5. verify
+    
+}
+
+void btGenNQRCalculator::CheckFrameId(int frame_id, std::string prefix)
+{
+    if (frame_id < 0 || frame_id >= mTraj->mNumOfFrames)
+    {
+        std::cout << "[error] nqr " << prefix << " illegal frame " << frame_id
+                  << std::endl;
+        exit(0);
+    }
+}
+
+void btGenNQRCalculator::CheckModelState(int frame_id, std::string prefix)
+{
+    CheckFrameId(frame_id, "CheckModelState");
+    tVectorXd q_diff = mModel->Getq() - mTraj->mq[frame_id];
+    tVectorXd qdot_diff = mModel->Getqdot() - mTraj->mqdot[frame_id];
+    double eps = 1e-10;
+    if (q_diff.norm() > eps || qdot_diff.norm() > eps)
+    {
+        std::cout << "[error] CheckModelstate " << prefix << " qdiff "
+                  << q_diff.norm() << " qdot diff " << qdot_diff.norm()
+                  << std::endl;
+        exit(1);
+    }
+}
+
+/**
+ * G =  [dt * Minv * Jac, 0]
+ *      [0, dt^2 * Minv * Jac]
+ * x = [q, qdot]
+ * Jac is the jacobian for TOTAL control vector
+*/
+tMatrixXd btGenNQRCalculator::GetG(int frame_id)
+{
+    auto &info = mNQRFrameInfos[frame_id];
+    tMatrixXd G = tMatrixXd::Zero(mStateSize, info.mTotalControlForceSize);
+    const tMatrixXd &Jac_control = info.mTotalControlJacobian;
+    const tMatrixXd &Minv = mModel->GetInvMassMatrix();
+    double mdt2 = mdt * mdt;
+    G.block(0, 0, num_of_freedom, info.mTotalControlForceSize) =
+        mdt * Minv * Jac_control;
+    G.block(num_of_freedom, 0, num_of_freedom, info.mTotalControlForceSize) =
+        mdt2 * Minv * Jac_control;
+    return G;
+}
+
+/**
+ * \brief       Get dGdx = [dGdq, dGdqdot]
+ * the definition of matrix G has been shown above
+*/
+void btGenNQRCalculator::GetdGdx(int frame_id, tEigenArr<tMatrixXd> &dGdx)
+{
+    // 1. dGdq
+    const auto &info = mNQRFrameInfos[frame_id];
+    const int total_control_size = info.mTotalControlForceSize;
+    dGdx.resize(num_of_freedom,
+                tMatrixXd::Zero(mStateSize, total_control_size));
+    {
+        // 1.1 give the dMinv/dq
+
+        // 1.2 get the dJac/dq from before
+
+        /*
+            dGdq =  [ dt * dMinvdq * Jac + dt * Minv * dJac/dq ]
+                    [ dt2 * dMinvdq * Jac + dt2 * Minv * dJac/dq ]
+        */
+    }
+
+    // 2. dGdqdot = 0
+}
+void btGenNQRCalculator::Getdhdx(int frame_id) {}
+
+void btGenNQRCalculator::VerifyContactAndControlJacobian(int frame_id) 
+{
+
+}

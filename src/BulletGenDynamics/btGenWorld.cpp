@@ -1459,7 +1459,7 @@ void btGeneralizeWorld::SetEnableContacrAwareControl()
 // 			std::cout << "guided traj exceed, exit\n";
 // 			exit(0);
 // 		}
-// 		tVectorXd force = mGuideTraj->mActiveForce[mFrameId];
+// 		tVectorXd force = mGuideTraj->mAction[mFrameId];
 // 		std::cout << "cur frame id " << mFrameId << " active force = "
 // << force.transpose() << std::endl; 		tVectorXd ref_q =
 // mGuideTraj->mq[mFrameId], 				  now_q =

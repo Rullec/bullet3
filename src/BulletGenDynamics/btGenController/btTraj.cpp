@@ -1,4 +1,5 @@
 #include "btTraj.h"
+#include "BulletGenDynamics/btGenModel/Joint.h"
 #include "BulletGenDynamics/btGenModel/RobotCollider.h"
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
 #include "BulletGenDynamics/btGenSolver/ContactSolver.h"
@@ -203,7 +204,7 @@ btTraj::btTraj()
     mq.clear();
     mqdot.clear();
     mqddot.clear();
-    mActiveForce.clear();
+    mTruthJointForceVec.clear();
     mContactForce.clear();
     mTruthJointForce.clear();
     mTimestep = 0;
@@ -228,7 +229,7 @@ bool btTraj::LoadTraj(const std::string &path, cRobotModelDynamics *model,
         mq.clear();
         mqdot.clear();
         mqddot.clear();
-        mActiveForce.clear();
+        mTruthJointForceVec.clear();
         mContactForce.clear();
         mTruthJointForce.clear();
     }
@@ -249,9 +250,10 @@ bool btTraj::LoadTraj(const std::string &path, cRobotModelDynamics *model,
     mq.resize(mNumOfFrames);
     mqdot.resize(mNumOfFrames);
     mqddot.resize(mNumOfFrames);
-    mActiveForce.resize(mNumOfFrames);
+    mTruthJointForceVec.resize(mNumOfFrames);
     mContactForce.resize(mNumOfFrames);
     mTruthJointForce.resize(mNumOfFrames);
+    mAction.resize(mNumOfFrames);
     for (auto &f : mTruthJointForce)
         f.resize(model->GetNumOfJoint() - 1, tVector::Zero());
     // mContactLocaPos.resize(mNumOfFrames);
@@ -279,9 +281,9 @@ bool btTraj::LoadTraj(const std::string &path, cRobotModelDynamics *model,
         tVectorXd char_pose;
         btJsonUtil::ReadVectorJson(char_pose_value, char_pose);
         mq[frame_id] = ConvertPoseToq(char_pose, model);
-        btJsonUtil::ReadVectorJson(action_value, mActiveForce[frame_id]);
+        btJsonUtil::ReadVectorJson(action_value, mAction[frame_id]);
         // std::cout << "char pose = " << char_pose.transpose() << std::endl;
-        // std::cout << "action = " << mActiveForce[frame_id].transpose() <<
+        // std::cout << "action = " << mAction[frame_id].transpose() <<
         // std::endl;
 
         // contact force
@@ -335,17 +337,43 @@ bool btTraj::LoadTraj(const std::string &path, cRobotModelDynamics *model,
             for (int j = 0; j < 4; j++)
                 mTruthJointForce[frame_id][i][j] = joint_forces[i * 4 + j];
         }
-    }
 
+        // set up the joint force (gen force) vector
+        int num_of_freedom = model->GetNumOfFreedom();
+        int num_of_actuated_freedom = num_of_freedom - 6;
+        mTruthJointForceVec[frame_id] =
+            tVectorXd::Zero(num_of_actuated_freedom);
+        int offset = 0;
+        for (int i = 0; i < model->GetNumOfJoint(); i++)
+        {
+            int actuated_joint_id = i - 1;
+            auto joint = dynamic_cast<Joint *>(model->GetJointById(i));
+            if (joint->GetJointType() == JointType::NONE_JOINT)
+                continue;
+            int joint_dof = joint->GetNumOfFreedom();
+            mTruthJointForceVec[frame_id].segment(offset, joint_dof) =
+                mTruthJointForce[frame_id][actuated_joint_id].segment(
+                    0, joint_dof);
+            offset += joint_dof;
+        }
+        // std::cout << "joint force vec = "
+        //           << mTruthJointForceVec[frame_id].transpose() << std::endl;
+        if (offset != num_of_actuated_freedom)
+        {
+            std::cout << "[error] LoadTraj: actuated freedom "
+                      << num_of_actuated_freedom << " != final offset "
+                      << offset << std::endl;
+        }
+    }
     // calcualte qdot and qddot
 
-    for (int frame_id = 1; frame_id < mNumOfFrames; frame_id++) mqdot[frame_id] = (mq[frame_id] - mq[frame_id - 1]) / mTimestep;
+    for (int frame_id = 1; frame_id < mNumOfFrames; frame_id++)
+        mqdot[frame_id] = (mq[frame_id] - mq[frame_id - 1]) / mTimestep;
 
     for (int frame_id = 1; frame_id < mNumOfFrames - 1; frame_id++)
         mqddot[frame_id] =
             (-2 * mq[frame_id] + mq[frame_id - 1] + mq[frame_id + 1]) /
             (mTimestep * mTimestep);
-
     // get all contact forces, sort and find some biggest
     // {
     //     tEigenArr<btGenContactForce *> forces(0);
@@ -386,7 +414,7 @@ bool btTraj::SaveTraj(const std::string &path, cRobotModelDynamics *model)
             btJsonUtil::BuildVectorJsonValue(ConvertqToPose(mq[i], model));
         data_perframe["timestep"] = this->mTimestep;
         data_perframe["truth_action"] =
-            btJsonUtil::BuildVectorJsonValue(this->mActiveForce[i]);
+            btJsonUtil::BuildVectorJsonValue(this->mAction[i]);
         data_perframe["contact_num"] = this->mContactForce[i].size();
         data_perframe["contact_info"] = Json::arrayValue;
         for (auto &f : mContactForce[i])
@@ -439,7 +467,7 @@ void btTraj::Reshape(int num_of_frame_new)
     mq.resize(num_of_frame_new);
     mqdot.resize(num_of_frame_new);
     mqddot.resize(num_of_frame_new);
-    mActiveForce.resize(num_of_frame_new);
+    mTruthJointForceVec.resize(num_of_frame_new);
     mContactForce.resize(num_of_frame_new);
 }
 
@@ -448,13 +476,7 @@ double btTraj::GetTimeLength() const { return mTimestep * (mNumOfFrames - 1); }
 tVectorXd btTraj::GetGenContactForceNoSet(int frame_id,
                                           cRobotModelDynamics *model)
 {
-    if (frame_id >= mNumOfFrames)
-    {
-        std::cout << "[error] btTraj::GetGenContactForceNoSet for frame "
-                  << frame_id << " illegal\n";
-        exit(0);
-    }
-
+    CheckModelState(frame_id, model, "get_gen_contact_force_no_set");
     auto contact_forces = this->mContactForce[frame_id];
     tVectorXd Q = tVectorXd::Zero(model->GetNumOfFreedom());
     for (auto fc : contact_forces)
@@ -468,14 +490,26 @@ tVectorXd btTraj::GetGenContactForceNoSet(int frame_id,
     return Q;
 }
 
+tMatrixXd btTraj::GetGenContactJacobianNoSet(int frame_id,
+                                             cRobotModelDynamics *model)
+{
+    CheckModelState(frame_id, model, "get_gen_contact_force_jac_no_set");
+    int num_of_contacts = this->mContactForce[frame_id].size();
+    int dof = model->GetNumOfFreedom();
+    tMatrixXd total_jac = tMatrixXd::Zero(num_of_contacts * 3, dof);
+    for (int i = 0; i < num_of_contacts; i++)
+    {
+        auto fc = mContactForce[frame_id][i];
+        auto link = dynamic_cast<btGenRobotCollider *>(fc->mObj);
+        tMatrixXd jac;
+        model->ComputeJacobiByGivenPointTotalDOFWorldFrame(
+            link->mLinkId, fc->mWorldPos.segment(0, 3), jac);
+        total_jac.block(3 * i, 0, 3, dof) = jac;
+    }
+    return total_jac;
+}
 tVectorXd btTraj::GetGenContactForce(int frame_id, cRobotModelDynamics *model)
 {
-    if (frame_id >= mNumOfFrames)
-    {
-        std::cout << "[error] btTraj::GetGenContactForce for frame " << frame_id
-                  << " illegal\n";
-        exit(0);
-    }
     model->PushState("calc contact force");
     model->SetqAndqdot(this->mq[frame_id], mqdot[frame_id]);
     tVectorXd Q = GetGenContactForceNoSet(frame_id, model);
@@ -507,4 +541,83 @@ tVectorXd btTraj::GetGenControlForce(int frame_id, cRobotModelDynamics *model)
     legacy_active_force =
         legacy_active_force.segment(6, legacy_active_force.size() - 6);
     return legacy_active_force;
+}
+
+/**
+ * \brief           Get the dJv/dq for contact points in current frame 
+*/
+void btTraj::GetGen_dContactJacobian_dq_NoSet(int frame_id,
+                                              cRobotModelDynamics *model,
+                                              tEigenArr<tMatrixXd> &dJacdq)
+{
+    CheckModelState(frame_id, model, "dJacdq");
+    int dof = model->GetNumOfFreedom();
+
+    int contact_num = mContactForce[frame_id].size();
+    dJacdq.resize(dof, tMatrixXd::Zero(3 * contact_num, dof));
+
+    for (int i = 0; i < contact_num; i++)
+    {
+        auto &pt = mContactForce[frame_id][i];
+        auto link_col = dynamic_cast<btGenRobotCollider *>(pt->mObj);
+        assert(link_col != nullptr);
+        int link_id = link_col->mLinkId;
+        auto link = model->GetLinkById(link_id);
+
+        // calculate at this contact point(local pos)
+        pt->mWorldPos[3] = 1;
+        tVector local_pos =
+            link->GetGlobalTransform().inverse() * pt->mWorldPos;
+        assert(std::fabs(local_pos[3] - 1) < 1e-10);
+        link->ComputeDJkvdq(local_pos.segment(0, 3));
+
+        // fetch dJvdq
+        for (int dof_id = 0; dof_id < dof; dof_id++)
+        {
+            // tMatrixXd dJkvdqi = ;
+            // std::cout << "dJkvdqi size " << dJkvdqi.rows() << " "
+            //           << dJkvdqi.cols() << std::endl;
+            // std::cout << "dJacdqi size " << dJacdq[dof_id].rows() << " "
+            //           << dJacdq[dof_id].cols() << std::endl;
+            // std::cout << "dof id = " << dof_id << " dof = " << dof << std::endl;
+            dJacdq[dof_id].block(3 * i, 0, 1, dof) =
+                link->GetJKv_dq(0).col(dof_id).transpose();
+            dJacdq[dof_id].block(3 * i + 1, 0, 1, dof) =
+                link->GetJKv_dq(1).col(dof_id).transpose();
+            dJacdq[dof_id].block(3 * i + 2, 0, 1, dof) =
+                link->GetJKv_dq(2).col(dof_id).transpose();
+        }
+
+        // restore dJvdq
+        link->ComputeDJkvdq(tVector3d::Zero());
+    }
+}
+
+void btTraj::CheckFrameId(int frame_id, std::string prefix)
+{
+    if (frame_id < 0 || frame_id >= mNumOfFrames)
+    {
+        std::cout << "[error] btTraj " << prefix << " illegal frame "
+                  << frame_id << std::endl;
+        exit(0);
+    }
+}
+
+/**
+ * \brief               make sure the model state is the same as what it was in mocap data
+*/
+void btTraj::CheckModelState(int frame_id, cRobotModelDynamics *model,
+                             std::string prefix)
+{
+    CheckFrameId(frame_id, "CheckModelState");
+    tVectorXd q_diff = model->Getq() - mq[frame_id];
+    tVectorXd qdot_diff = model->Getqdot() - mqdot[frame_id];
+    double eps = 1e-10;
+    if (q_diff.norm() > eps || qdot_diff.norm() > eps)
+    {
+        std::cout << "[error] CheckModelstate " << prefix << " qdiff "
+                  << q_diff.norm() << " qdot diff " << qdot_diff.norm()
+                  << std::endl;
+        exit(1);
+    }
 }

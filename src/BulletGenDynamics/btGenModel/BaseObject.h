@@ -222,7 +222,7 @@ public:
     virtual void ComputeJK_dot();
     virtual void ComputeJKv_dot(tVectorXd &q_dot, tVector3d &p){};
     virtual void ComputeJKw_dot(tVectorXd &q_dot){};
-    virtual void ComputeDJkvdq(tVector3d &p) {}
+    virtual void ComputeDJkvdq(const tVector3d &p) {}
     virtual void ComputeDJkwdq() {}
 
     double GetMass() const { return mass; }

@@ -134,7 +134,10 @@ void Link::ComputeJKw_dot(tVectorXd &q_dot)
 #endif
 }
 
-void Link::ComputeDJkvdq(tVector3d &p)
+/**
+ * \brief           Given the local pos of a point attached at this link, calculate dJkv/dq
+*/
+void Link::ComputeDJkvdq(const tVector3d &p)
 {
     assert(parent_joint != nullptr);
 #ifndef OLD_VERSION_JDOT

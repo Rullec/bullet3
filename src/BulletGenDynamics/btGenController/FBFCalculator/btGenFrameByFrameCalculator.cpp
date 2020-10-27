@@ -163,14 +163,14 @@ void btGenFBFTargetCalculator::CalcTarget(double dt, int target_frame_id,
         tilde_q = mTraj->mq[mRefFrameId + 1];
         // std::cout << "[FBF] set target q = " << tilde_q.transpose()
         //           << std::endl;
-        if (mTraj->mActiveForce[mRefFrameId].size() != num_of_freedom)
+        if (mTraj->mTruthJointForceVec[mRefFrameId].size() != num_of_freedom)
         {
             std::cout << "[error] FBFcalculator: we request a full dof active "
                          "force when updated\n"
                       << std::endl;
             exit(0);
         }
-        tilde_tau = mTraj->mActiveForce[mRefFrameId].segment(
+        tilde_tau = mTraj->mTruthJointForceVec[mRefFrameId].segment(
             6, num_of_underactuated_freedom);
     }
 
@@ -536,7 +536,7 @@ void btGenFBFTargetCalculator::Solve(tVectorXd &tilde_qddot,
     //     else
     //         std::cout << "pos diff lsq verified succ\n";
     // }
-    // tVectorXd ref_tau = mTraj->mActiveForce[mCurFrameId].segment(
+    // tVectorXd ref_tau = mTraj->mAction[mCurFrameId].segment(
     //     6, num_of_underactuated_freedom);
     // std::cout << "[solved] tau = " << tilde_tau.transpose() << std::endl;
     // std::cout << "[ref] tau = " << ref_tau.transpose() << std::endl;

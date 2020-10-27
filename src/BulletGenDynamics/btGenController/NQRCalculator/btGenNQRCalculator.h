@@ -34,6 +34,14 @@ protected:
         tVectorXd Q_coef; // state vector x close to origin
         tVectorXd R_coef; // control vector u close to origin
         tVectorXd P_coef; // control vector u minimize
+        // 3. variable sizes
+        int mContactForceSize;      // the size of total contact force
+        int mJointControlForceSize; // joint_force_size = total_dof - 6
+        int mTotalControlForceSize; // total_control_size = contact_size + joint_force_size
+        // 4. total control jacobian and derivations
+        tMatrixXd
+            mTotalControlJacobian; //  gen_force = mTotalControlJacobian * control_vector[joint, contact]
+        tEigenArr<tMatrixXd> mdJacdq; // d(mTotalControlJacobian)/dq
         tNQRFrameInfo();
     };
 
@@ -50,19 +58,24 @@ protected:
         const cRobotModelDynamics *mModel;
     };
 
-    std::vector<tSupposedContactPt *> mSupposedContactPt;
-    int mStateSize;             // state size = q_size + qdot_size
-    int mContactForceSize;      // the size of total contact force
-    int mJointControlForceSize; // joint_force_size = total_dof - 6
-    int mTotalControlForceSize; // total_control_size = contact_size + joint_force_size
+    // std::vector<tSupposedContactPt *> mSupposedContactPt;
+    int mStateSize; // state size = q_size + qdot_size
+
     // methods
-    void InitSupposdedContactPoints(const std::string &root);
+    // void InitSupposdedContactPoints(const std::string &root);
     void CalcNQR();
     void CalcNQRContactAndControlForce(int frame_id);
     void CalcNQRSystemLinearzation(int frame);
     void CalcNQRRiccati();
+    void VerifyContactAndControlJacobian(int frame_id);
     void VerifyNQRSystemLinearzation(int frame);
     void VerifyNQRRiccati();
     // virtual void PreCalcTarget(double dt, int target_id);
-    void DrawSupposedContactPoints();
+    // void DrawSupposedContactPoints();
+    void CheckFrameId(int frame_id, std::string prefix);
+    void CheckModelState(int frame_id, std::string prefix);
+
+    void GetdGdx(int frame_id, tEigenArr<tMatrixXd> &dGdx);
+    void Getdhdx(int frame_id);
+    tMatrixXd GetG(int frame_id);
 };
