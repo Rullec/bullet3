@@ -91,41 +91,112 @@ void btGenNQRCalculator::Reset() {}
 
 /**
  * \brief       calculate the NQR control policy, the final result ( Sk_mat and sk_vec ) will be used to do optimal control
-*/
-void btGenNQRCalculator::CalcNQR()
-{
-    // 1. allocation
-    mNQRFrameInfos.resize(mTraj->mNumOfFrames);
-
-    // 2. given all of the weight coef
-    CalcNQRCoef();
-
-    // 3. solve the ARE (algebraic riccati equation) recursively, inversely
-    CalcNQRRiccati();
-}
-
-/**
- * \brief       set the control weight coefficient in NQR Info, including
- * - Q_coef
- * - R_coef
- * - P_coef
-*/
-void btGenNQRCalculator::CalcNQRCoef()
-{
-
-    for (int i = 0; i < mTraj->mNumOfFrames; i++)
-    {
-    }
-}
-
-/**
- * \brief       calculate the nqr variables size or configuration, including :
+ * 
  * - state size (in state equation), 2 * dof
  * - contact force size (2 points on each foot indepently, load from an external file)
  * - control force size (n-6 dof, we have proved it's equivalent to the cartesian torque)
+ * 
+ *              then set the control weight coefficient in NQR Info, including
+ * - tVectorXd Q_coef; // state vector x close to origin
+ * - tVectorXd R_coef; // control vector u close to origin
+ * - tVectorXd P_coef; // control vector u minimize
+ * 
+ *              at last, Given the traj, calculate the active force & contact force from the mocap data
+ *              Put the result in NQRInfo
+ * - contact_force: in SUPPOSED contract points
+ * - control force: reestimate
 */
-void btGenNQRCalculator::CalcNQRVarSize() {}
-void btGenNQRCalculator::CalcNQRRiccati() {}
+void btGenNQRCalculator::CalcNQR()
+{
+    mModel->PushState("calc_nqr");
+    // 1. allocation
+    mNQRFrameInfos.resize(mTraj->mNumOfFrames);
+
+    // 2. var size
+    mStateSize = 2 * num_of_freedom;
+    mContactForceSize = 3 * mSupposedContactPt.size();
+    auto root = mModel->GetRoot();
+    mJointControlForceSize = num_of_freedom - root->GetNumOfFreedom();
+    mTotalControlForceSize = mJointControlForceSize + mContactForceSize;
+
+    // 3. coef
+    for (int i = 0; i < mTraj->mNumOfFrames; i++)
+    {
+        auto info = mNQRFrameInfos[i];
+        info.Q_coef = tVectorXd::Ones(mStateSize);
+        info.R_coef = tVectorXd::Ones(mTotalControlForceSize);
+        info.P_coef = tVectorXd::Ones(mTotalControlForceSize);
+    }
+
+    // 4. begin the main iter
+    for (int frame_id = mTraj->mNumOfFrames - 1; frame_id >= 0; frame_id--)
+    {
+        // set q and qdot
+        std::cout << "--------------- frame " << frame_id << " -------------\n";
+
+        const tVectorXd &q = mTraj->mq[frame_id],
+                        &qdot = mTraj->mqdot[frame_id];
+
+        mModel->SetqAndqdot(q, qdot);
+
+        // calc the contact and control
+        CalcNQRContactAndControlForce(frame_id);
+    }
+
+    // 3. solve the ARE (algebraic riccati equation) recursively, inversely
+    CalcNQRRiccati();
+    mModel->PopState("calc_nqr");
+}
+
+void btGenNQRCalculator::CalcNQRContactAndControlForce(int frame_id)
+{
+    int num_of_supposed_contact_pt = mSupposedContactPt.size();
+    // 1. contorl force
+    tVectorXd control_force = mTraj->GetGenControlForce(frame_id, mModel);
+
+    // 2. contact force:
+    // legacy Q_contact, current total Jacobian, generalized inverse solution
+    tVectorXd legacy_contact_force =
+        mTraj->GetGenContactForce(frame_id, mModel);
+    tMatrixXd supposed_jacobian =
+        tMatrixXd::Zero(num_of_supposed_contact_pt * 3, num_of_freedom);
+    for (int c_id = 0; c_id < num_of_supposed_contact_pt; c_id++)
+    {
+        auto pt = mSupposedContactPt[c_id];
+        tMatrixXd jac;
+        mModel->ComputeJacobiByGivenPointTotalDOFWorldFrame(
+            pt->mLinkId, pt->GetGlobalPos().segment(0, 3), jac);
+        supposed_jacobian.block(c_id * 3, 0, 3, num_of_freedom) = jac;
+    }
+
+    tMatrixXd supposed_jacobian_inv =
+        (supposed_jacobian * supposed_jacobian.transpose()).inverse() *
+        supposed_jacobian;
+
+    tVectorXd solved_contact_force =
+        supposed_jacobian_inv * legacy_contact_force;
+    std::cout << "solved contact force = " << solved_contact_force.transpose()
+              << std::endl;
+    exit(0);
+}
+
+/**
+ * \brief           Solve the algebraic riccati equation
+*/
+void btGenNQRCalculator::CalcNQRRiccati()
+{
+    int num_of_frames = this->mTraj->mNumOfFrames;
+    for (int cur_frame = num_of_frames; cur_frame >= 0; cur_frame--)
+    {
+        if (cur_frame == num_of_frames)
+        {
+            // given the init S_last and s_last
+        }
+        else
+        {
+        }
+    }
+}
 
 /**
  * \brief       calculate contact points
@@ -156,6 +227,9 @@ void btGenNQRCalculator::DrawSupposedContactPoints()
     }
 }
 
+/**
+ * \brief           Load the supposed contact points from file
+*/
 void btGenNQRCalculator::InitSupposdedContactPoints(
     const std::string &conf_path)
 {
@@ -206,3 +280,43 @@ void btGenNQRCalculator::InitSupposdedContactPoints(
             this->mModel, link_id, btMathUtil::Expand(local_pos, 1)));
     }
 }
+
+/**
+ * \brief       Check the solution of riccati equation in each frame
+*/
+void btGenNQRCalculator::VerifyNQRRiccati()
+{
+    std::cout << "begin to check ARE\n";
+    exit(0);
+}
+
+/**
+ * \brief       According to the optimal control literature, given the raw system
+ * 
+ * x_{t+1} = G(x_t)u_t +  + h(x_t) = f(x_t, u_t)
+ * 
+ * calculate the linearalized system:
+ * 
+ * A_t = \frac{d f}{d x}
+ * B_t = \frac{d f}{d u}
+ * 
+ * so that
+ * 
+ * \xi_{t+1} = A_t * \xi_t + B_t * \eta_t + d_k
+ * 
+ * \xi_t = x_t - \bar{x}_t,  \bar means it is in given mocap data
+ * \eta_t = u_t - \bar{u}_t,  \bar means it is in given mocap data
+ * d_k = 0 if the integration scheme keeps the same between the up&downstream, we took the semi-implicit from a-z
+ * 
+*/
+void btGenNQRCalculator::CalcNQRSystemLinearzation(int frame)
+{
+    // 1. validate the frame id
+
+    // 2.
+}
+
+/**
+ * \brief           
+*/
+void btGenNQRCalculator::VerifyNQRSystemLinearzation(int frame) {}

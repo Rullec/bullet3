@@ -51,12 +51,18 @@ protected:
     };
 
     std::vector<tSupposedContactPt *> mSupposedContactPt;
+    int mStateSize;             // state size = q_size + qdot_size
+    int mContactForceSize;      // the size of total contact force
+    int mJointControlForceSize; // joint_force_size = total_dof - 6
+    int mTotalControlForceSize; // total_control_size = contact_size + joint_force_size
     // methods
     void InitSupposdedContactPoints(const std::string &root);
     void CalcNQR();
-    void CalcNQRVarSize();
-    void CalcNQRCoef();
+    void CalcNQRContactAndControlForce(int frame_id);
+    void CalcNQRSystemLinearzation(int frame);
     void CalcNQRRiccati();
+    void VerifyNQRSystemLinearzation(int frame);
+    void VerifyNQRRiccati();
     // virtual void PreCalcTarget(double dt, int target_id);
     void DrawSupposedContactPoints();
 };

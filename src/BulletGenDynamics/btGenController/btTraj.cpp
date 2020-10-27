@@ -338,20 +338,13 @@ bool btTraj::LoadTraj(const std::string &path, cRobotModelDynamics *model,
     }
 
     // calcualte qdot and qddot
+
+    for (int frame_id = 1; frame_id < mNumOfFrames; frame_id++) mqdot[frame_id] = (mq[frame_id] - mq[frame_id - 1]) / mTimestep;
+
     for (int frame_id = 1; frame_id < mNumOfFrames - 1; frame_id++)
-    {
-        // std::cout << mNumOfFrames << " " << frame_id << std::endl;
-        // std::cout << "---------------frame " << frame_id <<
-        // "------------------\n";
-        mqdot[frame_id] = (mq[frame_id] - mq[frame_id - 1]) / mTimestep;
         mqddot[frame_id] =
             (-2 * mq[frame_id] + mq[frame_id - 1] + mq[frame_id + 1]) /
             (mTimestep * mTimestep);
-        // std::cout << "mq = " << mq[frame_id].transpose() << std::endl;
-        // std::cout << "mqdot = " << mqdot[frame_id].transpose() << std::endl;
-        // std::cout << "mqddot = " << mqddot[frame_id].transpose() <<
-        // std::endl; exit(0);
-    }
 
     // get all contact forces, sort and find some biggest
     // {
@@ -452,17 +445,16 @@ void btTraj::Reshape(int num_of_frame_new)
 
 double btTraj::GetTimeLength() const { return mTimestep * (mNumOfFrames - 1); }
 
-tVectorXd btTraj::GetGenContactForce(int frame_id, cRobotModelDynamics *model)
-
+tVectorXd btTraj::GetGenContactForceNoSet(int frame_id,
+                                          cRobotModelDynamics *model)
 {
     if (frame_id >= mNumOfFrames)
     {
-        std::cout << "[error] btTraj::GetGenContactForce for frame " << frame_id
-                  << " illegal\n";
+        std::cout << "[error] btTraj::GetGenContactForceNoSet for frame "
+                  << frame_id << " illegal\n";
         exit(0);
     }
-    model->PushState("calc contact force");
-    model->SetqAndqdot(this->mq[frame_id], mqdot[frame_id]);
+
     auto contact_forces = this->mContactForce[frame_id];
     tVectorXd Q = tVectorXd::Zero(model->GetNumOfFreedom());
     for (auto fc : contact_forces)
@@ -473,6 +465,20 @@ tVectorXd btTraj::GetGenContactForce(int frame_id, cRobotModelDynamics *model)
             link->mLinkId, fc->mWorldPos.segment(0, 3), jac);
         Q += jac.transpose() * fc->mForce.segment(0, 3);
     }
+    return Q;
+}
+
+tVectorXd btTraj::GetGenContactForce(int frame_id, cRobotModelDynamics *model)
+{
+    if (frame_id >= mNumOfFrames)
+    {
+        std::cout << "[error] btTraj::GetGenContactForce for frame " << frame_id
+                  << " illegal\n";
+        exit(0);
+    }
+    model->PushState("calc contact force");
+    model->SetqAndqdot(this->mq[frame_id], mqdot[frame_id]);
+    tVectorXd Q = GetGenContactForceNoSet(frame_id, model);
     model->PopState("calc contact force");
     return Q;
 }
