@@ -208,6 +208,7 @@ btTraj::btTraj()
     mContactForce.clear();
     mTruthJointForce.clear();
     mTimestep = 0;
+    mContactLocalPos.clear();
 }
 btTraj::~btTraj()
 {
@@ -493,7 +494,9 @@ tVectorXd btTraj::GetGenContactForceNoSet(int frame_id,
 tMatrixXd btTraj::GetGenContactJacobianNoSet(int frame_id,
                                              cRobotModelDynamics *model)
 {
-    CheckModelState(frame_id, model, "get_gen_contact_force_jac_no_set");
+    // CheckModelState(frame_id, model, "get_gen_contact_force_jac_no_set");
+    std::cout << "[warn] tmp hang out the check model state for "
+                 "get_gen_contact_force_jac_no_set\n";
     int num_of_contacts = this->mContactForce[frame_id].size();
     int dof = model->GetNumOfFreedom();
     tMatrixXd total_jac = tMatrixXd::Zero(num_of_contacts * 3, dof);
@@ -502,8 +505,23 @@ tMatrixXd btTraj::GetGenContactJacobianNoSet(int frame_id,
         auto fc = mContactForce[frame_id][i];
         auto link = dynamic_cast<btGenRobotCollider *>(fc->mObj);
         tMatrixXd jac;
-        model->ComputeJacobiByGivenPointTotalDOFWorldFrame(
-            link->mLinkId, fc->mWorldPos.segment(0, 3), jac);
+
+        // recalculate the world pos at this moment
+        tVector world_pos = tVector::Zero();
+        {
+            world_pos =
+                model->GetLinkById(link->mLinkId)->GetGlobalTransform() *
+                mContactLocalPos[frame_id][i];
+            model->ComputeJacobiByGivenPointTotalDOFWorldFrame(
+                link->mLinkId, world_pos.segment(0, 3), jac);
+        }
+
+        // directly use the
+        // {
+        //     world_pos = fc->mWorldPos;
+        // }
+
+        btMathUtil::IsHomogeneousPos(world_pos);
         total_jac.block(3 * i, 0, 3, dof) = jac;
     }
     return total_jac;
@@ -550,7 +568,8 @@ void btTraj::GetGen_dContactJacobian_dq_NoSet(int frame_id,
                                               cRobotModelDynamics *model,
                                               tEigenArr<tMatrixXd> &dJacdq)
 {
-    CheckModelState(frame_id, model, "dJacdq");
+    // CheckModelState(frame_id, model, "dJacdq");
+    std::cout << "[warn] tmp hang out the check model state for dJacdq\n";
     int dof = model->GetNumOfFreedom();
 
     int contact_num = mContactForce[frame_id].size();
@@ -565,10 +584,8 @@ void btTraj::GetGen_dContactJacobian_dq_NoSet(int frame_id,
         auto link = model->GetLinkById(link_id);
 
         // calculate at this contact point(local pos)
-        pt->mWorldPos[3] = 1;
-        tVector local_pos =
-            link->GetGlobalTransform().inverse() * pt->mWorldPos;
-        assert(std::fabs(local_pos[3] - 1) < 1e-10);
+        tVector local_pos = mContactLocalPos[frame_id][i];
+        btMathUtil::IsHomogeneousPos(local_pos);
         link->ComputeDJkvdq(local_pos.segment(0, 3));
 
         // fetch dJvdq
@@ -621,3 +638,38 @@ void btTraj::CheckModelState(int frame_id, cRobotModelDynamics *model,
         exit(1);
     }
 }
+
+/**
+ * \brief           Calculate the local contact location
+*/
+void btTraj::CalculateLocalContactPos(cRobotModelDynamics *model)
+{
+    if (mContactLocalPos.size() != 0)
+    {
+        std::cout << "[error] CalculateLocalContactPos maybe called twice\n";
+        exit(1);
+    }
+    mContactLocalPos.resize(mNumOfFrames);
+    model->PushState("local_pos");
+    for (int i = 0; i < mNumOfFrames; i++)
+    {
+        std::cout << "[warn] traj: enable local pos calculation\n";
+        model->SetqAndqdot(mq[i], model->Getqdot());
+        int num_of_contact = mContactForce[i].size();
+        mContactLocalPos[i].resize(num_of_contact);
+        for (int c_id = 0; c_id < num_of_contact; c_id++)
+        {
+            auto contact_pt = mContactForce[i][c_id];
+            tVector world_pos = contact_pt->mWorldPos;
+            int link_id =
+                dynamic_cast<btGenRobotCollider *>(contact_pt->mObj)->mLinkId;
+            auto link = model->GetLinkById(link_id);
+            tVector local_pos =
+                link->GetGlobalTransform().inverse() * world_pos;
+            mContactLocalPos[i][c_id] = local_pos;
+            btMathUtil::IsHomogeneousPos(local_pos);
+        }
+    }
+    model->PopState("local_pos");
+}
+

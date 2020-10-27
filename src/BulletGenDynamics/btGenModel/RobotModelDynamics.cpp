@@ -868,6 +868,9 @@ void cRobotModelDynamics::SyncToBullet()
     }
 }
 
+/**
+ * \brief           push current model state into the stack
+*/
 void cRobotModelDynamics::PushState(const std::string &tag,
                                     bool only_vel_and_force)
 {
@@ -895,6 +898,10 @@ void cRobotModelDynamics::PushState(const std::string &tag,
     mStateStack.push_back(std::make_pair(tag, state));
 }
 
+
+/**
+ * \brief           pop current model state outof the stack
+*/
 void cRobotModelDynamics::PopState(const std::string &tag,
                                    bool only_vel_and_force)
 {

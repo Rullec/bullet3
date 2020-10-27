@@ -39,6 +39,13 @@ btGenContactForce::btGenContactForce(btGenCollisionObject *obj_,
     mObj = obj_;
     mForce = f_;
     mWorldPos = p_;
+    if (std::fabs(mWorldPos[3] - 1) > 1e-10)
+    {
+        std::cout << "[error] btGenContactForce::btGenContactForce the world "
+                     "pos is not homogenous = "
+                  << mWorldPos.transpose() << std::endl;
+        exit(1);
+    }
     mIsSelfCollision = is_self_collision;
 }
 
@@ -909,7 +916,8 @@ void btGenContactSolver::AddManifold(btPersistentManifold *manifold)
                 // only add once for self-collisoin contact point
                 mColGroupData[data->mbody0GroupId]->AddContactPoint(data, true);
             }
-            else if (mMultibodyArray[0]->GetEnableContactAwareController() == true)
+            else if (mMultibodyArray[0]->GetEnableContactAwareController() ==
+                     true)
             {
                 std::cout << "[warn] self collision is ignored in contact "
                              "aware control\n";

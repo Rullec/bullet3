@@ -21,16 +21,18 @@ struct btTraj
                                           cRobotModelDynamics *model,
                                           tEigenArr<tMatrixXd> &dJacdq);
     tVectorXd GetGenControlForce(int frame_id, cRobotModelDynamics *model);
+    void CalculateLocalContactPos(cRobotModelDynamics *model);
+
     int mNumOfFrames;
     tEigenArr<tVectorXd> mq, mqdot, mqddot;
     tEigenArr<tVectorXd> mTruthJointForceVec;
     tEigenArr<tVectorXd> mAction;
     std::vector<tEigenArr<tVector>> mTruthJointForce;
     std::vector<std::vector<btGenContactForce *>> mContactForce;
-
     double mTimestep;
 
 protected:
+    tEigenArr<tEigenArr<tVector>> mContactLocalPos;
     std::string mTrajPath;
     void CheckFrameId(int frame_id, std::string prefix);
     void CheckModelState(int frame_id, cRobotModelDynamics *model,

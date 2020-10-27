@@ -49,6 +49,7 @@ void btGenNQRCalculator::Init(btGeneralizeWorld *mWorld, const std::string conf)
 void btGenNQRCalculator::SetTraj(btTraj *traj_)
 {
     btGenTargetCalculator::SetTraj(traj_);
+    traj_->CalculateLocalContactPos(mModel);
 
     // do precomputation for this traj
     CalcNQR();
@@ -145,6 +146,7 @@ void btGenNQRCalculator::CalcNQR()
         mModel->SetqAndqdot(q, qdot);
 
         CalcNQRContactAndControlForce(frame_id);
+        VerifyContactAndControlJacobian(frame_id);
         CalcNQRSystemLinearzation(frame_id);
     }
 
@@ -313,6 +315,8 @@ void btGenNQRCalculator::VerifyNQRSystemLinearzation(int frame) {}
 void btGenNQRCalculator::CalcNQRContactAndControlForce(int frame_id)
 {
     CheckModelState(frame_id, "contact and control force");
+    std::cout << "[warn] tmp hang out the check model state for contact and "
+                 "control force\n";
 
     // 1. contact jacobian
     tMatrixXd contact_jacobian =
@@ -354,9 +358,6 @@ void btGenNQRCalculator::CalcNQRContactAndControlForce(int frame_id)
                                 info.mContactForceSize) =
             dContactJacdq[dof].transpose();
     }
-
-    // 5. verify
-    
 }
 
 void btGenNQRCalculator::CheckFrameId(int frame_id, std::string prefix)
@@ -374,7 +375,7 @@ void btGenNQRCalculator::CheckModelState(int frame_id, std::string prefix)
     CheckFrameId(frame_id, "CheckModelState");
     tVectorXd q_diff = mModel->Getq() - mTraj->mq[frame_id];
     tVectorXd qdot_diff = mModel->Getqdot() - mTraj->mqdot[frame_id];
-    double eps = 1e-10;
+    double eps = 1e-6;
     if (q_diff.norm() > eps || qdot_diff.norm() > eps)
     {
         std::cout << "[error] CheckModelstate " << prefix << " qdiff "
@@ -430,7 +431,46 @@ void btGenNQRCalculator::GetdGdx(int frame_id, tEigenArr<tMatrixXd> &dGdx)
 }
 void btGenNQRCalculator::Getdhdx(int frame_id) {}
 
-void btGenNQRCalculator::VerifyContactAndControlJacobian(int frame_id) 
+// verify numerical gradient of CalcNQRContactAndControlForce
+void btGenNQRCalculator::VerifyContactAndControlJacobian(int frame_id)
 {
+    // 1. remember current control jacobian value, old dJacdq
+    mModel->PushState("verify_contact_and_control_jac");
+    CheckFrameId(frame_id, "verify_contact_and_control_jac");
+    auto &info = mNQRFrameInfos[frame_id];
+    tMatrixXd old_control_jac = info.mTotalControlJacobian;
+    tEigenArr<tMatrixXd> old_control_djac_dq = info.mdJacdq;
+    int num_of_freedom = mModel->GetNumOfFreedom();
+    tEigenArr<tMatrixXd> new_control_djac_dq(
+        num_of_freedom,
+        tMatrixXd::Zero(mStateSize, info.mTotalControlForceSize));
 
+    // 2. forward computation
+    tVectorXd q = mModel->Getq();
+    double eps = 1e-7;
+    for (int dof = 0; dof < num_of_freedom; dof++)
+    {
+        q[dof] += eps;
+        mModel->SetqAndqdot(q, mModel->Getqdot());
+        CalcNQRContactAndControlForce(frame_id);
+        tMatrixXd new_control_jac = info.mTotalControlJacobian;
+        tMatrixXd dcontrol_jac_dqi = (new_control_jac - old_control_jac) / eps;
+        tMatrixXd dcontrol_jac_dq_diff =
+            dcontrol_jac_dqi - old_control_djac_dq[dof];
+        std::cout << "dof " << dof << " diff norm "
+                  << dcontrol_jac_dq_diff.norm() << std::endl;
+        if (dcontrol_jac_dq_diff.norm() > eps)
+        {
+            std::cout << "analytic dJacdq = \n"
+                      << old_control_djac_dq[dof] << std::endl;
+            std::cout << "numerical dJacdq = \n"
+                      << dcontrol_jac_dqi << std::endl;
+            std::cout << "diff = \n" << dcontrol_jac_dq_diff << std::endl;
+            exit(0);
+        }
+        q[dof] -= eps;
+    }
+
+    mModel->PopState("verify_contact_and_control_jac");
+    exit(0);
 }
