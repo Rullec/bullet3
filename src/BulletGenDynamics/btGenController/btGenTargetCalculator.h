@@ -5,7 +5,7 @@
 
 class btTraj;
 class cRobotModelDynamics;
-
+class btCollisionObject;
 class btGeneralizeWorld;
 
 /**
@@ -43,7 +43,10 @@ protected:
     double mdt;
     // draw contact points utils
     struct GUIHelperInterface *mBulletGUIHelper;
+    std::vector<btCollisionObject *> mDrawPointsList;
 
     // helper functions
-    void PreCalcTarget(double dt, int target_id);
+    virtual void PreCalcTarget(double dt, int target_id);
+    void DrawPoint(const tVector3d &pos, double radius = 0.05);
+    void ClearDrawPoints();
 };

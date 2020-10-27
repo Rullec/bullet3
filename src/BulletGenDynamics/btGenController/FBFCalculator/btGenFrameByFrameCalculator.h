@@ -88,9 +88,9 @@ protected:
     void CalcContactConvertMat(btCharContactPt *contact,
                                tMatrixXd &convert_mat);
     int GetSolutionSizeByContactStatus(eContactStatus status);
-    void ClearDrawPoints();
-    void DrawContactPoints();
-    void DrawPoint(const tVector3d &pos, double r = 0.05);
+    // void ClearDrawPoints();
+    // void DrawContactPoints();
+    // void DrawPoint(const tVector3d &pos, double r = 0.05);
     // ---------vars
     QuadProgQPSolver *mQPSolver;
 
@@ -161,6 +161,4 @@ protected:
     std::vector<tEigenArr<tVector3d>> mRefContactLocalPos;
     tVectorXd
         mControlForce; // used in the tvcg control force close to prev energy term
-
-    std::vector<btCollisionObject *> mDrawPointsList;
 };

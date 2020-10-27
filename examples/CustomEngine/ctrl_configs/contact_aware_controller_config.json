@@ -4,11 +4,11 @@
     "feature_vector_file_legs": "examples/CustomEngine/ctrl_configs/features/oneleg/accel.json",
     "feature_vector_file_oneleg": "examples/CustomEngine/ctrl_configs/features/2links/accel.json",
     "resolve_control_tau": true,
-    "draw_reference_traj_character": true,
+    "draw_reference_traj_character": false,
     "draw_target_FBF_character": false,
     "max_frame": 1500,
     "start_frame": 2,
-    "output_diff": true,
+    "output_diff": false,
     "output_diff_path": "build_cmake/contact_aware.log",
     "enable_record_ctrled_traj": true,
     "enable_sync_traj_periodly": true,
@@ -18,7 +18,8 @@
     "save_dir": "/tmp/bullet/states",
     "enable_init_state_load": false,
     "init_state_file": "/tmp/bullet/states/0",
-    "enable_only_target_calculator": false,
+    "enable_only_target_calculator": true,
     "enable_draw_contact_points_in_bullet_GUI_controller": false,
-    "target_calculator_config": "examples/CustomEngine/ctrl_configs/target_calculator_configs/fbf_config.json"
+    "target_calculator_config_fbf": "examples/CustomEngine/ctrl_configs/target_calculator_configs/fbf_config.json",
+    "target_calculator_config": "examples/CustomEngine/ctrl_configs/target_calculator_configs/nqr_config.json"
 }

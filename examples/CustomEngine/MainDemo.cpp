@@ -70,7 +70,7 @@ protected:
     void MultistepSim(float dt);
     void SinglestepSim(float dt);
     btGeneralizeWorld *mGenWorld;
-    btGenContactAwareController *mController;
+    btGenContactAwareController *mAwareController;
     double mTimestep;
     // btRigidBody* target_rigidbody;
     // float mTime;
@@ -119,9 +119,9 @@ void CustomEngineMainDemo::initPhysics()
         if (physics_param->mEnableContactAwareControl)
         {
             mGenWorld->SetEnableContacrAwareControl();
-            mController = mGenWorld->GetContactAwareController();
-            mController->SetTraj(gContactAwareTraj, "tmp_traj.json", true);
-            mController->SetBulletGUIHelperInterface(m_guiHelper);
+            mAwareController = mGenWorld->GetContactAwareController();
+            mAwareController->SetTraj(gContactAwareTraj, "tmp_traj.json", true);
+            mAwareController->SetBulletGUIHelperInterface(m_guiHelper);
         }
     }
 
@@ -230,12 +230,12 @@ void CustomEngineMainDemo::MultistepSim(float dt)
                 elasped_time = dt;
             dt -= elasped_time;
 
-            if (physics_param->mEnableContactAwareControl && mController->IsEnd())
+            if (physics_param->mEnableContactAwareControl && mAwareController->IsEnd())
             {
                 std::cout << "traj terminated without save\n";
                 exit(0);
-                mController->Reset();
-                mController->SetTraj(gContactAwareTraj, "tmp_traj.json", true);
+                mAwareController->Reset();
+                mAwareController->SetTraj(gContactAwareTraj, "tmp_traj.json", true);
             }
             mGenWorld->ClearForce();
             mGenWorld->StepSimulation(

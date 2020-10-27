@@ -1,5 +1,4 @@
 #include "btGenFrameByFrameCalculator.h"
-#include "../examples/CommonInterfaces/CommonGUIHelperInterface.h"
 #include "BulletGenDynamics/btGenController/FBFCalculator/btGenFBFConstraint.h"
 #include "BulletGenDynamics/btGenController/FBFCalculator/btGenFBFEnergyTerm.h"
 #include "BulletGenDynamics/btGenController/QPSolver/MatlabQPSolver.h"
@@ -187,7 +186,7 @@ void btGenFBFTargetCalculator::CalcTarget(double dt, int target_frame_id,
         ClearDrawPoints();
         for (auto &pt : mContactPoints)
         {
-            DrawPoint(pt->mWorldPos.segment(0, 3));
+            DrawPoint(pt->mWorldPos.segment(0, 3), 0.05);
         }
     }
 }
@@ -980,46 +979,3 @@ int btGenFBFTargetCalculator::GetCalculatedNumOfContact() const
     return mContactPoints.size();
 }
 
-// struct GUIHelperInterface *gGUIHelper;
-void btGenFBFTargetCalculator::DrawPoint(const tVector3d &pos, double radius)
-{
-    if (mBulletGUIHelper == nullptr)
-        return;
-    btCollisionShape *colShape = nullptr;
-    btCollisionObject *obj = new btCollisionObject();
-    colShape = new btSphereShape(btScalar(radius));
-    btTransform trans;
-    // trans.setOrigin(btVector3(pos[0], pos[1], pos[2]));
-    trans.setOrigin(btVector3(pos[0], pos[1], pos[2]));
-    obj->setWorldTransform(trans);
-    obj->setCollisionShape(colShape);
-    obj->setCollisionFlags(0);
-    mWorld->GetInternalWorld()->addCollisionObject(obj, 0, 0);
-    mDrawPointsList.push_back(obj);
-
-    auto inter_world = mWorld->GetInternalWorld();
-    // std::cout << "draw point " << pos.transpose() << std::endl;
-    // std::cout << "num collision objs = "
-    //           << inter_world->getNumCollisionObjects() << std::endl;
-}
-
-void btGenFBFTargetCalculator::ClearDrawPoints()
-{
-    if (mBulletGUIHelper == nullptr)
-        return;
-    auto inter_world = mWorld->GetInternalWorld();
-    // std::cout << "clear points num = " << mDrawPointsList.size()
-    //           << " now = " << inter_world->getCollisionObjectArray().size()
-    //           << std::endl;
-
-    for (auto &pt : mDrawPointsList)
-    {
-        // inter_world->getCollisionObjectArray().remove(pt);
-        delete pt->getCollisionShape();
-        mWorld->GetInternalWorld()->removeCollisionObject(pt);
-        mBulletGUIHelper->removeGraphicsInstance(pt->getUserIndex());
-        delete pt;
-    }
-    // std::cout << "[debug] clear points " << mDrawPointsList.size() << std::endl;
-    mDrawPointsList.clear();
-}

@@ -1,6 +1,6 @@
 {
     "enable_gravity": true,
-    "contact_response_mode": "LCP",
+    "contact_response_mode": "No",
     "rigid_damping": 0,
     "mb_damping1": 0,
     "mb_damping2": 0,

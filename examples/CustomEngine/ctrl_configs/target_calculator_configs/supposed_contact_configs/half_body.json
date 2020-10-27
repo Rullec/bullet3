@@ -1,0 +1,42 @@
+{
+    "skeleton_path": "/home/xudong/Projects/DeepMimic/data/0908/characters/skeleton_legs.json",
+    "num_of_supposed_contact_points": 4,
+    "supposed_contact_point_lst": [
+        {
+            "link_name": "LFootTongue",
+            "link_id": 6,
+            "local_pos": [
+                0,
+                0.1,
+                -0.02
+            ]
+        },
+        {
+            "link_name": "LFootTongue",
+            "link_id": 6,
+            "local_pos": [
+                0,
+                -0.1,
+                -0.02
+            ]
+        },
+        {
+            "link_name": "RFootTongue",
+            "link_id": 3,
+            "local_pos": [
+                0,
+                0.1,
+                0.02
+            ]
+        },
+        {
+            "link_name": "RFootTongue",
+            "link_id": 3,
+            "local_pos": [
+                0,
+                -0.1,
+                0.02
+            ]
+        }
+    ]
+}
