@@ -2,6 +2,7 @@
 #define ROBOT_BASEOBJECT_H
 
 #include "ModelEigenUtils.h"
+#include <map>
 #include <string>
 #include <vector>
 
@@ -20,7 +21,7 @@ enum ShapeType
 const std::string shape_type_keys[TOTAL_SHAPE_TYPE] = {"sphere", "box",
                                                        "capsule", "cylinder"};
 
-enum
+enum eRootFreedomEnum
 {
     TRANSLATE_X = 0,
     TRANSLATE_Y,
@@ -184,10 +185,10 @@ public:
     virtual Freedom *AddFreedom(Freedom &f) { return nullptr; }
     virtual void InitTerms() = 0;
     void InitPrevFreedomIds();
+    void InitGlobalToTotalFreedomMap();
     const tVector3d &GetInitRotation() const { return init_rotation; }
 
     int GetNumTotalFreedoms() const { return total_freedoms; }
-    virtual const tMatrixXd &GetJKDot() const { return JK_dot; }
     void SetNumTotalFreedoms(int total_freedoms)
     {
         this->total_freedoms = total_freedoms;
@@ -200,12 +201,17 @@ public:
 
     // ====================================================
     // modeified 04/06/20,
-    const tMatrixXd &GetJKv_dq(int i) const;
-    const tMatrixXd &GetJKw_dq(int i) const;
-    const tMatrix &GetMWQ(int i);
+    const tMatrixXd &GetdJKvdq_nxnversion(int i) const;
+    const tMatrixXd &GetdJKwdq_nxnversion(int i) const;
+    tMatrixXd GetdJkdq_6xnversion(int i)
+        const; // needs to crate new matrix, so we cannot return a const reference
+    tMatrixXd GetdJKvdq_3xnversion(int i) const;
+    tMatrixXd GetdJKwdq_3xnversion(int i) const;
+    const tMatrix &GetMWQ(int i) const;
+    virtual const tMatrix &GetMWQQ(int i, int j) const = 0;
     virtual const tMatrix &
-    GetMWQQ(int i, int j) = 0; // \frac{\partial^2 R} {\partial q_i, \partial
-                               // q_i} dim=(4, 4), !! only works for joint
+    GetMWQQQ(int i, int j,
+             int k) const = 0; // please check the comment of variable mWqqq
     //=====================================================
 
     virtual void ComputeJacobiByGivenPoint(tMatrixXd &j,
@@ -220,11 +226,14 @@ public:
     virtual void ComputeJKv();
     virtual void ComputeJK();
     virtual void ComputeJK_dot();
-    virtual void ComputeJKv_dot(tVectorXd &q_dot, tVector3d &p){};
-    virtual void ComputeJKw_dot(tVectorXd &q_dot){};
+    virtual void ComputeJKv_dot(const tVectorXd &q_dot, const tVector3d &p){};
+    virtual void ComputeJKw_dot(const tVectorXd &q_dot){};
+    virtual void ComputedJkvdot_dq(const tVectorXd &qdot, const tVector3d &p){};
+    virtual void ComputedJkwdot_dq(const tVectorXd &qdot){};
     virtual void ComputeDJkvdq(const tVector3d &p) {}
     virtual void ComputeDJkwdq() {}
-
+    virtual void ComputeDDJkvddq(const tVector3d &p){};
+    virtual void ComputeDDJkwdqq(){};
     double GetMass() const { return mass; }
 
     std::vector<int> &GetPrevFreedomIds() { return dependent_dof_id; };
@@ -246,8 +255,15 @@ public:
     const tMatrixXd &GetJKw() const { return JK_w; }
     const tMatrixXd &GetJKv() const { return JK_v; }
     const tMatrixXd &GetJK() const { return JK; }
-    const tMatrixXd &GetJKv_dot() const { return JK_v_dot; }
-    const tMatrixXd &GetJKw_dot() const { return JK_w_dot; }
+    const tMatrixXd &GetJKvdot() const;
+    const tMatrixXd &GetJKwdot() const;
+    virtual const tMatrixXd &GetJKDot() const { return JK_dot; }
+    tMatrixXd GetJKw_reduced() const;
+    tMatrixXd GetJKv_reduced() const;
+    tMatrixXd GetJK_reduced() const;
+    tMatrixXd GetJKvdot_reduced() const;
+    tMatrixXd GetJKwdot_reduced() const;
+    tMatrixXd GetJkdot_recuded() const;
     const tMatrixXd &GetMassMatrix() const { return mass_matrix; }
     virtual void ComputeMassMatrix() {}
     void SetGlobalFreedoms(int gf) { this->global_freedom = gf; }
@@ -255,13 +271,12 @@ public:
     void SetOmega(tVector3d &omega) { this->omega = omega; }
     const tVector3d &GetOmega() const { return omega; }
 
-    void SetComputeSecondDerive(bool flag)
-    {
-        this->compute_second_derive = flag;
-    }
-    bool GetComputeSecondDerive() const { return this->compute_second_derive; }
-
+    void SetComputeSecondDerive(bool flag);
+    bool GetComputeSecondDerive() const;
+    void SetComputeThirdDerive(bool flag);
+    bool GetComputeThirdDeriv() const;
     const tVector3f &GetMeshScale() const { return mesh_scale; }
+    tVectorXd GetShortedFreedom(const tVectorXd &qx_log) const;
 
 protected:
     int id;
@@ -291,8 +306,11 @@ protected:
     EIGEN_V_tMatrixD mWq;     // \partial global transform over \partial q
     int total_freedoms;       // total_freedom = prev_freedom + local_freedom
     int prev_freedoms;        // the freedoms owned by my parent joints
-    std::vector<int> dependent_dof_id;
-    int local_freedom; // the freedom owned by myself
+    std::vector<int>
+        dependent_dof_id; // map from total_freedom_id to global_freedom_id
+    std::map<int, int>
+        map_from_global_to_total_freedom; // map from global_freedom_id to total_freedom_id
+    int local_freedom;                    // the freedom owned by myself
     tMatrix local_transform;
     tMatrix global_transform;
 
@@ -309,13 +327,12 @@ protected:
 
     JointType joint_type;
 
-    // ========================For Torque
-    // minimization=============================
+    // ========================For Torque minimization=============================
     tMatrix3d Ibody;
     int shape_type;
     tMatrixXd JK_w;
     tMatrixXd JK_v;
-    tMatrixXd JK_v_dot;
+    tMatrixXd JK_v_dot; // \dot{Jkv} in global freedoms
     tMatrixXd JK_w_dot;
     tMatrixXd JK;
     tMatrixXd JK_dot;
@@ -323,12 +340,25 @@ protected:
     int global_freedom; // global freedom is all freedoms of the whole character
     tVector3d omega;
 
-    EIGEN_V_MATXD jkv_dq; // 3 nxn
-    EIGEN_V_MATXD jkw_dq;
+    EIGEN_V_MATXD
+    jkv_dq; // vector<tMatrix: nxn>, vector size = 3 (one matrix per channel), d(Jv)/dq, global_freedoms
+    EIGEN_V_MATXD
+    jkw_dq; // vector<tMatrix: nxn>, vector size = 3(one matrix per channel), d(Jw)/dq, global_freedoms
+    EIGEN_VV_MATXD
+    ddjkv_dqq; // vector<vector<tMatrix: 3xn>>, the index of two outer layer is the freedom index, d^2(Jv)/d(qiqj), only store the lower diagnoal, total_freedoms
+    EIGEN_VV_MATXD
+    ddjkw_dqq; // vector<vector<tMatrix: 3xn>>, the index of two outer layer is the freedom index, d^2(Jw)/d(qiqj), only store the lower diagnoal, total_freedoms
+
+    EIGEN_V_MATXD
+    dJkvdot_dq; // vector<tMatrixXd : 3xn>, where n is the total_freedoms but not global_freedoms. d(Jkvdot)/dq, total_freedoms
+    EIGEN_V_MATXD
+    dJkwdot_dq; // vector<tMatrixXd : 3xn>, where n is the total_freedoms but not global_freedoms. d(JKwdot)/dq, total_freedoms
 
     // ============================================================================
 
-    bool compute_second_derive;
+    bool
+        compute_second_derive; // switch for calculating second-order derivatives
+    bool compute_third_derive; // switch for calculating third-order derivatives
 };
 
 #endif // ROBOT_BASEOBJECT_H

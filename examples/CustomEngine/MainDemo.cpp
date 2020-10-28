@@ -69,6 +69,7 @@ struct CustomEngineMainDemo : public CommonRigidBodyBase
 protected:
     void MultistepSim(float dt);
     void SinglestepSim(float dt);
+    void Test();
     btGeneralizeWorld *mGenWorld;
     btGenContactAwareController *mAwareController;
     double mTimestep;
@@ -101,7 +102,8 @@ void CustomEngineMainDemo::exitPhysics()
 void CustomEngineMainDemo::initPhysics()
 {
     srand(0);
-    physics_param = new tParams("./examples/CustomEngine/sim_configs/config.json");
+    physics_param =
+        new tParams("./examples/CustomEngine/sim_configs/config.json");
 
     m_guiHelper->setUpAxis(1);
 
@@ -116,6 +118,7 @@ void CustomEngineMainDemo::initPhysics()
     if (physics_param->mAddMultibody)
     {
         mGenWorld->AddMultibody(physics_param->mMultibodyPath);
+        // Test();
         if (physics_param->mEnableContactAwareControl)
         {
             mGenWorld->SetEnableContacrAwareControl();
@@ -230,12 +233,14 @@ void CustomEngineMainDemo::MultistepSim(float dt)
                 elasped_time = dt;
             dt -= elasped_time;
 
-            if (physics_param->mEnableContactAwareControl && mAwareController->IsEnd())
+            if (physics_param->mEnableContactAwareControl &&
+                mAwareController->IsEnd())
             {
                 std::cout << "traj terminated without save\n";
                 exit(0);
                 mAwareController->Reset();
-                mAwareController->SetTraj(gContactAwareTraj, "tmp_traj.json", true);
+                mAwareController->SetTraj(gContactAwareTraj, "tmp_traj.json",
+                                          true);
             }
             mGenWorld->ClearForce();
             mGenWorld->StepSimulation(
@@ -268,4 +273,41 @@ void CustomEngineMainDemo::SinglestepSim(float dt)
 
     global_frame_id++;
     return;
+}
+#include "BulletGenDynamics/btGenModel/Link.h"
+#include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
+void CustomEngineMainDemo::Test()
+{
+    std::cout << "begin test\n";
+    auto mb = mGenWorld->GetMultibody();
+    mb->SetComputeThirdDerive(true);
+    int dof = mb->GetNumOfFreedom();
+    tVectorXd q = tVectorXd::Random(dof), qdot = tVectorXd::Random(dof);
+    mb->SetqAndqdot(q, qdot);
+    // for (int i = 0; i < mb->GetNumOfLinks(); i++)
+    // {
+    //     auto link = dynamic_cast<Link *>(mb->GetLinkById(i));
+    //     std::cout << "link " << i << " M = \n"
+    //               << link->GetMassMatrix() << std::endl;
+    // }
+    // mb->TestdMassMatrixdq();
+    // mb->TestSecondJacobian();
+    // mb->TestThirdJacobian();
+    // mb->TestdJdotdq();
+    // mb->TestThirdJacobian();
+    // mb->TestdJdotdq();
+    // mb->TestThirdJacobian();
+    // mb->TestdJdotdq();
+    // mb->TestJacobian();
+
+    // mb->TestdJdotdq();
+    // mb->TestSecondJacobian();
+    // mb->TestReducedAPI();
+    // mb->TestThirdJacobian();
+    // mb->TestdJdotdqdot();
+    // mb->TestDCoriolisMatrixDq();
+    mb->TestDCoriolisMatrixDqdot();
+    
+    std::cout << "test done\n";
+    exit(0);
 }

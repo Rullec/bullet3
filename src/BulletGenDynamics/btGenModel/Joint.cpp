@@ -53,8 +53,7 @@ Freedom *Joint::GetFreedomByAxis(tVector3d axis, int type)
 }
 
 /**
- * \brief					��ʼ����ǰ�ؽ����������ɶȸ���, mTq
- * �� mWq.
+ * \brief					Init some variables and the relationship between parent and child
  */
 void Joint::InitTerms()
 {
@@ -83,6 +82,7 @@ void Joint::InitTerms()
     {
         dependent_dof_id.push_back(f.id);
     }
+    InitGlobalToTotalFreedomMap();
     total_freedoms = prev_freedoms + GetNumOfFreedom();
     local_jac_buf.resize(3, total_freedoms);
     InitMatrix();
@@ -96,6 +96,7 @@ void Joint::InitMatrix()
     r_m.resize(local_freedom);
     r_m_first_deriv.resize(local_freedom);
     r_m_second_deriv.resize(local_freedom);
+    r_m_third_deriv.resize(local_freedom);
     mTq.resize(local_freedom, tMatrix::Zero());
     mWq.resize(total_freedoms, tMatrix::Zero());
 
@@ -116,23 +117,51 @@ void Joint::InitMatrix()
     // jkv_dq.resize(global_freedom, tMatrixXd::Zero(3, global_freedom));
     // jkw_dq.resize(global_freedom, tMatrixXd::Zero(3, global_freedom));
 
+    // =================second order===============
     mTqq.resize(local_freedom);
 
     for (int i = 0; i < local_freedom; ++i)
     {
         mTqq[i].resize(i + 1);
+        for (auto &x : mTqq[i])
+            x.setZero();
     }
 
     mWqq.resize(total_freedoms);
     for (int i = 0; i < total_freedoms; i++)
     {
         mWqq[i].resize(i + 1);
+        for (auto &x : mWqq[i])
+            x.setZero();
+    }
+
+    // ==================third order================
+    mTqqq.resize(local_freedom);
+    for (int i = 0; i < local_freedom; i++)
+    {
+
+        mTqqq[i].resize(i + 1);
+        for (int j = 0; j <= i; j++)
+        {
+            // std::cout << "mTqqq " << i << " " << j << " resize\n";
+            mTqqq[i][j].resize(j + 1, tMatrix::Zero());
+        }
+    }
+    mWqqq.resize(total_freedoms);
+    for (int i = 0; i < total_freedoms; i++)
+    {
+        mWqqq[i].resize(i + 1);
+        for (int j = 0; j <= i; j++)
+        {
+            // std::cout << "mWqqq " << i << " " << j << " resize\n";
+            mWqqq[i][j].resize(j + 1, tMatrix::Zero());
+        }
     }
 }
 
 /**
- * \brief					���µ�ǰ�Ƕ���joint��ȫ����Ϣ
- * \param compute_gradient	�Ƿ�����ݶȣ��ڲ���ʱ�������ݶȣ����Ż�ʱ��Ҫ�����ݶȡ�?
+ * \brief					update the status of joint
+ * \param compute_gradient	update the gradient? no matter 1 or 2 or 3 order
  */
 void Joint::UpdateState(bool compute_gradient)
 {
@@ -142,20 +171,38 @@ void Joint::UpdateState(bool compute_gradient)
     ComputeLocalTransform();
     // 3. compute global transform
     ComputeGlobalTransform();
-    // 4. compute mTq, mWq
+    // 4. compute derivatives
     if (compute_gradient)
     {
-        ComputeTransformFirstDerive();
+        // first order values are computed default
+        ComputeLocalTransformFirstDerive();
         ComputeGlobalTransformFirstDerive();
 
         ComputeJKv();
         ComputeJKw();
         ComputeJK();
+
+        // second order derivatives need another switch
         if (compute_second_derive)
         {
             ComputeLocalSecondDeriveMatrix();
             ComputeLocalTransformSecondDerive();
             ComputeGlobalTransformSecondDerive();
+        }
+
+        // third order derivatives need another switch
+        if (compute_third_derive)
+        {
+            if (compute_second_derive == false)
+            {
+                std::cout << "[error] Joint::UpdateState: 3rd derivatives can "
+                             "only be "
+                             "calculated when 2ed derivatives are availiable\n";
+                exit(1);
+            }
+            ComputeLocalThirdDeriveMatrix();
+            ComputeLocalTransformThirdDerive();
+            ComputeGlobalTransformThirdDerive();
         }
     }
 }
@@ -189,9 +236,7 @@ void Joint::UpdateMatrix()
 }
 
 /**
- * \brief
- *����ֲ������һ�׵������� \frac{\partial
- *R_L}{\partial q}
+ * \brief       Compute the first derivatives of rot mat \frac{\partial R_L}{\partial q}
  */
 void Joint::ComputeLocalFirstDeriveMatrix()
 {
@@ -215,9 +260,7 @@ void Joint::ComputeLocalFirstDeriveMatrix()
 }
 
 /**
- * \brief
- *����ֲ�����Ķ��׵������� \frac{\partial^2
- *R_L}{\partial q_i \partial q_j}
+ * \brief       compute the second order derivatives of rotation matrix \frac{\partial^2 R_L}{\partial q_i \partial q_j}
  */
 void Joint::ComputeLocalSecondDeriveMatrix()
 {
@@ -241,8 +284,33 @@ void Joint::ComputeLocalSecondDeriveMatrix()
 }
 
 /**
- * \brief					���� local orientation
- * \param m					���ؽ��?
+ * \brief       compute the third order derivatives of the rot mat
+ * 
+*/
+void Joint::ComputeLocalThirdDeriveMatrix()
+{
+    int count = 0;
+    for (auto &f : freedoms)
+    {
+        if (f.axis[0] == 1)
+        {
+            xconventionRotation_dxdxdx(r_m_third_deriv[count], f.v);
+        }
+        else if (f.axis[1] == 1)
+        {
+            yconventionRotation_dydydy(r_m_third_deriv[count], f.v);
+        }
+        else if (f.axis[2] == 1)
+        {
+            zconventionRotation_dzdzdz(r_m_third_deriv[count], f.v);
+        }
+        count++;
+    }
+}
+
+/**
+ * \brief					Get the local orientation of this joint
+ * \param m					local orientation of this joint
  */
 void Joint::GetRotations(tMatrix3d &m)
 {
@@ -255,11 +323,19 @@ void Joint::GetRotations(tMatrix3d &m)
 }
 
 /**
- * \brief					���� mTq
+ * \brief					compute mTq, d(local_rot)/dq, 
+ *                          local_rot = Rz * Ry * Rx
  */
-void Joint::ComputeTransformFirstDerive()
+void Joint::ComputeLocalTransformFirstDerive()
 {
+    // 1. first calculate the dRx/dqx, dRy/dqy, dRz/dqz
     ComputeLocalFirstDeriveMatrix();
+
+    /*
+        2. T is the local transform matrix
+        T = Rz * Ry * Rx
+        mTq = [dT/dqx, dT/dqy, dT/dqz]
+    */
     if (mTq.size() == 1)
     {
         mTq[0] = r_m_first_deriv[0];
@@ -284,7 +360,14 @@ void Joint::ComputeTransformFirstDerive()
 }
 
 /**
- * \brief					ͨ�� mTq ���� mWq
+ * \brief					ͨCalculate mWq from mTq.
+ * 
+ * T is the local rotation matrix, T_local = Rz * Ry * Rx
+ * W is the world rotation matrix, W = W_parent * T_child_to_parent * T_local
+ * 
+ * this function tries to calculate dW/dq, q is all dependent freedom of this joint
+ * For prev freedoms: dW/dq = d(W_parent)/dq * T_child_to_parnet * T_local
+ * For joint's local freedoms: dW/dq = W_parent * T_child_to_parent * dT_local/dq
  */
 void Joint::ComputeGlobalTransformFirstDerive()
 {
@@ -326,9 +409,9 @@ void Joint::ComputeGlobalTransformFirstDerive()
 }
 
 /**
- * \brief					���� mTqq
- *							mTqq = \frac{\partial^2
- *R_L}{\partial q_i \partial q_j}
+ * \brief       compute the second order derivation of
+ *              local transform matrix T w.r.t q
+ *	    mTqq = \frac{\partial^2 R_L}{\partial q_i \partial q_j}
  */
 void Joint::ComputeLocalTransformSecondDerive()
 {
@@ -371,9 +454,49 @@ void Joint::ComputeLocalTransformSecondDerive()
 }
 
 /**
- * \brief					���� mWqq
- *							mWqq = \frac{\partial^2
- *R_W}{\partial q_i \partial q_j}
+ * \brief           compute mTqqq, d^3(T)/d(qi, qj, qk), i, j, k \in {x, y, x} = mTqqq[i][j][k]
+ *  This derivatives can be grouped into 3 types:
+ *  1. i!=j, i!=k, j!=k: 9 cases, compute 1 time, write 6 times
+ * 
+ *  2. (i==j or i==k or j==k) but the left two are different: 18 cases
+ *      equal index can be x or y or z. and the diff can be (yz) or (xy) or (xy)
+ *      computation 6 times, write 18 times
+ *  3. (i==j==k) 3 cases
+ *      all is equal to x, y, or z. computation 3 times, write 3 times
+ *  The above statement is about spherical joint. For revolute joint there is only one entry
+ *
+*/
+void Joint::ComputeLocalTransformThirdDerive()
+{
+    switch (GetJointType())
+    {
+    case JointType::FIXED_JOINT:
+    {
+        return;
+    }
+    break;
+    case JointType::SPHERICAL_JOINT:
+    {
+        ComputeLocalTransformThirdDeriveSpherical();
+    }
+    break;
+    case JointType::REVOLUTE_JOINT:
+    {
+        mTqqq[0][0][0] = r_m_third_deriv[0];
+    }
+    break;
+    default:
+        std::cout
+            << "[error] Joint compute 3rd derivatives unsupport joint type "
+            << GetJointType() << std::endl;
+        exit(1);
+        break;
+    }
+}
+
+/**
+ * \brief					Compute the 2ed order derivation of global trans mat w.r.t freedoms
+ *							mWqq = \frac{\partial^2R_W}{\partial q_i \partial q_j}
  */
 void Joint::ComputeGlobalTransformSecondDerive()
 {
@@ -445,8 +568,8 @@ void Joint::ComputeGlobalTransformSecondDerive()
 }
 
 /**
- * \brief					calculate the jacobian in given
- * position \param j					jacobian buffer output
+ * \brief					calculate the jacobian in given position 
+ * \param j					jacobian buffer output
  * \param p					local offset of targeted point
  */
 void Joint::ComputeJacobiByGivenPoint(tMatrixXd &j, const tVector &p) const
@@ -483,11 +606,9 @@ void Joint::ComputeHessianByGivenPoint(EIGEN_V_MATXD &ms,
 }
 
 /**
- * \brief			Compute Jacobian (Jv) for this point p with
- * respect to the whole DOF of this skeleton \param j			the
- * reference jacobian mat, it will be revised in the function
- * \param p			the target point where we want to get the
- * jacobian(Jv), expressed in joint local frame
+ * \brief			Compute Jacobian (Jv) for this point p with respect to the whole DOF of this skeleton 
+ * \param j			the reference jacobian mat, it will be revised in the function
+ * \param p			the target point where we want to get the jacobian(Jv), expressed in joint local frame
  */
 void Joint::ComputeJacobiByGivenPointTotalDOF(tMatrixXd &j,
                                               const tVector &p) const
@@ -529,7 +650,7 @@ void Joint::ComputeJacobiByGivenPointTotalDOF(tMatrixXd &j,
 //	JK_dot.block(3, 0, 3, global_freedom) = JK_w_dot;
 //}
 
-void Joint::ComputeJKv_dot(tVectorXd &q_dot, tVector3d &p)
+void Joint::ComputeJKv_dot(const tVectorXd &q_dot, const tVector3d &p)
 {
     Printer::Error("Calling ComputeJKv_dot in Joint");
     exit(-1);
@@ -546,7 +667,7 @@ void Joint::ComputeJKv_dot(tVectorXd &q_dot, tVector3d &p)
     }
 }
 
-void Joint::ComputeJKw_dot(tVectorXd &q_dot)
+void Joint::ComputeJKw_dot(const tVectorXd &q_dot)
 {
     Printer::Error("Calling ComputeJKw_dot in Joint");
     exit(-1);
@@ -603,7 +724,7 @@ void Joint::ComputeGlobalTransform()
     pos[2] = p_[2];
 }
 
-tMatrix &Joint::GetMWQQ(int i, int j)
+const tMatrix &Joint::GetMWQQ(int i, int j) const
 {
     int r = std::max(i, j);
     int c = std::min(i, j);
@@ -658,3 +779,237 @@ double Joint::GetTorqueLim() const { return mTorqueLim; }
 
 void Joint::SetDiffWeight(double weight) { mDiffWeight = weight; }
 double Joint::GetDiffWeight() const { return mDiffWeight; }
+
+/** \brief           compute spherical joint mTqqq, d^3(T)/d(qi, qj, qk), i, j, k \in {x, y, x} = mTqqq[i][j][k]
+ *  This derivatives can be grouped into 3 types:
+ *  group 1. i!=j, i!=k, j!=k: 9 cases, compute 1 time, write 6 times
+ * 
+ *  group 2. (i==j or i==k or j==k) but the left two are different: 18 times
+ *      equal index can be x or y or z. and the diff can be (yz) or (xy) or (xy)
+ *      computation 6 times, write 18 times
+ *  group 3. (i==j==k) 3 cases
+ *      all is equal to x, y, or z. computation 3 times, write 3 times
+ */
+void Joint::ComputeLocalTransformThirdDeriveSpherical()
+{
+    // 1. check joint type
+    if (joint_type != JointType::SPHERICAL_JOINT)
+    {
+        std::cout
+            << "[error] Joint::compute local transform third derive spherical "
+               "should not be called when joint type is "
+            << joint_type << std::endl;
+        exit(1);
+    }
+
+    // 2. handle the group 1
+    tMatrix buffer;
+    {
+        // computation
+        Tools::AVX4x4v1_3mat(r_m_first_deriv[2], r_m_first_deriv[1],
+                             r_m_first_deriv[0], buffer);
+
+        // write for 6 times
+        // memcpy(mTqqq[0][1][2].data(), buffer.data(), sizeof(double) * 16);
+        // memcpy(mTqqq[0][2][1].data(), buffer.data(), sizeof(double) * 16);
+        // memcpy(mTqqq[1][0][2].data(), buffer.data(), sizeof(double) * 16);
+        // memcpy(mTqqq[1][2][0].data(), buffer.data(), sizeof(double) * 16);
+        memcpy(mTqqq[2][1][0].data(), buffer.data(), sizeof(double) * 16);
+        // memcpy(mTqqq[2][0][1].data(), buffer.data(), sizeof(double) * 16);
+    }
+
+    // 3. handle the group 2
+    // T = Rz * Ry * Rx
+    { // 3.1 dT/(dqz dqz dqx), Ry = Ry
+
+        {
+            buffer.noalias() =
+                r_m_second_deriv[2] * r_m[1] * r_m_first_deriv[0];
+            memcpy(mTqqq[2][2][0].data(), buffer.data(), sizeof(double) * 16);
+            // memcpy(mTqqq[2][0][2].data(), buffer.data(), sizeof(double) * 16);
+            // memcpy(mTqqq[0][2][2].data(), buffer.data(), sizeof(double) * 16);
+        }
+        // 3.2 dT/(dqz dqz dqy), Rx = Rx
+        {
+            buffer.noalias() =
+                r_m_second_deriv[2] * r_m_first_deriv[1] * r_m[0];
+            memcpy(mTqqq[2][2][1].data(), buffer.data(), sizeof(double) * 16);
+            // memcpy(mTqqq[2][1][2].data(), buffer.data(), sizeof(double) * 16);
+            // memcpy(mTqqq[1][2][2].data(), buffer.data(), sizeof(double) * 16);
+        }
+        // 3.1 dT/(dqy dqy dqx), Ry = Ry
+        {
+            buffer.noalias() =
+                r_m[2] * r_m_second_deriv[1] * r_m_first_deriv[0];
+            memcpy(mTqqq[1][1][0].data(), buffer.data(), sizeof(double) * 16);
+            // memcpy(mTqqq[1][0][1].data(), buffer.data(), sizeof(double) * 16);
+            // memcpy(mTqqq[0][1].data(), buffer.data(), sizeof(double) * 16);
+        }
+        // 3.2 dT/(dqy dqy dqz), Rx = Rx
+        {
+            buffer.noalias() =
+                r_m_first_deriv[2] * r_m_second_deriv[1] * r_m[0];
+            // memcpy(mTqqq[1][1][2].data(), buffer.data(), sizeof(double) * 16);
+            // memcpy(mTqqq[1][2][1].data(), buffer.data(), sizeof(double) * 16);
+            memcpy(mTqqq[2][1][1].data(), buffer.data(), sizeof(double) * 16);
+        }
+        // 3.1 dT/(dqx dqx dqy)
+        {
+            buffer.noalias() =
+                r_m[2] * r_m_first_deriv[1] * r_m_second_deriv[0];
+            // memcpy(mTqqq[0][0][1].data(), buffer.data(), sizeof(double) * 16);
+            // memcpy(mTqqq[0][1][0].data(), buffer.data(), sizeof(double) * 16);
+            memcpy(mTqqq[1][0][0].data(), buffer.data(), sizeof(double) * 16);
+        }
+
+        // 3.2 dT/(dqx dqx dqz)
+        {
+            buffer.noalias() =
+                r_m_first_deriv[2] * r_m[1] * r_m_second_deriv[0];
+            // memcpy(mTqqq[0][0][2].data(), buffer.data(), sizeof(double) * 16);
+            // memcpy(mTqqq[0][2][0].data(), buffer.data(), sizeof(double) * 16);
+            memcpy(mTqqq[2][0][0].data(), buffer.data(), sizeof(double) * 16);
+        }
+    }
+
+    // 4. handle the group 3
+    // dT^3/d^3qz
+    buffer.noalias() = r_m_third_deriv[2] * r_m[1] * r_m[0];
+    memcpy(mTqqq[2][2][2].data(), buffer.data(), sizeof(double) * 16);
+
+    // dT^3/d^3qy
+    buffer.noalias() = r_m[2] * r_m_third_deriv[1] * r_m[0];
+    memcpy(mTqqq[1][1][1].data(), buffer.data(), sizeof(double) * 16);
+
+    // dT^3/^3qz
+    buffer.noalias() = r_m[2] * r_m[1] * r_m_third_deriv[0];
+    memcpy(mTqqq[0][0][0].data(), buffer.data(), sizeof(double) * 16);
+}
+
+/**
+ * \brief               Compute the third derivatives of world transform matrix W w.r.t q, aka mWqqq
+ *          
+ *  W is the local to world transform matrix
+ *      W = W_parent * T_child_to_parent * T_local     
+ * 
+ * so that, mWqqq[i][j][k] = d(W)/d(qi, qj, qk), i,j,k \in [0, 1, 2, ..., total_freedoms]
+ *  
+ *  total_freedoms = prev_freedoms(ancestors' freedom) + local_freedoms(myself's freedom)
+ * if i, j, k    
+*/
+void Joint::ComputeGlobalTransformThirdDerive()
+{
+    tMatrix child_to_parent;
+    if (parent == nullptr)
+        child_to_parent = init_rotation_matrix_4x4;
+    else
+        child_to_parent = rot_parent_child;
+    // visit the upper tensor
+    tMatrix buffer;
+    // the dof index "i" is in the range of my own dependent freedoms, [0, total_freedoms - 1]
+    for (int i = total_freedoms - 1; i >= 0; i--)
+        for (int j = i; j >= 0; j--)
+            for (int k = j; k >= 0; k--)
+            {
+                // k <= j <= i
+
+                if (i < prev_freedoms)
+                {
+                    // all derivatives are about previous freedoms
+                    buffer.noalias() = parent_joint->GetMWQQQ(i, j, k) *
+                                       child_to_parent * local_transform;
+                }
+                else if (j < prev_freedoms)
+                {
+                    // k, j are about previous freedoms
+                    // i is self freedoms
+                    buffer.noalias() = parent_joint->GetMWQQ(k, j) *
+                                       child_to_parent *
+                                       GetMTQ(i - prev_freedoms);
+                }
+                else if (k < prev_freedoms)
+                {
+                    // k is about previous freedoms
+                    // i, j is self freedoms
+                    buffer.noalias() =
+                        parent_joint->GetMWQ(k) * child_to_parent *
+                        GetMTQQ(i - prev_freedoms, j - prev_freedoms);
+                }
+                else
+                {
+                    // i, j, k is all about self freedoms
+                    if (parent) // has parent
+                    {
+                        buffer.noalias() =
+                            parent_joint->GetGlobalTransform() *
+                            child_to_parent *
+                            GetMTQQQ(i - prev_freedoms, j - prev_freedoms,
+                                     k - prev_freedoms);
+                    }
+                    else // no parent
+                    {
+                        buffer.noalias() =
+                            init_rotation_matrix_4x4 * child_to_parent *
+                            GetMTQQQ(i - prev_freedoms, j - prev_freedoms,
+                                     k - prev_freedoms);
+                    }
+                }
+
+                mWqqq[i][j][k].noalias() = buffer;
+            }
+}
+
+/**
+ * \brief           Please check the definition of mWqqq 
+*/
+const tMatrix &Joint::GetMWQQQ(int i, int j, int k) const
+{
+    if (i < j)
+        btMathUtil::Swap(i, j);
+    if (i < k)
+        btMathUtil::Swap(i, k);
+    if (j < k)
+        btMathUtil::Swap(j, k);
+    // sort: i >= j >= k
+    return mWqqq[i][j][k];
+}
+const tMatrix &Joint::GetMTQ(int i) const
+{
+    if (i >= local_freedom)
+    {
+        std::cout << "[error] Joint mTQ idx " << i << " >= local freedom "
+                  << local_freedom << std::endl;
+        exit(1);
+    }
+    return mTq[i];
+}
+
+const tMatrix &Joint::GetMTQQ(int i, int j) const
+{
+    if (i < j)
+        btMathUtil::Swap(i, j);
+    if (i >= local_freedom)
+    {
+        std::cout << "[error] Joint mTQQ idx " << i << " >= local freedom "
+                  << local_freedom << std::endl;
+        exit(1);
+    }
+
+    return mTqq[i][j];
+}
+const tMatrix &Joint::GetMTQQQ(int i, int j, int k) const
+{
+    if (i < j)
+        btMathUtil::Swap(i, j);
+    if (i < k)
+        btMathUtil::Swap(i, k);
+    if (j < k)
+        btMathUtil::Swap(j, k);
+    if (i >= local_freedom)
+    {
+        std::cout << "[error] Joint mTQQQ idx " << i << " >= local freedom "
+                  << local_freedom << std::endl;
+        exit(1);
+    }
+    return mTqqq[i][j][k];
+}

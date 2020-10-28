@@ -81,7 +81,8 @@ public:
     static tMatrix DirToRotMat(const tVector &dir, const tVector &up);
     static double CalcConditionNumber(const tMatrixXd &mat);
     static tMatrixXd JacobPreconditioner(const tMatrixXd &mat);
-    static bool IsHomogeneousPos(const tVector & pos, bool exit_if_not = true);
+    static bool IsHomogeneousPos(const tVector &pos, bool exit_if_not = true);
+    static bool IsSkewMatrix(const tMatrix3d &mat, double eps);
     // static void RoundZero(tMatrixXd &mat, double threshold = 1e-10);
 
     template <typename T>
@@ -105,6 +106,11 @@ public:
     {
         return (x > 0) ? 1 : ((x < 0) ? -1 : 0);
     }
-
+    template <typename T> static void Swap(T &a, T &b)
+    {
+        T tmp = a;
+        a = b;
+        b = tmp;
+    }
 };
 #endif

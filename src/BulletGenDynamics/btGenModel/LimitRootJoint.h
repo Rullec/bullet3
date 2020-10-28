@@ -17,7 +17,7 @@ public:
 
     void Tell() override;
 
-    void ComputeTransformFirstDerive() override;
+    void ComputeLocalTransformFirstDerive() override;
 
     void ComputeLocalTransformSecondDerive() override;
 };

@@ -44,6 +44,8 @@ cRobotModel::cRobotModel()
       com(0, 0, 0), total_mass(0), num_of_valid_joint(0),
       deep_mimic_motion_size(0), model_type(-1), scale(1)
 {
+    compute_second_deriv = false;
+    compute_third_deriv = false;
 }
 void cRobotModel::Init(const char *model_file, double scale, int type)
 {
@@ -120,7 +122,7 @@ std::vector<std::string> cRobotModel::GetJointNames()
 void cRobotModel::ResetPose()
 {
     const std::vector<double> zeros(num_of_freedom, 0);
-    this->Apply(zeros, 0);
+    this->Apply(zeros, 0, true);
 }
 
 void cRobotModel::GetAllLinksRotation(tEigenArr<tMatrix> &r)
@@ -181,12 +183,24 @@ void cRobotModel::GetAllLinksPosTimesMass(tVector3d &p)
 
 void cRobotModel::SetComputeSecondDerive(bool flag)
 {
+    compute_second_deriv = flag;
     for (auto &c : children_chain)
     {
         c->SetComputeSecondDerive(flag);
     }
 }
 
+void cRobotModel::SetComputeThirdDerive(bool flag)
+{
+    compute_third_deriv = flag;
+    for (auto &c : children_chain)
+    {
+        c->SetComputeThirdDerive(flag);
+    }
+}
+
+bool cRobotModel::GetComputeSecondDerive() { return compute_second_deriv; }
+bool cRobotModel::GetComputeThirdDerive() { return compute_third_deriv; }
 /**
  * \brif						����robot model
  * \param model_file			rom�ļ�·��
@@ -1335,10 +1349,10 @@ void cRobotModel::ComputeGradientNumerically()
     for (int order = 0; order < num_of_freedom; order++)
     {
         ans[order] += h;
-        Apply(ans, 0);
+        Apply(ans, 0, false);
         tVector3d p1 = end_joint->GetWorldPos();
         ans[order] -= h;
-        Apply(ans, 0);
+        Apply(ans, 0, false);
         tVector3d p2 = end_joint->GetWorldPos();
         tVector3d g_n = (p1 - p2) / h;
         grad.push_back(g_n);
@@ -1539,10 +1553,10 @@ void cRobotModel::ComputeComJacobiNumerically()
     for (int order = 0; order < num_of_freedom; order++)
     {
         ans[order] += h;
-        Apply(ans, 0);
+        Apply(ans, 0, false);
         tVector3d p1 = com;
         ans[order] -= h;
-        Apply(ans, 0);
+        Apply(ans, 0, false);
         tVector3d p2 = com;
         tVector3d g_n = (p1 - p2) / h;
         grad.push_back(g_n);
@@ -1685,10 +1699,10 @@ void cRobotModel::ComputeLinkJvNumerically()
     for (int order = 0; order < num_of_freedom; ++order)
     {
         ans[order] += h;
-        Apply(ans, 0);
+        Apply(ans, 0, false);
         tVector3d p1 = end_link->GetWorldPos();
         ans[order] -= h;
-        Apply(ans, 0);
+        Apply(ans, 0, false);
         tVector3d p2 = end_link->GetWorldPos();
         tVector3d g_n = (p1 - p2) / h;
         grad.push_back(g_n);
@@ -1708,10 +1722,10 @@ void cRobotModel::ComputeLinkJvNumerically(BaseObject *end_link, int frame,
     for (int order = 0; order < num_of_freedom; ++order)
     {
         ans[st_freedom + order] += h;
-        Apply(ans, st_freedom);
+        Apply(ans, st_freedom, false);
         tVector3d p1 = end_link->GetWorldPos();
         ans[st_freedom + order] -= h;
-        Apply(ans, st_freedom);
+        Apply(ans, st_freedom, false);
         tVector3d p2 = end_link->GetWorldPos();
         tVector3d g_n = (p1 - p2) / h;
         grad.col(order) = g_n;
@@ -1756,14 +1770,17 @@ void cRobotModel::InitModel()
 }
 
 /**
- * \brief
- *��ʼ���˶���������ÿһ����Root��End���˶�������DFS
- *							��¼������˳��֮�����еı������������˳����С�
+ * \brief           Init the whole chilren chain, root joint -> root link -> child joint -> child link
  */
 void cRobotModel::InitChildrenChain()
 {
+    // stack: push & pop
     std::stack<BaseObject *> temp_stack;
     temp_stack.push(root);
+
+    // the parent of links are joints
+    // the parent of joints are links
+    // all freedoms are over joints
     while (!temp_stack.empty())
     {
         auto *p = temp_stack.top();
@@ -1867,11 +1884,11 @@ void cRobotModel::InitMatrix()
 }
 
 /**
- * \brief
- * �����˶��������˶�������ת����ȫ�����꣬��һ�׵�����
+ * \brief           Update the joint & links chain
  */
 void cRobotModel::Update(bool compute_gradient)
 {
+    // for the whole children chain (joint-link), update the rotation & translation
     for (auto *p : children_chain)
     {
         p->UpdateState(compute_gradient);
@@ -2232,6 +2249,11 @@ void cRobotModel::ComputeCoriolisMatrix(tVectorXd &q_dot)
 
         // fout << "---------link " << link->GetName()
         // 	 << " end to calc coriolis matrix---------\n";
+        if (compute_third_deriv == true)
+        {
+            link->ComputedJkvdot_dq(q_dot, tVector3d::Zero());
+            link->ComputedJkwdot_dq(q_dot);
+        }
     }
 }
 
@@ -2297,7 +2319,7 @@ void cRobotModel::ComputedMassMatrixdq(EIGEN_V_MATXD &dMdq) const
         }
 
         // 2. compute dMdq
-        link->ComputedMdq(dMidq);
+        link->ComputedMassMatrixdq_global_freedom(dMidq);
 
         // 3. compute final result
         // dJvi dq: 3xn3n
@@ -2315,8 +2337,22 @@ void cRobotModel::ComputedMassMatrixdq(EIGEN_V_MATXD &dMdq) const
             dMdq[i] += dJdqi.transpose() * link_massmat * Ji;
             dMdq[i] += Ji.transpose() * dMidq[i] * Ji;
             dMdq[i] += Ji.transpose() * link_massmat * dJdqi;
+            // if (i == 6)
+            // {
+            //     std::cout << "------------link " << id << " dof " << i
+            //               << "-----------\n";
+            //     std::cout << "Ji = \n" << Ji << std::endl;
+            //     std::cout << "link_massmat = \n" << link_massmat << std::endl;
+            //     std::cout << "dJdqi = \n" << dJdqi << std::endl;
+            //     std::cout << "dMidqi = \n" << dMidq[i] << std::endl;
+            // }
         }
     }
+
+    // for (int i = 0; i < dof; i++)
+    // {
+    //     std::cout << "dMd" << i << " = \n" << dMdq[i] << std::endl;
+    // }
 }
 
 /**
@@ -2333,7 +2369,7 @@ void cRobotModel::TestLinkdMassMatrixdq()
     {
         auto link = static_cast<Link *>(GetLinkById(id));
         // 1. analytic solution of dMidq
-        link->ComputedMdq(dMidq[id]);
+        link->ComputedMassMatrixdq_global_freedom(dMidq[id]);
 
         // 2. old dMdq
         Mi_old[id] = link->GetMassMatrix();
@@ -2359,9 +2395,9 @@ void cRobotModel::TestLinkdMassMatrixdq()
             // 2.3 compare
             tMatrixXd dMdq_num = (Mi_new[id] - Mi_old[id]) / eps;
             tMatrixXd diff = dMidq[id][i] - dMdq_num;
-            std::cout << "link " << id << " dof " << i
+            std::cout << "[log] TestLinkMassdq link " << id << " dof " << i
                       << " diff = " << diff.norm() << std::endl;
-            if (diff.norm() > eps)
+            if (diff.norm() > eps * 10)
             {
                 std::cout << "dMdq num = \n" << dMdq_num << std::endl;
                 std::cout << "dMdq analytic = \n" << dMidq[id][i] << std::endl;
@@ -2373,8 +2409,7 @@ void cRobotModel::TestLinkdMassMatrixdq()
         q_new[i] -= eps;
     }
     Apply(q_old, true);
-    std::cout << "dMdq verified succ\n";
-    exit(0);
+    std::cout << "[log] dMdq verified succ\n";
 }
 
 /**
@@ -2398,15 +2433,458 @@ void cRobotModel::TestdMassMatrixdq()
         tMatrixXd new_mass_mat = GetMassMatrix();
         tMatrixXd dMassdq_num = (new_mass_mat - old_mass_mat) / eps;
         tMatrixXd diff = dMassdq_num - dMassdq[i];
-        std::cout << "dof " << i << " norm = " << diff.norm() << std::endl;
+        std::cout << "[log] TestdMdq: dof " << i << " norm = " << diff.norm()
+                  << std::endl;
         if (diff.norm() > 1e-6)
         {
-            std::cout << "[error] dMassdq failed\n";
-            std::cout << "diff = \n" << diff << std::endl;
+            printf("[error] dMassdq%d failed diff norm %.10f\n", i,
+                   diff.norm());
+            std::cout << "num =\n" << dMassdq_num << std::endl;
+            std::cout << "ana =\n" << dMassdq[i] << std::endl;
+            std::cout << "diff =\n" << diff << std::endl;
             exit(0);
         }
         q[i] -= eps;
     }
-    std::cout << "test dmass dq succ\n";
-    exit(0);
+    Apply(q, true);
+    std::cout << "[log] test dmass dq succ\n";
+}
+
+/**
+ * \brief       test the mWqqq 
+*/
+EIGEN_VV_tMatrixD GetJointXqq(Joint *joint, char type)
+{
+    EIGEN_VV_tMatrixD mWqq;
+    int target_freedom = -1;
+    if (type == 'T')
+        target_freedom = joint->GetNumOfFreedom();
+    else if (type == 'W')
+        target_freedom = joint->GetNumTotalFreedoms();
+
+    mWqq.resize(target_freedom);
+    for (int i = 0; i < target_freedom; i++)
+    {
+        mWqq[i].resize(target_freedom);
+        for (int j = 0; j < target_freedom; j++)
+        {
+            if (type == 'T')
+                mWqq[i][j] = joint->GetMTQQ(i, j);
+            else if (type == 'W')
+                mWqq[i][j] = joint->GetMWQQ(i, j);
+            else
+            {
+                std::cout << "[error] invalid type " << type << std::endl;
+                exit(1);
+            }
+        }
+    }
+    return mWqq;
+};
+
+EIGEN_V_tMatrixD GetJointXq(Joint *joint, char type)
+{
+    EIGEN_V_tMatrixD mXq; // mTq or mWq
+    int target_dof = -1;
+    if (type == 'T')
+        target_dof = joint->GetNumOfFreedom();
+    else if (type == 'W')
+        target_dof = joint->GetNumTotalFreedoms();
+    else
+    {
+        std::cout << "[error] wrong type " << type << std::endl;
+        exit(1);
+    }
+    mXq.resize(target_dof, tMatrix::Zero());
+    for (int i = 0; i < target_dof; i++)
+    {
+        if (type == 'T')
+        {
+            mXq[i] = joint->GetMTQ(i);
+        }
+        else if (type == 'W')
+        {
+            mXq[i] = joint->GetMWQ(i);
+        }
+        else
+        {
+            std::cout << "[error] wrong type " << type << std::endl;
+            exit(1);
+        }
+    }
+    return mXq;
+}
+EIGEN_VV_tMatrixD GetJointXqqDiff(const EIGEN_VV_tMatrixD &left,
+                                  const EIGEN_VV_tMatrixD &right,
+                                  double division = 1)
+{
+    assert(left.size() == right.size());
+    for (int i = 0; i < left.size(); i++)
+        assert(left[i].size() == right[i].size());
+
+    EIGEN_VV_tMatrixD diff = left;
+    for (int i = 0; i < left.size(); i++)
+    {
+        for (int j = 0; j < left[i].size(); j++)
+        {
+            diff[i][j] = (left[i][j] - right[i][j]) / division;
+        }
+    }
+    return diff;
+}
+EIGEN_V_tMatrixD GetJointXqDiff(const EIGEN_V_tMatrixD &left,
+                                const EIGEN_V_tMatrixD &right,
+                                double division = 1)
+{
+    assert(left.size() == right.size());
+
+    EIGEN_V_tMatrixD diff = left;
+    for (int i = 0; i < left.size(); i++)
+    {
+        diff[i] = (left[i] - right[i]) / division;
+    }
+    return diff;
+}
+EIGEN_VVV_tMatrixD GetJointXqqq(Joint *joint, char type)
+{
+    EIGEN_VVV_tMatrixD mWqqq;
+    int target_freedom = -1;
+    if (type == 'T')
+        target_freedom = joint->GetNumOfFreedom();
+    else if (type == 'W')
+        target_freedom = joint->GetNumTotalFreedoms();
+    mWqqq.resize(target_freedom);
+    for (int i = 0; i < target_freedom; i++)
+    {
+        mWqqq[i].resize(target_freedom);
+        for (int j = 0; j < target_freedom; j++)
+        {
+            mWqqq[i][j].resize(target_freedom);
+            for (int k = 0; k < target_freedom; k++)
+            {
+                if (type == 'T')
+                    mWqqq[i][j][k] = joint->GetMTQQQ(i, j, k);
+                else if (type == 'W')
+                    mWqqq[i][j][k] = joint->GetMWQQQ(i, j, k);
+                else
+                {
+                    std::cout << "[error] invalid type " << type << std::endl;
+                    exit(1);
+                }
+            }
+        }
+    }
+    return mWqqq;
+};
+
+void cRobotModel::TestmWqqq()
+{
+    tVectorXd q_old = Getq();
+    for (int i = 0; i < GetNumOfJoint(); i++)
+    {
+        TestJointmWqqq(i);
+    }
+    Apply(q_old, true);
+    std::cout << "[log] TestmWqqq for all joints succ\n";
+}
+
+/**
+ * \brief           Test the mTqqq for each joint
+*/
+void cRobotModel::TestmTqqq()
+{
+    tVectorXd q_old = Getq();
+    for (int i = 0; i < GetNumOfJoint(); i++)
+    {
+        TestJointmTqqq(i);
+    }
+    Apply(q_old, true);
+    std::cout << "[log] TestmTqqq for all joints succ\n";
+}
+
+void cRobotModel::TestJointmTqqq(int id)
+{
+    // 1. remember the old mTqq, and the analytic mTqqq
+    auto joint = dynamic_cast<Joint *>(GetJointById(id));
+    EIGEN_VV_tMatrixD Tqq_old = GetJointXqq(joint, 'T');
+    EIGEN_VVV_tMatrixD Tqqq_ana = GetJointXqqq(joint, 'T');
+
+    tVectorXd q = Getq();
+    double eps = 1e-6;
+    int local_freedom = joint->GetNumOfFreedom();
+    for (int i = 0; i < local_freedom; i++)
+    {
+        int global_i = joint->GetFreedoms(i)->id;
+        q[global_i] += eps;
+        Apply(q, true);
+        EIGEN_VV_tMatrixD Tqq_new = GetJointXqq(joint, 'T');
+        EIGEN_VV_tMatrixD Tqqq_num = GetJointXqqDiff(Tqq_new, Tqq_old, eps);
+
+        for (int dof1 = 0; dof1 < local_freedom; dof1++)
+            for (int dof2 = 0; dof2 < local_freedom; dof2++)
+            {
+                const tMatrix &num = Tqqq_num[dof1][dof2],
+                              &ana = Tqqq_ana[i][dof1][dof2];
+                tMatrix diff = ana - num;
+                double diff_norm = diff.norm();
+
+                // std::cout << "joint " << id << " d" << i << " for d^2T/q"
+                //           << dof1 << "q" << dof2 << " diff norm = " << diff_norm
+                //           << std::endl;
+                if (diff_norm > eps)
+                {
+                    printf("[error] TestTqqq joint %d d^3T/q%dq%dq%d diff norm "
+                           "= %.10f\n",
+                           id, i, dof1, dof2, diff_norm);
+                    std::cout
+                        << "[error] wrong result, num_norm = " << num.norm()
+                        << " ana_norm = " << ana.norm() << std::endl;
+                    std::cout << "num = \n" << num << std::endl;
+                    std::cout << "ana = \n" << ana << std::endl;
+                    exit(0);
+                }
+            }
+        q[global_i] -= eps;
+    }
+    printf("[log] TestTqqq joint %d succ\n", id);
+    Apply(q, true);
+}
+
+void cRobotModel::TestJointmWqqq(int id)
+{
+    // 1. remember the old mTqq, and the analytic mTqqq
+    auto joint = dynamic_cast<Joint *>(GetJointById(id));
+    EIGEN_VV_tMatrixD Wqq_old = GetJointXqq(joint, 'W');
+    EIGEN_VVV_tMatrixD Wqqq_ana = GetJointXqqq(joint, 'W');
+
+    tVectorXd q = Getq();
+    double eps = 1e-6;
+    int local_freedom = joint->GetNumOfFreedom();
+    int total_freedom = joint->GetNumTotalFreedoms();
+    for (int i = 0; i < total_freedom; i++)
+    {
+        int global_i = joint->GetPrevFreedomIds()[i];
+        q[global_i] += eps;
+        Apply(q, true);
+        EIGEN_VV_tMatrixD Wqq_new = GetJointXqq(joint, 'W');
+        EIGEN_VV_tMatrixD Wqqq_num = GetJointXqqDiff(Wqq_new, Wqq_old, eps);
+
+        for (int dof1 = 0; dof1 < total_freedom; dof1++)
+            for (int dof2 = 0; dof2 < total_freedom; dof2++)
+            {
+                const tMatrix &num = Wqqq_num[dof1][dof2],
+                              &ana = Wqqq_ana[i][dof1][dof2];
+                tMatrix diff = ana - num;
+                double diff_norm = diff.norm();
+
+                // std::cout << "joint " << id << " d" << i << " for d^2T/q"
+                //           << dof1 << "q" << dof2 << " diff norm = " << diff_norm
+                //           << std::endl;
+                if (diff_norm > eps)
+                {
+                    printf("[error] TestMqqq joint %d d^3W/q%dq%dq%d diff norm "
+                           "= %.10f\n",
+                           id, i, dof1, dof2, diff_norm);
+                    std::cout
+                        << "[error] wrong result, num_norm = " << num.norm()
+                        << " ana_norm = " << ana.norm() << std::endl;
+                    std::cout << "num = \n" << num << std::endl;
+                    std::cout << "ana = \n" << ana << std::endl;
+                    exit(0);
+                }
+            }
+        q[global_i] -= eps;
+    }
+    printf("[log] TestMWqqq for joint %d succ\n", id);
+    Apply(q, true);
+}
+
+void cRobotModel::TestmTqq()
+{
+    tVectorXd q_old = mq;
+    for (int i = 0; i < GetNumOfJoint(); i++)
+    {
+        TestJointmTqq(i);
+    }
+    Apply(q_old, true);
+    std::cout << "[log] TestmTqq for all joints succ\n";
+}
+void cRobotModel::TestmWqq()
+{
+    tVectorXd q_old = mq;
+    for (int i = 0; i < GetNumOfJoint(); i++)
+    {
+        TestJointmWqq(i);
+    }
+    Apply(q_old, true);
+    std::cout << "[log] TestmWqq for all joints succ\n";
+}
+
+void cRobotModel::TestJointmTqq(int id)
+{
+    // 1. get mTq old, get mTqq
+    auto joint = dynamic_cast<Joint *>(GetJointById(id));
+    int local_dof = joint->GetNumOfFreedom();
+    int prev_dof = joint->GetFreedoms(0)->id;
+    EIGEN_V_tMatrixD mTq(local_dof, tMatrix::Zero()); // 4x4xn
+    EIGEN_VV_tMatrixD mTqq(local_dof);                // 4x4xn xn
+    for (auto &x : mTqq)
+        x.resize(local_dof, tMatrix::Zero());
+
+    for (int i = 0; i < local_dof; i++)
+    {
+        mTq[i].noalias() = joint->GetMTQ(i);
+        for (int j = 0; j < local_dof; j++)
+        {
+            mTqq[i][j].noalias() = joint->GetMTQQ(i, j);
+        }
+    }
+
+    // 2. apply freedom, get mTq new, calculate mTqq numerically
+    tVectorXd q = mq;
+    double eps = 1e-7;
+    for (int i = 0; i < local_dof; i++)
+    {
+        int global_i = joint->GetFreedoms(i)->id;
+        q[global_i] += eps;
+        Apply(q, true);
+        EIGEN_V_tMatrixD mTq_new(local_dof, tMatrix::Zero());
+        EIGEN_V_tMatrixD mTqq_num(local_dof, tMatrix::Zero());
+        for (int j = 0; j < local_dof; j++)
+        {
+            mTq_new[j] = joint->GetMTQ(j);
+            mTqq_num[j] = (mTq_new[j] - mTq[j]) / eps;
+
+            tMatrix diff = mTqq_num[j] - mTqq[i][j];
+            double diff_norm = diff.norm();
+            if (diff_norm > eps)
+            {
+                printf("[error] joint %d dT^2/dq%dq%d diff norm %.10f\n", id, i,
+                       j, diff_norm);
+                exit(0);
+            }
+        }
+
+        // compare the mTqq
+        q[global_i] -= eps;
+    }
+    Apply(q, true);
+
+    printf("[log] TestmTqq for joint %d succ\n", id);
+}
+void cRobotModel::TestJointmWqq(int id)
+{
+    // 1. get mWq old, get mWqq
+    auto joint = dynamic_cast<Joint *>(GetJointById(id));
+    int local_dof = joint->GetNumOfFreedom();
+    int total_dof = joint->GetNumTotalFreedoms();
+    EIGEN_V_tMatrixD mWq_old = GetJointXq(joint, 'W'); // mWq_old[i] = dW/dqi
+    EIGEN_VV_tMatrixD mWqq =
+        GetJointXqq(joint, 'W'); // mWqq[i][j] = dW^2/dqidqj
+
+    // 2. apply freedom, get mTq new, calculate mTqq numerically
+    // if (id == 1)
+    // {
+    //     for (int i = 0; i < total_dof; i++)
+    //     {
+    //         printf("joint %d dWdq%d = \n", id, i);
+    //         std::cout << mWq_old[i] << std::endl;
+    //     }
+    //     exit(1);
+    // }
+
+    tVectorXd q = mq;
+    double eps = 1e-7;
+    for (int i = 0; i < total_dof; i++)
+    {
+        int global_i = joint->GetPrevFreedomIds()[i];
+        q[global_i] += eps;
+        Apply(q, true);
+        EIGEN_V_tMatrixD mWq_new =
+            GetJointXq(joint, 'W'); // mWq_new[i] = dW/dqi
+
+        EIGEN_V_tMatrixD mWqq_numi = GetJointXqDiff(mWq_new, mWq_old, eps);
+
+        EIGEN_V_tMatrixD mWqq_analytici(total_dof);
+        for (int tmp = 0; tmp < total_dof; tmp++)
+        {
+            mWqq_analytici[tmp] = mWqq[tmp][i];
+        }
+
+        for (int check_dof = 0; check_dof < total_dof; check_dof++)
+        {
+            tMatrix diff = mWqq_analytici[check_dof] - mWqq_numi[check_dof];
+            double diff_norm = diff.norm();
+            if (diff_norm > eps)
+            {
+                printf("[error] TestJointmWqq for joint %d dof %d check_dof %d "
+                       "diff norm %.10f\n",
+                       id, i, check_dof, diff_norm);
+                std::cout << "numerical res = \n"
+                          << mWqq_numi[check_dof] << std::endl;
+                std::cout << "analytic res = \n"
+                          << mWqq_analytici[check_dof] << std::endl;
+                exit(0);
+            }
+        }
+        // compare the mTqq
+        q[global_i] -= eps;
+    }
+    Apply(q, true);
+    // std::cout << "q = " << q.transpose() << std::endl;
+    printf("[log] TestmWqq for joint %d succ\n", id);
+}
+
+void cRobotModel::TestmWq()
+{
+    tVectorXd q_old = mq;
+    for (int i = 0; i < GetNumOfJoint(); i++)
+    {
+        TestJointmWq(i);
+    }
+    Apply(q_old, true);
+    std::cout << "[log] TestmWq for all joints succ\n";
+}
+
+void cRobotModel::TestJointmWq(int id)
+{
+    // 1. get old mW, get current analytic mWq
+    auto joint = GetJointById(id);
+    tMatrix W_old = joint->GetGlobalTransform();
+    int total_freedom = joint->GetNumTotalFreedoms();
+    EIGEN_V_tMatrixD mWq(total_freedom, tMatrix::Zero());
+    for (int i = 0; i < total_freedom; i++)
+    {
+        mWq[i] = joint->GetMWQ(i);
+    }
+
+    // 2. apply new value
+    tVectorXd q = mq;
+    double eps = 1e-7;
+    int prev_freedom = total_freedom - joint->GetNumOfFreedom();
+    for (int i = 0; i < total_freedom; i++)
+    {
+        int global_i = joint->GetPrevFreedomIds()[i];
+
+        q[global_i] += eps;
+        Apply(q, true);
+        tMatrix W_new = joint->GetGlobalTransform();
+        tMatrix mWq_num = (W_new - W_old) / eps;
+
+        tMatrix diff = mWq[i] - mWq_num;
+        double diff_norm = diff.norm();
+        if (diff_norm > eps * 10)
+        {
+            printf("[error] joint %d dW/dq%d diff norm %.10f\n", id, i,
+                   diff_norm);
+            std::cout << "mWq analytic = \n" << mWq[i] << std::endl;
+            std::cout << "mWq numerical = \n" << mWq_num << std::endl;
+            exit(0);
+        }
+
+        // compare the mTqq
+        q[global_i] -= eps;
+    }
+    Apply(q, true);
+    printf("[log] TestmWq for joint %d succ\n", id);
 }

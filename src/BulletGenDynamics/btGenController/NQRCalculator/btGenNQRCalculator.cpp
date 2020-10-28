@@ -3,6 +3,7 @@
 #include "BulletGenDynamics/btGenController/btTraj.h"
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
 #include "BulletGenDynamics/btGenUtil/BulletUtil.h"
+#include "BulletGenDynamics/btGenWorld.h"
 #include <iostream>
 
 btGenNQRCalculator::tNQRFrameInfo::tNQRFrameInfo()
@@ -52,6 +53,7 @@ void btGenNQRCalculator::SetTraj(btTraj *traj_)
     traj_->CalculateLocalContactPos(mModel);
 
     // do precomputation for this traj
+    mdt = traj_->mTimestep;
     CalcNQR();
 }
 void btGenNQRCalculator::SetCoef(const Json::Value &conf)
@@ -135,6 +137,7 @@ void btGenNQRCalculator::CalcNQR()
         info.P_coef = tVectorXd::Ones(info.mTotalControlForceSize);
     }
     // 4. begin the main iter
+    mModel->SetComputeThirdDerive(true);
     for (int frame_id = mTraj->mNumOfFrames - 1; frame_id >= 1; frame_id--)
     {
         // set q and qdot
@@ -146,7 +149,8 @@ void btGenNQRCalculator::CalcNQR()
         mModel->SetqAndqdot(q, qdot);
 
         CalcNQRContactAndControlForce(frame_id);
-        VerifyContactAndControlJacobian(frame_id);
+        // VerifyContactAndControlJacobian(frame_id);
+
         CalcNQRSystemLinearzation(frame_id);
     }
 
@@ -288,12 +292,24 @@ void btGenNQRCalculator::CalcNQRSystemLinearzation(int frame)
 {
     // 1. validate the frame id, and assume the model has been set before
     CheckModelState(frame, "system_linearize");
+    assert(true == mModel->GetComputeThirdDerive());
 
     // 2. get the A
     /*
         A = \frac{dG}{dx} * u + \frac{dh}{dx}
     */
+    {
+        // 2.1 get dGdx
+        tEigenArr<tMatrixXd> dGdx;
+        GetdGdx(frame, dGdx);
+        // VerifydGdx(frame, dGdx);
 
+        // 2.2 get dhdx
+        tMatrixXd dhdx;
+        Getdhdx(frame, dhdx);
+
+        Verifydhdx(frame, dhdx);
+    }
     // 3. get the B
     /*
     B = G
@@ -347,16 +363,16 @@ void btGenNQRCalculator::CalcNQRContactAndControlForce(int frame_id)
         d(control_jacobian)/dq  =   [[d(joint_torque_jacobian)/dq: dJvc/dq]]
                                 =   [0: dJvc^T/dq]
     */
-    info.mdJacdq.resize(
+    info.m_dControlJac_dq.resize(
         num_of_freedom,
         tMatrixXd::Zero(num_of_freedom, info.mTotalControlForceSize));
     tEigenArr<tMatrixXd> dContactJacdq;
     mTraj->GetGen_dContactJacobian_dq_NoSet(frame_id, mModel, dContactJacdq);
     for (int dof = 0; dof < num_of_freedom; dof++)
     {
-        info.mdJacdq[dof].block(0, info.mJointControlForceSize, num_of_freedom,
-                                info.mContactForceSize) =
-            dContactJacdq[dof].transpose();
+        info.m_dControlJac_dq[dof].block(
+            0, info.mJointControlForceSize, num_of_freedom,
+            info.mContactForceSize) = dContactJacdq[dof].transpose();
     }
 }
 
@@ -406,30 +422,147 @@ tMatrixXd btGenNQRCalculator::GetG(int frame_id)
 }
 
 /**
+ * \brief       Get current "R" vector
+ * 
+ * R = \dot{q}_t + dt * Minv * (QG - C * \dot{q})
+*/
+tVectorXd btGenNQRCalculator::GetR()
+{
+    return mModel->Getqdot() +
+           mdt * mModel->GetInvMassMatrix() *
+               (mModel->CalcGenGravity(mWorld->GetGravity()) -
+                mModel->GetCoriolisMatrix() * mModel->Getqdot());
+}
+
+/**
+ * \brief       calculate the residual of state equation, "h"
+ * 
+ * h =  [mdt * Rt + q_t]
+ *      [Rt]
+*/
+tVectorXd btGenNQRCalculator::Geth()
+{
+    tVectorXd Rt = GetR();
+    tVectorXd h = tVectorXd::Zero(mStateSize);
+    h.segment(0, num_of_freedom).noalias() = mdt * Rt + mModel->Getq();
+    h.segment(num_of_freedom, num_of_freedom).noalias() = Rt;
+    return h;
+}
+
+/**
  * \brief       Get dGdx = [dGdq, dGdqdot]
  * the definition of matrix G has been shown above
+ * 
+ * x_{t+1} = G * u_t + h
+ * 
+ * x is the state vector
+ * u is the control vector
+ * 
+ * G is the state transition matrix
+ * h is the state transition residual
 */
 void btGenNQRCalculator::GetdGdx(int frame_id, tEigenArr<tMatrixXd> &dGdx)
 {
     // 1. dGdq
     const auto &info = mNQRFrameInfos[frame_id];
     const int total_control_size = info.mTotalControlForceSize;
-    dGdx.resize(num_of_freedom,
-                tMatrixXd::Zero(mStateSize, total_control_size));
+    dGdx.resize(mStateSize, tMatrixXd::Zero(mStateSize, total_control_size));
+    tEigenArr<tMatrixXd> dMinvdq;
+    const tMatrixXd &Minv = mModel->GetInvMassMatrix();
     {
-        // 1.1 give the dMinv/dq
+        // 1.1 give the dMinv/dq = -M^{-1} * dMdq * M^{-1}
+        mModel->ComputedMassMatrixdq(dMinvdq); // now it's dMdq
+        for (int dof = 0; dof < num_of_freedom; dof++)
+        {
+            dMinvdq[dof] = -Minv * dMinvdq[dof] * Minv;
+            // std::cout << "dof " << dof << " dMinvdq norm "
+            //           << dMinvdq[dof].norm() << std::endl;
+        }
 
-        // 1.2 get the dJac/dq from before
-
+        // 1.2 get the dJac/dq from before, then gives the final
+        const tMatrixXd &control_jac = info.mTotalControlJacobian;
         /*
             dGdq =  [ dt * dMinvdq * Jac + dt * Minv * dJac/dq ]
                     [ dt2 * dMinvdq * Jac + dt2 * Minv * dJac/dq ]
+
+            dGdx = [dGdq(this part); dGdqdot]
         */
+        // std::cout << "dt = " << mdt << std::endl;
+        for (int dof = 0; dof < num_of_freedom; dof++)
+        {
+            // first part: [ dt * dMinvdq * Jac + dt * Minv * dJac/dq ]
+            dGdx[dof].block(0, 0, num_of_freedom, info.mTotalControlForceSize) =
+                mdt * dMinvdq[dof] * control_jac +
+                mdt * Minv * info.m_dControlJac_dq[dof];
+
+            // second part: dt * first part
+            dGdx[dof].block(num_of_freedom, 0, num_of_freedom,
+                            info.mTotalControlForceSize) =
+                mdt * dGdx[dof].block(0, 0, num_of_freedom,
+                                      info.mTotalControlForceSize);
+        }
     }
 
     // 2. dGdqdot = 0
+    {
+        // statesize = 2 * dof. the last half portion of vector "x" means qdot
+        // here we set all dGdqdot = 0
+        // dGdx = [dGdq; dGdqdot(this part)]
+        for (int i = num_of_freedom; i < mStateSize; i++)
+        {
+            dGdx[i].setZero();
+        }
+    }
+    // for (int i = 0; i < mStateSize; i++)
+    // {
+    //     std::cout << "dGdx " << i << " norm = " << dGdx[i].norm() << std::endl;
+    // }
+    // exit(0);
 }
-void btGenNQRCalculator::Getdhdx(int frame_id) {}
+
+/**
+ * \brief               Get dh/dx
+ * given the state equation: x_{t+1} = G * u + h, h is the state transition residual
+ * 
+ * for multibody h =    [ dt * R_t + q_t ]
+ *                      [ R_t  ]       \in R^{2n x 1}
+ * 
+ *                      R_t = \dot{q}_t + dt * Minv * (QG - C * qdot)
+ * 
+ * so dh/dx = [dh/dq, dh/dqdot] \in R^{2n x 2n}
+ * 
+ * dhdq =   [dt * dR_t/dq + I]
+ *          [dR_t/dq] \in R^{2n x n}
+ * dhdqdot =    [dt * dR_t/dqdot]
+ *              [dR_t/dqdot]        \in R{2n x n}
+ * 
+ * The key point is the formula above is:
+ *  1. dRdq 
+ *  2. dRdqdot
+*/
+void btGenNQRCalculator::Getdhdx(int frame_id, tMatrixXd &dhdx)
+{
+    std::cout << "dhdx hasn't been implemented\n";
+    // 1. get dRdq
+    tMatrixXd dRdq, dRdqdot;
+    GetdRdq(dRdq);
+    // VerifydRdq(dRdq);
+
+    // 2. get dRdqdot
+    GetdRdqdot(dRdqdot);
+    // VerifydRdqdot(dRdqdot);
+    // 3. combine and get the final dhdx
+    dhdx.noalias() = tMatrixXd::Zero(mStateSize, mStateSize);
+    dhdx.block(0, 0, num_of_freedom, num_of_freedom).noalias() =
+        mdt * dRdq + tMatrixXd::Identity(num_of_freedom, num_of_freedom);
+    dhdx.block(num_of_freedom, 0, num_of_freedom, num_of_freedom).noalias() =
+        dRdq;
+
+    dhdx.block(0, num_of_freedom, num_of_freedom, num_of_freedom).noalias() =
+        mdt * dRdqdot;
+    dhdx.block(num_of_freedom, num_of_freedom, num_of_freedom, num_of_freedom)
+        .noalias() = dRdqdot;
+}
 
 // verify numerical gradient of CalcNQRContactAndControlForce
 void btGenNQRCalculator::VerifyContactAndControlJacobian(int frame_id)
@@ -439,7 +572,7 @@ void btGenNQRCalculator::VerifyContactAndControlJacobian(int frame_id)
     CheckFrameId(frame_id, "verify_contact_and_control_jac");
     auto &info = mNQRFrameInfos[frame_id];
     tMatrixXd old_control_jac = info.mTotalControlJacobian;
-    tEigenArr<tMatrixXd> old_control_djac_dq = info.mdJacdq;
+    tEigenArr<tMatrixXd> old_control_djac_dq = info.m_dControlJac_dq;
     int num_of_freedom = mModel->GetNumOfFreedom();
     tEigenArr<tMatrixXd> new_control_djac_dq(
         num_of_freedom,
@@ -447,7 +580,7 @@ void btGenNQRCalculator::VerifyContactAndControlJacobian(int frame_id)
 
     // 2. forward computation
     tVectorXd q = mModel->Getq();
-    double eps = 1e-7;
+    double eps = 1e-8;
     for (int dof = 0; dof < num_of_freedom; dof++)
     {
         q[dof] += eps;
@@ -459,7 +592,7 @@ void btGenNQRCalculator::VerifyContactAndControlJacobian(int frame_id)
             dcontrol_jac_dqi - old_control_djac_dq[dof];
         std::cout << "dof " << dof << " diff norm "
                   << dcontrol_jac_dq_diff.norm() << std::endl;
-        if (dcontrol_jac_dq_diff.norm() > eps)
+        if (dcontrol_jac_dq_diff.norm() > eps * 10)
         {
             std::cout << "analytic dJacdq = \n"
                       << old_control_djac_dq[dof] << std::endl;
@@ -470,7 +603,204 @@ void btGenNQRCalculator::VerifyContactAndControlJacobian(int frame_id)
         }
         q[dof] -= eps;
     }
-
+    std::cout << "[log] frame " << frame_id
+              << " total control jacobian derivation verified succ\n";
     mModel->PopState("verify_contact_and_control_jac");
-    exit(0);
+}
+
+// Verify the numerical dGdx
+void btGenNQRCalculator::VerifydGdx(int frame_id,
+                                    const tEigenArr<tMatrixXd> &analytic_dGdx)
+{
+    mModel->PushState("verify_dGdx");
+    const auto &info = mNQRFrameInfos[frame_id];
+    const tMatrixXd old_G = GetG(frame_id);
+
+    tVectorXd q = mModel->Getq();
+    double eps = 1e-8;
+    for (int i = 0; i < num_of_freedom; i++)
+    {
+        q[i] += eps;
+        mModel->SetqAndqdot(q, mModel->Getqdot());
+        CalcNQRContactAndControlForce(frame_id);
+        tMatrixXd new_G = GetG(frame_id);
+        tMatrixXd dGdqi = (new_G - old_G) / eps;
+        tMatrixXd diff = dGdqi - analytic_dGdx[i];
+        double diff_max = diff.cwiseAbs().maxCoeff();
+        std::cout << "[log] dof " << i << " dGdx numerically diff max "
+                  << diff_max << ", ana norm " << analytic_dGdx[i].norm()
+                  << " , numerical norm " << dGdqi.norm() << std::endl;
+        if (diff_max > 1e-5)
+        {
+            std::cout << "anlytic dGdq = \n" << analytic_dGdx[i] << std::endl;
+            std::cout << "numerical dGdq = \n" << dGdqi << std::endl;
+            std::cout << "dGdq diff = \n" << diff << std::endl;
+            exit(0);
+        }
+        q[i] -= eps;
+    }
+    mModel->PopState("verify_dGdx");
+}
+
+void btGenNQRCalculator::Verifydhdx(int frame_id,
+                                    const tMatrixXd &analytic_dhdx)
+{
+    mModel->PushState("verify_dhdx");
+    tVectorXd old_h = Geth();
+    tVectorXd q_old = mModel->Getq(), qdot_old = mModel->Getqdot();
+    double eps = 1e-7;
+    for (int i = 0; i < num_of_freedom; i++)
+    {
+        q_old[i] += eps;
+        mModel->SetqAndqdot(q_old, qdot_old);
+        tVectorXd new_h = Geth();
+        tVectorXd dhdq_num = (new_h - old_h) / eps;
+        tVectorXd dhdq_diff = dhdq_num - analytic_dhdx.col(i);
+        double norm = dhdq_diff.norm();
+        if (norm > 10 * eps)
+        {
+            printf("[error] Verify dhdq%d failed, diff norm %.10f\n", i, norm);
+            std::cout << "ana = " << analytic_dhdx.col(i).transpose();
+            std::cout << "num = " << dhdq_num.transpose();
+        }
+        q_old[i] -= eps;
+        printf("[log] NQR: dhdq%d verify succ, value norm = %.5f, diif norm "
+               "%.10f\n",
+               i, dhdq_num.norm(), norm);
+    }
+    for (int i = 0; i < num_of_freedom; i++)
+    {
+        qdot_old[i] += eps;
+        mModel->SetqAndqdot(q_old, qdot_old);
+        tVectorXd new_h = Geth();
+        tVectorXd dhdqdot_num = (new_h - old_h) / eps;
+        tVectorXd dhdqdot_diff =
+            dhdqdot_num - analytic_dhdx.col(i + num_of_freedom);
+        double norm = dhdqdot_diff.norm();
+        if (norm > 10 * eps)
+        {
+            printf("[error] Verify dhdqdot%d failed, diff norm %.10f\n", i,
+                   norm);
+            std::cout << "ana = "
+                      << analytic_dhdx.col(i + num_of_freedom).transpose();
+            std::cout << "num = " << dhdqdot_num.transpose();
+        }
+        qdot_old[i] -= eps;
+        printf("[log] NQR: dhdqdot%d verify succ, value norm = %.5f, diff norm "
+               "%.10f\n",
+               i, dhdqdot_num.norm(), norm);
+    }
+    std::cout << "dRdqdot verify succ\n";
+    mModel->PopState("verify_dhdx");
+}
+
+/**
+ * \brief           calculate the derivative of R w.r.t q
+ * R = \dot{q}_t + dt * Minv * (QG - C * \dot{q}_t)
+ * 
+ * dRdq = dt * dMinvdq * (QG - C*qdot) + dt * Minv * (dQGdq - dCdq * qdot)
+ *      = -dt * Minv * dMdq * Minv * (QG - C*qdot) + dt * Minv * (dQGdq - dCdq * qdot)
+ * we assume that the result before is still okay
+*/
+
+void btGenNQRCalculator::GetdRdq(tMatrixXd &dRdq)
+{
+    const tMatrixXd &Minv = mModel->GetInvMassMatrix();
+    const tMatrixXd &M = mModel->GetMassMatrix();
+    EIGEN_V_MATXD dMdq;
+    mModel->ComputedMassMatrixdq(dMdq);
+
+    tVectorXd QG = mModel->CalcGenGravity(mWorld->GetGravity());
+    tMatrixXd C = mModel->GetCoriolisMatrix();
+    tMatrixXd dQGdq = mModel->CalcdGenGravitydq(mWorld->GetGravity());
+    tVectorXd qdot = mModel->Getqdot();
+    EIGEN_V_MATXD dCdq;
+    mModel->ComputeDCoriolisMatrixDq(qdot, dCdq);
+
+    const tVectorXd Minv_QG_Cqdot = Minv * (QG - C * qdot);
+
+    dRdq = tMatrixXd::Zero(num_of_freedom, num_of_freedom);
+    for (int dof = 0; dof < num_of_freedom; dof++)
+    {
+        dRdq.col(dof).noalias() =
+            -mdt * Minv * dMdq[dof] * Minv_QG_Cqdot +
+            mdt * Minv * (dQGdq.col(dof) - dCdq[dof] * qdot);
+    }
+}
+
+/**
+ * \brief       calculate dRdqdot
+ * R = \dot{q}_t + dt * Minv * (QG - C * \dot{q}_t)
+ * 
+ * dRdqdot = I - dt * Minv (dCdqdot * qdot + C * I)
+*/
+void btGenNQRCalculator::GetdRdqdot(tMatrixXd &dRdqdot)
+{
+    const tMatrixXd &Minv = mModel->GetInvMassMatrix();
+    tMatrixXd C = mModel->GetCoriolisMatrix();
+    EIGEN_V_MATXD dCdqdot;
+    mModel->ComputeDCoriolisMatrixDqdot(dCdqdot);
+    tVectorXd qdot = mModel->Getqdot();
+    dRdqdot.noalias() = tMatrixXd::Identity(num_of_freedom, num_of_freedom);
+    for (int i = 0; i < num_of_freedom; i++)
+    {
+        dRdqdot.col(i) -= mdt * Minv * (dCdqdot[i] * qdot + C.col(i));
+    }
+}
+
+void btGenNQRCalculator::VerifydRdq(const tMatrixXd &dRdq_ana)
+{
+    mModel->PushState("verify_drdq");
+    tVectorXd R_old = GetR();
+    tVectorXd q_old = mModel->Getq();
+    double eps = 1e-7;
+    for (int i = 0; i < num_of_freedom; i++)
+    {
+        q_old[i] += eps;
+        mModel->SetqAndqdot(q_old, mModel->Getqdot());
+        tVectorXd R_new = GetR();
+        tVectorXd dRdq_num = (R_new - R_old) / eps;
+        tVectorXd dRdq_diff = dRdq_num - dRdq_ana.col(i);
+        double norm = dRdq_diff.norm();
+        if (norm > 10 * eps)
+        {
+            printf("[error] Verify dRdq%d failed, diff norm %.10f\n", i, norm);
+            std::cout << "ana = " << dRdq_ana.col(i).transpose();
+            std::cout << "num = " << dRdq_num.transpose();
+        }
+        q_old[i] -= eps;
+        printf("[log] NQR: dRdq%d verify succ, value norm = %.5f\n", i,
+               dRdq_num.norm());
+    }
+    std::cout << "dRdq verify succ\n";
+    mModel->PopState("verify_drdq");
+}
+
+void btGenNQRCalculator::VerifydRdqdot(const tMatrixXd &dRdqdot_ana)
+{
+    mModel->PushState("verify_drdqdot");
+    tVectorXd R_old = GetR();
+    tVectorXd qdot_old = mModel->Getqdot();
+    double eps = 1e-7;
+    for (int i = 0; i < num_of_freedom; i++)
+    {
+        qdot_old[i] += eps;
+        mModel->SetqAndqdot(mModel->Getq(), qdot_old);
+        tVectorXd R_new = GetR();
+        tVectorXd dRdqdot_num = (R_new - R_old) / eps;
+        tVectorXd dRdqdot_diff = dRdqdot_num - dRdqdot_ana.col(i);
+        double norm = dRdqdot_diff.norm();
+        if (norm > 10 * eps)
+        {
+            printf("[error] Verify dRdqdot%d failed, diff norm %.10f\n", i,
+                   norm);
+            std::cout << "ana = " << dRdqdot_ana.col(i).transpose();
+            std::cout << "num = " << dRdqdot_num.transpose();
+        }
+        qdot_old[i] -= eps;
+        printf("[log] NQR: dRdqdot%d verify succ, value norm = %.5f\n", i,
+               dRdqdot_num.norm());
+    }
+    std::cout << "dRdqdot verify succ\n";
+    mModel->PopState("verify_drdqdot");
 }

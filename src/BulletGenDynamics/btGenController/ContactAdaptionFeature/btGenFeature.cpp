@@ -548,7 +548,7 @@ void btGenFeatureArray::EvalConvertMatAndResidualFromqddotToFeature(
         {
             const tMatrixXd Jv = link->GetJKv();
             const tVectorXd qdot = mModel->Getqdot();
-            const tMatrixXd Jv_dot = link->GetJKv_dot();
+            const tMatrixXd Jv_dot = link->GetJKvdot();
             ConvertMatFromqddotToFeature.block(feature_offset, 0, feature_size,
                                                num_of_freedom) =
                 mConvertPosToXZ * Jv;
@@ -560,7 +560,7 @@ void btGenFeatureArray::EvalConvertMatAndResidualFromqddotToFeature(
         {
             const tMatrixXd Jv = link->GetJKv();
             const tVectorXd qdot = mModel->Getqdot();
-            const tMatrixXd Jv_dot = link->GetJKv_dot();
+            const tMatrixXd Jv_dot = link->GetJKvdot();
             // std::cout << 'mConvertPosToY = \n' << mConvertPosToY <<
             // std::endl;
             ConvertMatFromqddotToFeature.block(feature_offset, 0, feature_size,
@@ -1099,7 +1099,7 @@ tVectorXd btGenFeatureArray::CalcTargetAccelFeature(const tVectorXd &qddot)
             auto link =
                 dynamic_cast<Link *>(mModel->GetLinkById(feature->mLinkId));
             tVector3d accel =
-                link->GetJKv() * qddot + link->GetJKv_dot() * qdot;
+                link->GetJKv() * qddot + link->GetJKvdot() * qdot;
 
             switch (feature->mFeatureType)
             {
@@ -1466,7 +1466,7 @@ void btGenFeatureArray::DebugAccelFeatureDFdtauIsZero(
             auto link = mModel->GetLinkById(sub_feature->mLinkId);
             const tMatrixXd &Jv = link->GetJKv();
             const tVectorXd &dJvdt_qdot =
-                link->GetJKv_dot() * mModel->Getqdot();
+                link->GetJKvdot() * mModel->Getqdot();
 
             auto joint = link->GetParent();
             if (IsJointFeature(sub_feature->mFeatureType))

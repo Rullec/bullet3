@@ -42,10 +42,10 @@ public:
 
     int GetNumOfFreedom() const;
     void Apply(const std::vector<double> &ang, int st,
-               bool compute_gradient = false);
+               bool compute_gradient);
     void Apply(const std::vector<double> &ang, tVector3d cycle_step, int st,
-               bool compute_gradient = false);
-    void Apply(const tVectorXd &ang, bool compute_gradient = false);
+               bool compute_gradient);
+    void Apply(const tVectorXd &ang, bool compute_gradient);
 
     void GetJointLimit(tVectorXd &lb, tVectorXd &up) const;
     tVector3d GetFreedomDirectionWorldFrame(int dof_id) const;
@@ -127,13 +127,26 @@ public:
     BaseObject *GetEndLink() { return end_link; }
 
     void SetComputeSecondDerive(bool flag);
+    void SetComputeThirdDerive(bool flag);
+    bool GetComputeSecondDerive();
+    bool GetComputeThirdDerive();
     const tVectorXd &Getqdot() const { return mqdot; }
     const tVectorXd &Getq() const { return mq; }
 
     std::string GetCharFile() const;
     double GetScale() const;
+    void TestmWqqq();
+    void TestmTqqq();
+    void TestmTqq();
+    void TestmWqq();
+    void TestmWq();
 
 protected:
+    void TestJointmTqqq(int joint);
+    void TestJointmWqqq(int joint);
+    void TestJointmTqq(int joint);
+    void TestJointmWqq(int joint);
+    void TestJointmWq(int joint);
     // compute methods is prohibited to be called outside of the class
     void ComputeMassMatrix();
     void ComputeCoriolisMatrix(tVectorXd &q_dot);
@@ -202,7 +215,7 @@ protected:
 
     BaseObject *GetBaseObjectById(int id, int type = JOINT) const;
 
-    BaseObject *root;
+    BaseObject *root; // root joint
     std::map<std::string, BaseObject *> links;
     std::map<std::string, BaseObject *> joints;
     std::map<int, BaseObject *> joint_id_map;
@@ -233,6 +246,8 @@ protected:
 
     int deep_mimic_motion_size;
     int model_type;
+    bool compute_second_deriv;
+    bool compute_third_deriv;
 
     tMatrixXd Jv; // (k * n_freedom, 3 * n_links)
     tMatrixXd Jw; // (k * n_freedom, 3 * n_joints)

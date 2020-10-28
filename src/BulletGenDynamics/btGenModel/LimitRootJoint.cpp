@@ -35,6 +35,7 @@ void LimitRootJoint::InitTerms()
 
     // the init matrix will allocate all matrices
     // the limit root joint has only 1 freedom: the z translate freedom
+    InitGlobalToTotalFreedomMap();
     InitMatrix();
 }
 
@@ -77,7 +78,7 @@ void LimitRootJoint::Tell()
  * mTq = dTdq = dTdz
  * 
 */
-void LimitRootJoint::ComputeTransformFirstDerive()
+void LimitRootJoint::ComputeLocalTransformFirstDerive()
 {
     mTq[0] = r_m_first_deriv[0];
 }

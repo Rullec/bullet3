@@ -41,7 +41,7 @@ protected:
         // 4. total control jacobian and derivations
         tMatrixXd
             mTotalControlJacobian; //  gen_force = mTotalControlJacobian * control_vector[joint, contact]
-        tEigenArr<tMatrixXd> mdJacdq; // d(mTotalControlJacobian)/dq
+        tEigenArr<tMatrixXd> m_dControlJac_dq; // d(mTotalControlJacobian)/dq
         tNQRFrameInfo();
     };
 
@@ -76,6 +76,14 @@ protected:
     void CheckModelState(int frame_id, std::string prefix);
 
     void GetdGdx(int frame_id, tEigenArr<tMatrixXd> &dGdx);
-    void Getdhdx(int frame_id);
+    void VerifydGdx(int frame_id, const tEigenArr<tMatrixXd> &analytic_dGdx);
+    void Getdhdx(int frame_id, tMatrixXd &dhdx);
+    void GetdRdq(tMatrixXd &dRdq);
+    void VerifydRdq(const tMatrixXd &dRdq_ana);
+    void VerifydRdqdot(const tMatrixXd &dRdqdot_ana);
+    void GetdRdqdot(tMatrixXd &dRdqdot);
+    void Verifydhdx(int frame_id, const tMatrixXd &analytic_dhdx);
     tMatrixXd GetG(int frame_id);
+    tVectorXd GetR();
+    tVectorXd Geth();
 };

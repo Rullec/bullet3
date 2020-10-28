@@ -29,18 +29,90 @@ BaseObjectJsonParam::BaseObjectJsonParam()
     shape_type = -1;
 }
 
-// \frac{ \partial Jw_k } { \partial q_i}, dim=(3, n_freedoms)
-const tMatrixXd &BaseObject::GetJKv_dq(int i) const { return jkv_dq[i]; }
+/**
+ * \brief           Get nxn matrix of dJkv/dqi
+ * the shape of the total tensor dJkvdq is 3xnxn. 
+ * Now we storage it in an 3-elements array dJkvdq, and each of it is a nxn matrix
+ * Note that n is "total_freedoms" but not "global_freedoms"
+ * This API should be used with care, it is not very intuitive
+*/
+const tMatrixXd &BaseObject::GetdJKvdq_nxnversion(int i) const
+{
+    return jkv_dq[i];
+}
 
-// \frac{ \partial Jv_k } { \partial q_i}, dim=(3, n_freedoms)
-const tMatrixXd &BaseObject::GetJKw_dq(int i) const { return jkw_dq[i]; }
+/**
+ * \brief           Get nxn matrix of dJkw/dqi 
+ * the shape of the total tensor dJkwdq is 3xnxn. 
+ * Now we storage it in an 3-elements array dJkwdq, and each of it is a nxn matrix
+ * Note that n is "total_freedoms" but not "global_freedoms"
+ * This API should be used with care, it is not very intuitive
+*/
+const tMatrixXd &BaseObject::GetdJKwdq_nxnversion(int i) const
+{
+    return jkw_dq[i];
+}
 
+/**
+ * \brief           Get the 6xn Jk for this object (usualy links)
+ * Jk = [Jkv \\ Jkw] \in R^{6 \times n}
+ * n is the total_freedoms but not the global freedoms
+ * \param dof       dJk/dqdot, in total_freedoms
+*/
+tMatrixXd BaseObject::GetdJkdq_6xnversion(int dof) const
+{
+    assert(dof < total_freedoms);
+    tMatrixXd dJkdqi = tMatrixXd::Zero(6, total_freedoms);
+    dJkdqi.block(0, 0, 3, total_freedoms) = GetdJKvdq_3xnversion(dof);
+    dJkdqi.block(3, 0, 3, total_freedoms) = GetdJKwdq_3xnversion(dof);
+    return dJkdqi;
+}
+
+/**
+ * \brief           Get the 3xn Jkv for this object (usually links)
+ * \param dof       interested freedom in total_freedom
+ * In default case, this Jkv is definied at the COM of this link, but not other places
+ * Jkv = d(position)/dq \in 3 \times n
+ * n is the total freedom but not the global_freedom
+*/
+tMatrixXd BaseObject::GetdJKvdq_3xnversion(int dof) const
+{
+    assert(dof < total_freedoms);
+    tMatrixXd dJkvdq = tMatrixXd::Zero(3, total_freedoms);
+    for (int i = 0; i < total_freedoms; i++)
+    {
+        dJkvdq(0, i) = jkv_dq[0](dependent_dof_id[i], dependent_dof_id[dof]);
+        dJkvdq(1, i) = jkv_dq[1](dependent_dof_id[i], dependent_dof_id[dof]);
+        dJkvdq(2, i) = jkv_dq[2](dependent_dof_id[i], dependent_dof_id[dof]);
+    }
+    return dJkvdq;
+}
+
+/**
+ * \brief           Get the 3xn Jkw for this object (usually links)
+ * \param dof       total_freedoms
+ * Jkw = d([\dot{R}*RT]^{-1})/dq \in 3 \times n
+ * n is the total freedom but not the global_freedom
+ * []^{-1} means the extraction of skew vector
+*/
+tMatrixXd BaseObject::GetdJKwdq_3xnversion(int dof) const
+{
+    assert(dof < total_freedoms);
+    tMatrixXd dJkwdq = tMatrixXd::Zero(3, total_freedoms);
+    for (int i = 0; i < total_freedoms; i++)
+    {
+        dJkwdq(0, i) = jkw_dq[0](dependent_dof_id[i], dependent_dof_id[dof]);
+        dJkwdq(1, i) = jkw_dq[1](dependent_dof_id[i], dependent_dof_id[dof]);
+        dJkwdq(2, i) = jkw_dq[2](dependent_dof_id[i], dependent_dof_id[dof]);
+    }
+    return dJkwdq;
+}
 /**
  * \brief       Get \frac{\partial R} {\partial q_i} dim=(4, 4)
  * \param i     the local freedom id in this base object, not the global freedom
  * id
  */
-const tMatrix &BaseObject::GetMWQ(int i)
+const tMatrix &BaseObject::GetMWQ(int i) const
 {
     if (i >= total_freedoms)
     {
@@ -100,12 +172,32 @@ void BaseObject::Tell()
               << local_pos[1] << ", " << local_pos[2] << "\n";
 }
 
+/**
+ * \brief           Add parent's dof into the "dependent_dof_id" array. 
+ * Note that the "dependent_dof_id" is still incomplete and needs to add my own freedoms after this function
+*/
 void BaseObject::InitPrevFreedomIds()
 {
     auto &parent_prev_ids = parent->GetPrevFreedomIds();
     for (size_t i = 0; i < parent_prev_ids.size(); i++)
     {
         dependent_dof_id.push_back(parent_prev_ids[i]);
+    }
+}
+
+/**
+ * \brief           Build the map from global freedom id to total freedom id which this object is dependent of 
+ * 
+ * The time of calling this method is critical: the dependent_dof_id must be initialized completely.
+*/
+void BaseObject::InitGlobalToTotalFreedomMap()
+{
+    this->map_from_global_to_total_freedom.clear();
+    for (int i = 0; i < dependent_dof_id.size(); i++)
+    {
+        int global_dof_id = dependent_dof_id[i];
+        int total_dof_id = i;
+        map_from_global_to_total_freedom[global_dof_id] = total_dof_id;
     }
 }
 
@@ -274,7 +366,8 @@ BaseObject::BaseObject(const BaseObjectParams &param)
       render_struct(nullptr), mass(param.mass), parent_joint(nullptr),
       total_freedoms(-1), prev_freedoms(0), local_freedom(0),
       init_rotation(param.local_rotation), joint_type(JointType::INVALID_JOINT),
-      shape_type(-1), global_freedom(0), compute_second_derive(false)
+      shape_type(-1), global_freedom(0), compute_second_derive(false),
+      compute_third_derive(false)
 {
     scale_matrix = Eigen::scale(mesh_scale.x(), mesh_scale.y(), mesh_scale.z());
 
@@ -317,7 +410,7 @@ BaseObject::BaseObject(const BaseObjectJsonParam &param)
       prev_freedoms(0), local_freedom(0), init_rotation(param.local_rot),
       joint_type(JointType::INVALID_JOINT), Ibody(param.inertia),
       shape_type(param.shape_type), global_freedom(0),
-      compute_second_derive(false)
+      compute_second_derive(false), compute_third_derive(false)
 {
     assert(Ibody.norm() < 1e2);
     if (param.type == LINK)
@@ -401,4 +494,85 @@ void BaseObject::UpdateInfo(BaseObjectJsonParam &param)
     shape_type = param.shape_type;
     InitObject();
     ComputeIbody();
+}
+
+void BaseObject::SetComputeThirdDerive(bool flag)
+{
+    compute_third_derive = flag;
+}
+bool BaseObject::GetComputeThirdDeriv() const { return compute_third_derive; }
+
+void BaseObject::SetComputeSecondDerive(bool flag)
+{
+    compute_second_derive = flag;
+}
+bool BaseObject::GetComputeSecondDerive() const
+{
+    return this->compute_second_derive;
+}
+
+const tMatrixXd &BaseObject::GetJKvdot() const { return JK_v_dot; }
+const tMatrixXd &BaseObject::GetJKwdot() const { return JK_w_dot; }
+
+tMatrixXd BaseObject::GetJKvdot_reduced() const
+{
+    tMatrixXd Jkv_dot_reduced = tMatrixXd::Zero(3, total_freedoms);
+    for (int i = 0; i < total_freedoms; i++)
+        Jkv_dot_reduced.col(i) = JK_v_dot.col(dependent_dof_id[i]);
+    return Jkv_dot_reduced;
+}
+tMatrixXd BaseObject::GetJKwdot_reduced() const
+{
+    tMatrixXd Jkw_dot_reduced = tMatrixXd::Zero(3, total_freedoms);
+    for (int i = 0; i < total_freedoms; i++)
+        Jkw_dot_reduced.col(i) = JK_w_dot.col(dependent_dof_id[i]);
+    return Jkw_dot_reduced;
+}
+
+tMatrixXd BaseObject::GetJKw_reduced() const
+{
+    tMatrixXd Jkw_reduced = tMatrixXd::Zero(3, total_freedoms);
+    for (int i = 0; i < total_freedoms; i++)
+    {
+        Jkw_reduced.col(i) = JK_w.col(dependent_dof_id[i]);
+    }
+    return Jkw_reduced;
+}
+tMatrixXd BaseObject::GetJKv_reduced() const
+{
+    tMatrixXd Jkv_reduced = tMatrixXd::Zero(3, total_freedoms);
+    for (int i = 0; i < total_freedoms; i++)
+    {
+        Jkv_reduced.col(i) = JK_v.col(dependent_dof_id[i]);
+    }
+    return Jkv_reduced;
+}
+tMatrixXd BaseObject::GetJK_reduced() const
+{
+    tMatrixXd Jk_reduced = tMatrixXd::Zero(6, total_freedoms);
+    for (int i = 0; i < total_freedoms; i++)
+    {
+        Jk_reduced.col(i) = this->JK.col(dependent_dof_id[i]);
+    }
+    return Jk_reduced;
+}
+
+tMatrixXd BaseObject::GetJkdot_recuded() const
+{
+    tMatrixXd Jk_dot_reduced = tMatrixXd::Zero(6, total_freedoms);
+    for (int i = 0; i < total_freedoms; i++)
+    {
+        Jk_dot_reduced.col(i) = JK_dot.col(dependent_dof_id[i]);
+    }
+    return Jk_dot_reduced;
+}
+tVectorXd BaseObject::GetShortedFreedom(const tVectorXd &qx_log) const
+{
+    assert(qx_log.size() == global_freedom);
+    tVectorXd q = tVectorXd::Zero(total_freedoms);
+    for (int i = 0; i < total_freedoms; i++)
+    {
+        q[i] = qx_log[dependent_dof_id[i]];
+    }
+    return q;
 }
