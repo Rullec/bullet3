@@ -77,6 +77,7 @@ protected:
 
     void GetdGdx(int frame_id, tEigenArr<tMatrixXd> &dGdx);
     void VerifydGdx(int frame_id, const tEigenArr<tMatrixXd> &analytic_dGdx);
-    void Getdhdx(int frame_id);
+    void Getdhdx(int frame_id, tMatrixXd &dhdx);
+    void Verifydhdx(int frame_id, const tMatrixXd &analytic_dhdx);
     tMatrixXd GetG(int frame_id);
 };

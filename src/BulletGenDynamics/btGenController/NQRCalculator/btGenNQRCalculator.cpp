@@ -299,9 +299,11 @@ void btGenNQRCalculator::CalcNQRSystemLinearzation(int frame)
         // 2.1 get dGdx
         tEigenArr<tMatrixXd> dGdx;
         GetdGdx(frame, dGdx);
-        VerifydGdx(frame, dGdx);
+        // VerifydGdx(frame, dGdx);
 
         // 2.2 get dhdx
+        tMatrixXd dhdx;
+        Getdhdx(frame, dhdx);
     }
     // 3. get the B
     /*
@@ -417,6 +419,14 @@ tMatrixXd btGenNQRCalculator::GetG(int frame_id)
 /**
  * \brief       Get dGdx = [dGdq, dGdqdot]
  * the definition of matrix G has been shown above
+ * 
+ * x_{t+1} = G * u_t + h
+ * 
+ * x is the state vector
+ * u is the control vector
+ * 
+ * G is the state transition matrix
+ * h is the state transition residual
 */
 void btGenNQRCalculator::GetdGdx(int frame_id, tEigenArr<tMatrixXd> &dGdx)
 {
@@ -476,7 +486,18 @@ void btGenNQRCalculator::GetdGdx(int frame_id, tEigenArr<tMatrixXd> &dGdx)
     // }
     // exit(0);
 }
-void btGenNQRCalculator::Getdhdx(int frame_id) {}
+
+/**
+ * \brief               Get dh/dx
+ * x_{t+1} = G * u + h
+ * h is the state transition residual
+ * 
+*/
+void btGenNQRCalculator::Getdhdx(int frame_id, tMatrixXd &dhdx)
+{
+    std::cout << "dhdx hasn't been implemented\n";
+    exit(0);
+}
 
 // verify numerical gradient of CalcNQRContactAndControlForce
 void btGenNQRCalculator::VerifyContactAndControlJacobian(int frame_id)
@@ -522,6 +543,7 @@ void btGenNQRCalculator::VerifyContactAndControlJacobian(int frame_id)
     mModel->PopState("verify_contact_and_control_jac");
 }
 
+// Verify the numerical dGdx
 void btGenNQRCalculator::VerifydGdx(int frame_id,
                                     const tEigenArr<tMatrixXd> &analytic_dGdx)
 {
@@ -553,4 +575,9 @@ void btGenNQRCalculator::VerifydGdx(int frame_id,
         q[i] -= eps;
     }
     mModel->PopState("verify_dGdx");
+}
+
+void btGenNQRCalculator::Verifydhdx(int frame_id,
+                                    const tMatrixXd &analytic_dhdx)
+{
 }
