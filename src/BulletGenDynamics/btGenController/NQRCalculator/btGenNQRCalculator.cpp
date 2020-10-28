@@ -52,6 +52,7 @@ void btGenNQRCalculator::SetTraj(btTraj *traj_)
     traj_->CalculateLocalContactPos(mModel);
 
     // do precomputation for this traj
+    mdt = traj_->mTimestep;
     CalcNQR();
 }
 void btGenNQRCalculator::SetCoef(const Json::Value &conf)
@@ -146,7 +147,8 @@ void btGenNQRCalculator::CalcNQR()
         mModel->SetqAndqdot(q, qdot);
 
         CalcNQRContactAndControlForce(frame_id);
-        VerifyContactAndControlJacobian(frame_id);
+        // VerifyContactAndControlJacobian(frame_id);
+
         CalcNQRSystemLinearzation(frame_id);
     }
 
@@ -293,7 +295,14 @@ void btGenNQRCalculator::CalcNQRSystemLinearzation(int frame)
     /*
         A = \frac{dG}{dx} * u + \frac{dh}{dx}
     */
+    {
+        // 2.1 get dGdx
+        tEigenArr<tMatrixXd> dGdx;
+        GetdGdx(frame, dGdx);
+        VerifydGdx(frame, dGdx);
 
+        // 2.2 get dhdx
+    }
     // 3. get the B
     /*
     B = G
@@ -347,16 +356,16 @@ void btGenNQRCalculator::CalcNQRContactAndControlForce(int frame_id)
         d(control_jacobian)/dq  =   [[d(joint_torque_jacobian)/dq: dJvc/dq]]
                                 =   [0: dJvc^T/dq]
     */
-    info.mdJacdq.resize(
+    info.m_dControlJac_dq.resize(
         num_of_freedom,
         tMatrixXd::Zero(num_of_freedom, info.mTotalControlForceSize));
     tEigenArr<tMatrixXd> dContactJacdq;
     mTraj->GetGen_dContactJacobian_dq_NoSet(frame_id, mModel, dContactJacdq);
     for (int dof = 0; dof < num_of_freedom; dof++)
     {
-        info.mdJacdq[dof].block(0, info.mJointControlForceSize, num_of_freedom,
-                                info.mContactForceSize) =
-            dContactJacdq[dof].transpose();
+        info.m_dControlJac_dq[dof].block(
+            0, info.mJointControlForceSize, num_of_freedom,
+            info.mContactForceSize) = dContactJacdq[dof].transpose();
     }
 }
 
@@ -414,20 +423,58 @@ void btGenNQRCalculator::GetdGdx(int frame_id, tEigenArr<tMatrixXd> &dGdx)
     // 1. dGdq
     const auto &info = mNQRFrameInfos[frame_id];
     const int total_control_size = info.mTotalControlForceSize;
-    dGdx.resize(num_of_freedom,
-                tMatrixXd::Zero(mStateSize, total_control_size));
+    dGdx.resize(mStateSize, tMatrixXd::Zero(mStateSize, total_control_size));
+    tEigenArr<tMatrixXd> dMinvdq;
+    const tMatrixXd &Minv = mModel->GetInvMassMatrix();
     {
-        // 1.1 give the dMinv/dq
+        // 1.1 give the dMinv/dq = -M^{-1} * dMdq * M^{-1}
+        mModel->ComputedMassMatrixdq(dMinvdq); // now it's dMdq
+        for (int dof = 0; dof < num_of_freedom; dof++)
+        {
+            dMinvdq[dof] = -Minv * dMinvdq[dof] * Minv;
+            // std::cout << "dof " << dof << " dMinvdq norm "
+            //           << dMinvdq[dof].norm() << std::endl;
+        }
 
-        // 1.2 get the dJac/dq from before
-
+        // 1.2 get the dJac/dq from before, then gives the final
+        const tMatrixXd &control_jac = info.mTotalControlJacobian;
         /*
             dGdq =  [ dt * dMinvdq * Jac + dt * Minv * dJac/dq ]
                     [ dt2 * dMinvdq * Jac + dt2 * Minv * dJac/dq ]
+
+            dGdx = [dGdq(this part); dGdqdot]
         */
+        // std::cout << "dt = " << mdt << std::endl;
+        for (int dof = 0; dof < num_of_freedom; dof++)
+        {
+            // first part: [ dt * dMinvdq * Jac + dt * Minv * dJac/dq ]
+            dGdx[dof].block(0, 0, num_of_freedom, info.mTotalControlForceSize) =
+                mdt * dMinvdq[dof] * control_jac +
+                mdt * Minv * info.m_dControlJac_dq[dof];
+
+            // second part: dt * first part
+            dGdx[dof].block(num_of_freedom, 0, num_of_freedom,
+                            info.mTotalControlForceSize) =
+                mdt * dGdx[dof].block(0, 0, num_of_freedom,
+                                      info.mTotalControlForceSize);
+        }
     }
 
     // 2. dGdqdot = 0
+    {
+        // statesize = 2 * dof. the last half portion of vector "x" means qdot
+        // here we set all dGdqdot = 0
+        // dGdx = [dGdq; dGdqdot(this part)]
+        for (int i = num_of_freedom; i < mStateSize; i++)
+        {
+            dGdx[i].setZero();
+        }
+    }
+    // for (int i = 0; i < mStateSize; i++)
+    // {
+    //     std::cout << "dGdx " << i << " norm = " << dGdx[i].norm() << std::endl;
+    // }
+    // exit(0);
 }
 void btGenNQRCalculator::Getdhdx(int frame_id) {}
 
@@ -439,7 +486,7 @@ void btGenNQRCalculator::VerifyContactAndControlJacobian(int frame_id)
     CheckFrameId(frame_id, "verify_contact_and_control_jac");
     auto &info = mNQRFrameInfos[frame_id];
     tMatrixXd old_control_jac = info.mTotalControlJacobian;
-    tEigenArr<tMatrixXd> old_control_djac_dq = info.mdJacdq;
+    tEigenArr<tMatrixXd> old_control_djac_dq = info.m_dControlJac_dq;
     int num_of_freedom = mModel->GetNumOfFreedom();
     tEigenArr<tMatrixXd> new_control_djac_dq(
         num_of_freedom,
@@ -447,7 +494,7 @@ void btGenNQRCalculator::VerifyContactAndControlJacobian(int frame_id)
 
     // 2. forward computation
     tVectorXd q = mModel->Getq();
-    double eps = 1e-7;
+    double eps = 1e-8;
     for (int dof = 0; dof < num_of_freedom; dof++)
     {
         q[dof] += eps;
@@ -459,7 +506,7 @@ void btGenNQRCalculator::VerifyContactAndControlJacobian(int frame_id)
             dcontrol_jac_dqi - old_control_djac_dq[dof];
         std::cout << "dof " << dof << " diff norm "
                   << dcontrol_jac_dq_diff.norm() << std::endl;
-        if (dcontrol_jac_dq_diff.norm() > eps)
+        if (dcontrol_jac_dq_diff.norm() > eps * 10)
         {
             std::cout << "analytic dJacdq = \n"
                       << old_control_djac_dq[dof] << std::endl;
@@ -470,7 +517,40 @@ void btGenNQRCalculator::VerifyContactAndControlJacobian(int frame_id)
         }
         q[dof] -= eps;
     }
-
+    std::cout << "[log] frame " << frame_id
+              << " total control jacobian derivation verified succ\n";
     mModel->PopState("verify_contact_and_control_jac");
-    exit(0);
+}
+
+void btGenNQRCalculator::VerifydGdx(int frame_id,
+                                    const tEigenArr<tMatrixXd> &analytic_dGdx)
+{
+    mModel->PushState("verify_dGdx");
+    const auto &info = mNQRFrameInfos[frame_id];
+    const tMatrixXd old_G = GetG(frame_id);
+
+    tVectorXd q = mModel->Getq();
+    double eps = 1e-8;
+    for (int i = 0; i < num_of_freedom; i++)
+    {
+        q[i] += eps;
+        mModel->SetqAndqdot(q, mModel->Getqdot());
+        CalcNQRContactAndControlForce(frame_id);
+        tMatrixXd new_G = GetG(frame_id);
+        tMatrixXd dGdqi = (new_G - old_G) / eps;
+        tMatrixXd diff = dGdqi - analytic_dGdx[i];
+        double diff_max = diff.cwiseAbs().maxCoeff();
+        std::cout << "[log] dof " << i << " dGdx numerically diff max "
+                  << diff_max << ", ana norm " << analytic_dGdx[i].norm()
+                  << " , numerical norm " << dGdqi.norm() << std::endl;
+        if (diff_max > 1e-5)
+        {
+            std::cout << "anlytic dGdq = \n" << analytic_dGdx[i] << std::endl;
+            std::cout << "numerical dGdq = \n" << dGdqi << std::endl;
+            std::cout << "dGdq diff = \n" << diff << std::endl;
+            exit(0);
+        }
+        q[i] -= eps;
+    }
+    mModel->PopState("verify_dGdx");
 }
