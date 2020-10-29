@@ -281,10 +281,10 @@ void CustomEngineMainDemo::Test()
     auto mb = mGenWorld->GetMultibody();
     mb->SetComputeThirdDerive(true);
     int dof = mb->GetNumOfFreedom();
-    // tVectorXd q = tVectorXd::Random(dof), qdot = tVectorXd::Random(dof);
-    tVectorXd q = tVectorXd::Zero(dof), qdot = tVectorXd::Zero(dof);
+    tVectorXd q = tVectorXd::Random(dof), qdot = tVectorXd::Random(dof);
+    // tVectorXd q = tVectorXd::Zero(dof), qdot = tVectorXd::Zero(dof);
     mb->SetqAndqdot(q, qdot);
-
+    // exit(1);
     // mb->TestmWq();
     // mb->TestmTqq();
     // mb->TestmWqq();

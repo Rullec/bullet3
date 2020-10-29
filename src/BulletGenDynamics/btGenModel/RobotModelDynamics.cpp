@@ -1308,7 +1308,7 @@ void cRobotModelDynamics::TestThirdJacobian()
     // 1. get the old dJvdq and ddJvdqq
     for (int i = 0; i < GetNumOfLinks(); i++)
     {
-        TestLinkddJvddq(i);
+        // TestLinkddJvddq(i);
         TestLinkddJwddq(i);
     }
     std::cout << "Test Thrid Jacobian succ\n";
@@ -1433,7 +1433,42 @@ void cRobotModelDynamics::TestLinkddJvddq(int id)
     PopState("test_link_ddjv_ddq");
     printf("Test Link %d ddJvddq succ\n", id);
 }
-void cRobotModelDynamics::TestLinkddJwddq(int id) 
+void cRobotModelDynamics::TestLinkddJwddq(int id)
 {
-    
+    PushState("test_link_ddjw_ddq");
+    // 1. get the intermediate result
+    auto link = dynamic_cast<Link *>(GetLinkById(id));
+    EIGEN_V_MATXD dJwdq_old = GetLinkdJxdq(link, 'W');
+    EIGEN_VV_MATXD ddJwddq_analytic = GetLinkddJxdqq(link, 'W');
+    SetComputeThirdDerive(false);
+
+    // 2. check the numerical derivatives
+    tVectorXd q_old = mq;
+    double eps = 1e-6;
+    for (int i = 0; i < num_of_freedom; i++)
+    {
+        q_old[i] += eps;
+        SetqAndqdot(q_old, mqdot);
+
+        EIGEN_V_MATXD dJwdq_new = GetLinkdJxdq(link, 'W');
+        EIGEN_V_MATXD num_i = GetLinkdJxdqDivision(dJwdq_new, dJwdq_old, eps);
+
+        const EIGEN_V_MATXD &ana_i = ddJwddq_analytic[i];
+        for (int j = 0; j < num_of_freedom; j++)
+        {
+            tMatrixXd diff = ana_i[j] - num_i[j];
+            double diff_norm = diff.norm();
+            if (diff_norm > eps)
+            {
+                printf("[error] link %d ddJwdq%dq%d diff norm %.10f\n", id, j,
+                       i, diff_norm);
+                std::cout << "ana = \n" << ana_i[j] << std::endl;
+                std::cout << "num = \n" << num_i[j] << std::endl;
+                exit(0);
+            }
+        }
+        q_old[i] -= eps;
+    }
+    PopState("test_link_ddjw_ddq");
+    printf("Test Link %d ddJwddq succ\n", id);
 }

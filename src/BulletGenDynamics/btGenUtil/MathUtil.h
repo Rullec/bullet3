@@ -82,6 +82,7 @@ public:
     static double CalcConditionNumber(const tMatrixXd &mat);
     static tMatrixXd JacobPreconditioner(const tMatrixXd &mat);
     static bool IsHomogeneousPos(const tVector &pos, bool exit_if_not = true);
+    static bool IsSkewMatrix(const tMatrix3d &mat, double eps);
     // static void RoundZero(tMatrixXd &mat, double threshold = 1e-10);
 
     template <typename T>

@@ -44,9 +44,11 @@ public:
     tMatrixXd GetTotalDofdJKw_dq(int target_dof_id) const;
     tMatrixXd GetddJKv_dqq(int i, int j) const;
     tMatrixXd GetddJKw_dqq(int i, int j) const;
+    tVector3d GetdddJkw_dqqq(int i, int j, int k) const;
     tMatrixXd GetTotalDofddJKv_dqq(int i, int j) const;
     tMatrixXd GetTotalDofddJKw_dqq(int i, int j) const;
     tMatrixXd GetTotalDofddJKx_dqq(int i, int j, char type) const;
+
 protected:
     tVector3d link_vel, link_omega; // the lin vel and ang vel w.r.t the COM of
                                     // this link in world frame
