@@ -244,6 +244,26 @@ void Link::ComputeDJkwdq()
             // mij.noalias() = mWq_i_topleft * mWq[j].topLeftCorner<3, 3>().transpose();  // 8.17
             mij.noalias() = mWq_i_topleft * mWq3x3_T[j]; // 8.17
             gij.noalias() = m + mij;
+
+            // my gij
+            // {
+            //     tMatrix3d my_gij =
+            //         parent_joint->GetMWQQ(i, j).topLeftCorner<3, 3>() *
+            //             parent_joint->GetGlobalTransform()
+            //                 .topLeftCorner<3, 3>()
+            //                 .transpose() +
+            //         parent_joint->GetMWQ(i).topLeftCorner<3, 3>() *
+            //             parent_joint->GetMWQ(j)
+            //                 .topLeftCorner<3, 3>()
+            //                 .transpose();
+            //     tMatrix3d diff = my_gij - gij;
+            //     double norm = diff.norm();
+            //     if (norm > 1e-10)
+            //     {
+            //         std::cout << "error gij diff = " << norm << std::endl;
+            //         exit(1);
+            //     }
+            // }
             // tVector3d g = Tools::FromSkewSymmetric(gij);
             // if (g.norm() > 1e-10)
             // {
@@ -364,7 +384,8 @@ void Link::InitTerms()
         ddjkw_dqq[i].resize(i + 1);
         for (int j = i; j >= 0; j--)
         {
-            ddjkw_dqq[i][j].noalias() = tMatrixXd::Zero(3, j + 1); // 3xk
+            ddjkw_dqq[i][j].noalias() =
+                tMatrixXd::Zero(3, total_freedoms); // 3xk
         }
     }
 
@@ -565,7 +586,6 @@ tMatrixXd Link::GetddJKv_dqq(int i, int j) const
 */
 tMatrixXd Link::GetddJKw_dqq(int i, int j) const
 {
-    tMatrixXd ddJkw_dqiqj = tMatrixXd::Zero(3, total_freedoms);
     if (i < j)
         btMathUtil::Swap(i, j);
     if (i >= total_freedoms)
@@ -574,22 +594,18 @@ tMatrixXd Link::GetddJKw_dqq(int i, int j) const
                   << total_freedoms << std::endl;
         exit(1);
     }
-    for (int k = 0; k < total_freedoms; k++)
-    {
-        ddJkw_dqiqj.col(k) = GetdddJkw_dqqq(i, j, k);
-    }
-    return ddJkw_dqiqj;
+    return ddjkw_dqq[i][j];
 }
-tVector3d Link::GetdddJkw_dqqq(int i, int j, int k) const
-{
-    if (i < j)
-        btMathUtil::Swap(i, j);
-    if (i < k)
-        btMathUtil::Swap(i, k);
-    if (j < k)
-        btMathUtil::Swap(j, k);
-    return ddjkw_dqq[i][j].col(k);
-}
+// tVector3d Link::GetdddJkw_dqqq(int i, int j, int k) const
+// {
+//     if (i < j)
+//         btMathUtil::Swap(i, j);
+//     if (i < k)
+//         btMathUtil::Swap(i, k);
+//     if (j < k)
+//         btMathUtil::Swap(j, k);
+//     return ddjkw_dqq[i][j].col(k);
+// }
 /**
  * \brief       Get ddJkv/dqiqj, but i and j is freedom index in global size
  * \param i     the index between [0, global_freedoms]
@@ -683,123 +699,53 @@ tMatrixXd Link::GetTotalDofddJKx_dqq(int local_i, int local_j, char type) const
  * But in order to reduce the space, we only save the lower diagnoal of this n^3 cube.
  * so now   ddJwdqq size = n
  *          ddJwdqq[i] size i+1
- *          ddJwdqq[i][j] size 3x(j+1)
- *          ddJwdqq[i][j][k] 
+ *          ddJwdqq[i][j] size 3x(n)
  * 
- * 1. conclusion one: W_3x3 = R
- *      The left up cornder of transformation matrix W_{4x4}: W_{3x3}
- *      is equal to the rotmat R_3x3. Their derivatives is the same as well, aka d^nW_3x3/dq^n = d^nR/dq^n
- * 
- * 2. the definition of ddJwdqq
- *  Jw = [dR/dqi * RT]^{-1}. the operator []^{-1} extract the skew vector from this mat
- *  dJwdqj = [
- *              d^2R/dqiqj * R^T 
- *              + 
- *              dR/dqi * dR^T/dqj
- *           ]
- *  d^2Jw/dqjdqk = [
- *              d^3R/dqiqjqk * R^T  + d^2R/dqiqj * dR^T/dqk
- *              + 
- *              d^2R/dqiqk * dR^T/dqj + dR/dqi * d^2R^T/dqjqk
- *           ]
+// //  * 1. conclusion one: W_3x3 = R
+// //  *      The left up cornder of transformation matrix W_{4x4}: W_{3x3}
+// //  *      is equal to the rotmat R_3x3. Their derivatives is the same as well, aka d^nW_3x3/dq^n = d^nR/dq^n
+// //  * 
+// //  * 2. the definition of ddJwdqq
+// //  *  Jw = [dR/dqi * RT]^{-1}. the operator []^{-1} extract the skew vector from this mat
+// //  *  dJwdqj = [
+// //  *              d^2R/dqiqj * R^T 
+// //  *              + 
+// //  *              dR/dqi * dR^T/dqj
+// //  *           ]
+// //  *  d^2Jw/dqjdqk = [
+// //  *              d^3R/dqiqjqk * R^T  + d^2R/dqiqj * dR^T/dqk
+// //  *              + 
+// //  *              d^2R/dqiqk * dR^T/dqj + dR/dqi * d^2R^T/dqjqk
+// //  *           ]
 */
 void Link::ComputeDDJkwdqq()
 {
-    // R^T
-    tMatrix3d local_rotation =
-        GetGlobalTransform().topLeftCorner<3, 3>() *
-        parent_joint->GetGlobalTransform().topLeftCorner<3, 3>().transpose();
-    const tMatrix3d &RT =
-        GetGlobalTransform().topLeftCorner<3, 3>().transpose();
     for (int i = total_freedoms - 1; i >= 0; i--)
     {
-        // dR/dqi
-        const tMatrix3d &dRdqi =
-            parent_joint->GetMWQ(i).topLeftCorner<3, 3>() * local_rotation;
         for (int j = i; j >= 0; j--)
         {
-            // d^2R/dqiqj
-            const tMatrix3d &d2Rdqiqj =
-                parent_joint->GetMWQQ(i, j).topLeftCorner<3, 3>() *
-                local_rotation;
-
-            // dR^T/dqj
-            const tMatrix3d &dRTdqj =
-                (parent_joint->GetMWQ(j).topLeftCorner<3, 3>() * local_rotation)
-                    .transpose();
-            for (int k = j; k >= 0; k--)
+            for (int k = 0; k < total_freedoms; k++)
             {
-                // d^3R/dqiqjqk
-                const tMatrix3d &d3Rdqiqjqk =
+                tMatrix3d part1 =
                     parent_joint->GetMWQQQ(i, j, k).topLeftCorner<3, 3>() *
-                    local_rotation;
-
-                // dR^T/dqk
-                const tMatrix3d &dRTdqk =
-                    (parent_joint->GetMWQ(k).topLeftCorner<3, 3>() *
-                     local_rotation)
+                    parent_joint->GetGlobalTransform()
+                        .topLeftCorner<3, 3>()
                         .transpose();
-
-                // d^2R^T/dqjqk
-                const tMatrix3d &d2RTdqjqk =
-                    (parent_joint->GetMWQQ(j, k).topLeftCorner<3, 3>() *
-                     local_rotation)
-                        .transpose();
-
-                // d^2R/dqiqk
-                const tMatrix3d &d2Rdqiqk =
+                tMatrix3d part2 =
                     parent_joint->GetMWQQ(i, k).topLeftCorner<3, 3>() *
-                    local_rotation;
+                    parent_joint->GetMWQ(j).topLeftCorner<3, 3>().transpose();
+                tMatrix3d part3 =
+                    parent_joint->GetMWQQ(j, k).topLeftCorner<3, 3>() *
+                    parent_joint->GetMWQ(i).topLeftCorner<3, 3>().transpose();
 
-                /*
-                    d^2Jw/dqjdqk = [
-                    d^3R/dqiqjqk * R^T  + d^2R/dqiqj * dR^T/dqk
-                    + 
-                    d^2R/dqiqk * dR^T/dqj + dR/dqi * d^2R^T/dqjqk
-                ]
-                */
-                tMatrix3d res = d3Rdqiqjqk * RT + d2Rdqiqj * dRTdqk +
-                                d2Rdqiqk * dRTdqj + dRdqi * d2RTdqjqk;
-
+                tMatrix3d part4 =
+                    parent_joint->GetMWQ(k).topLeftCorner<3, 3>() *
+                    parent_joint->GetMWQQ(i, j)
+                        .topLeftCorner<3, 3>()
+                        .transpose();
+                tMatrix3d res = part1 + part2 + part3 + part4;
                 ddjkw_dqq[i][j].col(k) = Tools::FromSkewSymmetric(res);
-                // printf("[debug] %d %d %d mat3 = \n", i, j, k);
-                //     std::cout << res << std::endl;
-                //     std::cout
-                //         << " skew vec = " << ddjkw_dqq[i][j].col(k).transpose()
-                //         << std::endl;
-
-                // if (i == 4 && j == 4 && k == 3)
-                // {
-                //     printf("[debug] %d %d %d mat3 = \n", i, j, k);
-                //     std::cout << res << std::endl;
-                //     std::cout
-                //         << " skew vec = " << ddjkw_dqq[i][j].col(k).transpose()
-                //         << std::endl;
-                //     std::cout << "local_rot = \n"
-                //               << local_rotation << std::endl;
-                //     std::cout << "d3Rdqiqjqk = \n" << d3Rdqiqjqk << std::endl;
-                //     std::cout << "RT = \n" << RT << std::endl;
-                //     std::cout << "d2Rdqiqj = \n" << d2Rdqiqj << std::endl;
-                //     std::cout << "dRTdqk = \n" << dRTdqk << std::endl;
-                //     std::cout << "d2Rdqiqk = \n" << d2Rdqiqk << std::endl;
-                //     std::cout << "dRTdqj = \n" << dRTdqj << std::endl;
-                //     std::cout << "dRdqi = \n" << dRdqi << std::endl;
-                //     std::cout << "d2RTdqjqk = \n" << d2RTdqjqk << std::endl;
-                //     tMatrix3d part_1 = d3Rdqiqjqk * RT;
-                //     tMatrix3d part_2 = d2Rdqiqj * dRTdqk;
-                //     tMatrix3d part_3 = d2Rdqiqk * dRTdqj;
-                //     tMatrix3d part_4 = dRdqi * d2RTdqjqk;
-                //     std::cout << "part1 = \n" << part_1 << std::endl;
-                //     std::cout << "part2 = \n" << part_2 << std::endl;
-                //     std::cout << "part3 = \n" << part_3 << std::endl;
-                //     std::cout << "part4 = \n" << part_4 << std::endl;
-                //     exit(0);
-                // }
-
-                assert(btMathUtil::IsSkewMatrix(res, 1e-6));
             }
         }
     }
-    // std::cout << "compute ddjkwdqq done\n";
-    // exit(0);
 }

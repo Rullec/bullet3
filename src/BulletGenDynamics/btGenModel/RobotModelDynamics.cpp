@@ -1308,7 +1308,7 @@ void cRobotModelDynamics::TestThirdJacobian()
     // 1. get the old dJvdq and ddJvdqq
     for (int i = 0; i < GetNumOfLinks(); i++)
     {
-        // TestLinkddJvddq(i);
+        TestLinkddJvddq(i);
         TestLinkddJwddq(i);
     }
     std::cout << "Test Thrid Jacobian succ\n";
@@ -1458,7 +1458,7 @@ void cRobotModelDynamics::TestLinkddJwddq(int id)
         {
             tMatrixXd diff = ana_i[j] - num_i[j];
             double diff_norm = diff.norm();
-            if (diff_norm > eps)
+            if (diff_norm > eps * 10)
             {
                 printf("[error] link %d ddJwdq%dq%d diff norm %.10f\n", id, j,
                        i, diff_norm);
