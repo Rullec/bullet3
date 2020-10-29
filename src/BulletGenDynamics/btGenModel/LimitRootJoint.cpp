@@ -77,7 +77,7 @@ void LimitRootJoint::Tell()
  * mTq = dTdq = dTdz
  * 
 */
-void LimitRootJoint::ComputeTransformFirstDerive()
+void LimitRootJoint::ComputeLocalTransformFirstDerive()
 {
     mTq[0] = r_m_first_deriv[0];
 }

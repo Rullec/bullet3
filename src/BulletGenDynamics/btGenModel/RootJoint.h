@@ -21,9 +21,11 @@ public:
 
     void Tell() override;
 
-    void ComputeTransformFirstDerive() override;
+    void ComputeLocalTransformFirstDerive() override;
 
     void ComputeLocalTransformSecondDerive() override;
+
+    void ComputeLocalTransformThirdDerive() override;
 };
 
 #endif // ROBOT_ROOTJOINT_H

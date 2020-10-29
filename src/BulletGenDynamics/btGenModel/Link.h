@@ -18,7 +18,8 @@ public:
     bool IsJoint() const override { return false; }
 
     void UpdateMWQ();
-    tMatrix &GetMWQQ(int i, int j) override;
+    const tMatrix &GetMWQQ(int i, int j) const override;
+    const tMatrix &GetMWQQQ(int i, int j, int k) const override;
 
     //===============For RigidBody Dynamics===============
     void ComputeMassMatrix() override;
@@ -27,6 +28,8 @@ public:
     void ComputeJKw_dot(tVectorXd &q_dot) override;
     void ComputeDJkvdq(const tVector3d &p) override;
     void ComputeDJkwdq() override;
+    void ComputeDDJkvddq(const tVector3d &p) override;
+    void ComputeDDJkwdqq() override;
     //====================================================
 
     //===================For Simulation===================

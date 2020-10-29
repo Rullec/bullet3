@@ -51,6 +51,20 @@ void Link::UpdateState(bool compute_gradient)
             ComputeDJkvdq(p);
             ComputeDJkwdq();
         }
+
+        if (compute_third_derive)
+        {
+            if (compute_second_derive == false)
+            {
+                std::cout
+                    << "[error] Link::UpdateState: 3rd derivatives can only be "
+                       "calculated when 2ed derivatives are availiable\n";
+                exit(1);
+            }
+            tVector3d p(0, 0, 0);
+            ComputeDDJkvddq(p);
+            ComputeDDJkwdqq();
+        }
         // std::cout << name << ":\n";
         // std::cout << JK_w << std::endl;
         // std::cout << "====\n";
@@ -278,9 +292,16 @@ void Link::ComputeDJkwdq()
 #endif
 }
 
-tMatrix &Link::GetMWQQ(int i, int j)
+const tMatrix &Link::GetMWQQ(int i, int j) const
 {
     Printer::Error("Calling GetMWQQ in Link Object");
+    assert(false);
+    return mWq[i];
+}
+
+const tMatrix &Link::GetMWQQQ(int i, int j, int k) const
+{
+    Printer::Error("Calling GetMWQQQ in Link Object");
     assert(false);
     return mWq[i];
 }
@@ -321,6 +342,19 @@ void Link::InitTerms()
     {
         jkv_dq[i].noalias() = tMatrixXd::Zero(global_freedom, global_freedom);
         jkw_dq[i].noalias() = tMatrixXd::Zero(global_freedom, global_freedom);
+    }
+
+    // int
+    ddjkv_dqq.resize(global_freedom);
+    ddjkw_dqq.resize(global_freedom);
+    for (int i = 0; i < global_freedom; i++)
+    {
+        ddjkv_dqq[i].resize(global_freedom);
+        ddjkw_dqq[i].resize(global_freedom);
+        for (auto &item : ddjkv_dqq[i])
+            item.noalias() = tMatrixXd::Zero(3, global_freedom);
+        for (auto &item : ddjkw_dqq[i])
+            item.noalias() = tMatrixXd::Zero(3, global_freedom);
     }
 
 #endif
@@ -451,3 +485,89 @@ void Link::ComputedMdq(tEigenArr<tMatrixXd> &dMdq)
             R * Ibody * dRdq[global_dof_id].transpose();
     }
 }
+
+/**
+ * \brief           Compute the second order derivatives of Jv w.r.t q
+ * Jv: 3 x n
+ * dJvdq: 3 x n x n
+ * dJvdq: 3 x n x n x n : vector<vector<tMatrix 3xn>>
+ * 
+ * p_global = parent_joint->getglobaltrans() * local_trans * p_local
+ * p_global = W * local_trans * p_local
+*/
+void Link::ComputeDDJkvddq(const tVector3d &p)
+{
+    auto visited = [](EIGEN_VV_MATXD &ddjkv_dqq, int i, int j, int k,
+                      const tVector3d &value) {
+        int has_equality = 0;
+        if (i == j)
+            has_equality++;
+        if (i == k)
+            has_equality++;
+        if (j == k)
+            has_equality++;
+        if (has_equality == 0)
+        {
+
+            ddjkv_dqq[i][j].col(k).noalias() = value;
+            ddjkv_dqq[i][k].col(j).noalias() = value;
+            ddjkv_dqq[j][i].col(k).noalias() = value;
+            ddjkv_dqq[j][k].col(i).noalias() = value;
+            ddjkv_dqq[k][j].col(i).noalias() = value;
+            ddjkv_dqq[k][i].col(j).noalias() = value;
+        }
+        else if (has_equality == 1)
+        {
+            int eq_idx = -1, ineq_idx = -1;
+            if (i == j)
+                eq_idx = i, ineq_idx = k;
+            else if (i == k)
+                eq_idx = i, ineq_idx = j;
+            else if (j == k)
+                eq_idx = k, ineq_idx = i;
+            ddjkv_dqq[eq_idx][eq_idx].col(ineq_idx).noalias() = value;
+            ddjkv_dqq[eq_idx][ineq_idx].col(eq_idx).noalias() = value;
+            ddjkv_dqq[ineq_idx][eq_idx].col(eq_idx).noalias() = value;
+        }
+        else if (has_equality == 3)
+        {
+            ddjkv_dqq[i][j].col(k).noalias() = value;
+        }
+    };
+
+    tVector p_local = btMathUtil::Expand(p, 1);
+    tVector local_transform_times_p_local = local_transform * p_local;
+    for (int i = 0; i < total_freedoms; i++)
+    {
+        for (int j = i; j < total_freedoms; j++)
+        {
+            for (int k = j; k < total_freedoms; k++)
+            {
+                /*
+                p_global = W * local_trans * p_local
+                Jv = d(p_global)dq -> Jv = dW/dq * (local_trans * p_local)
+
+                now, calculate the 
+                d^2(Jv)/d(qi qj) 
+                = d^2(dW/dq * (local_trans * p_local))/d(qi qj) 
+                = d^2(dW/dq)/d(qi qj)  * (local_trans * p_local)
+                = d^3(W)/d(q qi qj)  * (local_trans * p_local)
+                */
+                tVector entry_ijk = parent_joint->GetMWQQQ(i, j, k) *
+                                    local_transform_times_p_local;
+
+                visited(ddjkv_dqq, i, j, k, entry_ijk.segment(0, 3));
+            }
+        }
+    }
+}
+
+/**
+ * \brief           Compute the second order derivatives of Jw w.r.t q
+ * Jw: 3 x n
+ * dJwdq: 3 x n x n
+ * dJwdq: 3 x n x n x n : vector<vector<tMatrix 3xn>>
+ * 
+ * [w] = \dot{R} R^T
+*/
+void Link::ComputeDDJkwdqq() {}

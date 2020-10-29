@@ -17,6 +17,8 @@ cRobotModelDynamics ::tStateRecord::tStateRecord()
     mass_matrix.resize(0, 0);
     coriolis_matrix.resize(0, 0);
     damping_matrix.resize(0, 0);
+    compute_2rd_derive = false;
+    compute_3ed_derive = false;
 }
 extern bool gEnablePauseWhenSolveError;
 extern bool gEnableResolveWhenSolveError;
@@ -889,6 +891,8 @@ void cRobotModelDynamics::PushState(const std::string &tag,
     state->damping_matrix = mDampingMatrix;
     state->coriolis_matrix = coriolis_matrix;
     state->generalized_force = mGenForce;
+    state->compute_2rd_derive = compute_second_deriv;
+    state->compute_3ed_derive = compute_third_deriv;
     if (only_vel_and_force == false)
     {
         state->q = mq;
@@ -897,7 +901,6 @@ void cRobotModelDynamics::PushState(const std::string &tag,
 
     mStateStack.push_back(std::make_pair(tag, state));
 }
-
 
 /**
  * \brief           pop current model state outof the stack
@@ -935,6 +938,8 @@ void cRobotModelDynamics::PopState(const std::string &tag,
     mGenForce = state->generalized_force;
     coriolis_matrix = state->coriolis_matrix;
     mDampingMatrix = state->damping_matrix;
+    SetComputeSecondDerive(state->compute_2rd_derive);
+    SetComputeThirdDerive(state->compute_3ed_derive);
 
     if (only_vel_and_force == false)
     {
@@ -1238,12 +1243,14 @@ void cRobotModelDynamics::TestRotationChar()
  * "contact-aware nonlienar dynamics controller". This pointer will be used when
  * the LCP constraints are handled in ConstraintData.cpp
  */
-void cRobotModelDynamics::SetContactAwareController(btGenContactAwareController *ptr)
+void cRobotModelDynamics::SetContactAwareController(
+    btGenContactAwareController *ptr)
 {
     mController = ptr;
 }
 
-btGenContactAwareController *cRobotModelDynamics::GetContactAwareController() const
+btGenContactAwareController *
+cRobotModelDynamics::GetContactAwareController() const
 {
     return mController;
 }

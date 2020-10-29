@@ -66,8 +66,7 @@ void RootJoint::GetRotations(tMatrix3d &m)
     }
     m.setIdentity();
 
-
-    // calculate theta_x, theta_y, theta_z rotation matrices, and their first order derivation, 
+    // calculate theta_x, theta_y, theta_z rotation matrices, and their first order derivation,
     // Note that it is dR/dq, but not dR/dt
     xconventionTransform(r_m[REVOLUTE_X], freedoms[REVOLUTE_X].v);
     xconventionRotation_dx(r_m_first_deriv[REVOLUTE_X], freedoms[REVOLUTE_X].v);
@@ -103,7 +102,6 @@ void RootJoint::GetRotations(tMatrix3d &m)
     r_m_first_deriv[TRANSLATE_Z].setZero();
     r_m_first_deriv[TRANSLATE_Z].data()[14] = 1;
 
-
     // the final rotation matrix, without translation, is simple = Rz * Ry * Rx
     m = r_m[REVOLUTE_Z].topLeftCorner<3, 3>() *
         r_m[REVOLUTE_Y].topLeftCorner<3, 3>() *
@@ -137,7 +135,7 @@ void RootJoint::Tell()
  * 
  * dT/dn = M1 * M2 * ... * d(Mn)dn * M_{n+1} * ... * M_last
 */
-void RootJoint::ComputeTransformFirstDerive()
+void RootJoint::ComputeLocalTransformFirstDerive()
 {
     /*
         dT/dx = rm[2] * rm[1] * drm/dx * rm[5] * rm[4] * rm[3]
@@ -175,47 +173,10 @@ void RootJoint::ComputeLocalTransformSecondDerive()
                              freedoms[REVOLUTE_Y].v);
     zconventionRotation_dzdz(r_m_second_deriv[REVOLUTE_Z],
                              freedoms[REVOLUTE_Z].v);
-    // mTqq[TRANSLATE_X][TRANSLATE_X].setZero();
-    // mTqq[TRANSLATE_X][TRANSLATE_Y] = r_m[2] * r_m_first_deriv[1] *
-    // r_m_first_deriv[0] * r_m[5] * r_m[4] * r_m[3];
-    // mTqq[TRANSLATE_X][TRANSLATE_Z] = r_m_first_deriv[2] * r_m[1] *
-    // r_m_first_deriv[0] * r_m[5] * r_m[4] * r_m[3];
-    // mTqq[TRANSLATE_X][REVOLUTE_X]  = r_m[2] * r_m[1] * r_m_first_deriv[0] *
-    // r_m[5] * r_m[4] * r_m_first_deriv[3]; mTqq[TRANSLATE_X][REVOLUTE_Y]  =
-    // r_m[2] * r_m[1] * r_m_first_deriv[0] * r_m[5] * r_m_first_deriv[4] *
-    // r_m[3]; mTqq[TRANSLATE_X][REVOLUTE_Z]  = r_m[2] * r_m[1] *
-    // r_m_first_deriv[0] * r_m_first_deriv[5] * r_m[4] * r_m[3];
 
-    // mTqq[TRANSLATE_Y][TRANSLATE_Y].setZero();
-    // mTqq[TRANSLATE_Y][TRANSLATE_Z] = r_m_first_deriv[2] * r_m_first_deriv[1]
-    // * r_m[0] * r_m[5] * r_m[4] * r_m[3]; mTqq[TRANSLATE_Y][REVOLUTE_X]  =
-    // r_m[2] * r_m_first_deriv[1] * r_m[0] * r_m[5] * r_m[4] *
-    // r_m_first_deriv[3]; mTqq[TRANSLATE_Y][REVOLUTE_Y]  = r_m[2] *
-    // r_m_first_deriv[1] * r_m[0] * r_m[5] * r_m_first_deriv[4] * r_m[3];
-    // mTqq[TRANSLATE_Y][REVOLUTE_Z]  = r_m[2] * r_m_first_deriv[1] * r_m[0] *
-    // r_m_first_deriv[5] * r_m[4] * r_m[3];
-
-    // mTqq[TRANSLATE_Z][TRANSLATE_Z].setZero();
-    // mTqq[TRANSLATE_Z][REVOLUTE_X]  = r_m_first_deriv[2] * r_m[1] * r_m[0] *
-    // r_m[5] * r_m[4] * r_m_first_deriv[3]; mTqq[TRANSLATE_Z][REVOLUTE_Y]  =
-    // r_m_first_deriv[2] * r_m[1] * r_m[0] * r_m[5] * r_m_first_deriv[4] *
-    // r_m[3]; mTqq[TRANSLATE_Z][REVOLUTE_Z]  = r_m_first_deriv[2] * r_m[1] *
-    // r_m[0] * r_m_first_deriv[5] * r_m[4] * r_m[3];
-
-    // mTqq[REVOLUTE_X][REVOLUTE_X]  = r_m[2] * r_m[1] * r_m[0] * r_m[5] *
-    // r_m[4]			   * r_m_second_deriv[3];
-    // mTqq[REVOLUTE_X][REVOLUTE_Y]  = r_m[2] * r_m[1] * r_m[0] * r_m[5] *
-    // r_m_first_deriv[4] * r_m_first_deriv[3]; mTqq[REVOLUTE_X][REVOLUTE_Z]  =
-    // r_m[2] * r_m[1] * r_m[0] * r_m_first_deriv[5] * r_m[4] *
-    // r_m_first_deriv[3];
-
-    // mTqq[REVOLUTE_Y][REVOLUTE_Y] = r_m[2] * r_m[1] * r_m[0] * r_m[5]			 *
-    // r_m_second_deriv[4] * r_m[3]; mTqq[REVOLUTE_Y][REVOLUTE_Z] = r_m[2] *
-    // r_m[1] * r_m[0] * r_m_first_deriv[5] * r_m_first_deriv[4]  * r_m[3];
-
-    // mTqq[REVOLUTE_Z][REVOLUTE_Z] = r_m[2] * r_m[1] * r_m[0] *
-    // r_m_second_deriv[5] * r_m[4] * r_m[3];
-
+    r_m_second_deriv[TRANSLATE_X].setZero();
+    r_m_second_deriv[TRANSLATE_Y].setZero();
+    r_m_second_deriv[TRANSLATE_Z].setZero();
     mTqq[TRANSLATE_X][TRANSLATE_X].setZero();
     Tools::AVX4x4v1_6mat(r_m[2], r_m_first_deriv[1], r_m_first_deriv[0], r_m[5],
                          r_m[4], r_m[3], mTqq[TRANSLATE_Y][TRANSLATE_X]);
@@ -228,15 +189,6 @@ void RootJoint::ComputeLocalTransformSecondDerive()
                          mTqq[REVOLUTE_Y][TRANSLATE_X]);
     Tools::AVX4x4v1_6mat(r_m[2], r_m[1], r_m_first_deriv[0], r_m_first_deriv[5],
                          r_m[4], r_m[3], mTqq[REVOLUTE_Z][TRANSLATE_X]);
-    // mTqq[TRANSLATE_Y][TRANSLATE_X] = r_m[2] * r_m_first_deriv[1] *
-    // r_m_first_deriv[0] * r_m[5] * r_m[4] * r_m[3];
-    // mTqq[TRANSLATE_Z][TRANSLATE_X] = r_m_first_deriv[2] * r_m[1] *
-    // r_m_first_deriv[0] * r_m[5] * r_m[4] * r_m[3];
-    // mTqq[REVOLUTE_X][TRANSLATE_X]  = r_m[2] * r_m[1] * r_m_first_deriv[0] *
-    // r_m[5] * r_m[4] * r_m_first_deriv[3]; mTqq[REVOLUTE_Y][TRANSLATE_X]  =
-    // r_m[2] * r_m[1] * r_m_first_deriv[0] * r_m[5] * r_m_first_deriv[4] *
-    // r_m[3]; mTqq[REVOLUTE_Z][TRANSLATE_X]  = r_m[2] * r_m[1] *
-    // r_m_first_deriv[0] * r_m_first_deriv[5] * r_m[4] * r_m[3];
 
     mTqq[TRANSLATE_Y][TRANSLATE_Y].setZero();
     Tools::AVX4x4v1_6mat(r_m_first_deriv[2], r_m_first_deriv[1], r_m[0], r_m[5],
@@ -248,13 +200,6 @@ void RootJoint::ComputeLocalTransformSecondDerive()
                          mTqq[REVOLUTE_Y][TRANSLATE_Y]);
     Tools::AVX4x4v1_6mat(r_m[2], r_m_first_deriv[1], r_m[0], r_m_first_deriv[5],
                          r_m[4], r_m[3], mTqq[REVOLUTE_Z][TRANSLATE_Y]);
-    // mTqq[TRANSLATE_Z][TRANSLATE_Y] = r_m_first_deriv[2] * r_m_first_deriv[1]
-    // * r_m[0] * r_m[5] * r_m[4] * r_m[3]; mTqq[REVOLUTE_X][TRANSLATE_Y]  =
-    // r_m[2] * r_m_first_deriv[1] * r_m[0] * r_m[5] * r_m[4] *
-    // r_m_first_deriv[3]; mTqq[REVOLUTE_Y][TRANSLATE_Y]  = r_m[2] *
-    // r_m_first_deriv[1] * r_m[0] * r_m[5] * r_m_first_deriv[4] * r_m[3];
-    // mTqq[REVOLUTE_Z][TRANSLATE_Y]  = r_m[2] * r_m_first_deriv[1] * r_m[0] *
-    // r_m_first_deriv[5] * r_m[4] * r_m[3];
 
     mTqq[TRANSLATE_Z][TRANSLATE_Z].setZero();
     Tools::AVX4x4v1_6mat(r_m_first_deriv[2], r_m[1], r_m[0], r_m[5], r_m[4],
@@ -264,11 +209,6 @@ void RootJoint::ComputeLocalTransformSecondDerive()
                          mTqq[REVOLUTE_Y][TRANSLATE_Z]);
     Tools::AVX4x4v1_6mat(r_m_first_deriv[2], r_m[1], r_m[0], r_m_first_deriv[5],
                          r_m[4], r_m[3], mTqq[REVOLUTE_Z][TRANSLATE_Z]);
-    // mTqq[REVOLUTE_X][TRANSLATE_Z] = r_m_first_deriv[2] * r_m[1] * r_m[0] *
-    // r_m[5] * r_m[4] * r_m_first_deriv[3]; mTqq[REVOLUTE_Y][TRANSLATE_Z] =
-    // r_m_first_deriv[2] * r_m[1] * r_m[0] * r_m[5] * r_m_first_deriv[4] *
-    // r_m[3]; mTqq[REVOLUTE_Z][TRANSLATE_Z] = r_m_first_deriv[2] * r_m[1] *
-    // r_m[0] * r_m_first_deriv[5] * r_m[4] * r_m[3];
 
     Tools::AVX4x4v1_6mat(r_m[2], r_m[1], r_m[0], r_m[5], r_m[4],
                          r_m_second_deriv[3], mTqq[REVOLUTE_X][REVOLUTE_X]);
@@ -276,23 +216,101 @@ void RootJoint::ComputeLocalTransformSecondDerive()
                          r_m_first_deriv[3], mTqq[REVOLUTE_Y][REVOLUTE_X]);
     Tools::AVX4x4v1_6mat(r_m[2], r_m[1], r_m[0], r_m_first_deriv[5], r_m[4],
                          r_m_first_deriv[3], mTqq[REVOLUTE_Z][REVOLUTE_X]);
-    // mTqq[REVOLUTE_X][REVOLUTE_X] = r_m[2] * r_m[1] * r_m[0] * r_m[5] * r_m[4]
-    // * r_m_second_deriv[3]; mTqq[REVOLUTE_Y][REVOLUTE_X] = r_m[2] * r_m[1] *
-    // r_m[0] * r_m[5] * r_m_first_deriv[4] * r_m_first_deriv[3];
-    // mTqq[REVOLUTE_Z][REVOLUTE_X] = r_m[2] * r_m[1] * r_m[0] *
-    // r_m_first_deriv[5] * r_m[4] * r_m_first_deriv[3];
 
     Tools::AVX4x4v1_6mat(r_m[2], r_m[1], r_m[0], r_m[5], r_m_second_deriv[4],
                          r_m[3], mTqq[REVOLUTE_Y][REVOLUTE_Y]);
     Tools::AVX4x4v1_6mat(r_m[2], r_m[1], r_m[0], r_m_first_deriv[5],
                          r_m_first_deriv[4], r_m[3],
                          mTqq[REVOLUTE_Z][REVOLUTE_Y]);
-    // mTqq[REVOLUTE_Y][REVOLUTE_Y] = r_m[2] * r_m[1] * r_m[0] * r_m[5] *
-    // r_m_second_deriv[4] * r_m[3]; mTqq[REVOLUTE_Z][REVOLUTE_Y] = r_m[2] *
-    // r_m[1] * r_m[0] * r_m_first_deriv[5] * r_m_first_deriv[4]  * r_m[3];
 
     Tools::AVX4x4v1_6mat(r_m[2], r_m[1], r_m[0], r_m_second_deriv[5], r_m[4],
                          r_m[3], mTqq[REVOLUTE_Z][REVOLUTE_Z]);
-    // mTqq[REVOLUTE_Z][REVOLUTE_Z] = r_m[2] * r_m[1] * r_m[0] *
-    // r_m_second_deriv[5] * r_m[4] * r_m[3];
+}
+
+/**
+ * \brief       compute mTqqq for root joint, compute mTqqq
+ *  
+ *      d^3(T)/d(qi, qj, qk), i, j, k \in {0, 1, 2, 3, 4, 5} = mTqqq[i][j][k]
+ * 
+ * 
+*/
+// extern void DerivativesAccessChained(EIGEN_VVV_tMatrixD &VVV_mat, int i, int j,
+//                                      int k, const tMatrix &value);
+void RootJoint::ComputeLocalTransformThirdDerive()
+{
+    // 1. update the third deriv for 3 rotation freedoms
+    xconventionRotation_dxdxdx(r_m_third_deriv[REVOLUTE_X],
+                               freedoms[REVOLUTE_X].v);
+    yconventionRotation_dydydy(r_m_third_deriv[REVOLUTE_Y],
+                               freedoms[REVOLUTE_Y].v);
+    zconventionRotation_dzdzdz(r_m_third_deriv[REVOLUTE_Z],
+                               freedoms[REVOLUTE_Z].v);
+    r_m_third_deriv[TRANSLATE_X].setZero();
+    r_m_third_deriv[TRANSLATE_Y].setZero();
+    r_m_third_deriv[TRANSLATE_Z].setZero();
+
+    // 2. begin to calculate mTqqq
+    // T = trans_z * trans_y * trans_x * rot_z * rot_y * rot_x
+    const eRootFreedomEnum
+        root_freedom_order[eRootFreedomEnum::TOTAL_ROOT_FREEDOM] = {
+            eRootFreedomEnum::TRANSLATE_Z, eRootFreedomEnum::TRANSLATE_Y,
+            eRootFreedomEnum::TRANSLATE_X, eRootFreedomEnum::REVOLUTE_Z,
+            eRootFreedomEnum::REVOLUTE_Y,  eRootFreedomEnum::REVOLUTE_X};
+    int *freedom_derivative_order = new int[local_freedom];
+    tMatrix value;
+    for (int i = local_freedom - 1; i >= 0; i--)
+        for (int j = i; j >= 0; j--)
+            for (int k = j; k >= 0; k--)
+            {
+                memset(freedom_derivative_order, 0,
+                       sizeof(int) * local_freedom);
+                freedom_derivative_order[i]++;
+                freedom_derivative_order[j]++;
+                freedom_derivative_order[k]++;
+                value.setIdentity();
+                for (int idx = 0; idx < eRootFreedomEnum::TOTAL_ROOT_FREEDOM;
+                     idx++)
+                {
+                    switch (freedom_derivative_order[root_freedom_order[idx]])
+                    {
+                    case 0:
+                        value = value * r_m[root_freedom_order[idx]];
+                        break;
+                    case 1:
+                        value =
+                            value * r_m_first_deriv[root_freedom_order[idx]];
+                        break;
+                    case 2:
+                        value =
+                            value * r_m_second_deriv[root_freedom_order[idx]];
+                        break;
+                    case 3:
+                        value =
+                            value * r_m_third_deriv[root_freedom_order[idx]];
+                        break;
+
+                    default:
+                        std::cout << "[error] error derivative order "
+                                  << freedom_derivative_order[idx] << std::endl;
+                        exit(0);
+                        break;
+                    }
+                }
+                mTqqq[i][j][k] = value;
+                // std::cout << "d" << (char)('x' + i) << " for d^2T/q"
+                //           << (char)('x' + j) << "q" << (char)('x' + k)
+                //           << " = \n"
+                //           << value << std::endl;
+                // if (i == 4 && j == 3 && k == 3)
+                // {
+                //     for (int idx = 0;
+                //          idx < eRootFreedomEnum::TOTAL_ROOT_FREEDOM; idx++)
+                //         std::cout << "[calc mTqqq] dof " << idx
+                //                   << " derivative order "
+                //                   << freedom_derivative_order[idx] << std::endl;
+                //     std::cout << "dydy = " << r_m_second_deriv[1] << std::endl;
+                //     exit(1);
+                // }
+            }
+    // exit(0);
 }

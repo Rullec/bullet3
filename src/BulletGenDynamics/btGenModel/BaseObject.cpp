@@ -40,7 +40,7 @@ const tMatrixXd &BaseObject::GetJKw_dq(int i) const { return jkw_dq[i]; }
  * \param i     the local freedom id in this base object, not the global freedom
  * id
  */
-const tMatrix &BaseObject::GetMWQ(int i)
+const tMatrix &BaseObject::GetMWQ(int i) const
 {
     if (i >= total_freedoms)
     {
@@ -274,7 +274,8 @@ BaseObject::BaseObject(const BaseObjectParams &param)
       render_struct(nullptr), mass(param.mass), parent_joint(nullptr),
       total_freedoms(-1), prev_freedoms(0), local_freedom(0),
       init_rotation(param.local_rotation), joint_type(JointType::INVALID_JOINT),
-      shape_type(-1), global_freedom(0), compute_second_derive(false)
+      shape_type(-1), global_freedom(0), compute_second_derive(false),
+      compute_third_derive(false)
 {
     scale_matrix = Eigen::scale(mesh_scale.x(), mesh_scale.y(), mesh_scale.z());
 
@@ -317,7 +318,7 @@ BaseObject::BaseObject(const BaseObjectJsonParam &param)
       prev_freedoms(0), local_freedom(0), init_rotation(param.local_rot),
       joint_type(JointType::INVALID_JOINT), Ibody(param.inertia),
       shape_type(param.shape_type), global_freedom(0),
-      compute_second_derive(false)
+      compute_second_derive(false), compute_third_derive(false)
 {
     assert(Ibody.norm() < 1e2);
     if (param.type == LINK)
@@ -401,4 +402,19 @@ void BaseObject::UpdateInfo(BaseObjectJsonParam &param)
     shape_type = param.shape_type;
     InitObject();
     ComputeIbody();
+}
+
+void BaseObject::SetComputeThirdDerive(bool flag)
+{
+    compute_third_derive = flag;
+}
+bool BaseObject::GetComputeThirdDeriv() const { return compute_third_derive; }
+
+void BaseObject::SetComputeSecondDerive(bool flag)
+{
+    compute_second_derive = flag;
+}
+bool BaseObject::GetComputeSecondDerive() const
+{
+    return this->compute_second_derive;
 }

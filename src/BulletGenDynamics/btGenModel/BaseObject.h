@@ -20,7 +20,7 @@ enum ShapeType
 const std::string shape_type_keys[TOTAL_SHAPE_TYPE] = {"sphere", "box",
                                                        "capsule", "cylinder"};
 
-enum
+enum eRootFreedomEnum
 {
     TRANSLATE_X = 0,
     TRANSLATE_Y,
@@ -202,10 +202,11 @@ public:
     // modeified 04/06/20,
     const tMatrixXd &GetJKv_dq(int i) const;
     const tMatrixXd &GetJKw_dq(int i) const;
-    const tMatrix &GetMWQ(int i);
+    const tMatrix &GetMWQ(int i) const;
+    virtual const tMatrix &GetMWQQ(int i, int j) const = 0;
     virtual const tMatrix &
-    GetMWQQ(int i, int j) = 0; // \frac{\partial^2 R} {\partial q_i, \partial
-                               // q_i} dim=(4, 4), !! only works for joint
+    GetMWQQQ(int i, int j,
+             int k) const = 0; // please check the comment of variable mWqqq
     //=====================================================
 
     virtual void ComputeJacobiByGivenPoint(tMatrixXd &j,
@@ -224,7 +225,8 @@ public:
     virtual void ComputeJKw_dot(tVectorXd &q_dot){};
     virtual void ComputeDJkvdq(const tVector3d &p) {}
     virtual void ComputeDJkwdq() {}
-
+    virtual void ComputeDDJkvddq(const tVector3d &p){};
+    virtual void ComputeDDJkwdqq(){};
     double GetMass() const { return mass; }
 
     std::vector<int> &GetPrevFreedomIds() { return dependent_dof_id; };
@@ -255,12 +257,10 @@ public:
     void SetOmega(tVector3d &omega) { this->omega = omega; }
     const tVector3d &GetOmega() const { return omega; }
 
-    void SetComputeSecondDerive(bool flag)
-    {
-        this->compute_second_derive = flag;
-    }
-    bool GetComputeSecondDerive() const { return this->compute_second_derive; }
-
+    void SetComputeSecondDerive(bool flag);
+    bool GetComputeSecondDerive() const;
+    void SetComputeThirdDerive(bool flag);
+    bool GetComputeThirdDeriv() const;
     const tVector3f &GetMeshScale() const { return mesh_scale; }
 
 protected:
@@ -309,8 +309,7 @@ protected:
 
     JointType joint_type;
 
-    // ========================For Torque
-    // minimization=============================
+    // ========================For Torque minimization=============================
     tMatrix3d Ibody;
     int shape_type;
     tMatrixXd JK_w;
@@ -323,12 +322,19 @@ protected:
     int global_freedom; // global freedom is all freedoms of the whole character
     tVector3d omega;
 
-    EIGEN_V_MATXD jkv_dq; // 3 nxn
-    EIGEN_V_MATXD jkw_dq;
-
+    EIGEN_V_MATXD
+    jkv_dq; // vector<tMatrix: nxn>, vector size = 3 (one matrix per channel), d(Jv)/dq
+    EIGEN_V_MATXD
+    jkw_dq; // vector<tMatrix: nxn>, vector size = 3(one matrix per channel), d(Jw)/dq
+    EIGEN_VV_MATXD
+    ddjkv_dqq; // vector<vector<tMatrix: 3xn>>, the index of two outer layer is the freedom index, d^2(Jv)/d(qiqj)
+    EIGEN_VV_MATXD
+    ddjkw_dqq; // vector<vector<tMatrix: 3xn>>, the index of two outer layer is the freedom index, d^2(Jw)/d(qiqj)
     // ============================================================================
 
-    bool compute_second_derive;
+    bool
+        compute_second_derive; // switch for calculating second-order derivatives
+    bool compute_third_derive; // switch for calculating third-order derivatives
 };
 
 #endif // ROBOT_BASEOBJECT_H

@@ -64,7 +64,6 @@ public:
     bool GetEnableContactAwareController() const;
     void SetEnableContactAwareController(bool);
     bool GetCollisionEnabled() const;
-
 protected:
     // -------------------------simulation status-----------------------
     std::vector<btGenRobotCollider *>
@@ -91,6 +90,8 @@ protected:
         tMatrixXd mass_matrix;
         tMatrixXd coriolis_matrix;
         tMatrixXd damping_matrix;
+        bool compute_2rd_derive;
+        bool compute_3ed_derive;
     };
 
     const int mStackCapacity = 10;
