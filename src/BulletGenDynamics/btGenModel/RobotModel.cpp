@@ -2376,9 +2376,9 @@ void cRobotModel::TestLinkdMassMatrixdq()
             // 2.3 compare
             tMatrixXd dMdq_num = (Mi_new[id] - Mi_old[id]) / eps;
             tMatrixXd diff = dMidq[id][i] - dMdq_num;
-            std::cout << "link " << id << " dof " << i
+            std::cout << "[log] TestLinkMassdq link " << id << " dof " << i
                       << " diff = " << diff.norm() << std::endl;
-            if (diff.norm() > eps)
+            if (diff.norm() > eps * 10)
             {
                 std::cout << "dMdq num = \n" << dMdq_num << std::endl;
                 std::cout << "dMdq analytic = \n" << dMidq[id][i] << std::endl;
@@ -2390,8 +2390,7 @@ void cRobotModel::TestLinkdMassMatrixdq()
         q_new[i] -= eps;
     }
     Apply(q_old, true);
-    std::cout << "dMdq verified succ\n";
-    exit(0);
+    std::cout << "[log] dMdq verified succ\n";
 }
 
 /**
@@ -2415,7 +2414,8 @@ void cRobotModel::TestdMassMatrixdq()
         tMatrixXd new_mass_mat = GetMassMatrix();
         tMatrixXd dMassdq_num = (new_mass_mat - old_mass_mat) / eps;
         tMatrixXd diff = dMassdq_num - dMassdq[i];
-        std::cout << "dof " << i << " norm = " << diff.norm() << std::endl;
+        std::cout << "[log] TestdMdq: dof " << i << " norm = " << diff.norm()
+                  << std::endl;
         if (diff.norm() > 1e-6)
         {
             std::cout << "[error] dMassdq failed\n";
@@ -2424,8 +2424,8 @@ void cRobotModel::TestdMassMatrixdq()
         }
         q[i] -= eps;
     }
-    std::cout << "test dmass dq succ\n";
-    exit(0);
+    Apply(q, true);
+    std::cout << "[log] test dmass dq succ\n";
 }
 
 /**

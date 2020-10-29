@@ -82,6 +82,7 @@ void Joint::InitTerms()
     {
         dependent_dof_id.push_back(f.id);
     }
+    InitGlobalToTotalFreedomMap();
     total_freedoms = prev_freedoms + GetNumOfFreedom();
     local_jac_buf.resize(3, total_freedoms);
     InitMatrix();
@@ -972,7 +973,7 @@ const tMatrix &Joint::GetMWQQQ(int i, int j, int k) const
     // sort: i >= j >= k
     return mWqqq[i][j][k];
 }
-const tMatrix &Joint::GetMTQ(int i)const
+const tMatrix &Joint::GetMTQ(int i) const
 {
     if (i >= local_freedom)
     {
@@ -983,7 +984,7 @@ const tMatrix &Joint::GetMTQ(int i)const
     return mTq[i];
 }
 
-const tMatrix &Joint::GetMTQQ(int i, int j)const
+const tMatrix &Joint::GetMTQQ(int i, int j) const
 {
     if (i < j)
         btMathUtil::Swap(i, j);
@@ -996,7 +997,7 @@ const tMatrix &Joint::GetMTQQ(int i, int j)const
 
     return mTqq[i][j];
 }
-const tMatrix &Joint::GetMTQQQ(int i, int j, int k)const
+const tMatrix &Joint::GetMTQQQ(int i, int j, int k) const
 {
     if (i < j)
         btMathUtil::Swap(i, j);

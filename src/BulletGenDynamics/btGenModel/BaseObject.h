@@ -4,6 +4,7 @@
 #include "ModelEigenUtils.h"
 #include <string>
 #include <vector>
+#include <map>
 
 class Mesh; // binding mesh
 class RenderStruct;
@@ -184,6 +185,7 @@ public:
     virtual Freedom *AddFreedom(Freedom &f) { return nullptr; }
     virtual void InitTerms() = 0;
     void InitPrevFreedomIds();
+    void InitGlobalToTotalFreedomMap();
     const tVector3d &GetInitRotation() const { return init_rotation; }
 
     int GetNumTotalFreedoms() const { return total_freedoms; }
@@ -291,8 +293,11 @@ protected:
     EIGEN_V_tMatrixD mWq;     // \partial global transform over \partial q
     int total_freedoms;       // total_freedom = prev_freedom + local_freedom
     int prev_freedoms;        // the freedoms owned by my parent joints
-    std::vector<int> dependent_dof_id;
-    int local_freedom; // the freedom owned by myself
+    std::vector<int>
+        dependent_dof_id; // map from total_freedom_id to global_freedom_id
+    std::map<int, int>
+        map_from_global_to_total_freedom; // map from global_freedom_id to total_freedom_id
+    int local_freedom;                    // the freedom owned by myself
     tMatrix local_transform;
     tMatrix global_transform;
 
@@ -327,9 +332,16 @@ protected:
     EIGEN_V_MATXD
     jkw_dq; // vector<tMatrix: nxn>, vector size = 3(one matrix per channel), d(Jw)/dq
     EIGEN_VV_MATXD
-    ddjkv_dqq; // vector<vector<tMatrix: 3xn>>, the index of two outer layer is the freedom index, d^2(Jv)/d(qiqj)
-    EIGEN_VV_MATXD
-    ddjkw_dqq; // vector<vector<tMatrix: 3xn>>, the index of two outer layer is the freedom index, d^2(Jw)/d(qiqj)
+    ddjkv_dqq; // vector<vector<tMatrix: 3xn>>, the index of two outer layer is the freedom index, d^2(Jv)/d(qiqj), only store the lower diagnoal
+    
+    
+    /*
+        The layout of ddjkw_dqq is different from ddjkv_dqq, in this way, the sapce complexicty will become 1/6
+        we only store the d^2jkw/dqiqj =[col_0, col_1, \dots, col_k, \dots] that i>=j>=k
+
+        vector<vector<tMatrix: 3xm (HERE IS NOT n)>>, the index of two outer layer is the freedom index, d^2(Jw)/d(qiqj). only store the lower diagnoal of the cube
+    */ 
+    EIGEN_VV_MATXD ddjkw_dqq; 
     // ============================================================================
 
     bool

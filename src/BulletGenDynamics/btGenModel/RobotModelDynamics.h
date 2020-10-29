@@ -56,6 +56,7 @@ public:
     const tMatrixXd &GetDampingMatrix() const { return mDampingMatrix; }
     void TestJacobian();
     void TestSecondJacobian();
+    void TestThirdJacobian();
     tMatrixXd GetInvMassMatrix();
     void GetEffectInfo(tEigenArr<tVector> &force_array,
                        tEigenArr<tVector> &torque_array);
@@ -114,4 +115,6 @@ protected:
     void ComputeMassMatrix();
     void ComputeDampingMatrix();
     void TestRotationChar();
+    void TestLinkddJvddq(int id);
+    void TestLinkddJwddq(int id);
 };

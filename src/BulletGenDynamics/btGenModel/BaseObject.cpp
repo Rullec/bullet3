@@ -100,12 +100,32 @@ void BaseObject::Tell()
               << local_pos[1] << ", " << local_pos[2] << "\n";
 }
 
+/**
+ * \brief           Add parent's dof into the "dependent_dof_id" array. 
+ * Note that the "dependent_dof_id" is still incomplete and needs to add my own freedoms after this function
+*/
 void BaseObject::InitPrevFreedomIds()
 {
     auto &parent_prev_ids = parent->GetPrevFreedomIds();
     for (size_t i = 0; i < parent_prev_ids.size(); i++)
     {
         dependent_dof_id.push_back(parent_prev_ids[i]);
+    }
+}
+
+/**
+ * \brief           Build the map from global freedom id to total freedom id which this object is dependent of 
+ * 
+ * The time of calling this method is critical: the dependent_dof_id must be initialized completely.
+*/
+void BaseObject::InitGlobalToTotalFreedomMap()
+{
+    this->map_from_global_to_total_freedom.clear();
+    for (int i = 0; i < dependent_dof_id.size(); i++)
+    {
+        int global_dof_id = dependent_dof_id[i];
+        int total_dof_id = i;
+        map_from_global_to_total_freedom[global_dof_id] = total_dof_id;
     }
 }
 

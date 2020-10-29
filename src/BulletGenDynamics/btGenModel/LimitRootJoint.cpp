@@ -35,6 +35,7 @@ void LimitRootJoint::InitTerms()
 
     // the init matrix will allocate all matrices
     // the limit root joint has only 1 freedom: the z translate freedom
+    InitGlobalToTotalFreedomMap();
     InitMatrix();
 }
 

@@ -46,6 +46,7 @@ void RootJoint::InitTerms()
 {
     total_freedoms = GetNumOfFreedom();
     prev_freedoms = 0;
+    InitGlobalToTotalFreedomMap();
     InitMatrix();
 }
 

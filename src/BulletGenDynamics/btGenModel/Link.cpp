@@ -240,8 +240,7 @@ void Link::ComputeDJkwdq()
             // m.noalias() = parent_joint->GetMWQQ(i, j).topLeftCorner<3, 3>() *
             // 			  local_transform.topLeftCorner<3, 3>();
 
-            // mij.noalias() = mWq_i_topleft * mWq[j].topLeftCorner<3,
-            // 3>().transpose();  // 8.17
+            // mij.noalias() = mWq_i_topleft * mWq[j].topLeftCorner<3, 3>().transpose();  // 8.17
             mij.noalias() = mWq_i_topleft * mWq3x3_T[j]; // 8.17
             gij.noalias() = m + mij;
             // tVector3d g = Tools::FromSkewSymmetric(gij);
@@ -253,9 +252,9 @@ void Link::ComputeDJkwdq()
             // 	exit(0);
             // }
             // todo fix local freedom id
-            // jkw_dq[0].data()[i * global_freedom + dependent_dof_id[j]] =
-            // g[0]; jkw_dq[1].data()[i * global_freedom + dependent_dof_id[j]]
-            // = g[1]; jkw_dq[2].data()[i * global_freedom +
+            // jkw_dq[0].data()[i * global_freedom + dependent_dof_id[j]] = g[0];
+            // jkw_dq[1].data()[i * global_freedom + dependent_dof_id[j]] = g[1];
+            // jkw_dq[2].data()[i * global_freedom +
             // dependent_dof_id[j]] = g[2]; gij.data()[5], [6], [1] is the 0, 1,
             // 2 value of it corosponding skew vector
             jkw_dq[0](global_id_i, global_id_j) = gij.data()[5];
@@ -272,10 +271,9 @@ void Link::ComputeDJkwdq()
             // 	exit(0);
             // }
 
-            // jkw_dq[0].data()[dependent_dof_id[j] * global_freedom + i] =
-            // g[0]; jkw_dq[1].data()[dependent_dof_id[j] * global_freedom + i]
-            // = g[1]; jkw_dq[2].data()[dependent_dof_id[j] * global_freedom +
-            // i] = g[2];
+            // jkw_dq[0].data()[dependent_dof_id[j] * global_freedom + i] = g[0];
+            // jkw_dq[1].data()[dependent_dof_id[j] * global_freedom + i] = g[1];
+            // jkw_dq[2].data()[dependent_dof_id[j] * global_freedom + i] = g[2];
 
             // gji.data()[5], [6], [1] is the 0, 1, 2 value of it corosponding
             // skew vector
@@ -311,6 +309,10 @@ void Link::InitTerms()
     if (parent)
     {
         InitPrevFreedomIds();
+        InitGlobalToTotalFreedomMap();
+        // std::cout << "link " << id << " global map size = "
+        //           << map_from_global_to_total_freedom.size() << std::endl;
+        // exit(1);
         total_freedoms = parent->GetNumTotalFreedoms();
         parent_joint = parent;
     }
@@ -344,17 +346,25 @@ void Link::InitTerms()
         jkw_dq[i].noalias() = tMatrixXd::Zero(global_freedom, global_freedom);
     }
 
-    // int
-    ddjkv_dqq.resize(global_freedom);
-    ddjkw_dqq.resize(global_freedom);
-    for (int i = 0; i < global_freedom; i++)
+    // initialize the ddjvdqq
+    ddjkv_dqq.resize(total_freedoms);
+
+    for (int i = 0; i < total_freedoms; i++)
     {
-        ddjkv_dqq[i].resize(global_freedom);
-        ddjkw_dqq[i].resize(global_freedom);
+        ddjkv_dqq[i].resize(i + 1);
         for (auto &item : ddjkv_dqq[i])
-            item.noalias() = tMatrixXd::Zero(3, global_freedom);
-        for (auto &item : ddjkw_dqq[i])
-            item.noalias() = tMatrixXd::Zero(3, global_freedom);
+            item.noalias() = tMatrixXd::Zero(3, total_freedoms);
+    }
+
+    // initialize the ddjwdqq
+    ddjkw_dqq.resize(total_freedoms);
+    for (int i = total_freedoms - 1; i >= 0; i--)
+    {
+        ddjkw_dqq[i].resize(i + 1);
+        for (int j = i; j >= 0; j++)
+        {
+            ddjkw_dqq[i][j].noalias() = tMatrixXd::Zero(3, j + 1); // 3xk
+        }
     }
 
 #endif
@@ -420,13 +430,13 @@ void Link::SetColGroup(int flag)
 }
 
 /**
- * \brief					this function tries to calculate
- * :
- *
- * 			\frac{dJkv}{dq_{target_dof_id}} \in R^{3 \times n}
+ * \brief					this function tries to calculate:
+ * 
+ * 			\frac{dJkv}{dq_{target_dof_id}} \in R^{3 \times n \times n}
  *
  * 			Jkv \in R^{3 \times n}
  * 			target_dof_id \in [0, n-1]
+ * \param   target_dof_id   the freedom index in [0, global_freedoms]
  */
 tMatrixXd Link::GetTotalDofdJKv_dq(int target_dof_id) const
 {
@@ -440,6 +450,10 @@ tMatrixXd Link::GetTotalDofdJKv_dq(int target_dof_id) const
     return dJkv_dq;
 }
 
+/**
+ * \brief                   similar to GetTotalDofdJKv_dq
+ * \param   target_dof_id   the freedom index in [0, global_freedoms]
+*/
 tMatrixXd Link::GetTotalDofdJKw_dq(int target_dof_id) const
 {
     tMatrixXd dJkw_dq = tMatrixXd::Zero(3, global_freedom);
@@ -497,51 +511,13 @@ void Link::ComputedMdq(tEigenArr<tMatrixXd> &dMdq)
 */
 void Link::ComputeDDJkvddq(const tVector3d &p)
 {
-    auto visited = [](EIGEN_VV_MATXD &ddjkv_dqq, int i, int j, int k,
-                      const tVector3d &value) {
-        int has_equality = 0;
-        if (i == j)
-            has_equality++;
-        if (i == k)
-            has_equality++;
-        if (j == k)
-            has_equality++;
-        if (has_equality == 0)
-        {
-
-            ddjkv_dqq[i][j].col(k).noalias() = value;
-            ddjkv_dqq[i][k].col(j).noalias() = value;
-            ddjkv_dqq[j][i].col(k).noalias() = value;
-            ddjkv_dqq[j][k].col(i).noalias() = value;
-            ddjkv_dqq[k][j].col(i).noalias() = value;
-            ddjkv_dqq[k][i].col(j).noalias() = value;
-        }
-        else if (has_equality == 1)
-        {
-            int eq_idx = -1, ineq_idx = -1;
-            if (i == j)
-                eq_idx = i, ineq_idx = k;
-            else if (i == k)
-                eq_idx = i, ineq_idx = j;
-            else if (j == k)
-                eq_idx = k, ineq_idx = i;
-            ddjkv_dqq[eq_idx][eq_idx].col(ineq_idx).noalias() = value;
-            ddjkv_dqq[eq_idx][ineq_idx].col(eq_idx).noalias() = value;
-            ddjkv_dqq[ineq_idx][eq_idx].col(eq_idx).noalias() = value;
-        }
-        else if (has_equality == 3)
-        {
-            ddjkv_dqq[i][j].col(k).noalias() = value;
-        }
-    };
-
     tVector p_local = btMathUtil::Expand(p, 1);
     tVector local_transform_times_p_local = local_transform * p_local;
-    for (int i = 0; i < total_freedoms; i++)
+    for (int i = total_freedoms - 1; i >= 0; i--)
     {
-        for (int j = i; j < total_freedoms; j++)
+        for (int j = i; j >= 0; j--)
         {
-            for (int k = j; k < total_freedoms; k++)
+            for (int k = 0; k < total_freedoms; k++)
             {
                 /*
                 p_global = W * local_trans * p_local
@@ -556,7 +532,7 @@ void Link::ComputeDDJkvddq(const tVector3d &p)
                 tVector entry_ijk = parent_joint->GetMWQQQ(i, j, k) *
                                     local_transform_times_p_local;
 
-                visited(ddjkv_dqq, i, j, k, entry_ijk.segment(0, 3));
+                ddjkv_dqq[i][j].col(k) = entry_ijk.segment(0, 3);
             }
         }
     }
@@ -570,4 +546,125 @@ void Link::ComputeDDJkvddq(const tVector3d &p)
  * 
  * [w] = \dot{R} R^T
 */
-void Link::ComputeDDJkwdqq() {}
+void Link::ComputeDDJkwdqq(){this->ddjkw_dqq}
+
+/**
+ * \brief       Get dJkv/dqiqj
+ * \param i     the index between [0, total_freedoms-1], not glboal_freedoms
+ * \param j     the index between [0, total_freedoms-1], not glboal_freedoms
+*/
+tMatrixXd Link::GetddJKv_dqq(int i, int j) const
+{
+    if (i < j)
+        btMathUtil::Swap(i, j);
+    if (i >= total_freedoms)
+    {
+        std::cout << "[error] Get dd(Jkv)/dqq i = " << i << " >= total freedom "
+                  << total_freedoms << std::endl;
+        exit(1);
+    }
+    return ddjkv_dqq[i][j];
+}
+
+/**
+ * \brief       Get dJkv/dqiqj
+ * \param i     the index between [0, total_freedoms-1], not glboal_freedoms
+ * \param j     the index between [0, total_freedoms-1], not glboal_freedoms
+ * \return dJkv/dqiqj \in [3, total_freedoms]
+*/
+tMatrixXd Link::GetddJKw_dqq(int i, int j) const
+{
+    if (i < j)
+        btMathUtil::Swap(i, j);
+    if (i >= total_freedoms)
+    {
+        std::cout << "[error] Get dd(Jkw)/dqq i = " << i << " >= total freedom "
+                  << total_freedoms << std::endl;
+        exit(1);
+    }
+    return ddjkw_dqq[i][j];
+}
+
+/**
+ * \brief       Get ddJkv/dqiqj, but i and j is freedom index in global size
+ * \param i     the index between [0, global_freedoms]
+ * \param j     the index between [0, global_freedoms]
+ * \return      dJkvdqidj \in [3, global_freedoms]
+*/
+tMatrixXd Link::GetTotalDofddJKv_dqq(int global_i, int global_j) const
+{
+    if (global_i >= global_freedom || global_j >= global_freedom)
+    {
+        printf(
+            "[error] GetTotalDofddJKv dqq i = %d j = %d >= global freedom %d\n",
+            global_i, global_j, global_freedom);
+        exit(1);
+    };
+    // 1. check whether i and j are all freedoms which this link is dependent of, if not, return zero mat
+    auto i_iter = map_from_global_to_total_freedom.find(global_i),
+         j_iter = map_from_global_to_total_freedom.find(global_j);
+    if (i_iter == map_from_global_to_total_freedom.end() ||
+        j_iter == map_from_global_to_total_freedom.end())
+    {
+        return tMatrixXd::Zero(3, global_freedom);
+    }
+    else
+    {
+        return GetTotalDofddJKx_dqq(i_iter->second, j_iter->second, 'V');
+    }
+}
+
+/**
+ * \brief       Get ddJkw/dqiqj, but i and j is freedom index in global size
+ * \param i     the index between [0, global_freedoms]
+ * \param j     the index between [0, global_freedoms]
+ * \return      dJkwdqidj \in [3, global_freedoms]
+*/
+tMatrixXd Link::GetTotalDofddJKw_dqq(int global_i, int global_j) const
+{
+    if (global_i >= global_freedom || global_j >= global_freedom)
+    {
+        printf(
+            "[error] GetTotalDofddJKw dqq i = %d j = %d >= global freedom %d\n",
+            global_i, global_j, global_freedom);
+        exit(1);
+    };
+    // 1. check whether i and j are all freedoms which this link is dependent of, if not, return zero mat
+    auto i_iter = map_from_global_to_total_freedom.find(global_i),
+         j_iter = map_from_global_to_total_freedom.find(global_j);
+    if (i_iter == map_from_global_to_total_freedom.end() ||
+        j_iter == map_from_global_to_total_freedom.end())
+    {
+        return tMatrixXd::Zero(3, global_freedom);
+    }
+    else
+    {
+        return GetTotalDofddJKx_dqq(i_iter->second, j_iter->second, 'W');
+    }
+}
+
+tMatrixXd Link::GetTotalDofddJKx_dqq(int local_i, int local_j, char type) const
+{
+
+    tMatrixXd res = tMatrixXd::Zero(3, global_freedom);
+    tMatrixXd ddJkx_dqiqj;
+    if (type == 'W')
+    {
+        ddJkx_dqiqj.noalias() = GetddJKw_dqq(local_i, local_j);
+    }
+    else if (type == 'V')
+    {
+        ddJkx_dqiqj.noalias() = GetddJKv_dqq(local_i, local_j);
+    }
+    else
+    {
+        std::cout << "[error] Get Total dof ddJkx dqq type illegal: " << type
+                  << std::endl;
+        exit(1);
+    }
+    for (int tmp = 0; tmp < total_freedoms; tmp++)
+    {
+        res.col(dependent_dof_id[tmp]) = ddJkx_dqiqj.col(tmp);
+    }
+    return res;
+}

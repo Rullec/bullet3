@@ -284,12 +284,18 @@ void CustomEngineMainDemo::Test()
     // tVectorXd q = tVectorXd::Random(dof), qdot = tVectorXd::Random(dof);
     tVectorXd q = tVectorXd::Zero(dof), qdot = tVectorXd::Zero(dof);
     mb->SetqAndqdot(q, qdot);
-    mb->TestmWq();
-    mb->TestmTqq();
-    mb->TestmWqq();
-    mb->TestmTqqq();
-    mb->TestmWqqq();
 
+    // mb->TestmWq();
+    // mb->TestmTqq();
+    // mb->TestmWqq();
+    // mb->TestmTqqq();
+    // mb->TestmWqqq();
+    // mb->TestSecondJacobian();
+    mb->TestThirdJacobian();
+    // mb->TestJacobian();
+    // mb->TestLinkdMassMatrixdq();
+    // mb->TestdGenGravitydq(tVector::Random());
+    // mb->TestdMassMatrixdq();
     std::cout << "test done\n";
     exit(0);
 }

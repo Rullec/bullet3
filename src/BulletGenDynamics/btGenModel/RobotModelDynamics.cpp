@@ -292,35 +292,7 @@ void cRobotModelDynamics::TestSecondJacobian()
     std::cout << "[test] qdot = " << qdot.transpose() << std::endl;
     Apply(q, true);
 
-    // check mWQQ
-
-    {
-        // auto link = GetLinkById(0);
-        // for (int i = 3; i < 6; i++)
-        // 	for (int j = i; j < 6; j++)
-        // 	{
-        // 		printf("dWdq%ddq%d = \n", i, j);
-        // 		std::cout << link->GetParent()->GetMWQQ(i, j) <<
-        // std::endl;
-        // 	}
-        // exit(0);
-    }
-    // for (int i = 0; i < 2; i++)
-    // {
-    // 	q[4] += 1.0;
-    // 	std::cout << " q = " << q.transpose() << std::endl;
-    // 	Apply(q, true);
-    // 	for (int id = 0; id < num_of_links; id++)
-    // 	{
-    // 		auto link = GetLinkById(id);
-    // 		// link->ComputeJKw();
-    // 		std::cout << "Jkw = \n"
-    // 				  << link->GetJKw() << std::endl;
-    // 	}
-    // }
-    // exit(0);
     // 1. compute Jv'(dJv/dq) and Jw'(dJw/dq), current Jv and Jw
-
     tVector3d p = tVector3d(0, 0, 0);
 
     tEigenArr<tMatrixXd> Jkv_middle(0), Jkw_middle(0); // Jv, Jw
@@ -1302,7 +1274,7 @@ void cRobotModelDynamics::TestdGenGravitydq(const tVector &g)
     int global_dof = GetNumOfFreedom();
     tVectorXd QG_old = CalcGenGravity(g);
     tMatrixXd dQGdq = CalcdGenGravitydq(g);
-    double eps = 1e-5;
+    double eps = 1e-6;
     tVectorXd q = mq;
     for (int dof = 0; dof < global_dof; dof++)
     {
@@ -1312,15 +1284,156 @@ void cRobotModelDynamics::TestdGenGravitydq(const tVector &g)
         tVectorXd QG_new = CalcGenGravity(g);
         tVectorXd dQGDq_num = (QG_new - QG_old) / eps;
         tVectorXd diff = dQGDq_num - dQGdq.col(dof);
-        std::cout << "dof " << dof << " diff = " << diff.norm() << std::endl;
-        if (diff.norm() > eps)
+        std::cout << "[log] TestdGenQGdq: dof " << dof
+                  << " diff = " << diff.norm() << std::endl;
+        if (diff.norm() > eps * 10)
         {
             std::cout << "[error] verified failed\n";
             exit(0);
         }
         q[dof] -= eps;
     };
+    SetqAndqdot(q, mqdot);
+    std::cout << "[log] verify dQGdq succ\n";
+}
 
-    std::cout << "verify dQGdq succ\n";
-    exit(0);
+/**
+ * \brief       Test ddJvdqq and ddJwdqq
+*/
+
+void cRobotModelDynamics::TestThirdJacobian()
+{
+    PushState("test_third_jacobian");
+    tVectorXd q_old = mq;
+    // 1. get the old dJvdq and ddJvdqq
+    for (int i = 0; i < GetNumOfLinks(); i++)
+    {
+        TestLinkddJvddq(i);
+        TestLinkddJwddq(i);
+    }
+    std::cout << "Test Thrid Jacobian succ\n";
+    PopState("test_third_jacobian");
+}
+
+EIGEN_V_MATXD GetLinkdJxdq(Link *link, char type)
+{
+    int global_freedoms = link->GetGlobalFreedoms();
+    EIGEN_V_MATXD dJxdq(global_freedoms);
+    for (int i = 0; i < global_freedoms; i++)
+    {
+        switch (type)
+        {
+        case 'V':
+            dJxdq[i] = link->GetTotalDofdJKv_dq(i);
+            break;
+        case 'W':
+            dJxdq[i] = link->GetTotalDofdJKw_dq(i);
+            break;
+
+        default:
+            std::cout << "[error] illegal type in GetLink dJxdq " << type
+                      << std::endl;
+            exit(1);
+            break;
+        }
+    }
+
+    return dJxdq;
+}
+EIGEN_V_MATXD GetLinkdJxdqDivision(const EIGEN_V_MATXD &left,
+                                   const EIGEN_V_MATXD &right, double deno)
+{
+    assert(left.size() == right.size());
+    for (int i = 0; i < left.size(); i++)
+        assert(left[i].size() == right[i].size());
+
+    EIGEN_V_MATXD result(left.size());
+    for (int i = 0; i < left.size(); i++)
+    {
+        result[i] = (left[i] - right[i]) / deno;
+    }
+    return result;
+}
+
+EIGEN_VV_MATXD GetLinkddJxdqq(Link *link, char type)
+{
+    int global_freedoms = link->GetGlobalFreedoms();
+    EIGEN_VV_MATXD ddJxddq(global_freedoms);
+    for (auto &x : ddJxddq)
+        x.resize(global_freedoms);
+    for (int i = 0; i < global_freedoms; i++)
+        for (int j = 0; j < global_freedoms; j++)
+        {
+            switch (type)
+            {
+            case 'V':
+                ddJxddq[i][j] = link->GetTotalDofddJKv_dqq(i, j);
+                // if (i == 3 && j == 3)
+                // {
+                //     printf("get link %d d^2Jkv/dq%dq%d = \n", link->GetId(), i, j);
+                //     std::cout << ddJxddq[i][j] << std::endl;
+                //     exit(1);
+                // }
+
+                break;
+            case 'W':
+                ddJxddq[i][j] = link->GetTotalDofddJKw_dqq(i, j);
+                break;
+
+            default:
+                std::cout << "[error] illegal type in GetLink ddJxddq " << type
+                          << std::endl;
+                exit(1);
+                break;
+            }
+        }
+
+    return ddJxddq;
+}
+
+/**
+ * \brief       Test the ddJvddq for link id
+*/
+void cRobotModelDynamics::TestLinkddJvddq(int id)
+{
+    PushState("test_link_ddjv_ddq");
+    // 1. get the intermediate result
+    auto link = dynamic_cast<Link *>(GetLinkById(id));
+    EIGEN_V_MATXD dJvdq_old = GetLinkdJxdq(link, 'V');
+    EIGEN_VV_MATXD ddJvddq_analytic = GetLinkddJxdqq(link, 'V');
+    SetComputeThirdDerive(false);
+
+    // 2. check the numerical derivatives
+    tVectorXd q_old = mq;
+    double eps = 1e-6;
+    for (int i = 0; i < num_of_freedom; i++)
+    {
+        q_old[i] += eps;
+        SetqAndqdot(q_old, mqdot);
+
+        EIGEN_V_MATXD dJvdq_new = GetLinkdJxdq(link, 'V');
+        EIGEN_V_MATXD num_i = GetLinkdJxdqDivision(dJvdq_new, dJvdq_old, eps);
+
+        const EIGEN_V_MATXD &ana_i = ddJvddq_analytic[i];
+        for (int j = 0; j < num_of_freedom; j++)
+        {
+            tMatrixXd diff = ana_i[j] - num_i[j];
+            double diff_norm = diff.norm();
+            if (diff_norm > eps)
+            {
+                printf("[error] link %d ddJvdq%dq%d diff norm %.10f\n", id, j,
+                       i, diff_norm);
+                std::cout << "ana = \n" << ana_i[j] << std::endl;
+                std::cout << "num = \n" << num_i[j] << std::endl;
+                exit(0);
+            }
+        }
+        q_old[i] -= eps;
+    }
+    PopState("test_link_ddjv_ddq");
+    printf("Test Link %d ddJvddq succ\n", id);
+}
+void cRobotModelDynamics::TestLinkddJwddq(int id) 
+{
+    
 }
