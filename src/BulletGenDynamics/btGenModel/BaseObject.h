@@ -2,9 +2,9 @@
 #define ROBOT_BASEOBJECT_H
 
 #include "ModelEigenUtils.h"
+#include <map>
 #include <string>
 #include <vector>
-#include <map>
 
 class Mesh; // binding mesh
 class RenderStruct;
@@ -202,8 +202,12 @@ public:
 
     // ====================================================
     // modeified 04/06/20,
-    const tMatrixXd &GetJKv_dq(int i) const;
-    const tMatrixXd &GetJKw_dq(int i) const;
+    const tMatrixXd &GetJKv_dq_nxnversion(int i) const;
+    const tMatrixXd &GetJKw_dq_nxnversion(int i) const;
+    tMatrixXd GetJk_dq_6xnversion(int i)
+        const; // needs to crate new matrix, so we cannot return a const reference
+    tMatrixXd GetJKv_dq_3xnversion(int i) const;
+    tMatrixXd GetJKw_dq_3xnversion(int i) const;
     const tMatrix &GetMWQ(int i) const;
     virtual const tMatrix &GetMWQQ(int i, int j) const = 0;
     virtual const tMatrix &
@@ -225,6 +229,8 @@ public:
     virtual void ComputeJK_dot();
     virtual void ComputeJKv_dot(tVectorXd &q_dot, tVector3d &p){};
     virtual void ComputeJKw_dot(tVectorXd &q_dot){};
+    virtual void ComputedJkvdot_dq(const tVectorXd &qdot, const tVector3d &p){};
+    virtual void ComputedJkwdot_dq(const tVectorXd &qdot){};
     virtual void ComputeDJkvdq(const tVector3d &p) {}
     virtual void ComputeDJkwdq() {}
     virtual void ComputeDDJkvddq(const tVector3d &p){};
@@ -250,8 +256,10 @@ public:
     const tMatrixXd &GetJKw() const { return JK_w; }
     const tMatrixXd &GetJKv() const { return JK_v; }
     const tMatrixXd &GetJK() const { return JK; }
-    const tMatrixXd &GetJKv_dot() const { return JK_v_dot; }
-    const tMatrixXd &GetJKw_dot() const { return JK_w_dot; }
+    const tMatrixXd &GetJKv_dot() const;
+    const tMatrixXd &GetJKw_dot() const;
+    tMatrixXd GetJKv_dot_reduced() const;
+    tMatrixXd GetJKw_dot_reduced() const;
     const tMatrixXd &GetMassMatrix() const { return mass_matrix; }
     virtual void ComputeMassMatrix() {}
     void SetGlobalFreedoms(int gf) { this->global_freedom = gf; }
@@ -333,15 +341,14 @@ protected:
     jkw_dq; // vector<tMatrix: nxn>, vector size = 3(one matrix per channel), d(Jw)/dq
     EIGEN_VV_MATXD
     ddjkv_dqq; // vector<vector<tMatrix: 3xn>>, the index of two outer layer is the freedom index, d^2(Jv)/d(qiqj), only store the lower diagnoal
-    
-    
-    /*
-        The layout of ddjkw_dqq is different from ddjkv_dqq, in this way, the sapce complexicty will become 1/6
-        we only store the d^2jkw/dqiqj =[col_0, col_1, \dots, col_k, \dots] that i>=j>=k
+    EIGEN_VV_MATXD
+    ddjkw_dqq; // vector<vector<tMatrix: 3xn>>, the index of two outer layer is the freedom index, d^2(Jw)/d(qiqj), only store the lower diagnoal
 
-        vector<vector<tMatrix: 3xm (HERE IS NOT n)>>, the index of two outer layer is the freedom index, d^2(Jw)/d(qiqj). only store the lower diagnoal of the cube
-    */ 
-    EIGEN_VV_MATXD ddjkw_dqq; 
+    EIGEN_V_MATXD
+    dJkvdot_dq; // vector<tMatrixXd : 3xn>, where n is the total_freedoms but not global_freedoms. d(Jkvdot)/dq
+    EIGEN_V_MATXD
+    dJkwdot_dq; // vector<tMatrixXd : 3xn>, where n is the total_freedoms but not global_freedoms. d(JKwdot)/dq
+
     // ============================================================================
 
     bool

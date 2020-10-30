@@ -2314,7 +2314,7 @@ void cRobotModel::ComputedMassMatrixdq(EIGEN_V_MATXD &dMdq) const
         }
 
         // 2. compute dMdq
-        link->ComputedMdq(dMidq);
+        link->ComputedMassMatrixdq(dMidq);
 
         // 3. compute final result
         // dJvi dq: 3xn3n
@@ -2350,7 +2350,7 @@ void cRobotModel::TestLinkdMassMatrixdq()
     {
         auto link = static_cast<Link *>(GetLinkById(id));
         // 1. analytic solution of dMidq
-        link->ComputedMdq(dMidq[id]);
+        link->ComputedMassMatrixdq(dMidq[id]);
 
         // 2. old dMdq
         Mi_old[id] = link->GetMassMatrix();
@@ -2426,14 +2426,6 @@ void cRobotModel::TestdMassMatrixdq()
     }
     Apply(q, true);
     std::cout << "[log] test dmass dq succ\n";
-}
-
-/**
- * \brief           compute the derivation of coriolis matrix w.r.t q and qdot
-*/
-void cRobotModel::Compute_dCoriolisMatrix_dqandqdot(EIGEN_V_MATXD &dCdq,
-                                                    EIGEN_V_MATXD &dCdqdot)
-{
 }
 
 /**

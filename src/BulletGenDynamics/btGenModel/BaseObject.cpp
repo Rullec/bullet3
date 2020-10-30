@@ -29,12 +29,79 @@ BaseObjectJsonParam::BaseObjectJsonParam()
     shape_type = -1;
 }
 
-// \frac{ \partial Jw_k } { \partial q_i}, dim=(3, n_freedoms)
-const tMatrixXd &BaseObject::GetJKv_dq(int i) const { return jkv_dq[i]; }
+/**
+ * \brief           Get nxn matrix of dJkv/dqi
+ * the shape of the total tensor dJkvdq is 3xnxn. 
+ * Now we storage it in an 3-elements array dJkvdq, and each of it is a nxn matrix
+ * Note that n is "total_freedoms" but not "global_freedoms"
+ * This API should be used with care, it is not very intuitive
+*/
+const tMatrixXd &BaseObject::GetJKv_dq_nxnversion(int i) const
+{
+    return jkv_dq[i];
+}
 
-// \frac{ \partial Jv_k } { \partial q_i}, dim=(3, n_freedoms)
-const tMatrixXd &BaseObject::GetJKw_dq(int i) const { return jkw_dq[i]; }
+/**
+ * \brief           Get nxn matrix of dJkw/dqi 
+ * the shape of the total tensor dJkwdq is 3xnxn. 
+ * Now we storage it in an 3-elements array dJkwdq, and each of it is a nxn matrix
+ * Note that n is "total_freedoms" but not "global_freedoms"
+ * This API should be used with care, it is not very intuitive
+*/
+const tMatrixXd &BaseObject::GetJKw_dq_nxnversion(int i) const
+{
+    return jkw_dq[i];
+}
 
+/**
+ * \brief           Get the 6xn Jk for this object (usualy links)
+ * Jk = [Jkv \\ Jkw] \in R^{6 \times n}
+ * n is the total_freedoms but not the global freedoms
+ * \param dof       dJk/dqdot
+*/
+tMatrixXd BaseObject::GetJk_dq_6xnversion(int dof) const
+{
+    tMatrixXd dJkdqi = tMatrixXd::Zero(6, total_freedoms);
+    dJkdqi.block(0, 0, 3, total_freedoms) = GetJKv_dq_3xnversion(dof);
+    dJkdqi.block(3, 0, 3, total_freedoms) = GetJKw_dq_3xnversion(dof);
+    return dJkdqi;
+}
+
+/**
+ * \brief           Get the 3xn Jkv for this object (usually links)
+ * In default case, this Jkv is definied at the COM of this link, but not other places
+ * Jkv = d(position)/dq \in 3 \times n
+ * n is the total freedom but not the global_freedom
+*/
+tMatrixXd BaseObject::GetJKv_dq_3xnversion(int dof) const
+{
+    tMatrixXd dJkvdq = tMatrixXd::Zero(3, total_freedoms);
+    for (int i = 0; i < total_freedoms; i++)
+    {
+        dJkvdq(0, i) = jkv_dq[0](i, dof);
+        dJkvdq(1, i) = jkv_dq[1](i, dof);
+        dJkvdq(2, i) = jkv_dq[2](i, dof);
+    }
+    return dJkvdq;
+}
+
+/**
+ * \brief           Get the 3xn Jkw for this object (usually links)
+ * Jkw = d([\dot{R}*RT]^{-1})/dq \in 3 \times n
+ * n is the total freedom but not the global_freedom
+ * []^{-1} means the extraction of skew vector
+*/
+tMatrixXd BaseObject::GetJKw_dq_3xnversion(int dof) const
+{
+    tMatrixXd dJkwdq = tMatrixXd::Zero(3, total_freedoms);
+    for (int i = 0; i < total_freedoms; i++)
+    {
+        dJkwdq(0, i) = jkw_dq[0](i, dof);
+        dJkwdq(1, i) = jkw_dq[1](i, dof);
+        dJkwdq(2, i) = jkw_dq[2](i, dof);
+    }
+    return dJkwdq;
+}
 /**
  * \brief       Get \frac{\partial R} {\partial q_i} dim=(4, 4)
  * \param i     the local freedom id in this base object, not the global freedom
@@ -437,4 +504,21 @@ void BaseObject::SetComputeSecondDerive(bool flag)
 bool BaseObject::GetComputeSecondDerive() const
 {
     return this->compute_second_derive;
+}
+
+const tMatrixXd &BaseObject::GetJKv_dot() const { return JK_v_dot; }
+const tMatrixXd &BaseObject::GetJKw_dot() const { return JK_w_dot; }
+tMatrixXd BaseObject::GetJKv_dot_reduced() const
+{
+    tMatrixXd Jkv_dot_reduced = tMatrixXd::Zero(3, total_freedoms);
+    for (int i = 0; i < total_freedoms; i++)
+        Jkv_dot_reduced.col(i) = JK_v_dot.col(dependent_dof_id[i]);
+    return Jkv_dot_reduced;
+}
+tMatrixXd BaseObject::GetJKw_dot_reduced() const
+{
+    tMatrixXd Jkw_dot_reduced = tMatrixXd::Zero(3, total_freedoms);
+    for (int i = 0; i < total_freedoms; i++)
+        Jkw_dot_reduced.col(i) = JK_w_dot.col(dependent_dof_id[i]);
+    return Jkw_dot_reduced;
 }

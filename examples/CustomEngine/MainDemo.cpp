@@ -281,6 +281,7 @@ void CustomEngineMainDemo::Test()
     auto mb = mGenWorld->GetMultibody();
     mb->SetComputeThirdDerive(true);
     int dof = mb->GetNumOfFreedom();
+    // tVectorXd q = tVectorXd::Random(dof), qdot = tVectorXd::Random(dof);
     tVectorXd q = tVectorXd::Random(dof), qdot = tVectorXd::Random(dof);
     // tVectorXd q = tVectorXd::Zero(dof), qdot = tVectorXd::Zero(dof);
     mb->SetqAndqdot(q, qdot);
@@ -291,7 +292,8 @@ void CustomEngineMainDemo::Test()
     // mb->TestmTqqq();
     // mb->TestmWqqq();
     // mb->TestSecondJacobian();
-    mb->TestThirdJacobian();
+    // mb->TestThirdJacobian();
+    mb->TestdJdotdq();
     // mb->TestJacobian();
     // mb->TestLinkdMassMatrixdq();
     // mb->TestdGenGravitydq(tVector::Random());

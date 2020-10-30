@@ -598,11 +598,11 @@ void btTraj::GetGen_dContactJacobian_dq_NoSet(int frame_id,
             //           << dJacdq[dof_id].cols() << std::endl;
             // std::cout << "dof id = " << dof_id << " dof = " << dof << std::endl;
             dJacdq[dof_id].block(3 * i, 0, 1, dof) =
-                link->GetJKv_dq(0).col(dof_id).transpose();
+                link->GetJKv_dq_nxnversion(0).col(dof_id).transpose();
             dJacdq[dof_id].block(3 * i + 1, 0, 1, dof) =
-                link->GetJKv_dq(1).col(dof_id).transpose();
+                link->GetJKv_dq_nxnversion(1).col(dof_id).transpose();
             dJacdq[dof_id].block(3 * i + 2, 0, 1, dof) =
-                link->GetJKv_dq(2).col(dof_id).transpose();
+                link->GetJKv_dq_nxnversion(2).col(dof_id).transpose();
         }
 
         // restore dJvdq

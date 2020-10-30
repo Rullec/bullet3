@@ -389,6 +389,16 @@ void Link::InitTerms()
         }
     }
 
+    // init the d(Jkvdot)/dq
+    dJkvdot_dq.resize(total_freedoms);
+    for (auto &x : dJkvdot_dq)
+        x = tMatrixXd::Zero(3, total_freedoms);
+
+    // init the d(Jkwdot)/dq
+    dJkwdot_dq.resize(total_freedoms);
+    for (auto &x : dJkwdot_dq)
+        x = tMatrixXd::Zero(3, total_freedoms);
+
 #endif
 }
 
@@ -467,7 +477,7 @@ tMatrixXd Link::GetTotalDofdJKv_dq(int target_dof_id) const
     for (int i = 0; i < 3; i++)
         for (int j = 0; j < global_freedom; j++)
         {
-            dJkv_dq(i, j) = GetJKv_dq(i)(j, target_dof_id);
+            dJkv_dq(i, j) = GetJKv_dq_nxnversion(i)(j, target_dof_id);
         }
     return dJkv_dq;
 }
@@ -482,7 +492,7 @@ tMatrixXd Link::GetTotalDofdJKw_dq(int target_dof_id) const
     for (int i = 0; i < 3; i++)
         for (int j = 0; j < global_freedom; j++)
         {
-            dJkw_dq(i, j) = GetJKw_dq(i)(j, target_dof_id);
+            dJkw_dq(i, j) = GetJKw_dq_nxnversion(i)(j, target_dof_id);
         }
     return dJkw_dq;
 }
@@ -495,7 +505,7 @@ tMatrixXd Link::GetTotalDofdJKw_dq(int target_dof_id) const
  *      [ 0   d(RI0RT)/dq]
  * dRI0RTdq = dRdq I0RT + R*I0d(RT)dq
 */
-void Link::ComputedMdq(tEigenArr<tMatrixXd> &dMdq)
+void Link::ComputedMassMatrixdq(tEigenArr<tMatrixXd> &dMdq)
 {
     // std::cout << "[log] link " << GetId() << " dmdq begin\n";
     int dMdq_shape = 6;
@@ -748,4 +758,102 @@ void Link::ComputeDDJkwdqq()
             }
         }
     }
+}
+
+/**
+ * \brief           compute d\dot{Jkv}/dq
+ * \param qdot      generalized qdot, size = global_freedoms
+ * \param p         specified local position of target point 
+ * 
+ * Jkv  = d(parent->W * local_transform * p_local)/dq
+ *      = d(parent->W)dq  * local_transform * p_local
+ * Jkv_dot  = dJkvdq * qdot
+ *          = d(d(parent->W)dq  * local_transform * p_local)/dq * qdot
+ *          = d^2(parent->W)/dq^2 * qdot * local_transform * p_local
+ * dJkv_dot/dq = d [ d^2(parent->W)/dq^2 * qdot * local_transform * p_local ] / dq
+ *          =  d[d^2(parent->W)/dqiqj]/dqk * qdot * local_transform * p_local
+ *          \in R^{3 x n x n}
+*/
+void Link::ComputedJkvdot_dq(const tVectorXd &qdot, const tVector3d &p_local)
+{
+    // 1. cut the qdot
+    assert(qdot.size() == global_freedom);
+    tVectorXd qdot_short = tVectorXd::Zero(total_freedoms);
+    for (int i = 0; i < dependent_dof_id.size(); i++)
+    {
+        qdot_short[i] = qdot[dependent_dof_id[i]];
+    }
+    // 2.shape the final result
+    tVector homogenous_p_local = btMathUtil::Expand(p_local, 1);
+    tMatrixXd buffer_mat = tMatrixXd::Zero(3, total_freedoms);
+    tVector3d buffer_vec = tVector3d::Zero();
+    for (int i = 0; i < total_freedoms; i++)
+    {
+        for (int j = 0; j <= i; j++)
+        {
+            for (int k = 0; k < total_freedoms; k++)
+            {
+                buffer_mat.col(k).noalias() =
+                    (parent_joint->GetMWQQQ(i, j, k) * local_transform *
+                     homogenous_p_local)
+                        .segment(0, 3);
+            }
+            buffer_vec.noalias() = buffer_mat * qdot_short;
+            dJkvdot_dq[i].col(j).noalias() = buffer_vec;
+            dJkvdot_dq[j].col(i).noalias() = buffer_vec;
+        }
+    }
+}
+
+/**
+ * \brief           compute d\dot{Jkw}/dq
+ * \param qdot      qdot, length = global_freedoms;
+ * 
+ *  (NOT IMPLEMENTED): d(Jw_dot)/dq = d^2(Jw)/dq^2 * qdot
+ *  (IMPLEMENTED): 
+ * 
+*/
+void Link::ComputedJkwdot_dq(const tVectorXd &qdot)
+{
+    // 1. cut the qdot
+    assert(qdot.size() == global_freedom);
+    tVectorXd qdot_short = tVectorXd::Zero(total_freedoms);
+    for (int i = 0; i < dependent_dof_id.size(); i++)
+    {
+        qdot_short[i] = qdot[dependent_dof_id[i]];
+    }
+
+    // 2. get the result
+    for (int k = 0; k < total_freedoms; k++)
+    {
+        EIGEN_V_MATXD ddJkw_dqqk = GetddJKw_dqq_last_channel(k);
+        dJkwdot_dq[k].setZero();
+        for (int j = 0; j < total_freedoms; j++)
+        {
+            dJkwdot_dq[k] += ddJkw_dqqk[j] * qdot_short[j];
+        }
+    }
+}
+
+/**
+ * \brief           get d(jkvdot)/dq
+ * \param dof       d(Jkvdot)/qdot, the target freedom id in "[0, total_freedoms]"
+ * \return d(Jkvdot)/qdot \in R^{3 x total_freedoms}
+*/
+tMatrixXd Link::GetdJkvdotdq(int dof) { return dJkvdot_dq[dof]; }
+tMatrixXd Link::GetdJkwdotdq(int dof) { return dJkwdot_dq[dof]; }
+
+/**
+ * \brief           dJkwdqq : 3xnxnxn, 3 x i x j x k
+ * \param k         channel id
+ * This function get dJkwdqqk : 3xnxnx1: 3 x i x j
+*/
+EIGEN_V_MATXD Link::GetddJKw_dqq_last_channel(int k)
+{
+    EIGEN_V_MATXD ddJkwdqqk(total_freedoms);
+    for (int i = 0; i < total_freedoms; i++)
+    {
+        ddJkwdqqk[i].noalias() = GetddJKw_dqq(i, k);
+    }
+    return ddJkwdqqk;
 }

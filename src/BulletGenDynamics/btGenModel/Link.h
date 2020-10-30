@@ -23,13 +23,15 @@ public:
 
     //===============For RigidBody Dynamics===============
     void ComputeMassMatrix() override;
-    void ComputedMdq(tEigenArr<tMatrixXd> &dMdq);
+    void ComputedMassMatrixdq(tEigenArr<tMatrixXd> &dMdq);
     void ComputeJKv_dot(tVectorXd &q_dot, tVector3d &p) override;
     void ComputeJKw_dot(tVectorXd &q_dot) override;
     void ComputeDJkvdq(const tVector3d &p) override;
     void ComputeDJkwdq() override;
     void ComputeDDJkvddq(const tVector3d &p) override;
     void ComputeDDJkwdqq() override;
+    void ComputedJkvdot_dq(const tVectorXd &qdot, const tVector3d &p) override;
+    void ComputedJkwdot_dq(const tVectorXd &qdot) override;
     //====================================================
 
     //===================For Simulation===================
@@ -48,6 +50,9 @@ public:
     tMatrixXd GetTotalDofddJKv_dqq(int i, int j) const;
     tMatrixXd GetTotalDofddJKw_dqq(int i, int j) const;
     tMatrixXd GetTotalDofddJKx_dqq(int i, int j, char type) const;
+    tMatrixXd GetdJkvdotdq(int dof);
+    tMatrixXd GetdJkwdotdq(int dof);
+    EIGEN_V_MATXD GetddJKw_dqq_last_channel(int channel_id);
 
 protected:
     tVector3d link_vel, link_omega; // the lin vel and ang vel w.r.t the COM of

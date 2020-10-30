@@ -57,6 +57,11 @@ public:
     void TestJacobian();
     void TestSecondJacobian();
     void TestThirdJacobian();
+    void TestdJdotdq();
+    void TestDCoriolisMatrixDq();
+    void TestDCoriolisMatrixDqdot();
+    void ComputeDCoriolisMatrixDq(EIGEN_V_MATXD &dCdq);
+    void ComputeDCoriolisMatrixDqdot(EIGEN_V_MATXD &dCdqdot);
     tMatrixXd GetInvMassMatrix();
     void GetEffectInfo(tEigenArr<tVector> &force_array,
                        tEigenArr<tVector> &torque_array);
@@ -65,6 +70,7 @@ public:
     bool GetEnableContactAwareController() const;
     void SetEnableContactAwareController(bool);
     bool GetCollisionEnabled() const;
+
 protected:
     // -------------------------simulation status-----------------------
     std::vector<btGenRobotCollider *>
@@ -117,4 +123,9 @@ protected:
     void TestRotationChar();
     void TestLinkddJvddq(int id);
     void TestLinkddJwddq(int id);
+    void TestLinkdJdotdq(int id);
+    void ComputeDCoriolisMatrixDq_link_part1(int link_id);
+    void ComputeDCoriolisMatrixDq_link_part2(int link_id);
+    void TestDCoriolisMatrixDq_part1(int link_id);
+    void TestDCoriolisMatrixDq_part2(int link_id);
 };
