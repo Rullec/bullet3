@@ -36,7 +36,7 @@ BaseObjectJsonParam::BaseObjectJsonParam()
  * Note that n is "total_freedoms" but not "global_freedoms"
  * This API should be used with care, it is not very intuitive
 */
-const tMatrixXd &BaseObject::GetJKv_dq_nxnversion(int i) const
+const tMatrixXd &BaseObject::GetdJKvdq_nxnversion(int i) const
 {
     return jkv_dq[i];
 }
@@ -48,7 +48,7 @@ const tMatrixXd &BaseObject::GetJKv_dq_nxnversion(int i) const
  * Note that n is "total_freedoms" but not "global_freedoms"
  * This API should be used with care, it is not very intuitive
 */
-const tMatrixXd &BaseObject::GetJKw_dq_nxnversion(int i) const
+const tMatrixXd &BaseObject::GetdJKwdq_nxnversion(int i) const
 {
     return jkw_dq[i];
 }
@@ -57,48 +57,53 @@ const tMatrixXd &BaseObject::GetJKw_dq_nxnversion(int i) const
  * \brief           Get the 6xn Jk for this object (usualy links)
  * Jk = [Jkv \\ Jkw] \in R^{6 \times n}
  * n is the total_freedoms but not the global freedoms
- * \param dof       dJk/dqdot
+ * \param dof       dJk/dqdot, in total_freedoms
 */
-tMatrixXd BaseObject::GetJk_dq_6xnversion(int dof) const
+tMatrixXd BaseObject::GetdJkdq_6xnversion(int dof) const
 {
+    assert(dof < total_freedoms);
     tMatrixXd dJkdqi = tMatrixXd::Zero(6, total_freedoms);
-    dJkdqi.block(0, 0, 3, total_freedoms) = GetJKv_dq_3xnversion(dof);
-    dJkdqi.block(3, 0, 3, total_freedoms) = GetJKw_dq_3xnversion(dof);
+    dJkdqi.block(0, 0, 3, total_freedoms) = GetdJKvdq_3xnversion(dof);
+    dJkdqi.block(3, 0, 3, total_freedoms) = GetdJKwdq_3xnversion(dof);
     return dJkdqi;
 }
 
 /**
  * \brief           Get the 3xn Jkv for this object (usually links)
+ * \param dof       interested freedom in total_freedom
  * In default case, this Jkv is definied at the COM of this link, but not other places
  * Jkv = d(position)/dq \in 3 \times n
  * n is the total freedom but not the global_freedom
 */
-tMatrixXd BaseObject::GetJKv_dq_3xnversion(int dof) const
+tMatrixXd BaseObject::GetdJKvdq_3xnversion(int dof) const
 {
+    assert(dof < total_freedoms);
     tMatrixXd dJkvdq = tMatrixXd::Zero(3, total_freedoms);
     for (int i = 0; i < total_freedoms; i++)
     {
-        dJkvdq(0, i) = jkv_dq[0](i, dof);
-        dJkvdq(1, i) = jkv_dq[1](i, dof);
-        dJkvdq(2, i) = jkv_dq[2](i, dof);
+        dJkvdq(0, i) = jkv_dq[0](dependent_dof_id[i], dependent_dof_id[dof]);
+        dJkvdq(1, i) = jkv_dq[1](dependent_dof_id[i], dependent_dof_id[dof]);
+        dJkvdq(2, i) = jkv_dq[2](dependent_dof_id[i], dependent_dof_id[dof]);
     }
     return dJkvdq;
 }
 
 /**
  * \brief           Get the 3xn Jkw for this object (usually links)
+ * \param dof       total_freedoms
  * Jkw = d([\dot{R}*RT]^{-1})/dq \in 3 \times n
  * n is the total freedom but not the global_freedom
  * []^{-1} means the extraction of skew vector
 */
-tMatrixXd BaseObject::GetJKw_dq_3xnversion(int dof) const
+tMatrixXd BaseObject::GetdJKwdq_3xnversion(int dof) const
 {
+    assert(dof < total_freedoms);
     tMatrixXd dJkwdq = tMatrixXd::Zero(3, total_freedoms);
     for (int i = 0; i < total_freedoms; i++)
     {
-        dJkwdq(0, i) = jkw_dq[0](i, dof);
-        dJkwdq(1, i) = jkw_dq[1](i, dof);
-        dJkwdq(2, i) = jkw_dq[2](i, dof);
+        dJkwdq(0, i) = jkw_dq[0](dependent_dof_id[i], dependent_dof_id[dof]);
+        dJkwdq(1, i) = jkw_dq[1](dependent_dof_id[i], dependent_dof_id[dof]);
+        dJkwdq(2, i) = jkw_dq[2](dependent_dof_id[i], dependent_dof_id[dof]);
     }
     return dJkwdq;
 }
@@ -561,7 +566,7 @@ tMatrixXd BaseObject::GetJk_dot_recuded() const
     }
     return Jk_dot_reduced;
 }
-tVectorXd BaseObject::GetShortedFreedom(const tVectorXd qx_log) const
+tVectorXd BaseObject::GetShortedFreedom(const tVectorXd &qx_log) const
 {
     assert(qx_log.size() == global_freedom);
     tVectorXd q = tVectorXd::Zero(total_freedoms);

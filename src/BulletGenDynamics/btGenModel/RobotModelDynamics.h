@@ -56,11 +56,12 @@ public:
     const tMatrixXd &GetDampingMatrix() const { return mDampingMatrix; }
     void TestJacobian();
     void TestSecondJacobian();
+    void TestReducedAPI();
     void TestThirdJacobian();
     void TestdJdotdq();
     void TestDCoriolisMatrixDq();
     void TestDCoriolisMatrixDqdot();
-    void ComputeDCoriolisMatrixDq(EIGEN_V_MATXD &dCdq);
+    void ComputeDCoriolisMatrixDq(const tVectorXd &qdot, EIGEN_V_MATXD &dCdq);
     void ComputeDCoriolisMatrixDqdot(EIGEN_V_MATXD &dCdqdot);
     tMatrixXd GetInvMassMatrix();
     void GetEffectInfo(tEigenArr<tVector> &force_array,
@@ -125,6 +126,9 @@ protected:
     void TestLinkddJwddq(int id);
     void TestLinkdJdotdq(int id);
 
+    void TestDCoriolisMatrixDq_part1_1(int link_id);
+    void TestDCoriolisMatrixDq_part1_2(int link_id);
     void TestDCoriolisMatrixDq_part1(int link_id);
     void TestDCoriolisMatrixDq_part2(int link_id);
+    void TestDCoriolisMatrixDq_global_link(int id);
 };

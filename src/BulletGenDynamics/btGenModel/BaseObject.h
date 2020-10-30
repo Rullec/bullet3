@@ -201,12 +201,12 @@ public:
 
     // ====================================================
     // modeified 04/06/20,
-    const tMatrixXd &GetJKv_dq_nxnversion(int i) const;
-    const tMatrixXd &GetJKw_dq_nxnversion(int i) const;
-    tMatrixXd GetJk_dq_6xnversion(int i)
+    const tMatrixXd &GetdJKvdq_nxnversion(int i) const;
+    const tMatrixXd &GetdJKwdq_nxnversion(int i) const;
+    tMatrixXd GetdJkdq_6xnversion(int i)
         const; // needs to crate new matrix, so we cannot return a const reference
-    tMatrixXd GetJKv_dq_3xnversion(int i) const;
-    tMatrixXd GetJKw_dq_3xnversion(int i) const;
+    tMatrixXd GetdJKvdq_3xnversion(int i) const;
+    tMatrixXd GetdJKwdq_3xnversion(int i) const;
     const tMatrix &GetMWQ(int i) const;
     virtual const tMatrix &GetMWQQ(int i, int j) const = 0;
     virtual const tMatrix &
@@ -276,7 +276,7 @@ public:
     void SetComputeThirdDerive(bool flag);
     bool GetComputeThirdDeriv() const;
     const tVector3f &GetMeshScale() const { return mesh_scale; }
-    tVectorXd GetShortedFreedom(const tVectorXd qx_log) const;
+    tVectorXd GetShortedFreedom(const tVectorXd &qx_log) const;
 
 protected:
     int id;
@@ -332,7 +332,7 @@ protected:
     int shape_type;
     tMatrixXd JK_w;
     tMatrixXd JK_v;
-    tMatrixXd JK_v_dot;
+    tMatrixXd JK_v_dot; // \dot{Jkv} in global freedoms
     tMatrixXd JK_w_dot;
     tMatrixXd JK;
     tMatrixXd JK_dot;
@@ -341,18 +341,18 @@ protected:
     tVector3d omega;
 
     EIGEN_V_MATXD
-    jkv_dq; // vector<tMatrix: nxn>, vector size = 3 (one matrix per channel), d(Jv)/dq
+    jkv_dq; // vector<tMatrix: nxn>, vector size = 3 (one matrix per channel), d(Jv)/dq, global_freedoms
     EIGEN_V_MATXD
-    jkw_dq; // vector<tMatrix: nxn>, vector size = 3(one matrix per channel), d(Jw)/dq
+    jkw_dq; // vector<tMatrix: nxn>, vector size = 3(one matrix per channel), d(Jw)/dq, global_freedoms
     EIGEN_VV_MATXD
-    ddjkv_dqq; // vector<vector<tMatrix: 3xn>>, the index of two outer layer is the freedom index, d^2(Jv)/d(qiqj), only store the lower diagnoal
+    ddjkv_dqq; // vector<vector<tMatrix: 3xn>>, the index of two outer layer is the freedom index, d^2(Jv)/d(qiqj), only store the lower diagnoal, total_freedoms
     EIGEN_VV_MATXD
-    ddjkw_dqq; // vector<vector<tMatrix: 3xn>>, the index of two outer layer is the freedom index, d^2(Jw)/d(qiqj), only store the lower diagnoal
+    ddjkw_dqq; // vector<vector<tMatrix: 3xn>>, the index of two outer layer is the freedom index, d^2(Jw)/d(qiqj), only store the lower diagnoal, total_freedoms
 
     EIGEN_V_MATXD
-    dJkvdot_dq; // vector<tMatrixXd : 3xn>, where n is the total_freedoms but not global_freedoms. d(Jkvdot)/dq
+    dJkvdot_dq; // vector<tMatrixXd : 3xn>, where n is the total_freedoms but not global_freedoms. d(Jkvdot)/dq, total_freedoms
     EIGEN_V_MATXD
-    dJkwdot_dq; // vector<tMatrixXd : 3xn>, where n is the total_freedoms but not global_freedoms. d(JKwdot)/dq
+    dJkwdot_dq; // vector<tMatrixXd : 3xn>, where n is the total_freedoms but not global_freedoms. d(JKwdot)/dq, total_freedoms
 
     // ============================================================================
 

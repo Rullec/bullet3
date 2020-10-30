@@ -274,6 +274,7 @@ void CustomEngineMainDemo::SinglestepSim(float dt)
     global_frame_id++;
     return;
 }
+#include "BulletGenDynamics/btGenModel/Link.h"
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
 void CustomEngineMainDemo::Test()
 {
@@ -281,27 +282,29 @@ void CustomEngineMainDemo::Test()
     auto mb = mGenWorld->GetMultibody();
     mb->SetComputeThirdDerive(true);
     int dof = mb->GetNumOfFreedom();
-    // tVectorXd q = tVectorXd::Random(dof), qdot = tVectorXd::Random(dof);
     tVectorXd q = tVectorXd::Random(dof), qdot = tVectorXd::Random(dof);
-    // tVectorXd q = tVectorXd::Zero(dof), qdot = tVectorXd::Zero(dof);
     mb->SetqAndqdot(q, qdot);
-    // mb->TestdJdotdq();
-    mb->TestdMassMatrixdq();
-    // mb->TestJacobian();
-    // mb->TestDCoriolisMatrixDq();
-    // exit(1);
-    // mb->TestmWq();
-    // mb->TestmTqq();
-    // mb->TestmWqq();
-    // mb->TestmTqqq();
-    // mb->TestmWqqq();
+    // for (int i = 0; i < mb->GetNumOfLinks(); i++)
+    // {
+    //     auto link = dynamic_cast<Link *>(mb->GetLinkById(i));
+    //     std::cout << "link " << i << " M = \n"
+    //               << link->GetMassMatrix() << std::endl;
+    // }
+    // mb->TestdMassMatrixdq();
     // mb->TestSecondJacobian();
     // mb->TestThirdJacobian();
     // mb->TestdJdotdq();
+    // mb->TestThirdJacobian();
+    // mb->TestdJdotdq();
+    // mb->TestThirdJacobian();
+    // mb->TestdJdotdq();
     // mb->TestJacobian();
-    // mb->TestLinkdMassMatrixdq();
-    // mb->TestdGenGravitydq(tVector::Random());
-    // mb->TestdMassMatrixdq();
+
+    // mb->TestdJdotdq();
+    // mb->TestSecondJacobian();
+    // mb->TestReducedAPI();
+    // mb->TestThirdJacobian();
+    mb->TestDCoriolisMatrixDq();
     std::cout << "test done\n";
     exit(0);
 }

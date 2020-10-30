@@ -25,13 +25,21 @@ public:
     void ComputeMassMatrix() override;
     void ComputedMassMatrixdq_global_freedom(tEigenArr<tMatrixXd> &dMdq);
     void ComputedMassMatrixdq_total_freedom(tEigenArr<tMatrixXd> &dMdq);
-    void ComputedCoriolisMatrixdq_part1(const tVectorXd &qdot,
+    tMatrixXd ComputeCoriolisMatrixReduced(const tVectorXd &qdot);
+    void ComputedCoriolisMatrixdqReduced(const tVectorXd &qdot, tEigenArr<tMatrixXd> &dCdq);
+    void ComputedCoriolisMatrixdqReduced_part1(const tVectorXd &qdot,
                                         tEigenArr<tMatrixXd> &dCdq_part1);
-    void ComputedCoriolisMatrixdq_part2(const tVectorXd &qdot,
+    void ComputedCoriolisMatrixdq_part11(const tVectorXd &qdot,
+                                         tEigenArr<tMatrixXd> &dCdq_part11);
+    void ComputedCoriolisMatrixdqReduced_part2(const tVectorXd &qdot,
                                         tEigenArr<tMatrixXd> &dCdq_part1);
-    void ComputeCoriolisMatrix_part1(const tVectorXd & qdot, tMatrixXd & C_part1);
-    void ComputeCoriolisMatrix_part2(const tVectorXd & qdot, tMatrixXd & C_part2);
-    
+    void ComputeCoriolisMatrix_part11(const tVectorXd &qdot,
+                                      tMatrixXd &C_part11);
+    void ComputeCoriolisMatrix_part12(const tVectorXd &qdot,
+                                      tMatrixXd &C_part12);
+    void ComputeCoriolisMatrixReduced_part1(const tVectorXd &qdot, tMatrixXd &C_part1);
+    void ComputeCoriolisMatrixReduced_part2(const tVectorXd &qdot, tMatrixXd &C_part2);
+
     void ComputeJKv_dot(const tVectorXd &q_dot, const tVector3d &p) override;
     void ComputeJKw_dot(const tVectorXd &q_dot) override;
     void ComputeDJkvdq(const tVector3d &p) override;
@@ -60,6 +68,7 @@ public:
     tMatrixXd GetTotalDofddJKx_dqq(int i, int j, char type) const;
     tMatrixXd GetdJkvdotdq(int dof);
     tMatrixXd GetdJkwdotdq(int dof);
+
     EIGEN_V_MATXD GetddJKw_dqq_last_channel(int channel_id);
 
 protected:

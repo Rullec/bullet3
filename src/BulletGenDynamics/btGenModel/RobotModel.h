@@ -84,7 +84,6 @@ public:
     void ComputedMassMatrixdq(EIGEN_V_MATXD &dMdq) const;
     void TestLinkdMassMatrixdq();
     void TestdMassMatrixdq();
-    void Test_dCoriolisMatrix_dqandqdot();
     void InitModel();
     void InitChildrenChain();
     void InitDofidToJointMap();

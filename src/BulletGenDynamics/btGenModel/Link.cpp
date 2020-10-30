@@ -412,6 +412,11 @@ void Link::ComputeMassMatrix()
     mass_matrix.block(3, 3, 3, 3).noalias() =
         global_transform.topLeftCorner<3, 3>() * Ibody *
         global_transform.topLeftCorner<3, 3>().transpose();
+
+    // printf("----------link %d compute Mass mat-------\n", id);
+    // std::cout << "mass = " << mass << std::endl;
+    // std::cout << "global trans = \n" << global_transform << std::endl;
+    // std::cout << "Ibody = \n" << Ibody << std::endl;
     // std::cout << "raw inertia = \n"
     // 		  << Ibody << std::endl;
 
@@ -477,7 +482,7 @@ tMatrixXd Link::GetTotalDofdJKv_dq(int target_dof_id) const
     for (int i = 0; i < 3; i++)
         for (int j = 0; j < global_freedom; j++)
         {
-            dJkv_dq(i, j) = GetJKv_dq_nxnversion(i)(j, target_dof_id);
+            dJkv_dq(i, j) = GetdJKvdq_nxnversion(i)(j, target_dof_id);
         }
     return dJkv_dq;
 }
@@ -492,7 +497,7 @@ tMatrixXd Link::GetTotalDofdJKw_dq(int target_dof_id) const
     for (int i = 0; i < 3; i++)
         for (int j = 0; j < global_freedom; j++)
         {
-            dJkw_dq(i, j) = GetJKw_dq_nxnversion(i)(j, target_dof_id);
+            dJkw_dq(i, j) = GetdJKwdq_nxnversion(i)(j, target_dof_id);
         }
     return dJkw_dq;
 }
@@ -511,11 +516,20 @@ void Link::ComputedMassMatrixdq_global_freedom(tEigenArr<tMatrixXd> &dMdq)
 {
     EIGEN_V_MATXD dMdq_compact;
     ComputedMassMatrixdq_total_freedom(dMdq_compact);
-    dMdq.resize(global_freedom, tMatrixXd::Zero(6, 6));
+    dMdq.resize(global_freedom);
+    for (auto &x : dMdq)
+        x.noalias() = tMatrixXd::Zero(6, 6);
     for (int i = 0; i < total_freedoms; i++)
     {
         dMdq[dependent_dof_id[i]] = dMdq_compact[i];
     }
+    // if (id == 2)
+    // {
+    //     for (int i = 0; i < global_freedom; i++)
+    //     {
+    //         std::cout << "link2 dMdq" << i << " = \n" << dMdq[i] << std::endl;
+    //     }
+    // }
 }
 
 /**
@@ -851,6 +865,12 @@ void Link::ComputedJkwdot_dq(const tVectorXd &qdot)
  * \return d(Jkvdot)/qdot \in R^{3 x total_freedoms}
 */
 tMatrixXd Link::GetdJkvdotdq(int dof) { return dJkvdot_dq[dof]; }
+
+/**
+ * \brief           get d(jkwdot)/dq
+ * \param dof       d(Jkwdot)/qdot, the target freedom id in "[0, total_freedoms]"
+ * \return d(Jkwdot)/qdot \in R^{3 x total_freedoms}
+*/
 tMatrixXd Link::GetdJkwdotdq(int dof) { return dJkwdot_dq[dof]; }
 
 /**
@@ -873,102 +893,349 @@ EIGEN_V_MATXD Link::GetddJKw_dqq_last_channel(int k)
  * part1 = JkT * Mck * \dot{J}k
  * dpart1/dq = dJkTdq * Mck * \dot{J}_k + JkT * (dMckdq * \dot{J}_k + Mck * d\dot{J}k/dq)
 */
-void Link::ComputedCoriolisMatrixdq_part1(const tVectorXd &qdot,
-                                          tEigenArr<tMatrixXd> &dCdq_part1)
+void Link::ComputedCoriolisMatrixdqReduced_part1(
+    const tVectorXd &qdot, tEigenArr<tMatrixXd> &dCdq_part1)
 {
-    int total_freedom = GetNumTotalFreedoms();
-    dCdq_part1.resize(total_freedom);
-    EIGEN_V_MATXD dJkdq(total_freedom);
-    for (int i = 0; i < total_freedom; i++)
+    EIGEN_V_MATXD dJkdq(total_freedoms);
+    for (int dof = 0; dof < total_freedoms; dof++)
+        dJkdq[dof].noalias() = GetdJkdq_6xnversion(dof);
+    tMatrixXd Jk = GetJK_reduced();
+    // 2. Mck and dMdq
+    tMatrixXd Mck = GetMassMatrix();
+    EIGEN_V_MATXD dMdq;
+    ComputedMassMatrixdq_total_freedom(dMdq);
+
+    dCdq_part1.resize(total_freedoms);
+    for (auto &x : dCdq_part1)
+        x = tMatrixXd::Zero(total_freedoms, total_freedoms);
+
+    EIGEN_V_MATXD dJdot_dq(total_freedoms, tMatrixXd::Zero(6, total_freedoms));
+    for (int i = 0; i < total_freedoms; i++)
     {
-        dJkdq[i].noalias() = GetJk_dq_6xnversion(i);
+        dJdot_dq[i] = tMatrixXd::Zero(6, total_freedoms);
+        dJdot_dq[i].block(0, 0, 3, total_freedoms) = GetdJkvdotdq(i);
+        dJdot_dq[i].block(3, 0, 3, total_freedoms) = GetdJkwdotdq(i);
     }
 
-    // 2. get Mck
-    const tMatrixXd &Mck = GetMassMatrix();
-    // 3. get Jdot
-    const tMatrixXd &Jdot = GetJk_dot_recuded();
-    // 4. get JkT
-    const tMatrixXd &JkT = GetJK_reduced().transpose();
-    // 5. get dMckdq
-    EIGEN_V_MATXD dMckdq;
-    ComputedMassMatrixdq_total_freedom(dMckdq);
-
-    // 6. get d(\dot{Jk})/dq
-    EIGEN_V_MATXD dJdotdq(total_freedom, tMatrixXd::Zero(6, total_freedom));
-    ComputedJkvdot_dq(qdot, tVector3d::Zero());
-    ComputedJkwdot_dq(qdot);
-    for (int dof = 0; dof < total_freedom; dof++)
+    tMatrixXd Jdot = GetJk_dot_recuded();
+    // 3. compute
+    for (int i = 0; i < total_freedoms; i++)
     {
-        dJdotdq[dof].block(0, 0, 3, total_freedom) = GetdJkvdotdq(dof);
-        dJdotdq[dof].block(3, 0, 3, total_freedom) = GetdJkwdotdq(dof);
+        dCdq_part1[i] = dJkdq[i].transpose() * Mck * Jdot +
+                        Jk.transpose() * (dMdq[i] * Jdot + Mck * dJdot_dq[i]);
+    }
+}
+
+/**
+ * \brief           Calculate the first part of Coriolis matrix of this link in total freedom (which means "reduced")
+ * 
+ * C_part1 = JkT * Mck * Jdot \in R^{total_freedoms, total_freedoms}
+*/
+void Link::ComputeCoriolisMatrixReduced_part1(const tVectorXd &qdot,
+                                              tMatrixXd &C_part1)
+{
+
+    const tMatrixXd &mass_cartesian = GetMassMatrix();
+    const tMatrixXd &jk = GetJK_reduced();
+    tMatrixXd Jdot = GetJk_dot_recuded();
+    C_part1 = jk.transpose() * mass_cartesian * Jdot;
+}
+
+// C 11 = JkT * Mck
+void Link::ComputeCoriolisMatrix_part11(const tVectorXd &qdot,
+                                        tMatrixXd &C_part11)
+{
+    // ================ JKT * Mck version=============
+    {
+        // const tMatrixXd &mass_cartesian = GetMassMatrix();
+        // const tMatrixXd &jk = GetJK_reduced();
+
+        // C_part11 = jk.transpose() * mass_cartesian;
     }
 
-    // 7. form the final result
-    for (int dof = 0; dof < total_freedom; dof++)
-    {
-        // printf("dJkdq[dof] size %d %d\n", dJkdq[dof].rows(), dJkdq[dof].cols());
-        // printf("JkT size %d %d\n", JkT.rows(), JkT.cols());
-        // printf("dMckdq[dof] size %d %d\n", dMckdq[dof].rows(),
-        //        dMckdq[dof].cols());
-        // printf("Jdot size %d %d\n", Jdot.rows(), Jdot.cols());
-        // printf("Mck size %d %d\n", Mck.rows(), Mck.cols());
-        // printf("dJdotdq[dof] size %d %d\n", dJdotdq[dof].rows(),
-        //        dJdotdq[dof].cols());
-        tMatrixXd part1 = dJkdq[dof] * Mck * Jdot;
+    // ================ JkT version==================
+    // {
+    //     const tMatrixXd &jk = GetJK_reduced();
 
-        tMatrixXd part2 = JkT * (dMckdq[dof] * Jdot + Mck * dJdotdq[dof]);
-        dCdq_part1[dof].noalias() = part1 + part2;
+    //     C_part11 = jk.transpose();
+    // }
+
+    // ================ Jdot version =======================
+    // C_part11 = GetJk_dot_recuded();
+
+    // ================ JKT * Mck * Jdot version=============
+    {
+        const tMatrixXd &mass_cartesian = GetMassMatrix();
+        const tMatrixXd &jk = GetJK_reduced();
+        tMatrixXd Jdot = GetJk_dot_recuded();
+        C_part11 = jk.transpose() * mass_cartesian * Jdot;
+    }
+}
+
+// d(C11) = dJkTdq * Mck + JkT * dMckdq
+void Link::ComputedCoriolisMatrixdq_part11(const tVectorXd &qdot,
+                                           tEigenArr<tMatrixXd> &dCdq_part11)
+{
+    // ================ JkT * Mck version============
+    {
+        // 1. Jk and dJkdq
+        // EIGEN_V_MATXD dJkdq(total_freedoms);
+        // for (int dof = 0; dof < total_freedoms; dof++)
+        //     dJkdq[dof].noalias() = GetdJkdq_6xnversion(dof);
+        // tMatrixXd Jk = GetJK_reduced();
+        // // 2. Mck and dMdq
+        // tMatrixXd Mck = GetMassMatrix();
+        // EIGEN_V_MATXD dMdq;
+        // ComputedMassMatrixdq_total_freedom(dMdq);
+
+        // dCdq_part11.resize(total_freedoms);
+        // for (auto &x : dCdq_part11)
+        //     x = tMatrixXd::Zero(total_freedoms, total_freedoms);
+
+        // // 3. compute
+        // for (int i = 0; i < total_freedoms; i++)
+        // {
+        //     dCdq_part11[i] =
+        //         dJkdq[i].transpose() * Mck + Jk.transpose() * dMdq[i];
+        // }
+    }
+
+    // ================= JkT version =====================
+    // {
+    //     dCdq_part11.resize(total_freedoms);
+    //     EIGEN_V_MATXD dJkdq(total_freedoms);
+    //     for (int dof = 0; dof < total_freedoms; dof++)
+    //     {
+    //         dCdq_part11[dof].noalias() = GetdJkdq_6xnversion(dof).transpose();
+    //     }
+    // }
+
+    // ================ Jdot version =======================
+    {
+        // dCdq_part11.resize(total_freedoms);
+
+        // for (int i = 0; i < total_freedoms; i++)
+        // {
+        //     dCdq_part11[i] = tMatrixXd::Zero(6, total_freedoms);
+        //     dCdq_part11[i].block(0, 0, 3, total_freedoms) = GetdJkvdotdq(i);
+        //     dCdq_part11[i].block(3, 0, 3, total_freedoms) = GetdJkwdotdq(i);
+        // }
+    }
+
+    // ================ JkT * Mck * Jdot version============
+    {
+        EIGEN_V_MATXD dJkdq(total_freedoms);
+        for (int dof = 0; dof < total_freedoms; dof++)
+            dJkdq[dof].noalias() = GetdJkdq_6xnversion(dof);
+        tMatrixXd Jk = GetJK_reduced();
+        // 2. Mck and dMdq
+        tMatrixXd Mck = GetMassMatrix();
+        EIGEN_V_MATXD dMdq;
+        ComputedMassMatrixdq_total_freedom(dMdq);
+
+        dCdq_part11.resize(total_freedoms);
+        for (auto &x : dCdq_part11)
+            x = tMatrixXd::Zero(total_freedoms, total_freedoms);
+
+        EIGEN_V_MATXD dJdot_dq(total_freedoms,
+                               tMatrixXd::Zero(6, total_freedoms));
+        for (int i = 0; i < total_freedoms; i++)
+        {
+            dJdot_dq[i] = tMatrixXd::Zero(6, total_freedoms);
+            dJdot_dq[i].block(0, 0, 3, total_freedoms) = GetdJkvdotdq(i);
+            dJdot_dq[i].block(3, 0, 3, total_freedoms) = GetdJkwdotdq(i);
+        }
+
+        tMatrixXd Jdot = GetJk_dot_recuded();
+        // 3. compute
+        for (int i = 0; i < total_freedoms; i++)
+        {
+            dCdq_part11[i] =
+                dJkdq[i].transpose() * Mck * Jdot +
+                Jk.transpose() * (dMdq[i] * Jdot + Mck * dJdot_dq[i]);
+        }
+    }
+}
+void ComputeCoriolisMatrix_part12(const tVectorXd &qdot, tMatrixXd &C_part12) {}
+
+/**
+ * \brief           compute the second part of C matrix:
+ *      Ck_part2 = JkT * [\tilde{\omega}_k] * Mck * Jk
+*/
+void Link::ComputeCoriolisMatrixReduced_part2(const tVectorXd &qdot,
+                                              tMatrixXd &C_part2)
+{
+    // =============FULL JkT * [\tilde{\omega}_k] * Mck * Jk ===========
+    {
+        tVectorXd qdot_shorted = GetShortedFreedom(qdot);
+        const tMatrixXd &mass_cartesian = GetMassMatrix();
+        const tMatrixXd &jk = GetJK_reduced();
+        const tMatrixXd &jkw = GetJKw_reduced();
+
+        tVector3d omega = jkw * qdot_shorted;
+        tMatrix3d omega_skew;
+        Tools::SkewMatrix(omega, omega_skew);
+
+        tMatrixXd w_skew = tMatrixXd::Zero(6, 6);
+        w_skew.block(3, 3, 3, 3) = omega_skew;
+        C_part2.noalias() = jk.transpose() * w_skew * mass_cartesian * jk;
+    }
+
+    // =================== JKT * [\tilde{\omega}_k] =================
+    {
+        // tVectorXd qdot_shorted = GetShortedFreedom(qdot);
+        // const tMatrixXd &jkw = GetJKw_reduced();
+        // tVector3d omega = jkw * qdot_shorted;
+        // tMatrix3d omega_skew;
+        // Tools::SkewMatrix(omega, omega_skew);
+        // tMatrixXd w_skew = tMatrixXd::Zero(6, 6);
+        // w_skew.block(3, 3, 3, 3) = omega_skew;
+        // const tMatrixXd &jk = GetJK_reduced();
+
+        // C_part2 = jk.transpose() * w_skew;
     }
 }
 
 /**
  *  \brief      Compute the second part of dCdq       
-        part2 = JkT * (dMckdq * \dot{J}_k
-                    + Mck * d\dot{J}dq
-                    + d[\tilde{\omega_k}]dq * Mck
-                    + [\tilde{\omega_k}] * dMckdq
-                    ）
-        part2 =  d[ JkT * [\tilde{\omega}_k] * Mck * Jk ] / dq
+        part2 = dJkTdq * [\tilde{\omega_k}] * Mck * Jk 
+                +
+                JkT * (
+                        d[\tilde{\omega_k}]dq * Mck * Jk 
+                        + [\tilde{\omega_k}] * (
+                            dMckdq * Jk 
+                            + 
+                            Mck * dJkdq
+                        )
+                    )
  * 
 */
-void Link::ComputedCoriolisMatrixdq_part2(const tVectorXd &qdot,
-                                          tEigenArr<tMatrixXd> &dCdq_part1)
+void Link::ComputedCoriolisMatrixdqReduced_part2(
+    const tVectorXd &qdot, tEigenArr<tMatrixXd> &dCdq_part2)
 {
-    // 1. get JkT
-    // 2. get dMckdq
-    // 3. get \dot{J}_k
-    // 4. get Mck
-    // 5. get d\dot{J}dq
-    // 6. get d[\tilde{\omega_k}]dq
-    // 7. get \tilde{\omega_k}
+    // ============ FULL ==========
+    {
+
+        // 1. get JkT
+        const tMatrixXd &Jk = GetJK_reduced();
+        // 2. get dMckdq
+        EIGEN_V_MATXD dMdq;
+        ComputedMassMatrixdq_total_freedom(dMdq);
+
+        // 3. get \dot{J}_k
+        const tMatrixXd &Jkdot = GetJk_dot_recuded();
+
+        // 4. get Mck
+        const tMatrixXd &Mck = GetMassMatrix();
+        // 5. get d\dot{J}dq
+        EIGEN_V_MATXD dJkdotdq(total_freedoms);
+        for (int i = 0; i < total_freedoms; i++)
+        {
+            dJkdotdq[i] = tMatrixXd::Zero(6, total_freedoms);
+            dJkdotdq[i].block(0, 0, 3, total_freedoms) = GetdJkvdotdq(i);
+            dJkdotdq[i].block(3, 0, 3, total_freedoms) = GetdJkwdotdq(i);
+        }
+
+        // 6. get d[\tilde{\omega_k}]dq
+        EIGEN_V_MATXD dOmegadq(total_freedoms);
+        tVectorXd qdot_shorted = GetShortedFreedom(qdot);
+        for (int i = 0; i < total_freedoms; i++)
+        {
+            tVector3d domega_dqi = GetdJKwdq_3xnversion(i) * qdot_shorted;
+            dOmegadq[i] = tMatrixXd::Zero(6, 6);
+            dOmegadq[i].block(3, 3, 3, 3) = Tools::SkewMatrix(domega_dqi);
+        }
+
+        // 7. get \tilde{\omega_k}
+        tVector3d omega = GetJKw_reduced() * qdot_shorted;
+        tMatrixXd tilde_omega = tMatrixXd::Zero(6, 6);
+        tilde_omega.block(3, 3, 3, 3) = Tools::SkewMatrix(omega);
+
+        // 8. get dJkdq
+        EIGEN_V_MATXD dJkdq(total_freedoms);
+        for (int i = 0; i < total_freedoms; i++)
+            dJkdq[i] = GetdJkdq_6xnversion(i);
+        // 8. get the final result
+        dCdq_part2.resize(total_freedoms);
+        for (int i = 0; i < total_freedoms; i++)
+        {
+            /*
+        part2 = dJkTdq * [\tilde{\omega_k}] * Mck * Jk
+                +
+                JkT * (
+                        d[\tilde{\omega_k}]dq * Mck * Jk
+                        + [\tilde{\omega_k}] * (
+                            dMckdq * Jk
+                            +
+                            Mck * dJkdq
+                        )
+                    )
+        */
+            dCdq_part2[i] = dJkdq[i].transpose() * tilde_omega * Mck * Jk +
+                            Jk.transpose() *
+                                (dOmegadq[i] * Mck * Jk +
+                                 tilde_omega * (dMdq[i] * Jk + Mck * dJkdq[i]));
+        }
+    }
+
+    // ================ d[ JkT * \tilde{\omega_k} ]dq =================
+    {
+        // const tMatrixXd &Jk = GetJK_reduced();
+        // EIGEN_V_MATXD dJkdq(total_freedoms);
+        // for (int i = 0; i < total_freedoms; i++)
+        //     dJkdq[i] = GetdJkdq_6xnversion(i);
+        // dCdq_part2.resize(total_freedoms);
+
+        // EIGEN_V_MATXD dOmegadq(total_freedoms);
+        // tVectorXd qdot_shorted = GetShortedFreedom(qdot);
+        // for (int i = 0; i < total_freedoms; i++)
+        // {
+        //     tVector3d domega_dqi = GetdJKwdq_3xnversion(i) * qdot_shorted;
+        //     dOmegadq[i] = tMatrixXd::Zero(6, 6);
+        //     dOmegadq[i].block(3, 3, 3, 3) = Tools::SkewMatrix(domega_dqi);
+        // }
+        // tVector3d omega = GetJKw_reduced() * qdot_shorted;
+        // tMatrixXd tilde_omega = tMatrixXd::Zero(6, 6);
+        // tilde_omega.block(3, 3, 3, 3) = Tools::SkewMatrix(omega);
+        // for (int i = 0; i < total_freedoms; i++)
+        // {
+        //     // dJkT * \tilde{omega} + JkT * d\omegadq
+        //     dCdq_part2[i] = dJkdq[i].transpose() * tilde_omega +
+        //                     Jk.transpose() * dOmegadq[i];
+        //     // dCdq_part2[i] = dJkdq[i].transpose();
+        // }
+    }
 }
 
-void Link::ComputeCoriolisMatrix_part1(const tVectorXd &qdot,
-                                       tMatrixXd &C_part1)
+/**
+ * \brief           Compute the coriolis matrix of this link
+ * part1 = JkT * Mck * \dot{J}k
+ * part2 = JkT * [\tilde{\omega}_k] * Mck * Jk
+ * 
+ * Ck = part1 + part2  \in R^{total_freedoms, total_freedoms}
+*/
+tMatrixXd Link::ComputeCoriolisMatrixReduced(const tVectorXd &qdot)
 {
-    tVectorXd shorted_qdot = GetShortedFreedom(qdot);
-    C_part1.setZero();
-
-    tVector3d p(0, 0, 0);
-    tMatrixXd w_skew(6, 6);
-    w_skew.setZero();
-
-    ComputeJKw_dot(qdot);
-    ComputeJKv_dot(qdot, p);
-    ComputeJK_dot();
-
-    const tMatrixXd &mass_cartesian = GetMassMatrix();
-    const tMatrixXd &jk = GetJK_reduced();
-    const tMatrixXd &jk_dot = GetJk_dot_recuded();
-    const tMatrixXd &jkw = GetJKw_reduced();
-
-    tVector3d omega = jkw * shorted_qdot;
-    tMatrix3d omega_skew;
-    Tools::SkewMatrix(omega, omega_skew);
-
-    w_skew.block(3, 3, 3, 3) = omega_skew;
-
-    C_part1 = jk.transpose() * mass_cartesian * jk_dot;
+    tMatrixXd C_part1, C_part2;
+    ComputeCoriolisMatrixReduced_part1(qdot, C_part1);
+    ComputeCoriolisMatrixReduced_part2(qdot, C_part2);
+    return C_part1 + C_part2;
 }
-void ComputeCoriolisMatrix_part2(const tVectorXd &qdot, tMatrixXd &C_part2) {}
+
+/**
+ * \brief           Compute dCdq in reduced coordinate of this link
+ * 
+ * Ck \in R^{total_freedoms, total_freedoms}
+*/
+void Link::ComputedCoriolisMatrixdqReduced(const tVectorXd &qdot,
+                                           tEigenArr<tMatrixXd> &dCdq)
+{
+    tEigenArr<tMatrixXd> dCpart1dq, dCpart2dq;
+    ComputedCoriolisMatrixdqReduced_part1(qdot, dCpart1dq);
+    ComputedCoriolisMatrixdqReduced_part2(qdot, dCpart2dq);
+    dCdq.resize(total_freedoms);
+    for (int i = 0; i < total_freedoms; i++)
+    {
+        dCdq[i].noalias() = dCpart1dq[i] + dCpart2dq[i];
+    }
+}

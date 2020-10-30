@@ -2249,6 +2249,11 @@ void cRobotModel::ComputeCoriolisMatrix(tVectorXd &q_dot)
 
         // fout << "---------link " << link->GetName()
         // 	 << " end to calc coriolis matrix---------\n";
+        if (compute_third_deriv == true)
+        {
+            link->ComputedJkvdot_dq(q_dot, tVector3d::Zero());
+            link->ComputedJkwdot_dq(q_dot);
+        }
     }
 }
 
@@ -2332,8 +2337,22 @@ void cRobotModel::ComputedMassMatrixdq(EIGEN_V_MATXD &dMdq) const
             dMdq[i] += dJdqi.transpose() * link_massmat * Ji;
             dMdq[i] += Ji.transpose() * dMidq[i] * Ji;
             dMdq[i] += Ji.transpose() * link_massmat * dJdqi;
+            // if (i == 6)
+            // {
+            //     std::cout << "------------link " << id << " dof " << i
+            //               << "-----------\n";
+            //     std::cout << "Ji = \n" << Ji << std::endl;
+            //     std::cout << "link_massmat = \n" << link_massmat << std::endl;
+            //     std::cout << "dJdqi = \n" << dJdqi << std::endl;
+            //     std::cout << "dMidqi = \n" << dMidq[i] << std::endl;
+            // }
         }
     }
+
+    // for (int i = 0; i < dof; i++)
+    // {
+    //     std::cout << "dMd" << i << " = \n" << dMdq[i] << std::endl;
+    // }
 }
 
 /**
@@ -2430,11 +2449,6 @@ void cRobotModel::TestdMassMatrixdq()
     Apply(q, true);
     std::cout << "[log] test dmass dq succ\n";
 }
-
-/**
- * \brief           test the derivation of coriolis matrix w.r.t q and qdot
-*/
-void cRobotModel::Test_dCoriolisMatrix_dqandqdot() {}
 
 /**
  * \brief       test the mWqqq 
