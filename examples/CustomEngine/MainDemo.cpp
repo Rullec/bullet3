@@ -285,6 +285,10 @@ void CustomEngineMainDemo::Test()
     tVectorXd q = tVectorXd::Random(dof), qdot = tVectorXd::Random(dof);
     // tVectorXd q = tVectorXd::Zero(dof), qdot = tVectorXd::Zero(dof);
     mb->SetqAndqdot(q, qdot);
+    // mb->TestdJdotdq();
+    mb->TestdMassMatrixdq();
+    // mb->TestJacobian();
+    // mb->TestDCoriolisMatrixDq();
     // exit(1);
     // mb->TestmWq();
     // mb->TestmTqq();
@@ -293,7 +297,7 @@ void CustomEngineMainDemo::Test()
     // mb->TestmWqqq();
     // mb->TestSecondJacobian();
     // mb->TestThirdJacobian();
-    mb->TestdJdotdq();
+    // mb->TestdJdotdq();
     // mb->TestJacobian();
     // mb->TestLinkdMassMatrixdq();
     // mb->TestdGenGravitydq(tVector::Random());

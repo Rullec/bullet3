@@ -650,7 +650,7 @@ void Joint::ComputeJacobiByGivenPointTotalDOF(tMatrixXd &j,
 //	JK_dot.block(3, 0, 3, global_freedom) = JK_w_dot;
 //}
 
-void Joint::ComputeJKv_dot(tVectorXd &q_dot, tVector3d &p)
+void Joint::ComputeJKv_dot(const tVectorXd &q_dot, const tVector3d &p)
 {
     Printer::Error("Calling ComputeJKv_dot in Joint");
     exit(-1);
@@ -667,7 +667,7 @@ void Joint::ComputeJKv_dot(tVectorXd &q_dot, tVector3d &p)
     }
 }
 
-void Joint::ComputeJKw_dot(tVectorXd &q_dot)
+void Joint::ComputeJKw_dot(const tVectorXd &q_dot)
 {
     Printer::Error("Calling ComputeJKw_dot in Joint");
     exit(-1);

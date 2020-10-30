@@ -2314,7 +2314,7 @@ void cRobotModel::ComputedMassMatrixdq(EIGEN_V_MATXD &dMdq) const
         }
 
         // 2. compute dMdq
-        link->ComputedMassMatrixdq(dMidq);
+        link->ComputedMassMatrixdq_global_freedom(dMidq);
 
         // 3. compute final result
         // dJvi dq: 3xn3n
@@ -2350,7 +2350,7 @@ void cRobotModel::TestLinkdMassMatrixdq()
     {
         auto link = static_cast<Link *>(GetLinkById(id));
         // 1. analytic solution of dMidq
-        link->ComputedMassMatrixdq(dMidq[id]);
+        link->ComputedMassMatrixdq_global_freedom(dMidq[id]);
 
         // 2. old dMdq
         Mi_old[id] = link->GetMassMatrix();
@@ -2418,8 +2418,11 @@ void cRobotModel::TestdMassMatrixdq()
                   << std::endl;
         if (diff.norm() > 1e-6)
         {
-            std::cout << "[error] dMassdq failed\n";
-            std::cout << "diff = \n" << diff << std::endl;
+            printf("[error] dMassdq%d failed diff norm %.10f\n", i,
+                   diff.norm());
+            std::cout << "num =\n" << dMassdq_num << std::endl;
+            std::cout << "ana =\n" << dMassdq[i] << std::endl;
+            std::cout << "diff =\n" << diff << std::endl;
             exit(0);
         }
         q[i] -= eps;

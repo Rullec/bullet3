@@ -56,8 +56,8 @@ public:
                                    const tVector &p) const override;
     void ComputeHessianByGivenPoint(EIGEN_V_MATXD &ms,
                                     const tVector &p) const override;
-    void ComputeJKv_dot(tVectorXd &q_dot, tVector3d &p) override;
-    void ComputeJKw_dot(tVectorXd &q_dot) override;
+    void ComputeJKv_dot(const tVectorXd &q_dot, const tVector3d &p) override;
+    void ComputeJKw_dot(const tVectorXd &q_dot) override;
 
     void ComputeLocalTransform() override;
     void ComputeGlobalTransform() override;

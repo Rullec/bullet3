@@ -189,7 +189,6 @@ public:
     const tVector3d &GetInitRotation() const { return init_rotation; }
 
     int GetNumTotalFreedoms() const { return total_freedoms; }
-    virtual const tMatrixXd &GetJKDot() const { return JK_dot; }
     void SetNumTotalFreedoms(int total_freedoms)
     {
         this->total_freedoms = total_freedoms;
@@ -227,8 +226,8 @@ public:
     virtual void ComputeJKv();
     virtual void ComputeJK();
     virtual void ComputeJK_dot();
-    virtual void ComputeJKv_dot(tVectorXd &q_dot, tVector3d &p){};
-    virtual void ComputeJKw_dot(tVectorXd &q_dot){};
+    virtual void ComputeJKv_dot(const tVectorXd &q_dot, const tVector3d &p){};
+    virtual void ComputeJKw_dot(const tVectorXd &q_dot){};
     virtual void ComputedJkvdot_dq(const tVectorXd &qdot, const tVector3d &p){};
     virtual void ComputedJkwdot_dq(const tVectorXd &qdot){};
     virtual void ComputeDJkvdq(const tVector3d &p) {}
@@ -258,8 +257,13 @@ public:
     const tMatrixXd &GetJK() const { return JK; }
     const tMatrixXd &GetJKv_dot() const;
     const tMatrixXd &GetJKw_dot() const;
+    virtual const tMatrixXd &GetJKDot() const { return JK_dot; }
+    tMatrixXd GetJKw_reduced() const;
+    tMatrixXd GetJKv_reduced() const;
+    tMatrixXd GetJK_reduced() const;
     tMatrixXd GetJKv_dot_reduced() const;
     tMatrixXd GetJKw_dot_reduced() const;
+    tMatrixXd GetJk_dot_recuded() const;
     const tMatrixXd &GetMassMatrix() const { return mass_matrix; }
     virtual void ComputeMassMatrix() {}
     void SetGlobalFreedoms(int gf) { this->global_freedom = gf; }
@@ -272,6 +276,7 @@ public:
     void SetComputeThirdDerive(bool flag);
     bool GetComputeThirdDeriv() const;
     const tVector3f &GetMeshScale() const { return mesh_scale; }
+    tVectorXd GetShortedFreedom(const tVectorXd qx_log) const;
 
 protected:
     int id;

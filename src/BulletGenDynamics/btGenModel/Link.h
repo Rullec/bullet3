@@ -23,9 +23,17 @@ public:
 
     //===============For RigidBody Dynamics===============
     void ComputeMassMatrix() override;
-    void ComputedMassMatrixdq(tEigenArr<tMatrixXd> &dMdq);
-    void ComputeJKv_dot(tVectorXd &q_dot, tVector3d &p) override;
-    void ComputeJKw_dot(tVectorXd &q_dot) override;
+    void ComputedMassMatrixdq_global_freedom(tEigenArr<tMatrixXd> &dMdq);
+    void ComputedMassMatrixdq_total_freedom(tEigenArr<tMatrixXd> &dMdq);
+    void ComputedCoriolisMatrixdq_part1(const tVectorXd &qdot,
+                                        tEigenArr<tMatrixXd> &dCdq_part1);
+    void ComputedCoriolisMatrixdq_part2(const tVectorXd &qdot,
+                                        tEigenArr<tMatrixXd> &dCdq_part1);
+    void ComputeCoriolisMatrix_part1(const tVectorXd & qdot, tMatrixXd & C_part1);
+    void ComputeCoriolisMatrix_part2(const tVectorXd & qdot, tMatrixXd & C_part2);
+    
+    void ComputeJKv_dot(const tVectorXd &q_dot, const tVector3d &p) override;
+    void ComputeJKw_dot(const tVectorXd &q_dot) override;
     void ComputeDJkvdq(const tVector3d &p) override;
     void ComputeDJkwdq() override;
     void ComputeDDJkvddq(const tVector3d &p) override;

@@ -1475,25 +1475,33 @@ void cRobotModelDynamics::TestLinkddJwddq(int id)
 
 void cRobotModelDynamics::TestDCoriolisMatrixDq()
 {
-    PushState("test_dCdq");
-    tVectorXd q = mq;
-    double eps = 1e-7;
-    tMatrixXd C_old = GetCoriolisMatrix();
-    EIGEN_V_MATXD dCdq_ana;
-    ComputeDCoriolisMatrixDq(dCdq_ana);
-    std::cout << "dCdq unsupported\n";
+    for (int i = 0; i < GetNumOfLinks(); i++)
+    {
+        TestDCoriolisMatrixDq_part1(i);
+    }
+    std::cout << "[log] TestDcDq part1 for all links succ\n";
+    std::cout << "[error] still needs to test dCdq part2 and total\n";
     exit(1);
-    // for (int i = 0; i < num_of_freedom; i++)
-    // {
-    //     q[i] += eps;
-    //     SetqAndqdot(q, mqdot);
-    //     tMatrixXd C_new = GetCoriolisMatrix();
-    //     tMatrixXd dCdqi_num = (C_new - C_old) / eps;
+    // PushState("test_dCdq");
+    // tVectorXd q = mq;
+    // double eps = 1e-7;
+    // tMatrixXd C_old = GetCoriolisMatrix();
+    // EIGEN_V_MATXD dCdq_ana;
 
-    //     q[i] -= eps;
-    // }
+    // // test part1
+    // ComputeDCoriolisMatrixDq(dCdq_ana);
 
-    PopState("test_dCdq");
+    // // for (int i = 0; i < num_of_freedom; i++)
+    // // {
+    // //     q[i] += eps;
+    // //     SetqAndqdot(q, mqdot);
+    // //     tMatrixXd C_new = GetCoriolisMatrix();
+    // //     tMatrixXd dCdqi_num = (C_new - C_old) / eps;
+
+    // //     q[i] -= eps;
+    // // }
+
+    // PopState("test_dCdq");
 }
 
 void cRobotModelDynamics::TestDCoriolisMatrixDqdot()
@@ -1554,10 +1562,12 @@ void cRobotModelDynamics::TestDCoriolisMatrixDqdot()
 */
 void cRobotModelDynamics::ComputeDCoriolisMatrixDq(EIGEN_V_MATXD &dCdq)
 {
+    EIGEN_V_MATXD dCpart1_dq, dCpart2_dq;
     for (int i = 0; i < GetNumOfLinks(); i++)
     {
+        auto link = dynamic_cast<Link *>(GetLinkById(i));
         //==========part 1 computation=========
-        ComputeDCoriolisMatrixDq_link_part1(i);
+        link->ComputedCoriolisMatrixdq_part1(mqdot, dCpart1_dq);
         {
             /*
                 dJkTdq * (
@@ -1578,62 +1588,44 @@ void cRobotModelDynamics::ComputeDCoriolisMatrixDq(EIGEN_V_MATXD &dCdq)
         }
 
         //==========part 2 computation=========
-        ComputeDCoriolisMatrixDq_link_part2(i);
+        link->ComputedCoriolisMatrixdq_part2(mqdot, dCpart2_dq);
     }
 }
 
-/**
- * \brief           compute the dpart1/dq of coriolis matrix for target link
- * part1 = JkT * Mck * \dot{J}k
- * dpart1/dq = dJkTdq * Mck * \dot{J}_k + JkT * (dMckdq * \dot{J}_k + Mck * d\dot{J}k/dq)
-*/
-void cRobotModelDynamics::ComputeDCoriolisMatrixDq_link_part1(int link_id)
+void cRobotModelDynamics::TestDCoriolisMatrixDq_part1(int link_id)
 {
-    // 1.get dJkdq
     auto link = dynamic_cast<Link *>(GetLinkById(link_id));
-    int total_freedom = link->GetNumOfFreedom();
-    EIGEN_V_MATXD dJkdq(total_freedom);
-    for (int i = 0; i < total_freedom; i++)
+    EIGEN_V_MATXD dCdq_part1;
+    tMatrixXd C_part1_old;
+    link->ComputedCoriolisMatrixdq_part1(mqdot, dCdq_part1);
+    link->ComputeCoriolisMatrix_part1(mqdot, C_part1_old);
+    int total_freedoms = link->GetNumTotalFreedoms();
+    tVectorXd q_old = mq;
+    double eps = 1e-8;
+    tMatrixXd C_part1_new;
+    for (int i = 0; i < total_freedoms; i++)
     {
-        dJkdq[i].noalias() = link->GetJk_dq_6xnversion(i);
+        int global_dof = link->GetPrevFreedomIds()[i];
+        q_old[global_dof] += eps;
+        SetqAndqdot(q_old, mqdot);
+        link->ComputeCoriolisMatrix_part1(mqdot, C_part1_new);
+        tMatrixXd dCpart1_dq_num = (C_part1_new - C_part1_old) / eps;
+        tMatrixXd diff = dCpart1_dq_num - dCdq_part1[i];
+        double diff_norm = diff.norm();
+        if (diff_norm > 1e-5)
+        {
+            printf(
+                "[error] Test dCpart1_dq for link %d dof %d diff norm %.10f\n",
+                link_id, i, diff_norm);
+            std::cout << "num = \n" << dCpart1_dq_num << std::endl;
+            std::cout << "ana = \n" << dCdq_part1[i] << std::endl;
+            exit(1);
+        }
+
+        q_old[global_dof] -= eps;
     }
-
-    // 2. get Mck
-    const tMatrixXd &Mck = link->GetMassMatrix();
-    // 3. get Jdot
-    const tMatrixXd &Jdot = link->GetJKDot();
-    // 4. get JkT
-    const tMatrixXd &JkT = link->GetJK().transpose();
-    // 5. get dMckdq
-    EIGEN_V_MATXD dMckdq;
-    link->ComputedMassMatrixdq(dMckdq);
-    std::cout << "[error] here is a error, the dMckdq of this link is based on "
-                 "global freedoms\n";
-    exit(1);
-    // 6. get d(\dot{Jk})/dq
+    std::cout << "[log] Test DC_partdq link " << link_id << " succ\n";
 }
-
-/**
- *  \brief      Compute the second part of dCdq       
-        part2 = JkT * (dMckdq * \dot{J}_k
-                    + Mck * d\dot{J}dq
-                    + d[\tilde{\omega_k}]dq * Mck
-                    + [\tilde{\omega_k}] * dMckdq
-                    ）
-        part2 =  d[ JkT * [\tilde{\omega}_k] * Mck * Jk ] / dq
- * 
-*/
-void cRobotModelDynamics::ComputeDCoriolisMatrixDq_link_part2(int link_id)
-{
-    // 1. get JkT
-    // 2. get dMckdq
-    // 3. get \dot{J}_k
-    // 4. get Mck
-    // 5. get d\dot{J}dq
-    // 6. get d[\tilde{\omega_k}]dq
-    // 7. get \tilde{\omega_k}
-}
-void cRobotModelDynamics::TestDCoriolisMatrixDq_part1(int link_id) {}
 void cRobotModelDynamics::TestDCoriolisMatrixDq_part2(int link_id) {}
 /**
  * \brief               Compute dCdqdot

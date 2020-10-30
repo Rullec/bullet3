@@ -508,6 +508,7 @@ bool BaseObject::GetComputeSecondDerive() const
 
 const tMatrixXd &BaseObject::GetJKv_dot() const { return JK_v_dot; }
 const tMatrixXd &BaseObject::GetJKw_dot() const { return JK_w_dot; }
+
 tMatrixXd BaseObject::GetJKv_dot_reduced() const
 {
     tMatrixXd Jkv_dot_reduced = tMatrixXd::Zero(3, total_freedoms);
@@ -521,4 +522,52 @@ tMatrixXd BaseObject::GetJKw_dot_reduced() const
     for (int i = 0; i < total_freedoms; i++)
         Jkw_dot_reduced.col(i) = JK_w_dot.col(dependent_dof_id[i]);
     return Jkw_dot_reduced;
+}
+
+tMatrixXd BaseObject::GetJKw_reduced() const
+{
+    tMatrixXd Jkw_reduced = tMatrixXd::Zero(3, total_freedoms);
+    for (int i = 0; i < total_freedoms; i++)
+    {
+        Jkw_reduced.col(i) = JK_w.col(dependent_dof_id[i]);
+    }
+    return Jkw_reduced;
+}
+tMatrixXd BaseObject::GetJKv_reduced() const
+{
+    tMatrixXd Jkv_reduced = tMatrixXd::Zero(3, total_freedoms);
+    for (int i = 0; i < total_freedoms; i++)
+    {
+        Jkv_reduced.col(i) = JK_v.col(dependent_dof_id[i]);
+    }
+    return Jkv_reduced;
+}
+tMatrixXd BaseObject::GetJK_reduced() const
+{
+    tMatrixXd Jk_reduced = tMatrixXd::Zero(6, total_freedoms);
+    for (int i = 0; i < total_freedoms; i++)
+    {
+        Jk_reduced.col(i) = this->JK.col(dependent_dof_id[i]);
+    }
+    return Jk_reduced;
+}
+
+tMatrixXd BaseObject::GetJk_dot_recuded() const
+{
+    tMatrixXd Jk_dot_reduced = tMatrixXd::Zero(6, total_freedoms);
+    for (int i = 0; i < total_freedoms; i++)
+    {
+        Jk_dot_reduced.col(i) = JK_dot.col(dependent_dof_id[i]);
+    }
+    return Jk_dot_reduced;
+}
+tVectorXd BaseObject::GetShortedFreedom(const tVectorXd qx_log) const
+{
+    assert(qx_log.size() == global_freedom);
+    tVectorXd q = tVectorXd::Zero(total_freedoms);
+    for (int i = 0; i < total_freedoms; i++)
+    {
+        q[i] = qx_log[dependent_dof_id[i]];
+    }
+    return q;
 }

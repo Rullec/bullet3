@@ -124,8 +124,7 @@ protected:
     void TestLinkddJvddq(int id);
     void TestLinkddJwddq(int id);
     void TestLinkdJdotdq(int id);
-    void ComputeDCoriolisMatrixDq_link_part1(int link_id);
-    void ComputeDCoriolisMatrixDq_link_part2(int link_id);
+
     void TestDCoriolisMatrixDq_part1(int link_id);
     void TestDCoriolisMatrixDq_part2(int link_id);
 };
