@@ -511,17 +511,17 @@ bool BaseObject::GetComputeSecondDerive() const
     return this->compute_second_derive;
 }
 
-const tMatrixXd &BaseObject::GetJKv_dot() const { return JK_v_dot; }
-const tMatrixXd &BaseObject::GetJKw_dot() const { return JK_w_dot; }
+const tMatrixXd &BaseObject::GetJKvdot() const { return JK_v_dot; }
+const tMatrixXd &BaseObject::GetJKwdot() const { return JK_w_dot; }
 
-tMatrixXd BaseObject::GetJKv_dot_reduced() const
+tMatrixXd BaseObject::GetJKvdot_reduced() const
 {
     tMatrixXd Jkv_dot_reduced = tMatrixXd::Zero(3, total_freedoms);
     for (int i = 0; i < total_freedoms; i++)
         Jkv_dot_reduced.col(i) = JK_v_dot.col(dependent_dof_id[i]);
     return Jkv_dot_reduced;
 }
-tMatrixXd BaseObject::GetJKw_dot_reduced() const
+tMatrixXd BaseObject::GetJKwdot_reduced() const
 {
     tMatrixXd Jkw_dot_reduced = tMatrixXd::Zero(3, total_freedoms);
     for (int i = 0; i < total_freedoms; i++)
@@ -557,7 +557,7 @@ tMatrixXd BaseObject::GetJK_reduced() const
     return Jk_reduced;
 }
 
-tMatrixXd BaseObject::GetJk_dot_recuded() const
+tMatrixXd BaseObject::GetJkdot_recuded() const
 {
     tMatrixXd Jk_dot_reduced = tMatrixXd::Zero(6, total_freedoms);
     for (int i = 0; i < total_freedoms; i++)

@@ -255,15 +255,15 @@ public:
     const tMatrixXd &GetJKw() const { return JK_w; }
     const tMatrixXd &GetJKv() const { return JK_v; }
     const tMatrixXd &GetJK() const { return JK; }
-    const tMatrixXd &GetJKv_dot() const;
-    const tMatrixXd &GetJKw_dot() const;
+    const tMatrixXd &GetJKvdot() const;
+    const tMatrixXd &GetJKwdot() const;
     virtual const tMatrixXd &GetJKDot() const { return JK_dot; }
     tMatrixXd GetJKw_reduced() const;
     tMatrixXd GetJKv_reduced() const;
     tMatrixXd GetJK_reduced() const;
-    tMatrixXd GetJKv_dot_reduced() const;
-    tMatrixXd GetJKw_dot_reduced() const;
-    tMatrixXd GetJk_dot_recuded() const;
+    tMatrixXd GetJKvdot_reduced() const;
+    tMatrixXd GetJKwdot_reduced() const;
+    tMatrixXd GetJkdot_recuded() const;
     const tMatrixXd &GetMassMatrix() const { return mass_matrix; }
     virtual void ComputeMassMatrix() {}
     void SetGlobalFreedoms(int gf) { this->global_freedom = gf; }

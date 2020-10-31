@@ -1536,23 +1536,33 @@ void cRobotModelDynamics::TestDCoriolisMatrixDq()
 void cRobotModelDynamics::TestDCoriolisMatrixDqdot()
 {
     PushState("test_dCdqdot");
-    tVectorXd q = mq;
+    tVectorXd qdot_old = mqdot;
     double eps = 1e-7;
     tMatrixXd C_old = GetCoriolisMatrix();
-    EIGEN_V_MATXD dCdqDOT_ana;
-    ComputeDCoriolisMatrixDqdot(dCdqDOT_ana);
-    std::cout << "dCdqDOT unsupported\n";
-    exit(1);
-    // for (int i = 0; i < num_of_freedom; i++)
-    // {
-    //     q[i] += eps;
-    //     SetqAndqdot(q, mqdot);
-    //     tMatrixXd C_new = GetCoriolisMatrix();
-    //     tMatrixXd dCdqi_num = (C_new - C_old) / eps;
+    EIGEN_V_MATXD dCdqdot_ana;
+    ComputeDCoriolisMatrixDqdot(dCdqdot_ana);
 
-    //     q[i] -= eps;
-    // }
+    for (int i = 0; i < GetNumOfFreedom(); i++)
+    {
+        qdot_old[i] += eps;
+        SetqAndqdot(mq, qdot_old);
+        tMatrixXd C_new = GetCoriolisMatrix();
 
+        tMatrixXd dCdqdot_num = (C_new - C_old) / eps;
+        tMatrixXd dCdqdot_diff = dCdqdot_num - dCdqdot_ana[i];
+        double norm = dCdqdot_diff.norm();
+        if (norm > eps * 10)
+        {
+            printf("[error] TestDcDqdot for dof %d diff %.10f\n", i, norm);
+            std::cout << "num = " << dCdqdot_num << std::endl;
+            std::cout << "ana = " << dCdqdot_ana[i] << std::endl;
+            exit(1);
+        }
+        printf("[log] TestDcDqdot dof %d succ, value norm = %.10f\n", i,
+               dCdqdot_num.norm());
+        qdot_old[i] -= eps;
+    }
+    printf("[log] TestDcDqdot succ\n");
     PopState("test_dCdqdot");
 }
 
@@ -1619,88 +1629,118 @@ void cRobotModelDynamics::ComputeDCoriolisMatrixDq(const tVectorXd &qdot,
     }
 }
 
-void cRobotModelDynamics::TestDCoriolisMatrixDq_part1(int link_id)
-{
-    PushState("test_dcdq_1");
-    auto link = dynamic_cast<Link *>(GetLinkById(link_id));
-    EIGEN_V_MATXD dCdq_part1;
-    tMatrixXd C_part1_old;
-    link->ComputeCoriolisMatrixReduced_part1(mqdot, C_part1_old);
-    link->ComputedCoriolisMatrixdqReduced_part1(mqdot, dCdq_part1);
+// void cRobotModelDynamics::TestDCoriolisMatrixDq_part1(int link_id)
+// {
+//     PushState("test_dcdq_1");
+//     auto link = dynamic_cast<Link *>(GetLinkById(link_id));
+//     EIGEN_V_MATXD dCdq_part1;
+//     tMatrixXd C_part1_old;
+//     link->ComputeCoriolisMatrixReduced_part1(mqdot, C_part1_old);
+//     link->ComputedCoriolisMatrixdqReduced_part1(mqdot, dCdq_part1);
 
-    int total_freedoms = link->GetNumTotalFreedoms();
-    tVectorXd q_old = mq;
-    double eps = 1e-7;
-    tMatrixXd C_part1_new;
-    for (int i = 0; i < total_freedoms; i++)
-    {
-        int global_dof = link->GetPrevFreedomIds()[i];
-        q_old[global_dof] += eps;
-        SetqAndqdot(q_old, mqdot);
-        link->ComputeCoriolisMatrixReduced_part1(mqdot, C_part1_new);
-        tMatrixXd dCpart1_dq_num = (C_part1_new - C_part1_old) / eps;
-        tMatrixXd diff = dCpart1_dq_num - dCdq_part1[i];
-        double diff_norm = diff.norm();
-        if (diff_norm > 10 * eps)
-        {
-            printf(
-                "[error] Test dCpart1_dq for link %d dof %d diff norm %.10f\n",
-                link_id, i, diff_norm);
-            std::cout << "num = \n" << dCpart1_dq_num << std::endl;
-            std::cout << "ana = \n" << dCdq_part1[i] << std::endl;
-            exit(1);
-        }
-        // std::cout << "dCdq part1 for link " << link_id << " d" << i << " = \n"
-        //           << dCpart1_dq_num << std::endl;
-        q_old[global_dof] -= eps;
-    }
-    PopState("test_dcdq_1");
-    std::cout << "[log] Test DC_part1dq link " << link_id << " succ\n";
-}
-void cRobotModelDynamics::TestDCoriolisMatrixDq_part2(int link_id)
-{
-    PushState("test_dcdq_2");
-    auto link = dynamic_cast<Link *>(GetLinkById(link_id));
-    EIGEN_V_MATXD dCdq_part2;
-    tMatrixXd C_part2_old;
-    link->ComputeCoriolisMatrixReduced_part2(mqdot, C_part2_old);
-    link->ComputedCoriolisMatrixdqReduced_part2(mqdot, dCdq_part2);
+//     int total_freedoms = link->GetNumTotalFreedoms();
+//     tVectorXd q_old = mq;
+//     double eps = 1e-7;
+//     tMatrixXd C_part1_new;
+//     for (int i = 0; i < total_freedoms; i++)
+//     {
+//         int global_dof = link->GetPrevFreedomIds()[i];
+//         q_old[global_dof] += eps;
+//         SetqAndqdot(q_old, mqdot);
+//         link->ComputeCoriolisMatrixReduced_part1(mqdot, C_part1_new);
+//         tMatrixXd dCpart1_dq_num = (C_part1_new - C_part1_old) / eps;
+//         tMatrixXd diff = dCpart1_dq_num - dCdq_part1[i];
+//         double diff_norm = diff.norm();
+//         if (diff_norm > 10 * eps)
+//         {
+//             printf(
+//                 "[error] Test dCpart1_dq for link %d dof %d diff norm %.10f\n",
+//                 link_id, i, diff_norm);
+//             std::cout << "num = \n" << dCpart1_dq_num << std::endl;
+//             std::cout << "ana = \n" << dCdq_part1[i] << std::endl;
+//             exit(1);
+//         }
+//         // std::cout << "dCdq part1 for link " << link_id << " d" << i << " = \n"
+//         //           << dCpart1_dq_num << std::endl;
+//         q_old[global_dof] -= eps;
+//     }
+//     PopState("test_dcdq_1");
+//     std::cout << "[log] Test DC_part1dq link " << link_id << " succ\n";
+// }
+// void cRobotModelDynamics::TestDCoriolisMatrixDq_part2(int link_id)
+// {
+//     PushState("test_dcdq_2");
+//     auto link = dynamic_cast<Link *>(GetLinkById(link_id));
+//     EIGEN_V_MATXD dCdq_part2;
+//     tMatrixXd C_part2_old;
+//     link->ComputeCoriolisMatrixReduced_part2(mqdot, C_part2_old);
+//     link->ComputedCoriolisMatrixdqReduced_part2(mqdot, dCdq_part2);
 
-    int total_freedoms = link->GetNumTotalFreedoms();
-    tVectorXd q_old = mq;
-    double eps = 1e-7;
-    tMatrixXd C_part2_new;
-    for (int i = 0; i < total_freedoms; i++)
-    {
-        int global_dof = link->GetPrevFreedomIds()[i];
-        q_old[global_dof] += eps;
-        SetqAndqdot(q_old, mqdot);
-        link->ComputeCoriolisMatrixReduced_part2(mqdot, C_part2_new);
-        tMatrixXd dCpart2_dq_num = (C_part2_new - C_part2_old) / eps;
-        tMatrixXd diff = dCpart2_dq_num - dCdq_part2[i];
-        double diff_norm = diff.norm();
-        if (diff_norm > 10 * eps)
-        {
-            printf(
-                "[error] Test dCpart2_dq for link %d dof %d diff norm %.10f\n",
-                link_id, i, diff_norm);
-            std::cout << "num = \n" << dCpart2_dq_num << std::endl;
-            std::cout << "ana = \n" << dCdq_part2[i] << std::endl;
-            exit(1);
-        }
-        // std::cout << "dCdq part2 for link " << link_id << " d" << i << " = \n"
-        //           << dCpart2_dq_num << std::endl;
-        q_old[global_dof] -= eps;
-    }
-    PopState("test_dcdq_2");
-    std::cout << "[log] Test DC_part2dq link " << link_id << " succ\n";
-}
+//     int total_freedoms = link->GetNumTotalFreedoms();
+//     tVectorXd q_old = mq;
+//     double eps = 1e-7;
+//     tMatrixXd C_part2_new;
+//     for (int i = 0; i < total_freedoms; i++)
+//     {
+//         int global_dof = link->GetPrevFreedomIds()[i];
+//         q_old[global_dof] += eps;
+//         SetqAndqdot(q_old, mqdot);
+//         link->ComputeCoriolisMatrixReduced_part2(mqdot, C_part2_new);
+//         tMatrixXd dCpart2_dq_num = (C_part2_new - C_part2_old) / eps;
+//         tMatrixXd diff = dCpart2_dq_num - dCdq_part2[i];
+//         double diff_norm = diff.norm();
+//         if (diff_norm > 10 * eps)
+//         {
+//             printf(
+//                 "[error] Test dCpart2_dq for link %d dof %d diff norm %.10f\n",
+//                 link_id, i, diff_norm);
+//             std::cout << "num = \n" << dCpart2_dq_num << std::endl;
+//             std::cout << "ana = \n" << dCdq_part2[i] << std::endl;
+//             exit(1);
+//         }
+//         // std::cout << "dCdq part2 for link " << link_id << " d" << i << " = \n"
+//         //           << dCpart2_dq_num << std::endl;
+//         q_old[global_dof] -= eps;
+//     }
+//     PopState("test_dcdq_2");
+//     std::cout << "[log] Test DC_part2dq link " << link_id << " succ\n";
+// }
 /**
  * \brief               Compute dCdqdot
  * 
  * dCdqdot = JkT * (Mck * d\dot{Jk}dq + d[\tilde{wk}]dqdot * Mck * J)
 */
-void cRobotModelDynamics::ComputeDCoriolisMatrixDqdot(EIGEN_V_MATXD &dCdqdot) {}
+void cRobotModelDynamics::ComputeDCoriolisMatrixDqdot(EIGEN_V_MATXD &dCdqdot)
+{
+    // 1. allocate
+    int num_of_freedom = GetNumOfFreedom();
+    dCdqdot.resize(num_of_freedom);
+    for (auto &x : dCdqdot)
+        x.noalias() = tMatrixXd::Zero(num_of_freedom, num_of_freedom);
+
+    // 2. get dCdqdot on each link
+    for (int link_id = 0; link_id < GetNumOfLinks(); link_id++)
+    {
+        auto link = dynamic_cast<Link *>(GetLinkById(link_id));
+        int total_freedom = link->GetNumTotalFreedoms();
+        auto dependent_dof = link->GetPrevFreedomIds();
+        EIGEN_V_MATXD dCdqdot_link_reduced;
+        link->ComputedCoriolisMatrixdqdotReduced(dCdqdot_link_reduced);
+
+        // 3. map the value into global dCdqdot
+        for (int slice = 0; slice < total_freedom; slice++)
+        {
+            for (int i = 0; i < total_freedom; i++)
+                for (int j = 0; j < total_freedom; j++)
+                {
+                    dCdqdot[dependent_dof[slice]](dependent_dof[i],
+                                                  dependent_dof[j]) +=
+                        dCdqdot_link_reduced[slice](i, j);
+                }
+            //
+        }
+    }
+}
 
 /**
  * \brief               Compute dJdotdq for all links
@@ -1721,8 +1761,8 @@ void cRobotModelDynamics::TestLinkdJdotdq(int id)
 
     // 1. get the middle value
     auto link = dynamic_cast<Link *>(GetLinkById(id));
-    tMatrixXd jvdot_old = link->GetJKv_dot_reduced();
-    tMatrixXd jwdot_old = link->GetJKw_dot_reduced();
+    tMatrixXd jvdot_old = link->GetJKvdot_reduced();
+    tMatrixXd jwdot_old = link->GetJKwdot_reduced();
 
     tVector3d local_p = tVector3d::Zero();
     link->ComputedJkvdot_dq(mqdot, local_p);
@@ -1742,8 +1782,8 @@ void cRobotModelDynamics::TestLinkdJdotdq(int id)
         int global_i = link->GetPrevFreedomIds()[total_i];
         q_old[global_i] += eps;
         SetqAndqdot(q_old, mqdot);
-        tMatrixXd jvdot_new = link->GetJKv_dot_reduced();
-        tMatrixXd jwdot_new = link->GetJKw_dot_reduced();
+        tMatrixXd jvdot_new = link->GetJKvdot_reduced();
+        tMatrixXd jwdot_new = link->GetJKwdot_reduced();
         tMatrixXd djvdotdq_num = (jvdot_new - jvdot_old) / eps,
                   djwdotdq_num = (jwdot_new - jwdot_old) / eps;
 
@@ -1771,43 +1811,43 @@ void cRobotModelDynamics::TestLinkdJdotdq(int id)
     PopState("test_link_djdot_dq");
 }
 
-// test JkT * Mck and its derivatives
-void cRobotModelDynamics::TestDCoriolisMatrixDq_part1_1(int link_id)
-{
-    PushState("test_dcdq_part11");
-    auto link = dynamic_cast<Link *>(GetLinkById(link_id));
-    EIGEN_V_MATXD derive;
-    link->ComputedCoriolisMatrixdq_part11(mqdot, derive);
-    tMatrixXd C11_old;
-    link->ComputeCoriolisMatrix_part11(mqdot, C11_old);
+// // test JkT * Mck and its derivatives
+// void cRobotModelDynamics::TestDCoriolisMatrixDq_part1_1(int link_id)
+// {
+//     PushState("test_dcdq_part11");
+//     auto link = dynamic_cast<Link *>(GetLinkById(link_id));
+//     EIGEN_V_MATXD derive;
+//     link->ComputedCoriolisMatrixdq_part11(mqdot, derive);
+//     tMatrixXd C11_old;
+//     link->ComputeCoriolisMatrix_part11(mqdot, C11_old);
 
-    tVectorXd q_old = mq;
-    double eps = 1e-7;
-    int total_freedom = link->GetNumTotalFreedoms();
-    for (int total_i = 0; total_i < total_freedom; total_i++)
-    {
-        int global_i = link->GetPrevFreedomIds()[total_i];
-        q_old[global_i] += eps;
-        SetqAndqdot(q_old, mqdot);
-        tMatrixXd C11_new;
-        link->ComputeCoriolisMatrix_part11(mqdot, C11_new);
-        tMatrixXd dC11_num = (C11_new - C11_old) / eps;
-        tMatrixXd diff = dC11_num - derive[total_i];
-        double diff_norm = diff.norm();
-        std::cout << "link " << link_id << " dof " << total_i
-                  << " diff norm = \n"
-                  << diff_norm << std::endl;
-        if (diff_norm > 10 * eps)
-        {
-            std::cout << "ana = \n" << derive[total_i] << std::endl;
-            std::cout << "num = \n" << dC11_num << std::endl;
-            std::cout << "error\n";
-            exit(1);
-        }
-        q_old[global_i] -= eps;
-    }
-    PopState("test_dcdq_part11");
-}
+//     tVectorXd q_old = mq;
+//     double eps = 1e-7;
+//     int total_freedom = link->GetNumTotalFreedoms();
+//     for (int total_i = 0; total_i < total_freedom; total_i++)
+//     {
+//         int global_i = link->GetPrevFreedomIds()[total_i];
+//         q_old[global_i] += eps;
+//         SetqAndqdot(q_old, mqdot);
+//         tMatrixXd C11_new;
+//         link->ComputeCoriolisMatrix_part11(mqdot, C11_new);
+//         tMatrixXd dC11_num = (C11_new - C11_old) / eps;
+//         tMatrixXd diff = dC11_num - derive[total_i];
+//         double diff_norm = diff.norm();
+//         std::cout << "link " << link_id << " dof " << total_i
+//                   << " diff norm = \n"
+//                   << diff_norm << std::endl;
+//         if (diff_norm > 10 * eps)
+//         {
+//             std::cout << "ana = \n" << derive[total_i] << std::endl;
+//             std::cout << "num = \n" << dC11_num << std::endl;
+//             std::cout << "error\n";
+//             exit(1);
+//         }
+//         q_old[global_i] -= eps;
+//     }
+//     PopState("test_dcdq_part11");
+// }
 
 void cRobotModelDynamics::TestReducedAPI()
 {
@@ -1912,4 +1952,53 @@ void cRobotModelDynamics::TestDCoriolisMatrixDq_global_link(int id)
         q_old[global_i] -= eps;
     }
     std::cout << "[log] Test reduced dCdq for link " << id << " succ\n";
+}
+
+/**
+ * \brief           Verify the dJdotdqdot
+ * 
+ * dJdotdqdot = dJdq
+*/
+void cRobotModelDynamics::TestdJdotdqdot()
+{
+
+    for (int link_id = 0; link_id < GetNumOfLinks(); link_id++)
+    {
+        PushState("test_djdotdqdot");
+        auto link = dynamic_cast<Link *>(GetLinkById(link_id));
+        int total_freedoms = link->GetNumTotalFreedoms();
+        // 1. get getcurrent Jdot, and dJdotdqdot
+        tMatrixXd Jkdot_old = link->GetJkdot_recuded();
+        EIGEN_V_MATXD dJkdotdqdot_ana(total_freedoms,
+                                      tMatrixXd::Zero(6, total_freedoms));
+        for (int i = 0; i < total_freedoms; i++)
+        {
+            dJkdotdqdot_ana[i] = link->GetdJkdotdqdot(i);
+        }
+
+        tVectorXd qdot_old = mqdot;
+        double eps = 1e-7;
+        for (int dof = 0; dof < total_freedoms; dof++)
+        {
+            int global_dof = link->GetPrevFreedomIds()[dof];
+            qdot_old[global_dof] += eps;
+            SetqAndqdot(mq, qdot_old);
+            tMatrixXd Jkdot_new = link->GetJkdot_recuded();
+            tMatrixXd dJkdotdqdot_num = (Jkdot_new - Jkdot_old) / eps;
+            tMatrixXd dJkdotdqdot_diff = dJkdotdqdot_num - dJkdotdqdot_ana[dof];
+            double norm = dJkdotdqdot_diff.norm();
+            if (norm > eps * 10)
+            {
+                printf("[error] dJkdotdqdot link %d dof %d diff norm %.10f\n",
+                       link_id, dof, norm);
+                std::cout << "ana = \n" << dJkdotdqdot_ana[dof] << std::endl;
+                std::cout << "num = \n" << dJkdotdqdot_num << std::endl;
+                exit(1);
+            }
+
+            qdot_old[global_dof] -= eps;
+        }
+        std::cout << "[log] Test dJdotdqdot for link " << link_id << " succ\n";
+        PopState("test_djdotdqdot");
+    }
 }

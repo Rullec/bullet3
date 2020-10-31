@@ -861,15 +861,15 @@ void Link::ComputedJkwdot_dq(const tVectorXd &qdot)
 
 /**
  * \brief           get d(jkvdot)/dq
- * \param dof       d(Jkvdot)/qdot, the target freedom id in "[0, total_freedoms]"
- * \return d(Jkvdot)/qdot \in R^{3 x total_freedoms}
+ * \param dof       d(Jkvdot)/q, the target freedom id in "[0, total_freedoms]"
+ * \return d(Jkvdot)/q \in R^{3 x total_freedoms}
 */
 tMatrixXd Link::GetdJkvdotdq(int dof) { return dJkvdot_dq[dof]; }
 
 /**
  * \brief           get d(jkwdot)/dq
- * \param dof       d(Jkwdot)/qdot, the target freedom id in "[0, total_freedoms]"
- * \return d(Jkwdot)/qdot \in R^{3 x total_freedoms}
+ * \param dof       d(Jkwdot)/q, the target freedom id in "[0, total_freedoms]"
+ * \return d(Jkwdot)/q \in R^{3 x total_freedoms}
 */
 tMatrixXd Link::GetdJkwdotdq(int dof) { return dJkwdot_dq[dof]; }
 
@@ -887,6 +887,26 @@ EIGEN_V_MATXD Link::GetddJKw_dqq_last_channel(int k)
     }
     return ddJkwdqqk;
 }
+
+/**
+ * \brief           get d(Jkdot)/dq
+ * \param dof       dJkdot/dq, [6, total_freedoms]
+*/
+tMatrixXd Link::GetdJkdotdq(int dof)
+{
+    tMatrixXd dJkdotdqi = tMatrixXd::Zero(6, total_freedoms);
+    dJkdotdqi.block(0, 0, 3, total_freedoms).noalias() = GetdJkvdotdq(dof);
+    dJkdotdqi.block(3, 0, 3, total_freedoms).noalias() = GetdJkwdotdq(dof);
+    return dJkdotdqi;
+}
+
+/**
+ * \brief           get d(Jkdot)/dqdot
+ * \param dof       the interested id in range [0, total_freedoms - 1]
+ * 
+ * Note that dJkdotdqdot = dJkdq
+*/
+tMatrixXd Link::GetdJkdotdqdot(int dof) { return GetdJkdq_6xnversion(dof); }
 
 /**
  * \brief               Calculate dCdq part1
@@ -917,7 +937,7 @@ void Link::ComputedCoriolisMatrixdqReduced_part1(
         dJdot_dq[i].block(3, 0, 3, total_freedoms) = GetdJkwdotdq(i);
     }
 
-    tMatrixXd Jdot = GetJk_dot_recuded();
+    tMatrixXd Jdot = GetJkdot_recuded();
     // 3. compute
     for (int i = 0; i < total_freedoms; i++)
     {
@@ -937,7 +957,7 @@ void Link::ComputeCoriolisMatrixReduced_part1(const tVectorXd &qdot,
 
     const tMatrixXd &mass_cartesian = GetMassMatrix();
     const tMatrixXd &jk = GetJK_reduced();
-    tMatrixXd Jdot = GetJk_dot_recuded();
+    tMatrixXd Jdot = GetJkdot_recuded();
     C_part1 = jk.transpose() * mass_cartesian * Jdot;
 }
 
@@ -967,7 +987,7 @@ void Link::ComputeCoriolisMatrix_part11(const tVectorXd &qdot,
     {
         const tMatrixXd &mass_cartesian = GetMassMatrix();
         const tMatrixXd &jk = GetJK_reduced();
-        tMatrixXd Jdot = GetJk_dot_recuded();
+        tMatrixXd Jdot = GetJkdot_recuded();
         C_part11 = jk.transpose() * mass_cartesian * Jdot;
     }
 }
@@ -1046,7 +1066,7 @@ void Link::ComputedCoriolisMatrixdq_part11(const tVectorXd &qdot,
             dJdot_dq[i].block(3, 0, 3, total_freedoms) = GetdJkwdotdq(i);
         }
 
-        tMatrixXd Jdot = GetJk_dot_recuded();
+        tMatrixXd Jdot = GetJkdot_recuded();
         // 3. compute
         for (int i = 0; i < total_freedoms; i++)
         {
@@ -1123,7 +1143,7 @@ void Link::ComputedCoriolisMatrixdqReduced_part2(
         ComputedMassMatrixdq_total_freedom(dMdq);
 
         // 3. get \dot{J}_k
-        const tMatrixXd &Jkdot = GetJk_dot_recuded();
+        const tMatrixXd &Jkdot = GetJkdot_recuded();
 
         // 4. get Mck
         const tMatrixXd &Mck = GetMassMatrix();
@@ -1237,5 +1257,37 @@ void Link::ComputedCoriolisMatrixdqReduced(const tVectorXd &qdot,
     for (int i = 0; i < total_freedoms; i++)
     {
         dCdq[i].noalias() = dCpart1dq[i] + dCpart2dq[i];
+    }
+}
+
+/**
+ * \brief           Comput dCdqdot in reduced freedom (total_freedom, but not global_freedom)
+ * 
+ * C = JkT * (Mck * Jkdot + [\tilde{\omega}] * Mck * Jk)
+ * 
+ * dCdqdot = JkT * (Mck * dJkdotdqdot + d[\tilde{\omega}]dqdot Mck Jck)
+ * 
+ * Note that domega/dqdot = Jw
+ * 
+ * size = total_freedoms
+*/
+void Link::ComputedCoriolisMatrixdqdotReduced(tEigenArr<tMatrixXd> &dCdqdot)
+{
+    dCdqdot.resize(total_freedoms);
+
+    const tMatrixXd &JkT = GetJK_reduced().transpose();
+    const tMatrixXd &Mck = GetMassMatrix();
+    const tMatrixXd &dOmega_dqdot = GetJKw_reduced();
+    tMatrixXd dTildeOmega_dqdot = tMatrixXd::Zero(6, 6);
+    tMatrixXd dJkdotdqdot;
+    for (int dof = 0; dof < total_freedoms; dof++)
+    {
+        dJkdotdqdot.noalias() = GetdJkdotdqdot(dof);
+
+        dTildeOmega_dqdot.block(3, 3, 3, 3) =
+            Tools::SkewMatrix(dOmega_dqdot.col(dof));
+        dCdqdot[dof].noalias() =
+            JkT *
+            (Mck * dJkdotdqdot + dTildeOmega_dqdot * Mck * JkT.transpose());
     }
 }

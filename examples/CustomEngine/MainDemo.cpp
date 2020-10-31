@@ -304,7 +304,10 @@ void CustomEngineMainDemo::Test()
     // mb->TestSecondJacobian();
     // mb->TestReducedAPI();
     // mb->TestThirdJacobian();
-    mb->TestDCoriolisMatrixDq();
+    // mb->TestdJdotdqdot();
+    // mb->TestDCoriolisMatrixDq();
+    mb->TestDCoriolisMatrixDqdot();
+    
     std::cout << "test done\n";
     exit(0);
 }
