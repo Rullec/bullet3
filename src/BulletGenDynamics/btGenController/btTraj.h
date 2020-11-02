@@ -15,26 +15,23 @@ struct btTraj
     double GetTimeLength() const;
     tVectorXd GetGenContactForce(int frame_id, cRobotModelDynamics *model);
     tVectorXd GetGenContactForceNoSet(int frame_id, cRobotModelDynamics *model);
-    tMatrixXd GetGenContactJacobianNoSet(int frame_id,
-                                         cRobotModelDynamics *model);
-    void GetGen_dContactJacobian_dq_NoSet(int frame_id,
-                                          cRobotModelDynamics *model,
-                                          tEigenArr<tMatrixXd> &dJacdq);
+    // tMatrixXd GetGenContactJacobianNoSet(int frame_id,
+    //                                      cRobotModelDynamics *model);
+    // void GetGen_dContactJacobian_dq_NoSet(int frame_id,
+    //                                       cRobotModelDynamics *model,
+    //                                       tEigenArr<tMatrixXd> &dJacdq);
     tVectorXd GetGenControlForce(int frame_id, cRobotModelDynamics *model);
-    void CalculateLocalContactPos(cRobotModelDynamics *model);
-
     int mNumOfFrames;
     tEigenArr<tVectorXd> mq, mqdot, mqddot;
     tEigenArr<tVectorXd> mTruthJointForceVec;
     tEigenArr<tVectorXd> mAction;
     std::vector<tEigenArr<tVector>> mTruthJointForce;
-    std::vector<std::vector<btGenContactForce *>> mContactForce;
+    std::vector<std::vector<btGenMBContactForce *>> mContactForce;
     double mTimestep;
 
 protected:
-    tEigenArr<tEigenArr<tVector>> mContactLocalPos;
     std::string mTrajPath;
-    void CheckFrameId(int frame_id, std::string prefix);
+    void CheckFrameId(int frame_id, std::string prefix) const;
     void CheckModelState(int frame_id, cRobotModelDynamics *model,
                          std::string prefix);
 };

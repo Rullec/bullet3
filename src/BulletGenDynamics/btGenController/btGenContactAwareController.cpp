@@ -90,7 +90,7 @@ void btGenContactAwareController::SetTraj(const std::string &ref_traj,
                      "inconsistent with the given motion\n";
         exit(0);
     }
-    if (mRefFrameId >= mRefTraj->mNumOfFrames - 2)
+    if (mRefFrameId >= mRefTraj->mNumOfFrames - 1)
     {
         std::cout << "btGenContactAwareController::SetTraj the traj has "
                   << mRefTraj->mNumOfFrames << " frames but the start frame is "
@@ -198,14 +198,17 @@ void btGenContactAwareController::Update(double dt)
 
     // 2. calculate the control target from the FBF optimzier
     FetchControlTarget(dt, mTargetAccel, mTargetVel, mTargetPos, mTargetTau);
-
-    // 3. Calculate the convert matrix and residual used in the contact-aware jointed LCP
-    //      If we only use Frame by frame to do control (which means the LCP is disable), call the ControlByFBF method
     if (mEnableOnlyTargetController == true)
+        //      If we only use Frame by frame to do control (which means the LCP is disable), call the ControlByFBF method
         mTargetCalculator->ControlByAdaptionController();
     else
+    {
+
+        // 3. Calculate the convert matrix and residual used in the contact-aware jointed LCP
+
         mFeatureVector->Eval(dt, mTargetAccel, mTargetVel, mTargetPos,
                              mTargetTau, mH, mE, mf);
+    }
 
     // 4. update
     PostUpdate();
@@ -252,6 +255,10 @@ void btGenContactAwareController::LoadTraj(const std::string &path)
  */
 void btGenContactAwareController::ResolveActiveForce()
 {
+    std::cout << "[error] ResolveActiveForce should not be used anymore, it "
+                 "will destroy the actuated force in mocap data\n";
+
+    exit(0);
     /*
                     Mqddot + Cqdot = QG + Qcontrol + Qcontact
                     Qcontrol = Mqddot + Cqdot - QG - Qcontact
@@ -653,7 +660,7 @@ tMatrixXd btGenContactAwareController::CalcLCPPartBPrefix() const
 
 bool btGenContactAwareController::IsEnd()
 {
-    return mRefFrameId >= (mRefTraj->mq.size() - 2);
+    return mRefFrameId >= (mRefTraj->mq.size() - 1);
 }
 
 /**
@@ -743,9 +750,19 @@ void btGenContactAwareController::RecordTraj()
             auto cur_contact = mWorld->GetContactForces()[id];
             if (cur_contact->mObj->GetType() == eColObjType::RobotCollder)
             {
-                rec_contacts.push_back(new btGenContactForce(
-                    cur_contact->mObj, cur_contact->mForce,
-                    cur_contact->mWorldPos, cur_contact->mIsSelfCollision));
+                /*
+                btGenRobotCollider *collider, const tVector &f,
+                        const tVector &world_pos, const tVector &local_pos,
+                        bool is_self_collision
+                */
+                auto link_collider =
+                    dynamic_cast<btGenRobotCollider *>(cur_contact->mObj);
+                auto link = mModel->GetLinkById(link_collider->mLinkId);
+                tVector local_pos = link->GetGlobalTransform().inverse() *
+                                    cur_contact->mWorldPos;
+                rec_contacts.push_back(new btGenMBContactForce(
+                    link_collider, cur_contact->mForce, cur_contact->mWorldPos,
+                    local_pos, cur_contact->mIsSelfCollision));
             }
         }
     }

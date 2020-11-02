@@ -9,6 +9,7 @@ btGenTargetCalculator::btGenTargetCalculator()
     mTraj = nullptr;
     mWorld = nullptr;
     mDrawPointsList.clear();
+    mRefFrameId = -1;
 }
 
 btGenTargetCalculator::~btGenTargetCalculator() { ClearDrawPoints(); }

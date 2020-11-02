@@ -23,6 +23,18 @@ public:
     tVector mForce, mWorldPos; // position in world and force in world frame
     bool mIsSelfCollision;
 };
+
+class btGenMBContactForce : public btGenContactForce
+{
+public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    btGenMBContactForce(btGenRobotCollider *collider, const tVector &f,
+                        const tVector &world_pos, const tVector &local_pos,
+                        bool is_self_collision);
+    int mLinkId;
+    tVector mLocalPos;
+};
+
 struct btGenConstraintGeneralizedForce
 {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;

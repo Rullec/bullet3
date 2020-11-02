@@ -1477,8 +1477,7 @@ void cRobotModel::ComputeJacobiByGivenPoint(std::string name,
  * respect to the whole DOF of this skeleton
  * \param	link_id			the attached link id of this point
  * \param	point			point position in world frame
- * \param	j				the reference of jacobian, it will be
- * REVISED in this function
+ * \param	j				the reference of jacobian, it will be REVISED in this function
  */
 void cRobotModel::ComputeJacobiByGivenPointTotalDOFWorldFrame(
     int link_id, const tVector3d &point_world, tMatrixXd &j) const
@@ -1504,6 +1503,23 @@ void cRobotModel::ComputeJacobiByGivenPointTotalDOFWorldFrame(
     // 1));
 }
 
+/**
+ * \brief					Calculate Jacobian for this point with
+ * respect to the whole DOF of this skeleton
+ * \param	link_id			the attached link id of this point
+ * \param	point			point position in local frame of the LINK, NOT JOINT
+ * \param	j				the reference of jacobian, it will be REVISED in this function
+ */
+void cRobotModel::ComputeJacobiByGivenPointTotalDOFLinkLocalFrame(
+    int link_id, const tVector3d &point, tMatrixXd &j) const
+{
+    ComputeJacobiByGivenPointTotalDOFWorldFrame(
+        link_id,
+        (GetLinkById(link_id)->GetGlobalTransform() *
+         btMathUtil::Expand(point, 1))
+            .segment(0, 3),
+        j);
+}
 // /**
 //  * \param point			point in link local frame
 // */

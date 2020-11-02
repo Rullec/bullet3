@@ -59,6 +59,9 @@ public:
     void ComputeJacobiByGivenPointTotalDOFWorldFrame(int link_id,
                                                      const tVector3d &point,
                                                      tMatrixXd &j) const;
+    void ComputeJacobiByGivenPointTotalDOFLinkLocalFrame(int link_id,
+                                                     const tVector3d &point,
+                                                     tMatrixXd &j) const;
     // void ComputeJacobiByGivenPointTotalDOFLocalFrame(int link_id, const
     // tVector3d& point, tMatrixXd& j) const;
     void ComputeCoMJacobi(tMatrixXd &j);

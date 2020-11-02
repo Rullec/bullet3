@@ -49,6 +49,16 @@ btGenContactForce::btGenContactForce(btGenCollisionObject *obj_,
     mIsSelfCollision = is_self_collision;
 }
 
+btGenMBContactForce::btGenMBContactForce(btGenRobotCollider *collider,
+                                         const tVector &f,
+                                         const tVector &world_pos,
+                                         const tVector &local_pos,
+                                         bool is_self_collision)
+    : btGenContactForce(collider, f, world_pos, is_self_collision)
+{
+    mLinkId = collider->mLinkId;
+    mLocalPos = btMathUtil::Expand(local_pos, 1) ;
+}
 // const std::string log_path = "debug_solve_new.txt";
 btGenContactSolver::btGenContactSolver(const std::string &config_path,
                                        btDiscreteDynamicsWorld *world)

@@ -1,4 +1,7 @@
 {
     "target_calculator_type": "NQR",
-    "supposed_contact_pt_conf": "examples/CustomEngine/ctrl_configs/target_calculator_configs/supposed_contact_configs/half_body.json"
+    "supposed_contact_pt_conf": "examples/CustomEngine/ctrl_configs/target_calculator_configs/supposed_contact_configs/half_body.json",
+    "Q": 10,
+    "R": 0.1,
+    "P": 0
 }

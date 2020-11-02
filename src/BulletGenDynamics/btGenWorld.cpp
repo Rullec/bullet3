@@ -690,82 +690,82 @@ void btGeneralizeWorld::CollisionResponse(double dt)
         break;
     }
 
-    if (mMBEnableContactAwareLCP == true && mContactForces.size() != 0 &&
-        mDebugThreeContactForces == true)
-    {
-        std::cout << "[debug] begin to debug three contact forces\n";
-        // 1. save the contact force and control force
+    // if (mMBEnableContactAwareLCP == true && mContactForces.size() != 0 &&
+    //     mDebugThreeContactForces == true)
+    // {
+    //     std::cout << "[debug] begin to debug three contact forces\n";
+    //     // 1. save the contact force and control force
 
-        std::vector<btGenContactForce *> mContactForces_old(0);
-        for (auto &x : mContactForces)
-            mContactForces_old.push_back(new btGenContactForce(*x));
+    //     std::vector<btGenContactForce *> mContactForces_old(0);
+    //     for (auto &x : mContactForces)
+    //         mContactForces_old.push_back(new btGenContactForce(*x));
 
-        std::vector<btGenConstraintGeneralizedForce *>
-            mConstraintGenalizedForce_old(0);
-        for (auto &x : mConstraintGenalizedForce)
-            mConstraintGenalizedForce_old.push_back(
-                new btGenConstraintGeneralizedForce(*x));
+    //     std::vector<btGenConstraintGeneralizedForce *>
+    //         mConstraintGenalizedForce_old(0);
+    //     for (auto &x : mConstraintGenalizedForce)
+    //         mConstraintGenalizedForce_old.push_back(
+    //             new btGenConstraintGeneralizedForce(*x));
 
-        std::vector<btGenConstraintGeneralizedForce *>
-            mContactAwareControlForce_old(0);
+    //     std::vector<btGenConstraintGeneralizedForce *>
+    //         mContactAwareControlForce_old(0);
 
-        for (auto &x : mContactAwareControlForce)
-            mContactAwareControlForce_old.push_back(
-                new btGenConstraintGeneralizedForce(*x));
+    //     for (auto &x : mContactAwareControlForce)
+    //         mContactAwareControlForce_old.push_back(
+    //             new btGenConstraintGeneralizedForce(*x));
 
-        // 2. apply the control force, resolve the contact force
-        // 3. compare the contact force
-        std::cout
-            << "------------------contact aware contact forces-------------\n";
-        DebugPrintContactForce(mContactForces);
+    //     // 2. apply the control force, resolve the contact force
+    //     // 3. compare the contact force
+    //     std::cout
+    //         << "------------------contact aware contact forces-------------\n";
+    //     DebugPrintContactForce(mContactForces);
 
-        // CollisionResponseLCP(dt);
-        auto active_applied_contact_forces =
-            DebugGetContactForces(dt, mContactAwareControlForce);
-        std::cout
-            << "------------------active applied contact forces-------------\n";
-        std::cout << "now apply force = ";
-        for (auto &x : mContactAwareControlForce)
-        {
-            std::cout << x->value << " ";
-        }
-        std::cout << std::endl;
-        DebugPrintContactForce(active_applied_contact_forces);
+    //     // CollisionResponseLCP(dt);
+    //     auto active_applied_contact_forces =
+    //         DebugGetContactForces(dt, mContactAwareControlForce);
+    //     std::cout
+    //         << "------------------active applied contact forces-------------\n";
+    //     std::cout << "now apply force = ";
+    //     for (auto &x : mContactAwareControlForce)
+    //     {
+    //         std::cout << x->value << " ";
+    //     }
+    //     std::cout << std::endl;
+    //     DebugPrintContactForce(active_applied_contact_forces);
 
-        // output the legacy contact forces
-        std::cout
-            << "------------------contact forces from ref traj-------------\n";
-        int ref_frameid = mControlController->GetRefFrameId() - 1;
-        // std::cout << "ref frame id = " << ref_frameid << std::endl;
-        auto traj = mControlController->GetRefTraj();
-        DebugPrintContactForce(traj->mContactForce[ref_frameid]);
-        tVectorXd legacy_gen_contact_force =
-            DebugConvertCartesianContactForceToGenForce(
-                traj->mq[ref_frameid], traj->mContactForce[ref_frameid]);
-        // std::cout << "gen = " << legacy_gen_contact_force.transpose()
-        //           << std::endl;
+    //     // output the legacy contact forces
+    //     std::cout
+    //         << "------------------contact forces from ref traj-------------\n";
+    //     int ref_frameid = mControlController->GetRefFrameId() - 1;
+    //     // std::cout << "ref frame id = " << ref_frameid << std::endl;
+    //     auto traj = mControlController->GetRefTraj();
+    //     DebugPrintContactForce(traj->mContactForce[ref_frameid]);
+    //     tVectorXd legacy_gen_contact_force =
+    //         DebugConvertCartesianContactForceToGenForce(
+    //             traj->mq[ref_frameid], traj->mContactForce[ref_frameid]);
+    //     // std::cout << "gen = " << legacy_gen_contact_force.transpose()
+    //     //           << std::endl;
 
-        tVectorXd legacy_active_force = DebugGetGenControlForce(ref_frameid);
-        std::cout << "truth joint forces = " << legacy_active_force.transpose()
-                  << std::endl;
+    //     tVectorXd legacy_active_force = DebugGetGenControlForce(ref_frameid);
+    //     std::cout << "truth joint forces = " << legacy_active_force.transpose()
+    //               << std::endl;
 
-        std::cout << "-------------contact force after applying the control "
-                     "force from ref traj--------------\n";
-        auto contact_forces_after_applying_the_ref_control =
-            DebugGetContactForces(dt, legacy_active_force);
-        DebugPrintContactForce(contact_forces_after_applying_the_ref_control);
+    //     std::cout << "-------------contact force after applying the control "
+    //                  "force from ref traj--------------\n";
+    //     auto contact_forces_after_applying_the_ref_control =
+    //         DebugGetContactForces(dt, legacy_active_force);
+    //     DebugPrintContactForce(contact_forces_after_applying_the_ref_control);
 
-        std::cout << "q = " << mMultibody->Getq().norm() << std::endl;
-        std::cout << "qdot = " << mMultibody->Getqdot().norm() << std::endl;
-        // 4. restore the controller state, and the old contact forces
-        this->mMultibody->SetEnableContactAwareController(true);
-        mMBEnableContactAwareLCP = true;
+    //     std::cout << "q = " << mMultibody->Getq().norm() << std::endl;
+    //     std::cout << "qdot = " << mMultibody->Getqdot().norm() << std::endl;
+    //     // 4. restore the controller state, and the old contact forces
+    //     this->mMultibody->SetEnableContactAwareController(true);
+    //     mMBEnableContactAwareLCP = true;
 
-        // apply the old contact forces, then return
-        mContactForces = mContactForces_old;
-        mConstraintGenalizedForce = mConstraintGenalizedForce_old;
-        mContactAwareControlForce = mContactAwareControlForce_old;
-    }
+    //     // apply the old contact forces, then return
+    //     mContactForces = mContactForces_old;
+    //     mConstraintGenalizedForce = mConstraintGenalizedForce_old;
+    //     mContactAwareControlForce = mContactAwareControlForce_old;
+    // }
     // btTimeUtil::End("LCP total");
     // tVectorXd qnew = mMultibody->Getq();
     // tVectorXd qdotnew = mMultibody->Getqdot();
@@ -1191,50 +1191,50 @@ btGeneralizeWorld::DebugGetContactForces(double dt,
     return DebugGetContactForces(dt, gen_forces);
 }
 
-tVectorXd btGeneralizeWorld::DebugConvertCartesianContactForceToGenForce(
-    const tVectorXd &new_q, const std::vector<btGenContactForce *> &fs)
-{
-    // 1. save state
-    mMultibody->PushState("debug_convert_cartesian_contact_force");
-    // set new state
-    mMultibody->SetqAndqdot(new_q, mMultibody->Getqdot());
+// tVectorXd btGeneralizeWorld::DebugConvertCartesianContactForceToGenForce(
+//     const tVectorXd &new_q, const std::vector<btGenContactForce *> &fs)
+// {
+//     // 1. save state
+//     mMultibody->PushState("debug_convert_cartesian_contact_force");
+//     // set new state
+//     mMultibody->SetqAndqdot(new_q, mMultibody->Getqdot());
 
-    // calc the gen force
-    tVectorXd Q = tVectorXd::Zero(mMultibody->GetNumOfFreedom());
-    // std::cout << "----------begin to convert the cartesian contact "
-    //              "forces----------\n";
-    for (auto f : fs)
-    {
-        if (f->mObj->GetType() == eColObjType::RobotCollder)
-        {
-            auto collider = dynamic_cast<btGenRobotCollider *>(f->mObj);
-            tMatrixXd jac;
-            mMultibody->ComputeJacobiByGivenPointTotalDOFWorldFrame(
-                collider->mLinkId, f->mWorldPos.segment(0, 3), jac);
-            Q += jac.transpose() * f->mForce.segment(0, 3);
-        }
-    }
-    // restore state
-    mMultibody->PopState("debug_convert_cartesian_contact_force");
+//     // calc the gen force
+//     tVectorXd Q = tVectorXd::Zero(mMultibody->GetNumOfFreedom());
+//     // std::cout << "----------begin to convert the cartesian contact "
+//     //              "forces----------\n";
+//     for (auto f : fs)
+//     {
+//         if (f->mObj->GetType() == eColObjType::RobotCollder)
+//         {
+//             auto collider = dynamic_cast<btGenRobotCollider *>(f->mObj);
+//             tMatrixXd jac;
+//             mMultibody->ComputeJacobiByGivenPointTotalDOFWorldFrame(
+//                 collider->mLinkId, f->mWorldPos.segment(0, 3), jac);
+//             Q += jac.transpose() * f->mForce.segment(0, 3);
+//         }
+//     }
+//     // restore state
+//     mMultibody->PopState("debug_convert_cartesian_contact_force");
 
-    // return the gen force
-    return Q;
-}
+//     // return the gen force
+//     return Q;
+// }
 
-void btGeneralizeWorld::DebugPrintContactForce(
-    const std::vector<btGenContactForce *> &fs)
-{
-    for (auto &x : fs)
-    {
-        if (x->mObj->GetType() == eColObjType::RobotCollder)
-            std::cout << x->mForce.transpose() << std::endl;
-    }
-}
-tVectorXd btGeneralizeWorld::DebugGetGenControlForce(int ref_frameid)
-{
-    return mControlController->GetRefTraj()->GetGenControlForce(ref_frameid,
-                                                             mMultibody);
-}
+// void btGeneralizeWorld::DebugPrintContactForce(
+//     const std::vector<btGenMBContactForce *> &fs)
+// {
+//     for (auto &x : fs)
+//     {
+//         if (x->mObj->GetType() == eColObjType::RobotCollder)
+//             std::cout << x->mForce.transpose() << std::endl;
+//     }
+// }
+// tVectorXd btGeneralizeWorld::DebugGetGenControlForce(int ref_frameid)
+// {
+//     return mControlController->GetRefTraj()->GetGenControlForce(ref_frameid,
+//                                                              mMultibody);
+// }
 
 void btGeneralizeWorld::CollectFrameInfo(double dt)
 {

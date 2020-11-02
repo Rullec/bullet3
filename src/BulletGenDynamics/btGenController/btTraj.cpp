@@ -208,7 +208,6 @@ btTraj::btTraj()
     mContactForce.clear();
     mTruthJointForce.clear();
     mTimestep = 0;
-    mContactLocalPos.clear();
 }
 btTraj::~btTraj()
 {
@@ -224,6 +223,9 @@ btTraj::~btTraj()
 bool btTraj::LoadTraj(const std::string &path, cRobotModelDynamics *model,
                       int max_frame /* = -1*/)
 {
+    model->PushState("load_traj");
+    model->SetComputeSecondDerive(false);
+    model->SetComputeThirdDerive(false);
     std::cout << "[btTraj] Load traj v2 from " << path << std::endl;
     // 1. clear the ref traj
     {
@@ -289,6 +291,7 @@ bool btTraj::LoadTraj(const std::string &path, cRobotModelDynamics *model,
 
         // contact force
         mContactForce[frame_id].resize(num_of_contact);
+        model->Apply(mq[frame_id], false);
         // mContactLocaPos[frame_id].resize(num_of_contact);
         for (int c_id = 0; c_id < num_of_contact; c_id++)
         {
@@ -310,13 +313,22 @@ bool btTraj::LoadTraj(const std::string &path, cRobotModelDynamics *model,
             // 	std::cout << "[error] btGenContactController: self collision hasn't
             // been supported\n"; 	exit(0);
             // }
-            btGenCollisionObject *obj = model->GetLinkCollider(link_id);
+            btGenRobotCollider *obj = model->GetLinkCollider(link_id);
             // std::cout << "contact " << c_id << "link id " << link_id << " pos
             // " << pos.transpose() << " force " << force_value.transpose() <<
             // std::endl;
-            cur_contact_value =
-                new btGenContactForce(obj, force_value.segment(0, 4),
-                                      pos.segment(0, 4), is_self_collision);
+            // cur_contact_value =
+            //     new btGenContactForce(obj, force_value.segment(0, 4),
+            //                           pos.segment(0, 4), is_self_collision);
+            tVector world_pos = btMathUtil::Expand(pos.segment(0, 4), 1);
+            tVector local_pos = model->GetLinkById(obj->mLinkId)
+                                    ->GetGlobalTransform()
+                                    .inverse() *
+                                world_pos;
+
+            cur_contact_value = new btGenMBContactForce(
+                obj, force_value.segment(0, 4), world_pos, local_pos,
+                is_self_collision);
         }
         // truth joint forces
         tVectorXd joint_forces;
@@ -357,6 +369,9 @@ bool btTraj::LoadTraj(const std::string &path, cRobotModelDynamics *model,
                     0, joint_dof);
             offset += joint_dof;
         }
+        // std::cout << "[load] truth joint force vec = "
+        //           << mTruthJointForceVec[frame_id].size() << std::endl;
+        // exit(0);
         // std::cout << "joint force vec = "
         //           << mTruthJointForceVec[frame_id].transpose() << std::endl;
         if (offset != num_of_actuated_freedom)
@@ -397,6 +412,7 @@ bool btTraj::LoadTraj(const std::string &path, cRobotModelDynamics *model,
     //     }
     //     exit(1);
     // }
+    model->PopState("load_traj");
     return true;
 }
 
@@ -491,41 +507,41 @@ tVectorXd btTraj::GetGenContactForceNoSet(int frame_id,
     return Q;
 }
 
-tMatrixXd btTraj::GetGenContactJacobianNoSet(int frame_id,
-                                             cRobotModelDynamics *model)
-{
-    // CheckModelState(frame_id, model, "get_gen_contact_force_jac_no_set");
-    std::cout << "[warn] tmp hang out the check model state for "
-                 "get_gen_contact_force_jac_no_set\n";
-    int num_of_contacts = this->mContactForce[frame_id].size();
-    int dof = model->GetNumOfFreedom();
-    tMatrixXd total_jac = tMatrixXd::Zero(num_of_contacts * 3, dof);
-    for (int i = 0; i < num_of_contacts; i++)
-    {
-        auto fc = mContactForce[frame_id][i];
-        auto link = dynamic_cast<btGenRobotCollider *>(fc->mObj);
-        tMatrixXd jac;
+// tMatrixXd btTraj::GetGenContactJacobianNoSet(int frame_id,
+//                                              cRobotModelDynamics *model)
+// {
+//     // std::cout << "[warn] tmp hang out the check model state for "
+//     //              "get_gen_contact_force_jac_no_set\n";
 
-        // recalculate the world pos at this moment
-        tVector world_pos = tVector::Zero();
-        {
-            world_pos =
-                model->GetLinkById(link->mLinkId)->GetGlobalTransform() *
-                mContactLocalPos[frame_id][i];
-            model->ComputeJacobiByGivenPointTotalDOFWorldFrame(
-                link->mLinkId, world_pos.segment(0, 3), jac);
-        }
+//     int num_of_contacts = this->mContactForce[frame_id].size();
+//     int dof = model->GetNumOfFreedom();
+//     tMatrixXd total_jac = tMatrixXd::Zero(num_of_contacts * 3, dof);
+//     for (int i = 0; i < num_of_contacts; i++)
+//     {
+//         auto fc = mContactForce[frame_id][i];
+//         auto link = dynamic_cast<btGenRobotCollider *>(fc->mObj);
+//         tMatrixXd jac;
 
-        // directly use the
-        // {
-        //     world_pos = fc->mWorldPos;
-        // }
+//         // recalculate the world pos at this moment
+//         tVector world_pos = tVector::Zero();
+//         {
+//             world_pos =
+//                 model->GetLinkById(link->mLinkId)->GetGlobalTransform() *
+//                 mContactForce[frame_id][i]->mLocalPos;
+//             model->ComputeJacobiByGivenPointTotalDOFWorldFrame(
+//                 link->mLinkId, world_pos.segment(0, 3), jac);
+//         }
 
-        btMathUtil::IsHomogeneousPos(world_pos);
-        total_jac.block(3 * i, 0, 3, dof) = jac;
-    }
-    return total_jac;
-}
+//         // directly use the
+//         // {
+//         //     world_pos = fc->mWorldPos;
+//         // }
+
+//         btMathUtil::IsHomogeneousPos(world_pos);
+//         total_jac.block(3 * i, 0, 3, dof) = jac;
+//     }
+//     return total_jac;
+// }
 tVectorXd btTraj::GetGenContactForce(int frame_id, cRobotModelDynamics *model)
 {
     model->PushState("calc contact force");
@@ -561,56 +577,56 @@ tVectorXd btTraj::GetGenControlForce(int frame_id, cRobotModelDynamics *model)
     return legacy_active_force;
 }
 
-/**
- * \brief           Get the dJv/dq for contact points in current frame 
-*/
-void btTraj::GetGen_dContactJacobian_dq_NoSet(int frame_id,
-                                              cRobotModelDynamics *model,
-                                              tEigenArr<tMatrixXd> &dJacdq)
-{
-    // CheckModelState(frame_id, model, "dJacdq");
-    std::cout << "[warn] tmp hang out the check model state for dJacdq\n";
-    int dof = model->GetNumOfFreedom();
+// /**
+//  * \brief           Get the dJv/dq for contact points in current frame
+// */
+// void btTraj::GetGen_dContactJacobian_dq_NoSet(int frame_id,
+//                                               cRobotModelDynamics *model,
+//                                               tEigenArr<tMatrixXd> &dJacdq)
+// {
+//     CheckModelState(frame_id, model, "dJacdq");
+//     // std::cout << "[warn] tmp hang out the check model state for dJacdq\n";
+//     int dof = model->GetNumOfFreedom();
 
-    int contact_num = mContactForce[frame_id].size();
-    dJacdq.resize(dof, tMatrixXd::Zero(3 * contact_num, dof));
+//     int contact_num = mContactForce[frame_id].size();
+//     dJacdq.resize(dof, tMatrixXd::Zero(3 * contact_num, dof));
 
-    for (int i = 0; i < contact_num; i++)
-    {
-        auto &pt = mContactForce[frame_id][i];
-        auto link_col = dynamic_cast<btGenRobotCollider *>(pt->mObj);
-        assert(link_col != nullptr);
-        int link_id = link_col->mLinkId;
-        auto link = model->GetLinkById(link_id);
+//     for (int i = 0; i < contact_num; i++)
+//     {
+//         auto &pt = mContactForce[frame_id][i];
+//         auto link_col = dynamic_cast<btGenRobotCollider *>(pt->mObj);
+//         assert(link_col != nullptr);
+//         int link_id = link_col->mLinkId;
+//         auto link = model->GetLinkById(link_id);
 
-        // calculate at this contact point(local pos)
-        tVector local_pos = mContactLocalPos[frame_id][i];
-        btMathUtil::IsHomogeneousPos(local_pos);
-        link->ComputeDJkvdq(local_pos.segment(0, 3));
+//         // calculate at this contact point(local pos)
+//         tVector local_pos = mContactForce[frame_id][i]->mLocalPos;
+//         btMathUtil::IsHomogeneousPos(local_pos);
+//         link->ComputeDJkvdq(local_pos.segment(0, 3));
 
-        // fetch dJvdq
-        for (int dof_id = 0; dof_id < dof; dof_id++)
-        {
-            // tMatrixXd dJkvdqi = ;
-            // std::cout << "dJkvdqi size " << dJkvdqi.rows() << " "
-            //           << dJkvdqi.cols() << std::endl;
-            // std::cout << "dJacdqi size " << dJacdq[dof_id].rows() << " "
-            //           << dJacdq[dof_id].cols() << std::endl;
-            // std::cout << "dof id = " << dof_id << " dof = " << dof << std::endl;
-            dJacdq[dof_id].block(3 * i, 0, 1, dof) =
-                link->GetdJKvdq_nxnversion(0).col(dof_id).transpose();
-            dJacdq[dof_id].block(3 * i + 1, 0, 1, dof) =
-                link->GetdJKvdq_nxnversion(1).col(dof_id).transpose();
-            dJacdq[dof_id].block(3 * i + 2, 0, 1, dof) =
-                link->GetdJKvdq_nxnversion(2).col(dof_id).transpose();
-        }
+//         // fetch dJvdq
+//         for (int dof_id = 0; dof_id < dof; dof_id++)
+//         {
+//             // tMatrixXd dJkvdqi = ;
+//             // std::cout << "dJkvdqi size " << dJkvdqi.rows() << " "
+//             //           << dJkvdqi.cols() << std::endl;
+//             // std::cout << "dJacdqi size " << dJacdq[dof_id].rows() << " "
+//             //           << dJacdq[dof_id].cols() << std::endl;
+//             // std::cout << "dof id = " << dof_id << " dof = " << dof << std::endl;
+//             dJacdq[dof_id].block(3 * i, 0, 1, dof) =
+//                 link->GetdJKvdq_nxnversion(0).col(dof_id).transpose();
+//             dJacdq[dof_id].block(3 * i + 1, 0, 1, dof) =
+//                 link->GetdJKvdq_nxnversion(1).col(dof_id).transpose();
+//             dJacdq[dof_id].block(3 * i + 2, 0, 1, dof) =
+//                 link->GetdJKvdq_nxnversion(2).col(dof_id).transpose();
+//         }
 
-        // restore dJvdq
-        link->ComputeDJkvdq(tVector3d::Zero());
-    }
-}
+//         // restore dJvdq
+//         link->ComputeDJkvdq(tVector3d::Zero());
+//     }
+// }
 
-void btTraj::CheckFrameId(int frame_id, std::string prefix)
+void btTraj::CheckFrameId(int frame_id, std::string prefix) const
 {
     if (frame_id < 0 || frame_id >= mNumOfFrames)
     {
@@ -638,38 +654,3 @@ void btTraj::CheckModelState(int frame_id, cRobotModelDynamics *model,
         exit(1);
     }
 }
-
-/**
- * \brief           Calculate the local contact location
-*/
-void btTraj::CalculateLocalContactPos(cRobotModelDynamics *model)
-{
-    if (mContactLocalPos.size() != 0)
-    {
-        std::cout << "[error] CalculateLocalContactPos maybe called twice\n";
-        exit(1);
-    }
-    mContactLocalPos.resize(mNumOfFrames);
-    model->PushState("local_pos");
-    for (int i = 0; i < mNumOfFrames; i++)
-    {
-        std::cout << "[warn] traj: enable local pos calculation\n";
-        model->SetqAndqdot(mq[i], model->Getqdot());
-        int num_of_contact = mContactForce[i].size();
-        mContactLocalPos[i].resize(num_of_contact);
-        for (int c_id = 0; c_id < num_of_contact; c_id++)
-        {
-            auto contact_pt = mContactForce[i][c_id];
-            tVector world_pos = contact_pt->mWorldPos;
-            int link_id =
-                dynamic_cast<btGenRobotCollider *>(contact_pt->mObj)->mLinkId;
-            auto link = model->GetLinkById(link_id);
-            tVector local_pos =
-                link->GetGlobalTransform().inverse() * world_pos;
-            mContactLocalPos[i][c_id] = local_pos;
-            btMathUtil::IsHomogeneousPos(local_pos);
-        }
-    }
-    model->PopState("local_pos");
-}
-

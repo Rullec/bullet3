@@ -146,10 +146,10 @@ protected:
     std::vector<btGenContactForce *> DebugGetContactForces(
         double dt,
         const std::vector<btGenConstraintGeneralizedForce *> &gen_forces);
-    void DebugPrintContactForce(const std::vector<btGenContactForce *> &fs);
-    tVectorXd DebugConvertCartesianContactForceToGenForce(
-        const tVectorXd &new_q, const std::vector<btGenContactForce *> &fs);
-    tVectorXd DebugGetGenControlForce(int ref_frameid);
+    // void DebugPrintContactForce(const std::vector<btGenMBContactForce *> &fs);
+    // tVectorXd DebugConvertCartesianContactForceToGenForce(
+    //     const tVectorXd &new_q, const std::vector<btGenMBContactForce *> &fs);
+    // tVectorXd DebugGetGenControlForce(int ref_frameid);
     void Update(double dt);
     // void UpdateTransform(double dt);
     void UpdateVelocityInternal(double dt);
