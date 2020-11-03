@@ -68,6 +68,7 @@ void btGenNQRCalculator::Init(btGeneralizeWorld *mWorld, const std::string conf)
     P_coef = btJsonUtil::ParseAsDouble("P", conf_json);
     printf("[log] Q(xi min) = %.5f, R(eta min) %.5f, P(f close) = %.5f\n",
            Q_coef, R_coef, P_coef);
+    mWorkPolicy = btJsonUtil::ParseAsString("work_policy", conf_json);
 }
 void btGenNQRCalculator::SetTraj(btTraj *traj_)
 {
@@ -139,7 +140,7 @@ void btGenNQRCalculator::ControlByAdaptionController()
     tVectorXd mocap_q = mTraj->mq[mRefFrameId],
               mocap_qdot = mTraj->mqdot[mRefFrameId];
     tVectorXd q_diff = cur_q - mocap_q, qdot_diff = cur_qdot - mocap_qdot;
-    printf("[nqr] ctrl myself: q diff %.5f, qdot diff %.5f\n", q_diff.norm(),
+    printf("[nqr] ctrl myself: q diff %.15f, qdot diff %.15f\n", q_diff.norm(),
            qdot_diff.norm());
     // draw the contact points
     // 1. get current control force = [joint_force, contact_force] from NQR
@@ -1118,15 +1119,43 @@ btGenNQRCalculator::CalcControlVector(const tContactInfo &contact_info)
     const tVectorXd &s_vec_next = next_info.sk_vec;
     const tVectorXd &hk = Geth();
     const tVectorXd &bar_x_next = next_info.mStateVector_mocap;
-
-    tMatrixXd part1 = (Pk + Rk + G.transpose() * S_mat_next * G).inverse();
-    tVectorXd part2 =
-        Rk * bar_u_k -
-        G.transpose() * (s_vec_next + S_mat_next * (hk - bar_x_next));
-    tVectorXd uk = part1 * part2;
-    std::cout << "[nqr] solve control vec = " << uk.transpose() << std::endl;
-    std::cout << "[nqr] mocap control vec = " << bar_u_k.transpose()
-              << std::endl;
+    const tMatrixXd &Bk = cur_info.mB;
+    const tMatrixXd &Ak = cur_info.mA;
+    tVectorXd uk;
+    if (mWorkPolicy == "NQR")
+    {
+        // std::cout << "G = \n" << G << std::endl;
+        // std::cout << "h = " << hk.transpose() << std::endl;
+        // std::cout << "ref frame = " << mRefFrameId << std::endl;
+        tMatrixXd part1 = (Pk + Rk + G.transpose() * S_mat_next * G).inverse();
+        tVectorXd part2 =
+            Rk * bar_u_k -
+            G.transpose() * (s_vec_next + S_mat_next * (hk - bar_x_next));
+        uk = part1 * part2;
+    }
+    else if (mWorkPolicy == "LQR")
+    {
+        tVectorXd xi_k = tVectorXd::Zero(mStateSize);
+        const tVectorXd &s_vec_cur = cur_info.sk_vec;
+        xi_k.segment(0, num_of_freedom) =
+            (mModel->Getq() - mTraj->mq[mRefFrameId]);
+        xi_k.segment(num_of_freedom, num_of_freedom) =
+            (mModel->Getqdot() - mTraj->mqdot[mRefFrameId]);
+        tMatrixXd part1 =
+            (Pk + Rk + Bk.transpose() * S_mat_next * Bk).inverse();
+        tVectorXd part2 = (Bk.transpose() * S_mat_next * (Ak * xi_k) +
+                           Bk.transpose() * s_vec_cur + Pk * bar_u_k);
+        uk = bar_u_k - part1 * part2;
+    }
+    else
+    {
+        std::cout << "[nqr] invalid work policy : " << mWorkPolicy << std::endl;
+        exit(1);
+    }
+    std::cout << "[" << mWorkPolicy
+              << "] solve control vec = " << uk.transpose() << std::endl;
+    std::cout << "[" << mWorkPolicy
+              << "] mocap control vec = " << bar_u_k.transpose() << std::endl;
     return uk;
 }
 

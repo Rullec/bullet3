@@ -80,10 +80,11 @@ protected:
     };
 
     // std::vector<tSupposedContactPt *> mSupposedContactPt;
-    int mStateSize; // state size = q_size + qdot_size
-    double Q_coef;  // state vector x close to origin
-    double R_coef;  // control vector u close to origin
-    double P_coef;  // control vector u minimize
+    int mStateSize;          // state size = q_size + qdot_size
+    double Q_coef;           // state vector x close to origin
+    double R_coef;           // control vector u close to origin
+    double P_coef;           // control vector u minimize
+    std::string mWorkPolicy; // lqr or nqr? policy calculation?
 
     void CalcNQR();
     // ==================System Equation & Linearalization==================
