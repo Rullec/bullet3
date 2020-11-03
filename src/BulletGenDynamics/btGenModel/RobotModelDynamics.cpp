@@ -1518,7 +1518,7 @@ void cRobotModelDynamics::TestDCoriolisMatrixDq()
         tMatrixXd dCdq_num = (C_new - C_old) / eps;
         tMatrixXd dCdq_diff = dCdq_num - dCdq[i];
         double norm = dCdq_diff.norm();
-        if (norm > 10 * eps)
+        if (norm > 100 * eps)
         {
             std::cout << "[error] TestDCDq global dof " << i
                       << " dCdq diff norm = " << norm << std::endl;
@@ -1526,7 +1526,7 @@ void cRobotModelDynamics::TestDCoriolisMatrixDq()
             std::cout << "num = \n" << dCdq_num << std::endl;
             exit(1);
         }
-        std::cout << "[log] dof " << i << " dCdq succ\n";
+        // std::cout << "[log] dof " << i << " dCdq succ\n";
         q_old[i] -= eps;
     }
     std::cout << "[log] Test reduced dCdq succ\n";

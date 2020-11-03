@@ -204,7 +204,7 @@ void btGenNQRCalculator::CalcNQR()
     {
         // set q and qdot
         // printf("[log] solve nqr for frame %d\n", frame_id);
-        // std::cout << "--------------- frame " << frame_id << " -------------\n";
+        std::cout << "--------------- frame " << frame_id << " -------------\n";
 
         const tVectorXd &q = mTraj->mq[frame_id],
                         &qdot = mTraj->mqdot[frame_id];
@@ -232,6 +232,7 @@ void btGenNQRCalculator::CalcNQR()
                                              ? nullptr
                                              : &(mNQRFrameInfos[frame_id + 1]);
         CalcNQRRiccati(cur_frame_info, next_frame_info);
+        // mModel->TestDCoriolisMatrixDq();
     }
     // VerifyNQRRiccati();
     mModel->PopState("calc_nqr");
@@ -467,12 +468,12 @@ void btGenNQRCalculator::CalcSystemLinearzation(
         // 2.1 get dGdx
         tEigenArr<tMatrixXd> dGdx;
         GetdGdx(contact_info, dGdx);
-        // VerifydGdx(frame, dGdx);
+        // VerifydGdx(contact_info, dGdx);
 
         // 2.2 get dhdx
         tMatrixXd dhdx;
         Getdhdx(dhdx);
-        // Verifydhdx(frame, dhdx);
+        // Verifydhdx(dhdx);
 
         // 2.3 get A
 
@@ -492,6 +493,7 @@ void btGenNQRCalculator::CalcSystemLinearzation(
     // x.segment(num_of_freedom, num_of_freedom) = mModel->Getqdot();
     // tVectorXd u = info.mTotalControlVector_mocap;
     // VerifySystemLinearzation(contact_info, info.mA, info.mB, x, u);
+    // printf("[log] dfdu/dfdx tested well!\n");
 }
 
 /**
@@ -517,11 +519,13 @@ void btGenNQRCalculator::VerifySystemLinearzation(const tContactInfo &info,
         tVectorXd dfdx_diff = dfdxi - dfdx.col(i);
 
         double norm = dfdx_diff.norm();
-        printf("[log] dfdx%d diff norm %.10f!\n", i, norm);
-        if (norm > eps)
+        // printf("[log] dfdx%d diff norm %.10f!\n", i, norm);
+        if (norm > eps * 100)
         {
             printf("[error] system linearzation dfdx%d diff norm %.10f\n", i,
                    norm);
+            std::cout << "ana = " << dfdx.col(i).transpose() << std::endl;
+            std::cout << "num = " << dfdxi.transpose() << std::endl;
             exit(0);
         }
         x[i] -= eps;
@@ -544,7 +548,7 @@ void btGenNQRCalculator::VerifySystemLinearzation(const tContactInfo &info,
         }
         u[i] -= eps;
     }
-    std::cout << "[log] dfdu/dfdx tested well!\n";
+
     mModel->PopState("verify_linearization");
 }
 
@@ -658,8 +662,8 @@ void btGenNQRCalculator::CheckModelState(int frame_id, std::string prefix)
 }
 /**
  * \brief       Get the G matrix when the character is running
- * G =  [dt * Minv * Jac, 0]
- *      [0, dt^2 * Minv * Jac]
+ * G =  [dt2 * Minv * Jac]
+ *      [dt * Minv * Jac]
  * x = [q, qdot]
  * Jac is the jacobian for TOTAL control vector
  *  
@@ -674,9 +678,9 @@ tMatrixXd btGenNQRCalculator::GetG(const tContactInfo &contact_info)
     const tMatrixXd &Jac_control = CalcTotalControlJacobian(contact_info);
     const tMatrixXd &Minv = mModel->GetInvMassMatrix();
     double mdt2 = mdt * mdt;
-    G.block(0, 0, num_of_freedom, total_size) = mdt * Minv * Jac_control;
+    G.block(0, 0, num_of_freedom, total_size) = mdt2 * Minv * Jac_control;
     G.block(num_of_freedom, 0, num_of_freedom, total_size) =
-        mdt2 * Minv * Jac_control;
+        mdt * Minv * Jac_control;
     return G;
 }
 
@@ -728,6 +732,7 @@ void btGenNQRCalculator::GetdGdx(const tContactInfo &contact_info,
         num_of_underactuated_freedom + 3 * contact_info.size();
     dGdx.resize(mStateSize, tMatrixXd::Zero(mStateSize, total_control_size));
     tEigenArr<tMatrixXd> dMinvdq;
+    double mdt2 = mdt * mdt;
     const tMatrixXd &Minv = mModel->GetInvMassMatrix();
     {
         // 1.1 give the dMinv/dq = -M^{-1} * dMdq * M^{-1}
@@ -740,8 +745,8 @@ void btGenNQRCalculator::GetdGdx(const tContactInfo &contact_info,
         // 1.2 get the dJac/dq from before, then gives the final
         const tMatrixXd &control_jac = CalcTotalControlJacobian(contact_info);
         /*
-            dGdq =  [ dt * dMinvdq * Jac + dt * Minv * dJac/dq ]
-                    [ dt2 * dMinvdq * Jac + dt2 * Minv * dJac/dq ]
+            dGdq =  [ dt2 * dMinvdq * Jac + dt2 * Minv * dJac/dq ]
+                    [ dt * dMinvdq * Jac + dt * Minv * dJac/dq ]
 
             dGdx = [dGdq(this part); dGdqdot]
         */
@@ -752,13 +757,13 @@ void btGenNQRCalculator::GetdGdx(const tContactInfo &contact_info,
         {
             // first part: [ dt * dMinvdq * Jac + dt * Minv * dJac/dq ]
             dGdx[dof].block(0, 0, num_of_freedom, total_control_size) =
-                mdt * dMinvdq[dof] * control_jac +
-                mdt * Minv * dControlJac_dq[dof];
+                mdt2 * dMinvdq[dof] * control_jac +
+                mdt2 * Minv * dControlJac_dq[dof];
 
             // second part: dt * first part
             dGdx[dof].block(num_of_freedom, 0, num_of_freedom,
                             total_control_size) =
-                mdt * dGdx[dof].block(0, 0, num_of_freedom, total_control_size);
+                dGdx[dof].block(0, 0, num_of_freedom, total_control_size) / mdt;
         }
     }
 
