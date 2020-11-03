@@ -204,7 +204,7 @@ void btGenNQRCalculator::CalcNQR()
     {
         // set q and qdot
         // printf("[log] solve nqr for frame %d\n", frame_id);
-        std::cout << "--------------- frame " << frame_id << " -------------\n";
+        std::cout << "\r[nqr] calculate frame " << frame_id << "   ";
 
         const tVectorXd &q = mTraj->mq[frame_id],
                         &qdot = mTraj->mqdot[frame_id];
@@ -234,6 +234,8 @@ void btGenNQRCalculator::CalcNQR()
         CalcNQRRiccati(cur_frame_info, next_frame_info);
         // mModel->TestDCoriolisMatrixDq();
     }
+    std::cout << "\r[nqr] calculate total frame " << mTraj->mNumOfFrames
+              << " done\n";
     // VerifyNQRRiccati();
     mModel->PopState("calc_nqr");
 }
