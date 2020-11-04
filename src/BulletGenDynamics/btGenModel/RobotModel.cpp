@@ -1493,7 +1493,6 @@ void cRobotModel::ComputeJacobiByGivenPointTotalDOFWorldFrame(
                 rt,
             1);
     target_joint->ComputeJacobiByGivenPointTotalDOF(j, p);
-
     // auto* target_link = GetLinkById(link_id);
     // auto* target_joint = target_link->GetParent();
     // tVector3d rt = point_world - target_link->GetWorldPos();

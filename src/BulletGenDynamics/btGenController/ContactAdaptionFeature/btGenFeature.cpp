@@ -1,9 +1,9 @@
 #include "btGenFeature.h"
+#include "BulletGenDynamics/btGenController/btTraj.h"
 #include "BulletGenDynamics/btGenModel/Link.h"
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
 #include "BulletGenDynamics/btGenUtil/JsonUtil.h"
 #include "btGenFeatureUtils.h"
-#include "BulletGenDynamics/btGenController/btTraj.h"
 #include <fstream>
 #include <iostream>
 #include <map>
@@ -264,18 +264,14 @@ void btGenFeatureArray::Eval(double dt, const tVectorXd &qddot_target,
     mFeatureArrays[1]->mRefFeature = CalcTargetVelFeature(qdot_target);
     mFeatureArrays[0]->mRefFeature = CalcTargetPosFeature(q_target);
 
-    // std::cout << "ref q = " << q_target.transpose() << std::endl;
-    // std::cout << "ref feature = " << mFeatureArrays[0]->mRefFeature.transpose()
-    //           << std::endl;
     EvalDynamicTerms(mFeatureArrays[2]->mRefFeature,
                      mFeatureArrays[1]->mRefFeature,
                      mFeatureArrays[0]->mRefFeature, tau_target, H, E, f);
+    // EvalHEfForOnlyAccelJointFeature(H, E, f);
 
-    // std::cout << "ref feature vector " <<
-    // mRefAccelFeature[target_frame].transpose() << std::endl; std::cout << "mH
-    // = \n"
-    // 		  << H << std::endl;
-    // exit(0);
+    mH_prev = H;
+    mE_prev = E;
+    mf_prev = f;
 }
 
 // int btGenFeatureArray::GetSingleFeatureOffset(int feature_id) const
@@ -932,76 +928,28 @@ void btGenFeatureArray::EvalDynamicTerms(const tVectorXd &ref_accel_feature,
         auto &pos_feature = mFeatureArrays[0], &vel_feature = mFeatureArrays[1],
              &accel_feature = mFeatureArrays[2];
 
-        // tMatrixXd tmp = pos_feature->mWeight.asDiagonal();
-        // std::cout << "pos feature weight = " << pos_feature->mWeight
-        //           << std::endl;
-        // std::cout << "pos feature weight mat = " << tmp << std::endl;
-
-        tMatrixXd W1TW1 = (accel_feature->mWeight.cwiseProduct(
-                               accel_feature->mWeight))
-                              .asDiagonal(),
+        tMatrixXd W1TW1 = 2 * (accel_feature->mWeight.cwiseProduct(
+                                   accel_feature->mWeight))
+                                  .asDiagonal(),
                   W2TW2 =
+                      2 *
                       (vel_feature->mWeight.cwiseProduct(vel_feature->mWeight))
                           .asDiagonal(),
                   W3TW3 =
+                      2 *
                       (pos_feature->mWeight.cwiseProduct(pos_feature->mWeight))
                           .asDiagonal(),
                   WtauTWtau =
-                      (mWeight_tau.cwiseProduct(mWeight_tau)).asDiagonal();
+                      2 * (mWeight_tau.cwiseProduct(mWeight_tau)).asDiagonal();
 
-        // std::cout << "W1TW1 = \n " << W1TW1 << std::endl;
-        // std::cout << "W1 = \n " << pos_feature->mWeight.transpose()
-        //           << std::endl;
-        // std::cout << "W2TW2 = \n " << W2TW2 << std::endl;
-        // std::cout << "W3TW3 = \n " << W3TW3 << std::endl;
-        // if (pos_feature->mWeight.size() == 0)
-        //     W1TW1.resize(0, 0);
-        // if (vel_feature->mWeight.size() == 0)
-        //     W2TW2.resize(0, 0);
-        // if (accel_feature->mWeight.size() == 0)
-        //     W3TW3.resize(0, 0);
-
-        // std::cout << "W1TW1 = \n " << W1TW1 << std::endl;
-        // std::cout << "W1 = \n " << pos_feature->mWeight.transpose()
-        //           << std::endl;
-        // std::cout << "W2TW2 = \n " << W2TW2 << std::endl;
-        // std::cout << "W3TW3 = \n " << W3TW3 << std::endl;
-        // exit(0);
-        // std::cout << "begin to calc E \n";
-        // std::cout << "D alpha = \n" << D_alpha << std::endl;
-        // std::cout << "W1TW1 = \n" << W1TW1 << std::endl;
-        // {
-        //     tMatrixXd E1 = D_alpha.transpose() * W1TW1 * D_alpha;
-        //     // std::cout << "E1 = \n" << E1 << std::endl;
-        //     tMatrixXd E2 = D_nu.transpose() * W2TW2 * D_nu;
-        //     // std::cout << "E2 = \n" << E2 << std::endl;
-        //     tMatrixXd E3 = D_phi.transpose() * W3TW3 * D_phi;
-        //     // std::cout << "E3 = \n" << E3 << std::endl;
-        //     E.noalias() = WtauTWtau;
-        //     if (E1.size() > 0)
-        //         E += E1;
-        //     if (E2.size() > 0)
-        //         E += E2;
-        //     if (E3.size() > 0)
-        //         E += E3;
-        // }
         {
             E.noalias() = WtauTWtau
 
                           + D_alpha.transpose() * W1TW1 * D_alpha +
                           D_nu.transpose() * W2TW2 * D_nu +
                           D_phi.transpose() * W3TW3 * D_phi;
-            // std::cout << "[debug] E = " << E.norm() << std::endl;
-            // std::cout << "[debug] D_nu = " << D_nu.norm() << std::endl;
-            // std::cout << "[debug] D_nu.T * W2TW2 = "
-            //           << (D_nu.transpose() * W2TW2).norm() << std::endl;
-            // std::cout << "[debug] W2TW2 = " << W2TW2.norm() << std::endl;
-            // std::cout << "E pos part = "
-            //           << (D_phi.transpose() * W3TW3 * D_phi).norm()
-            //           << std::endl;
         }
-        // std::cout << "E = \n" << E << std::endl;
-        // exit(1);
+
         tMatrixXd F = D_alpha.transpose() * W1TW1 * M_alpha +
                       D_nu.transpose() * W2TW2 * M_nu +
                       D_phi.transpose() * W3TW3 * M_phi;
@@ -1098,8 +1046,7 @@ tVectorXd btGenFeatureArray::CalcTargetAccelFeature(const tVectorXd &qddot)
             // for pos feature, the feture vector is d^2(p)/dt^2
             auto link =
                 dynamic_cast<Link *>(mModel->GetLinkById(feature->mLinkId));
-            tVector3d accel =
-                link->GetJKv() * qddot + link->GetJKvdot() * qdot;
+            tVector3d accel = link->GetJKv() * qddot + link->GetJKvdot() * qdot;
 
             switch (feature->mFeatureType)
             {
@@ -1465,8 +1412,7 @@ void btGenFeatureArray::DebugAccelFeatureDFdtauIsZero(
             int fea_size = GetSingleFeatureSize(sub_feature);
             auto link = mModel->GetLinkById(sub_feature->mLinkId);
             const tMatrixXd &Jv = link->GetJKv();
-            const tVectorXd &dJvdt_qdot =
-                link->GetJKvdot() * mModel->Getqdot();
+            const tVectorXd &dJvdt_qdot = link->GetJKvdot() * mModel->Getqdot();
 
             auto joint = link->GetParent();
             if (IsJointFeature(sub_feature->mFeatureType))
@@ -2213,4 +2159,172 @@ void btGenFeatureArray::DebugFullMinimiumIsTheSameAsTheRefTraj(
     // std::cout << "X new = " << X_new.transpose() << std::endl;
     // std::cout << "control force = " << control_force.transpose() << std::endl;
     // exit(0);
+}
+
+/**
+ * \brief       Confirm the current contact foce + control force is local minimium
+ * 
+ * Given contact force X and control force f_c, we should make sure
+ * d Energy(X, f_c)/ d f_c = 0 (get the numerical gradient)
+ * 
+*/
+void btGenFeatureArray::VerifyTheSolutionIsLocalMin(
+    const tVectorXd &control_force_old, const tVectorXd &contact_force_old)
+{
+    AssertOnlyAccelJointFeature("verify_solution_local_min");
+
+    // first verify eqaution
+    tVectorXd residual = mH_prev * contact_force_old +
+                         mE_prev.inverse() * mf_prev - control_force_old;
+    if (residual.norm() > 1e-10)
+    {
+
+        std::cout << "[error] H * Q_contact + Einv * f - tau residual = "
+                  << residual.transpose() << std::endl;
+        exit(0);
+    }
+
+    // 2. get current accel energy
+    tVectorXd control_force = control_force_old,
+              contact_force = contact_force_old;
+
+    // 3. change the contact force, get the energy again, it must be zero
+    double eps = 1e-7;
+    tVectorXd grad_vec = tVectorXd::Zero(mModel->GetNumOfFreedom() - 6);
+    for (int i = 0; i < mModel->GetNumOfFreedom() - 6; i++)
+    {
+        control_force[i] += eps;
+        double after_energy =
+            CalcAccelFeatureEnergy(control_force, contact_force);
+
+        control_force[i] -= eps;
+
+        control_force[i] -= eps;
+        double before_energy =
+            CalcAccelFeatureEnergy(control_force, contact_force);
+        control_force[i] += eps;
+
+        double grad = (after_energy - before_energy) / (2 * eps);
+        grad_vec[i] = grad;
+    }
+    double max_coef = grad_vec.cwiseAbs().maxCoeff();
+    if (max_coef > 1e-4)
+    {
+        std::cout << "[log] local minimium: control force = "
+                  << control_force_old.transpose() << std::endl;
+        std::cout << "[error] grad vec = " << grad_vec.transpose()
+                  << " max_coef " << max_coef << std::endl;
+        // exit(0);
+    }
+    std::cout << "[log] feature LSQ grad norm = " << grad_vec.norm()
+              << std::endl;
+    // exit(0);
+}
+
+/**
+ * \brief           Calculate the accel energy
+ * Energy = ||W_alpha * (\alpha - \tilde{\alpha})||^2
+ * 
+ * the W_alpha is weight, and \alpha is function a(X, \tau)
+ * 
+ * accel = Minv * N * \tau + Minv * X + Minv * (QG - C * qdot)
+*/
+double btGenFeatureArray::CalcAccelFeatureEnergy(const tVectorXd &control_force,
+                                                 const tVectorXd &contact_force)
+{
+    AssertOnlyAccelJointFeature("accel_energy");
+    int num_of_freedom = mModel->GetNumOfFreedom();
+    int num_of_actuated_freedom = num_of_freedom - 6;
+    const tMatrixXd &Minv = mModel->GetInvMassMatrix();
+    const tVectorXd &QG_Cqdot = mModel->CalcGenGravity(mGravity) -
+                                mModel->GetCoriolisMatrix() * mModel->Getqdot();
+
+    tVectorXd accel_now =
+        Minv * (this->mN * control_force + contact_force + QG_Cqdot);
+
+    const tVectorXd &accel_diff = accel_now - mFeatureArrays[2]->mRefFeature;
+    const tMatrixXd &weight = mFeatureArrays[2]->mWeight.asDiagonal();
+    tVectorXd energy =
+        (accel_diff.transpose() * 2 * weight.transpose() * weight * accel_diff);
+
+    // std::cout << "[calcE] accel weight = " << weight.transpose() << std::endl;
+    // std::cout << "[calcE] accel target = " << accel_diff.transpose() << std::endl;
+    // std::cout << "[calcE] accel target = " << accel_diff.transpose() << std::endl;
+
+    return energy[0];
+}
+
+/**
+ * \brief           Given the H, E, f calculated by standard evalulation pipeline
+ *          Try to verify these three result again
+ * \param res_H     calculated H
+ * \param res_E     calculated E
+ * \param res_f     calculated f
+*/
+void btGenFeatureArray::EvalHEfForOnlyAccelJointFeature(const tMatrixXd &res_H,
+                                                        tMatrixXd &res_E,
+                                                        tVectorXd &res_f)
+{
+    AssertOnlyAccelJointFeature("eval_HEf_debug");
+
+    const tMatrixXd &Minv = mModel->GetInvMassMatrix();
+    const tMatrixXd &accel_weight = mFeatureArrays[2]->mWeight.asDiagonal();
+    const tVectorXd &QG_Cqdot = mModel->CalcGenGravity(mGravity) -
+                                mModel->GetCoriolisMatrix() * mModel->Getqdot();
+    const tVectorXd &ref_feature = mFeatureArrays[2]->mRefFeature;
+    tMatrixXd F = mN.transpose() * Minv.transpose() * 2 *
+                  accel_weight.transpose() * accel_weight * Minv;
+    tMatrixXd E = mN.transpose() * Minv.transpose() * 2 *
+                  accel_weight.transpose() * accel_weight * Minv * mN;
+    tVectorXd f = -mN.transpose() * Minv.transpose() * 2 *
+                  accel_weight.transpose() * accel_weight *
+                  (Minv * QG_Cqdot - ref_feature);
+    tMatrixXd H = -E.inverse() * F;
+    // begin to compare
+    tMatrixXd H_diff = H - res_H;
+    tMatrixXd E_diff = E - res_E;
+    tVectorXd f_diff = f - res_f;
+    double H_diff_norm = H_diff.norm();
+    double E_diff_norm = E_diff.norm();
+    double f_diff_norm = f_diff.norm();
+    double eps = 1e-8;
+    if (H_diff_norm > eps || E_diff_norm > eps || f_diff_norm > eps)
+    {
+        printf(
+            "[error] H diff norm %.10f, E diff norm %.10f, f diff norm %.10f\n",
+            H_diff_norm, E_diff_norm, f_diff_norm);
+        exit(0);
+    }
+    std::cout << "[log] verify H, E, f done\n";
+
+    // std::cout << "E comp = \n " << res_E << std::endl;
+    // std::cout << "E simp = \n " << E << std::endl;
+    // exit(0);
+}
+
+void btGenFeatureArray::AssertOnlyAccelJointFeature(const std::string &prefix)
+{ // 1. confirm here is only accel feature
+    if (mFeatureArrays[0]->mNumOfFeature != 0 ||
+        mFeatureArrays[1]->mNumOfFeature)
+    {
+        std::cout << "[error] " << prefix
+                  << ":there shouldn't be "
+                     "pos vel feature\n";
+        exit(0);
+    }
+
+    // confirm only joint
+    for (int i = 0; i < mFeatureArrays[2]->mNumOfFeature; i++)
+    {
+
+        auto type = mFeatureArrays[2]->mFeatureVector[i]->mFeatureType;
+        if (type > btGenFeatureType::FixedJoint ||
+            type < btGenFeatureType::SphereJoint)
+        {
+            std::cout << "[error] " << prefix
+                      << ": feature type "
+                         "must be joint\n";
+            exit(0);
+        }
+    }
 }

@@ -3,7 +3,7 @@
     "supposed_contact_pt_conf": "examples/CustomEngine/ctrl_configs/target_calculator_configs/supposed_contact_configs/half_body.json",
     "work_policy": "LQR",
     "work_policy_bak": "NQR",
-    "Q": 1,
+    "Q": 100,
     "R": 1,
     "P": 1e-5
 }

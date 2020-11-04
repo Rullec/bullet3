@@ -573,7 +573,7 @@ tVectorXd btTraj::GetGenControlForce(int frame_id, cRobotModelDynamics *model)
             truth_joint_forces[joint_id - 1].segment(0, dof);
     }
     legacy_active_force =
-        legacy_active_force.segment(6, legacy_active_force.size() - 6);
+        (legacy_active_force.segment(6, legacy_active_force.size() - 6)).eval();
     return legacy_active_force;
 }
 

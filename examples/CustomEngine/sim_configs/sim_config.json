@@ -1,6 +1,8 @@
 {
     "enable_gravity": true,
-    "contact_response_mode": "No",
+    "collision_detection_mode_bak": "Native",
+    "collision_detection_mode": "FromTheTraj",
+    "contact_response_mode": "LCP",
     "rigid_damping": 0,
     "mb_damping1": 0,
     "mb_damping2": 0,

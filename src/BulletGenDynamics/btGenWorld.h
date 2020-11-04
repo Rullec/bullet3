@@ -8,7 +8,7 @@ class btGenContactSolver;
 class cRobotModelDynamics;
 class btGenContactForce;
 class btGenConstraintGeneralizedForce;
-// class btGenPDController;
+class btGenCollisionDispatcher;
 class btGenContactAwareController;
 class btTraj;
 class btGeneralizeWorld
@@ -49,6 +49,7 @@ public:
     void SetGravity(const tVector &g);
     tVector GetGravity() const;
     void AddGround(double height);
+    const btCollisionObject *GetGround() const;
     void AddMultibody(const std::string &path);
     void AddMultibody(cRobotModelDynamics *model);
     cRobotModelDynamics *GetMultibody();
@@ -63,7 +64,7 @@ public:
     btGenContactAwareController *GetContactAwareController();
     btDiscreteDynamicsWorld *GetInternalWorld();
     btBroadphaseInterface *GetBroadphase();
-    btCollisionDispatcher *GetDispatcher();
+    btGenCollisionDispatcher *GetDispatcher();
     btDefaultCollisionConfiguration *GetConfiguration();
     eContactResponseMode GetContactResponseMode() const;
     void SetEnableContacrAwareControl();
@@ -71,7 +72,7 @@ public:
 protected:
     btDiscreteDynamicsWorld *mInternalWorld;
     btBroadphaseInterface *m_broadphase;
-    btCollisionDispatcher *m_dispatcher;
+    btGenCollisionDispatcher *m_dispatcher;
     btDefaultCollisionConfiguration *m_collisionConfiguration;
     std::vector<btGenRigidBody *> mSimObjs;
     cRobotModelDynamics *mMultibody;
@@ -103,6 +104,7 @@ protected:
 
     // bool mMBEAngleClamp;
     // bool mMBTestJacobian;
+    btCollisionObject *mGround;
     bool mMBEnableCollectFrameInfo;
     bool mEnablePauseWhenMaxVel;
     int mMBCollectFrameNum;

@@ -597,6 +597,7 @@ void btDbvtBroadphase::collide(btDispatcher* dispatcher)
 					if (pa->m_uniqueId > pb->m_uniqueId)
 						btSwap(pa, pb);
 #endif
+
 					m_paircache->removeOverlappingPair(pa, pb, dispatcher);
 					--ni;
 					--i;

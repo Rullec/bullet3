@@ -1,0 +1,54 @@
+{
+    "root_joint": {
+        "accel": 0.0
+    },
+    "Spine1_joint": {
+        "accel": 0.5
+    },
+    "vneck_joint": {
+        "accel": 0.5
+    },
+    "RightArm_joint": {
+        "accel": 0.67
+    },
+    "RightForeArm_joint": {
+        "accel": 0.54
+    },
+    "RightHand_joint": {
+        "accel": 0.1
+    },
+    "Neck_joint": {
+        "accel": 0.1
+    },
+    "Head_joint": {
+        "accel": 0.1
+    },
+    "LeftArm_joint": {
+        "accel": 0.67
+    },
+    "LeftForeArm_joint": {
+        "accel": 0.54
+    },
+    "LeftHand_joint": {
+        "accel": 0.1
+    },
+    "RightLeg_joint": {
+        "accel": 0.58
+    },
+    "RightFoot_joint": {
+        "accel": 0.2
+    },
+    "RFootTongue_joint": {
+        "accel": 0.09
+    },
+    "LeftLeg_joint": {
+        "accel": 0.58
+    },
+    "LeftFoot_joint": {
+        "accel": 0.2
+    },
+    "LFootTongue_joint": {
+        "accel": 0.09
+    },
+    "tau_weight": 10.0
+}

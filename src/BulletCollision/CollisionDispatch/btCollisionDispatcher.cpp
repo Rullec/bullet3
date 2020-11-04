@@ -108,7 +108,7 @@ void btCollisionDispatcher::releaseManifold(btPersistentManifold* manifold)
 	//printf("releaseManifold: gNumManifold %d\n",gNumManifold);
 	clearManifold(manifold);
 
-	int findIndex = manifold->m_index1a;
+	int findIndex = manifold->m_index1a;	
 	btAssert(findIndex < m_manifoldsPtr.size());
 	m_manifoldsPtr.swap(findIndex, m_manifoldsPtr.size() - 1);
 	m_manifoldsPtr[findIndex]->m_index1a = findIndex;

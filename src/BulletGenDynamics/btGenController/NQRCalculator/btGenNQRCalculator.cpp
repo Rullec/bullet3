@@ -96,39 +96,40 @@ void btGenNQRCalculator::CalcTarget(double dt, int target_frame_id,
     // 1. do preparation
     PreCalcTarget(dt, target_frame_id);
 
-    // // 2. fetch the Sk_mat and sk_vec, P/R coef, G/h calculate the control policy
-    // std::cout << "[log] control by NQR controller purely "
-    //           << ", gui ptr = " << this->mBulletGUIHelper << " frame "
-    //           << mRefFrameId << std::endl;
-    // {
-    //     tVectorXd cur_q = mModel->Getq(), cur_qdot = mModel->Getqdot();
-    //     tVectorXd mocap_q = mTraj->mq[mRefFrameId],
-    //               mocap_qdot = mTraj->mqdot[mRefFrameId];
-    //     tVectorXd q_diff = cur_q - mocap_q, qdot_diff = cur_qdot - mocap_qdot;
-    //     printf("[nqr] q diff %.5f, qdot diff %.5f\n", q_diff.norm(),
-    //            qdot_diff.norm());
-    // }
-    // // draw the contact points
-    // // 1. get current control force = [joint_force, contact_force] from NQR
-    // const auto &cur_contact_info = mTraj->mContactForce[mRefFrameId];
-    // tVectorXd uk = CalcControlVector(cur_contact_info);
+    // 2. fetch the Sk_mat and sk_vec, P/R coef, G/h calculate the control policy
+    std::cout << "[nqr] calc ref target in ref frame " << mRefFrameId
+              << std::endl;
+    {
+        tVectorXd cur_q = mModel->Getq(), cur_qdot = mModel->Getqdot();
+        tVectorXd mocap_q = mTraj->mq[mRefFrameId],
+                  mocap_qdot = mTraj->mqdot[mRefFrameId];
+        tVectorXd q_diff = cur_q - mocap_q, qdot_diff = cur_qdot - mocap_qdot;
+        printf("[nqr] q diff %.10f, qdot diff %.10f\n", q_diff.norm(),
+               qdot_diff.norm());
+    }
+    // draw the contact points
+    // 1. get current control force = [joint_force, contact_force] from NQR
+    const auto &cur_contact_info = mTraj->mContactForce[mRefFrameId];
+    tVectorXd uk = CalcControlVector(cur_contact_info);
 
-    // // 2. apply it to the model
-    // mModel->PushState("apply_target_try");
-    // ApplyControlVector(cur_contact_info, mNQRFrameInfos[mRefFrameId], uk);
-    // mModel->ApplyGravity(mWorld->GetGravity());
+    // 2. apply it to the model
+    mModel->PushState("apply_target_try");
+    {
+        // note that the gravity has been added to the chracter, we shouldn't add it again
+        ApplyControlVector(cur_contact_info, mNQRFrameInfos[mRefFrameId], uk);
 
-    // // 3. apply the control policy AND THE GRAVITY, get the qddot, qdotnext, qnext
-    // tilde_qddot = mModel->Getqddot();
-    // tilde_qdot = mdt * tilde_qddot + mModel->Getqdot();
-    // tilde_q = mdt * tilde_qdot + mModel->Getq();
-    // tilde_tau =
-    //     uk.segment(3 * cur_contact_info.size(), num_of_underactuated_freedom);
-    // std::cout << "[nqr] target: qddot = " << tilde_qddot.transpose()
-    //           << std::endl;
-    // std::cout << "[nqr] target: tau = " << tilde_tau.transpose() << std::endl;
-
-    // mModel->PopState("apply_target_try");
+        // 3. apply the control policy (with no G!), get the qddot, qdotnext, qnext
+        tilde_qddot = mModel->Getqddot();
+        tilde_qdot = mdt * tilde_qddot + mModel->Getqdot();
+        tilde_q = mdt * tilde_qdot + mModel->Getq();
+        tilde_tau = uk.segment(3 * cur_contact_info.size(),
+                               num_of_underactuated_freedom);
+        // std::cout << "[nqr] target: qddot = " << tilde_qddot.transpose()
+        //           << std::endl;
+        // std::cout << "[nqr] target: tau = " << tilde_tau.transpose()
+        //           << std::endl;
+    }
+    mModel->PopState("apply_target_try");
 }
 int btGenNQRCalculator::GetCalculatedNumOfContact() const { return -1; }
 void btGenNQRCalculator::ControlByAdaptionController()
@@ -1159,10 +1160,10 @@ btGenNQRCalculator::CalcControlVector(const tContactInfo &contact_info)
         std::cout << "[nqr] invalid work policy : " << mWorkPolicy << std::endl;
         exit(1);
     }
-    std::cout << "[" << mWorkPolicy
-              << "] solve control vec = " << uk.transpose() << std::endl;
-    std::cout << "[" << mWorkPolicy
-              << "] mocap control vec = " << bar_u_k.transpose() << std::endl;
+    // std::cout << "[" << mWorkPolicy
+    //           << "] solve control vec = " << uk.transpose() << std::endl;
+    // std::cout << "[" << mWorkPolicy
+    //           << "] mocap control vec = " << bar_u_k.transpose() << std::endl;
     return uk;
 }
 

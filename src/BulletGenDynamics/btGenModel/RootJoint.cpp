@@ -313,5 +313,6 @@ void RootJoint::ComputeLocalTransformThirdDerive()
                 //     exit(1);
                 // }
             }
+    delete[] freedom_derivative_order;
     // exit(0);
 }

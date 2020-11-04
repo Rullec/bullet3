@@ -1,4 +1,5 @@
 #include "btGenWorld.h"
+#include "BulletGenDynamics/btGenCollision/btGenCollisionDispatcher.h"
 #include "BulletGenDynamics/btGenController/PDController/btGenPDController.h"
 #include "BulletGenDynamics/btGenController/btTraj.h"
 #include "BulletGenDynamics/btGenModel/EulerAngelRotationMatrix.h"
@@ -30,7 +31,7 @@ btGeneralizeWorld::btGeneralizeWorld()
     m_collisionConfiguration = nullptr;
     mSimObjs.clear();
     mMultibody = nullptr;
-
+    mGround = nullptr;
     mGuideTraj = nullptr;
     mFrameId = 0;
 }
@@ -74,9 +75,11 @@ btGeneralizeWorld::~btGeneralizeWorld()
 
 void btGeneralizeWorld::Init(const std::string &config_path)
 {
+    Json::Value dispatcher_conf;
     {
         Json::Value config_js;
         btJsonUtil::LoadJson(config_path, config_js);
+        dispatcher_conf = config_js;
         mInternalWorld = nullptr;
         m_broadphase = nullptr;
         m_dispatcher = nullptr;
@@ -184,7 +187,9 @@ void btGeneralizeWorld::Init(const std::string &config_path)
     }
 
     m_collisionConfiguration = new btDefaultCollisionConfiguration();
-    m_dispatcher = new btCollisionDispatcher(m_collisionConfiguration);
+    m_dispatcher = new btGenCollisionDispatcher(dispatcher_conf, this,
+
+                                                m_collisionConfiguration);
     m_broadphase = new btDbvtBroadphase();
     btConstraintSolver *solver = nullptr;
     if (enable_bullet_sim == true)
@@ -212,6 +217,7 @@ void btGeneralizeWorld::Init(const std::string &config_path)
 
 void btGeneralizeWorld::AddGround(double height)
 {
+    if (mGround == nullptr)
     {
         btStaticPlaneShape *plane =
             new btStaticPlaneShape(btVector3(0, 1, 0), height);
@@ -220,6 +226,7 @@ void btGeneralizeWorld::AddGround(double height)
         trans.setIdentity();
         trans.setOrigin(btVector3(0, 0, 0));
         createRigidBody(0, trans, plane, "ground");
+        mGround = mSimObjs[mSimObjs.size() - 1];
     }
     // {
     // 	btBoxShape* groundShape = new btBoxShape(btVector3(btScalar(50.),
@@ -235,6 +242,10 @@ void btGeneralizeWorld::AddGround(double height)
     // }
 }
 
+const btCollisionObject *btGeneralizeWorld ::GetGround() const
+{
+    return this->mGround;
+}
 void btGeneralizeWorld::AddObj(int n, const std::string &obj_type,
                                bool add_perturb /*=false*/)
 {
@@ -363,7 +374,7 @@ void btGeneralizeWorld::AddMultibody(const std::string &skeleton_name)
 
     mMultibody->InitSimVars(mInternalWorld, mMBZeroInitPose, mMBZeroInitPoseVel,
                             true);
-
+    this->m_dispatcher->SetModel(mMultibody);
     // if (mMBEnableGuideAction == true)
     // {
     //     InitGuideTraj();
@@ -466,7 +477,7 @@ btBroadphaseInterface *btGeneralizeWorld::GetBroadphase()
 {
     return m_broadphase;
 }
-btCollisionDispatcher *btGeneralizeWorld::GetDispatcher()
+btGenCollisionDispatcher *btGeneralizeWorld::GetDispatcher()
 {
     return m_dispatcher;
 }
@@ -623,8 +634,10 @@ void btGeneralizeWorld::CollisionDetect()
 {
     mManifolds.clear();
     mInternalWorld->performDiscreteCollisionDetection();
+    m_dispatcher->Update();
     // std::cout << "[bt] dispatcher = " << m_dispatcher << std::endl;
     int num_of_manifolds = m_dispatcher->getNumManifolds();
+
     // std::cout << "[bt] num of manifolds = " << num_of_manifolds << std::endl;
     for (int i = 0; i < num_of_manifolds; i++)
         mManifolds.push_back(m_dispatcher->getManifoldByIndexInternal(i));
@@ -911,6 +924,8 @@ void btGeneralizeWorld::CollisionResponseLCP(double dt)
     if (mMultibody != nullptr &&
         mMultibody->GetEnableContactAwareController() == true)
     {
+        for (auto &x : mContactAwareControlForce)
+            delete x;
         mContactAwareControlForce.clear();
         // std::cout << "[log] restore active force by contact-aware LCP is
         // enabled\n";
@@ -1424,6 +1439,7 @@ void btGeneralizeWorld::SetEnableContacrAwareControl()
     mMBEnableContactAwareLCP = true;
     mControlController = new btGenContactAwareController(this);
     mControlController->Init(this->mMultibody, mContactAwareConfig);
+    m_dispatcher->SetController(mControlController);
 }
 
 // /**

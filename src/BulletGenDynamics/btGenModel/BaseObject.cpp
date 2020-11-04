@@ -262,6 +262,31 @@ void BaseObject::ComputeIbody()
         double radius = mesh_scale(0) / 2;
         Ibody = tMatrix3d::Identity() * 2.0 / 5 * mass * pow(radius, 2);
     }
+    else if (shape_type == ShapeType::CAPSULE_SHAPE)
+    {
+        Ibody = tMatrix3d::Zero();
+        double radius = mesh_scale(0) / 2;
+        double height = mesh_scale(1);
+
+        tVector3d halfExtents(radius, radius, radius);
+        halfExtents[1] += height / 2;
+
+        double lx = 2 * (halfExtents[0]);
+        double ly = 2 * (halfExtents[1]);
+        double lz = 2 * (halfExtents[2]);
+        const double x2 = lx * lx;
+        const double y2 = ly * ly;
+        const double z2 = lz * lz;
+        const double scaledmass = mass / 12;
+
+        Ibody(0, 0) = scaledmass * (y2 + z2);
+        Ibody(1, 1) = scaledmass * (x2 + z2);
+        Ibody(2, 2) = scaledmass * (x2 + y2);
+
+        // std::cout << "[log] capsule radius " << radius << " height " << height
+        //           << " inertia = \n"
+        //           << Ibody << std::endl;
+    }
     else
     {
         std::cout << "Unsupported type: " << shape_type << " in ComputeIbody\n";

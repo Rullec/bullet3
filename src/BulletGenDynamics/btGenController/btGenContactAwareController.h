@@ -38,7 +38,7 @@ public:
     // int GetInternalFrameId() const;
     void SetTraj(const std::string &mRefTrajPath,
                  const std::string &mOutputTraj, bool enable_output = false);
-    btTraj *GetRefTraj();
+    const btTraj *GetRefTraj() const;
     void Update(double dt);
     void UpdateMultibodyVelocityDebug(double dt);
     void UpdateMultibodyVelocityAndTransformDebug(double dt);

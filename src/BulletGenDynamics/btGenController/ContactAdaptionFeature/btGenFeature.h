@@ -37,6 +37,8 @@ public:
                                      const tVectorXd &contact_force);
     void DebugFullMinimiumIsTheSameAsTheRefTraj(const tVectorXd &control_force,
                                                 const tVectorXd &contact_force);
+    void VerifyTheSolutionIsLocalMin(const tVectorXd &control_force,
+                                     const tVectorXd &contact_force);
     virtual ~btGenFeatureArray();
 
 protected:
@@ -59,6 +61,9 @@ protected:
     // used in the calculation of energy term
     tVectorXd mTargetAccel, mTargetVel, mTargetPos;
     tVectorXd mTargetTau;
+
+    tMatrixXd mH_prev, mE_prev;
+    tVectorXd mf_prev;
     //--------------methods
     void InitWeightTau(const std::string &conf);
     void InitFeature(const std::string &conf);
@@ -98,4 +103,10 @@ protected:
 
     void TestdJvdq(tVectorXd &q, tVectorXd &qdot, tVectorXd &qddot,
                    int link_id);
+
+    void AssertOnlyAccelJointFeature(const std::string &prefix);
+    void EvalHEfForOnlyAccelJointFeature(const tMatrixXd &res_H,
+                                         tMatrixXd &res_E, tVectorXd &res_f);
+    double CalcAccelFeatureEnergy(const tVectorXd &control_force,
+                                  const tVectorXd &contact_force);
 };

@@ -6,7 +6,7 @@
         "accel": 0.1
     },
     "root_location": {
-        "accel": 0.1
+        "accel": 6
     },
     "RightLeg_joint": {
         "accel": 0.58

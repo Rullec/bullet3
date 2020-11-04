@@ -246,7 +246,7 @@ void btGenContactAwareController::LoadTraj(const std::string &path)
 
     // load the saved traj in order to shape that
     mOutputTraj->LoadTraj(path, mModel, mMaxFrame);
-    mOutputTraj->Reshape(std::min(mMaxFrame, mRefTraj->mNumOfFrames) - 2);
+    mOutputTraj->Reshape(std::min(mMaxFrame, mRefTraj->mNumOfFrames));
 }
 
 /**
@@ -343,10 +343,15 @@ btGenContactAwareController::CalcControlForce(const tVectorXd &Q_contact)
     // std::endl; std::cout << "[control] mH norm = " << mH.norm() << std::endl;
     // std::cout << "[control] mE norm = " << mE.norm() << std::endl;
     // std::cout << "[control] mf norm = " << mf.norm() << std::endl;
+    int ref_size = mRefTraj->mTruthJointForceVec[mRefFrameId - 1].size();
+    if (ref_size != num_of_underactuated_freedom)
+    {
+        std::cout << "[error] the ref truth joint force vec size " << ref_size
+                  << " != " << num_of_underactuated_freedom << std::endl;
+        exit(1);
+    }
     // std::cout << "[control] mf = " << mf.transpose() << std::endl;
-    tVectorXd ref_force =
-        mRefTraj->mTruthJointForceVec[mRefFrameId - 1].transpose().segment(
-            6, mModel->GetNumOfFreedom() - 6);
+    tVectorXd ref_force = mRefTraj->mTruthJointForceVec[mRefFrameId - 1];
     // std::cout << "q = " << mModel->Getq().segment(0, 3).transpose() <<
     // std::endl; std::cout << "[controller] ref ctrl force = " <<
     // ref_force.transpose() << std::endl; std::cout << "[controller] calced ctrl
@@ -420,6 +425,9 @@ btGenContactAwareController::CalcControlForce(const tVectorXd &Q_contact)
     // mFeatureVector->DebugAccelFeatureDFdtauIsZero(mCtrlForce, Q_contact);
     // mFeatureVector->DebugTauFeatureDFdtauIsZero(mCtrlForce, Q_contact);
     // when we get the control force, we can evaluate the energy term in btGenFeatureArray then evaulate the control result immediately
+    // std::cout
+    //     << "[warn] begin to verify whether the solution is a local minimium\n";
+    // mFeatureVector->VerifyTheSolutionIsLocalMin(Q_active, Q_contact);
 
     return Q_active;
 }
@@ -807,7 +815,10 @@ void btGenContactAwareController::SetBulletGUIHelperInterface(
     mBulletGUIHelper = inter;
     mTargetCalculator->SetBulletGUIHelperInterface(inter);
 }
-btTraj *btGenContactAwareController::GetRefTraj() { return this->mRefTraj; }
+const btTraj *btGenContactAwareController::GetRefTraj() const
+{
+    return this->mRefTraj;
+}
 
 /**
  * \brief               Save current state to the path speicifed by "SaveDir"

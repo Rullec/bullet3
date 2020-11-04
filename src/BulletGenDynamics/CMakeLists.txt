@@ -53,6 +53,14 @@ SET(
 	btGenUtil/TimeUtil.cpp
 )
 
+
+
+
+SET(
+	BulletGenCollision_SRCS
+	btGenCollision/btGenCollisionDispatcher.cpp
+)
+
 SET(
 	BulletGenPDControler_SRCS
 	./btGenController/btGenContactAwareController.cpp
@@ -94,6 +102,7 @@ SET(
 
 SET(BulletGenDynamics_SRCS
 	btGenWorld.cpp
+	${BulletGenCollision_SRCS}
 	${BulletGenPDControler_SRCS}
 	${BulletGenSolver_SRCS}
 	${BulletGenModel_SRCS}

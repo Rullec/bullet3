@@ -128,6 +128,13 @@ void cRobotModelDynamics::InitSimVars(btDynamicsWorld *world, bool zero_pose,
                                        btMathUtil::Expand(mesh_scale, 0)) /
                                    2);
             break;
+        case ShapeType::CAPSULE_SHAPE:
+        {
+            double radius = 0.5 * mesh_scale[0];
+            double height = mesh_scale[1];
+            shape = new btCapsuleShape(radius, height);
+        }
+        break;
         default:
             std::cout << "unsupported type in init sim vars\n";
             exit(0);
