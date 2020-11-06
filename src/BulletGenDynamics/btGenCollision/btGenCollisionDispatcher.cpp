@@ -2,6 +2,7 @@
 #include "BulletCollision/BroadphaseCollision/btBroadphaseProxy.h"
 #include "BulletGenDynamics/btGenController/btGenContactAwareController.h"
 #include "BulletGenDynamics/btGenController/btTraj.h"
+#include "BulletGenDynamics/btGenController/btTrajContactMigrator.h"
 #include "BulletGenDynamics/btGenModel/RobotCollider.h"
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
 #include "BulletGenDynamics/btGenUtil/JsonUtil.h"
@@ -37,6 +38,7 @@ void btGenCollisionDispatcher::SetModel(cRobotModelDynamics *model)
 */
 void btGenCollisionDispatcher::Update()
 {
+    map_colid_manifold.clear();
     // std::cout << "collision dispatcher update in mode: " << mCollisionType
     //           << std::endl;
     if (mCollisionType == "Native")
@@ -54,6 +56,19 @@ void btGenCollisionDispatcher::Update()
         }
         ClearModelRelatedContact();
         RestoreContactInfoFromTraj();
+    }
+    else if (mCollisionType == "OnlySupposedPoint")
+    {
+        std::cout << "[warn] collision dispatcher works in " << mCollisionType
+                  << " mode\n";
+        if (mController == nullptr)
+        {
+            std::cout << "[error] btGenCollisionDispatcher: controller cannot "
+                         "be null when the mode = "
+                      << mCollisionType << std::endl;
+        }
+        ClearModelRelatedContact();
+        AddContactInfoFromSupposedInfo();
     }
     else
     {
@@ -137,11 +152,6 @@ void btGenCollisionDispatcher::RestoreContactInfoFromTraj()
     // iterative on all contact points. if this pair has been added, add the contact pt; if not, create new manifold and add.
     // begin to create new contact points and new manifold
 
-    std::map<std::pair<int, int>, btPersistentManifold *>
-        map_colid_manifold; // map from the collision body id pair to the manifold
-    std::map<std::pair<int, int>, btPersistentManifold *>::iterator it =
-        map_colid_manifold.begin();
-
     const btCollisionObject *ground = mWorld->GetGround();
     int ground_col_id = ground->getWorldArrayIndex();
     for (int i = 0; i < contact_force_array.size(); i++)
@@ -150,52 +160,126 @@ void btGenCollisionDispatcher::RestoreContactInfoFromTraj()
         auto &cur_force = contact_force_array[i];
         if (cur_force->mIsSelfCollision == true)
             continue;
+
         // 2. get link id
         btGenRobotCollider *link_collider =
             mModel->GetLinkCollider(cur_force->mLinkId);
         int link_col_id = link_collider->getWorldArrayIndex();
 
         // 3. find the manifold
-        int big_id = link_col_id, small_id = ground_col_id;
-        if (big_id < small_id)
-            btMathUtil::Swap(big_id, small_id);
-        std::pair<int, int> colid_pair(small_id, big_id);
+        btPersistentManifold *mani =
+            FindOrCreateManifold(link_collider, ground);
 
-        // 3.1 if we hasn't found it, create and insert
-        it = map_colid_manifold.find(colid_pair);
-        if (it == map_colid_manifold.end())
-        {
-            printf("[log] failed to find the manifold for body id pair %d %d, "
-                   "create a new one\n",
-                   small_id, big_id);
-
-            // body0 is always the link collider (suppose no self collision)
-
-            map_colid_manifold[colid_pair] =
-                getNewManifold(link_collider, ground);
-            std::cout << "create new manifold idxa = "
-                      << map_colid_manifold[colid_pair]->m_index1a << std::endl;
-            it = map_colid_manifold.find(colid_pair);
-        }
         // 3.2 put this contact point into the manifold
         tVector contact_pos_world =
             mModel->GetLinkById(link_collider->mLinkId)->GetGlobalTransform() *
             cur_force->mLocalPos;
-        btVector3 contact_pos_bt_world =
-            btBulletUtil::tVectorTobtVector(contact_pos_world);
-        btVector3 contact_pos_bt_local =
-            btBulletUtil::tVectorTobtVector(cur_force->mLocalPos);
-        btManifoldPoint pt(contact_pos_bt_local, contact_pos_bt_local,
-                           btVector3(0, 1, 0),
-                           -1e-3); // pointA, pointB, normalToBody0, distance <0
-        pt.m_partId0 = link_col_id;
-        pt.m_partId1 = ground_col_id;
-        pt.m_positionWorldOnA = contact_pos_bt_world;
-        pt.m_positionWorldOnB = contact_pos_bt_world;
-
-        it->second->addManifoldPoint(pt);
+        AddContactPointInManifold(mani, link_col_id, ground_col_id,
+                                  cur_force->mLocalPos, contact_pos_world,
+                                  tVector(0, 1, 0, 0), -1e-4);
         std::cout << "[log] GenDispatcher: put contact point "
-                  << contact_pos_world.transpose() << " for body " << small_id
-                  << " and " << big_id << std::endl;
+                  << contact_pos_world.transpose() << " for body "
+                  << link_col_id << " and " << ground_col_id << std::endl;
     }
+}
+
+/**
+ * \brief               Fetch the supposed contact info(only 2 points at each foot) from the contact-aware controller, 
+ * do contact detection by our self (w.r.t the ground)
+ * if collided, add them in the manifold
+ * else continue
+*/
+void btGenCollisionDispatcher::AddContactInfoFromSupposedInfo()
+{
+    // 1. get the supposed info, which means that, we should check the file and reload it
+    std::string supposed_contact_path = mController->GetSupposedContactInfo();
+    btTrajContactMigrator::tGivenContactPtInfo info =
+        btTrajContactMigrator::LoadGivenContactPts(mModel,
+                                                   supposed_contact_path);
+    btTrajContactMigrator::tGivenContactPtInfo::iterator it = info.begin();
+    const btCollisionObject *ground = this->mWorld->GetGround();
+    double ground_height = 0;
+    while (it != info.end())
+    {
+        int link_id = it->first;
+        const tEigenArr<btTrajContactMigrator::tGivenContactPt> &pt_array =
+            it->second;
+        auto link = mModel->GetLinkById(link_id);
+        auto link_collider = mModel->GetLinkCollider(link_id);
+        for (auto &pt : pt_array)
+        {
+            tVector global_pos = link->GetGlobalTransform() * pt.mLocalPos;
+
+            // we confirm collision here
+            if (global_pos[1] < (ground_height + 5e-3))
+            {
+                // collided! add the contact point
+                std::cout << "[log] btGenCollisionDispatcher: add contact "
+                             "point from supposed info, link id "
+                          << link_id << " pos " << global_pos.transpose()
+                          << std::endl;
+                auto mani = FindOrCreateManifold(link_collider, ground);
+                AddContactPointInManifold(
+                    mani, link_collider->getWorldArrayIndex(),
+                    ground->getWorldArrayIndex(), pt.mLocalPos, global_pos,
+                    tVector(0, 1, 0, 0), -1e-4);
+            }
+        }
+        it++;
+    }
+}
+
+/**
+ * \brief               Given the contact pair id (body0 and body1 id), find the manifold. if it doesn't exist, create a new one and return
+ * it's an elementart tools
+*/
+btPersistentManifold *btGenCollisionDispatcher::FindOrCreateManifold(
+    const btGenRobotCollider *link_collider, const btCollisionObject *ground)
+{
+    int big_id = link_collider->getWorldArrayIndex(),
+        small_id = ground->getWorldArrayIndex();
+    if (big_id < small_id)
+        btMathUtil::Swap(big_id, small_id);
+    std::pair<int, int> colid_pair(small_id, big_id);
+
+    // 3.1 if we hasn't found it, create and insert
+    std::map<std::pair<int, int>, btPersistentManifold *>::iterator it =
+        map_colid_manifold.find(colid_pair);
+    if (it == map_colid_manifold.end())
+    {
+        printf("[log] failed to find the manifold for body id pair %d %d, "
+               "create a new one\n",
+               small_id, big_id);
+
+        // link_collider is always the link collider (suppose no self collision)
+
+        map_colid_manifold[colid_pair] = getNewManifold(link_collider, ground);
+        std::cout << "create new manifold idxa = "
+                  << map_colid_manifold[colid_pair]->m_index1a << std::endl;
+        it = map_colid_manifold.find(colid_pair);
+    }
+    return it->second;
+}
+
+/**
+ * \brief           Add a contact point into the manifold
+*/
+void btGenCollisionDispatcher::AddContactPointInManifold(
+    btPersistentManifold *mani, int link_col_id, int ground_col_id,
+    const tVector &pos_local, const tVector &pos_global, const tVector &normal,
+    double distance)
+{
+    assert(distance < 0); // penetration distance, should be negative
+    btManifoldPoint pt(
+
+        btBulletUtil::tVectorTobtVector(pos_local),
+        btBulletUtil::tVectorTobtVector(pos_local),
+        btBulletUtil::tVectorTobtVector(normal),
+        distance); // pointA, pointB, normalToBody0, distance <0
+    pt.m_partId0 = link_col_id;
+    pt.m_partId1 = ground_col_id;
+    pt.m_positionWorldOnA = btBulletUtil::tVectorTobtVector(pos_global);
+    pt.m_positionWorldOnB = btBulletUtil::tVectorTobtVector(pos_global);
+
+    mani->addManifoldPoint(pt);
 }

@@ -223,6 +223,7 @@ btTraj::~btTraj()
 bool btTraj::LoadTraj(const std::string &path, cRobotModelDynamics *model,
                       int max_frame /* = -1*/)
 {
+    mTrajPath = path;
     model->PushState("load_traj");
     model->SetComputeSecondDerive(false);
     model->SetComputeThirdDerive(false);
@@ -418,6 +419,7 @@ bool btTraj::LoadTraj(const std::string &path, cRobotModelDynamics *model,
 
 bool btTraj::SaveTraj(const std::string &path, cRobotModelDynamics *model)
 {
+    mOutputPath = path;
     Json::Value root;
     root["version"] = 2;
     root["list"] = Json::arrayValue;
@@ -449,6 +451,38 @@ bool btTraj::SaveTraj(const std::string &path, cRobotModelDynamics *model)
             contact_info["is_self_collision"] = f->mIsSelfCollision;
             data_perframe["contact_info"].append(contact_info);
         }
+        // write joint
+        /*
+        tVectorXd joint_forces;
+        btJsonUtil::ReadVectorJson(
+            btJsonUtil::ParseAsValue("truth_joint_force", cur_data),
+            joint_forces);
+        // std::cout << "frame " << frame_id
+        //           << " joint force = " << joint_forces.transpose() << std::endl;
+        int num_of_actuated_joint = model->GetNumOfJoint() - 1;
+        if (num_of_actuated_joint * 4 != joint_forces.size())
+        {
+            std::cout << "[error] bt load traj v2 requsted joint force length "
+                      << num_of_actuated_joint << " != " << joint_forces.size()
+                      << std::endl;
+            exit(0);
+        }
+        for (int i = 0; i < num_of_actuated_joint; i++)
+        {
+            for (int j = 0; j < 4; j++)
+                mTruthJointForce[frame_id][i][j] = joint_forces[i * 4 + j];
+        }
+        */
+        tVectorXd truth_joint_force =
+            tVectorXd::Zero(mTruthJointForce[i].size() * 4);
+        for (int c = 0; c < mTruthJointForce[i].size(); c++)
+        {
+            for (int tmp = 0; tmp < 4; tmp++)
+                truth_joint_force[c * 4 + tmp] = mTruthJointForce[i][c][tmp];
+        }
+        data_perframe["truth_joint_force"] =
+            btJsonUtil::BuildVectorJsonValue(truth_joint_force);
+
         root["list"].append(data_perframe);
     }
     btJsonUtil::WriteJson(path, root, true);
@@ -654,3 +688,6 @@ void btTraj::CheckModelState(int frame_id, cRobotModelDynamics *model,
         exit(1);
     }
 }
+
+std::string btTraj::GetLoadPath() const { return mTrajPath; }
+std::string btTraj::GetOutputPath() const { return mOutputPath; }

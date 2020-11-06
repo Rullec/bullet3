@@ -4,6 +4,7 @@
 #include "BulletGenDynamics/btGenController/FBFCalculator/btGenFrameByFrameCalculator.h"
 #include "BulletGenDynamics/btGenController/NQRCalculator/btGenNQRCalculator.h"
 #include "BulletGenDynamics/btGenController/btTraj.h"
+#include "BulletGenDynamics/btGenController/btTrajContactMigrator.h"
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
 #include "BulletGenDynamics/btGenSolver/ContactSolver.h"
 #include "BulletGenDynamics/btGenUtil/JsonUtil.h"
@@ -154,10 +155,16 @@ void btGenContactAwareController::PreUpdate(double dt)
         SaveCurrentState();
 
     // 2. draw the contact points
-    if (mEnableDrawContactPointsInBulletGUIController == true)
+    if (mEnableDrawContactPointsInBulletGUIController == true ||
+        mEnableDrawRefTrajContactPoints == true)
     {
         ClearDrawPoints();
-        DrawContactPoints();
+
+        if (mEnableDrawContactPointsInBulletGUIController)
+            DrawContactPoints();
+        if (mEnableDrawRefTrajContactPoints)
+            DrawRefTrajContactPoints();
+        // exit(0);
     }
 
     // 3. judge the preliminary
@@ -244,6 +251,9 @@ void btGenContactAwareController::LoadTraj(const std::string &path)
     if (mResolveControlToruqe)
         ResolveActiveForce();
 
+    if (mEnableMigrateContactInfo)
+        btTrajContactMigrator::MigrateTrajContactByGivenInfo(
+            mModel, mRefTraj, mMigratecontactInfoPath);
     // load the saved traj in order to shape that
     mOutputTraj->LoadTraj(path, mModel, mMaxFrame);
     mOutputTraj->Reshape(std::min(mMaxFrame, mRefTraj->mNumOfFrames));
@@ -472,6 +482,13 @@ void btGenContactAwareController::ReadConfig(const std::string &config)
         btJsonUtil::ParseAsBool("enable_ref_traj_delayed_update", root);
     mEnableDrawContactPointsInBulletGUIController = btJsonUtil::ParseAsBool(
         "enable_draw_contact_points_in_bullet_GUI_controller", root);
+    mEnableDrawRefTrajContactPoints =
+        btJsonUtil::ParseAsBool("enable_draw_ref_traj_contact_point", root);
+
+    mEnableMigrateContactInfo =
+        btJsonUtil::ParseAsBool("enable_contact_migrator", root);
+    mMigratecontactInfoPath =
+        btJsonUtil::ParseAsString("contact_migrator_info", root);
 
     if (mEnableOnlyTargetController == true)
     {
@@ -1046,6 +1063,26 @@ void btGenContactAwareController::DrawContactPoints()
     }
 }
 
+/**
+ * \brief               Draw contact points in ref traj
+*/
+void btGenContactAwareController::DrawRefTrajContactPoints()
+{
+    printf("begin to draw ref traj contact in ref frame %d num %d\n",
+           mRefFrameId, mRefTraj->mContactForce[mRefFrameId].size());
+
+    for (auto &x : mRefTraj->mContactForce[mRefFrameId])
+    {
+
+        tVectorXd global_pos =
+            mModel->GetLinkById(x->mLinkId)->GetGlobalTransform() *
+            x->mLocalPos;
+        DrawPoint(global_pos.segment(0, 3));
+        std::cout << "[debug] draw contact force in ref traj at "
+                  << global_pos.transpose() << std::endl;
+    }
+}
+
 btGenTargetCalculator *btGenContactAwareController::CreateTargetCalculator(
     const std::string conf_path) const
 {
@@ -1074,4 +1111,9 @@ btGenTargetCalculator *btGenContactAwareController::CreateTargetCalculator(
 
     calc->Init(mWorld, conf_path);
     return calc;
+}
+
+std::string btGenContactAwareController::GetSupposedContactInfo()
+{
+    return this->mMigratecontactInfoPath;
 }

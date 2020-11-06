@@ -21,6 +21,8 @@ struct btTraj
     //                                       cRobotModelDynamics *model,
     //                                       tEigenArr<tMatrixXd> &dJacdq);
     tVectorXd GetGenControlForce(int frame_id, cRobotModelDynamics *model);
+    std::string GetLoadPath() const;
+    std::string GetOutputPath() const;
     int mNumOfFrames;
     tEigenArr<tVectorXd> mq, mqdot, mqddot;
     tEigenArr<tVectorXd> mTruthJointForceVec;
@@ -30,7 +32,9 @@ struct btTraj
     double mTimestep;
 
 protected:
-    std::string mTrajPath;
+    std::string mTrajPath; // where is it loaded?
+    std::string
+        mOutputPath; // where it is written? (it has value only when "SaveTraj" has been called once)
     void CheckFrameId(int frame_id, std::string prefix) const;
     void CheckModelState(int frame_id, cRobotModelDynamics *model,
                          std::string prefix);

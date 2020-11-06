@@ -51,6 +51,7 @@ public:
     btGenTargetCalculator *GetTargetCalculator();
     void SetBulletGUIHelperInterface(struct GUIHelperInterface *inter);
     int GetRefFrameId() const { return mRefFrameId; }
+    std::string GetSupposedContactInfo();
     // void GetAdviseInfo(tMatrixXd& C, tMatrixXd& D, tMatrixXd& E, tMatrixXd&
     // N, tVectorXd& b);
 
@@ -67,6 +68,9 @@ protected:
     tVectorXd mCtrlForce;
     bool mResolveControlToruqe; // given the mocap data (ref traj), re solve the
                                 // control torque
+    bool
+        mEnableMigrateContactInfo; // move the contact points in the ref traj to the given configuration
+    std::string mMigratecontactInfoPath; // given an ideal contact point file
     std::string mTargetCalculatorConfigFile;
     bool mOutputControlDiff;
     bool mEnableSyncTrajPeriodly;     // sync the ref traj to the simulation
@@ -80,6 +84,8 @@ protected:
                                       // stay at the current frame
     bool
         mEnableDrawContactPointsInBulletGUIController; // enable drawing contact points
+    bool
+        mEnableDrawRefTrajContactPoints; // enable drawing contact points in ref traj
     int mSyncTrajPeriod; // the sync period speicifed by config file
     cRobotModelDynamics *mModel;
     btGeneralizeWorld *mWorld;
@@ -117,6 +123,7 @@ protected:
     void PostUpdate();
     void ReadConfig(const std::string &config);
     void ResolveActiveForce();
+    void MigrateTrajContactByGivenInfo();
     void LoadTraj(const std::string &traj);
     void FetchControlTarget(double dt, tVectorXd &qddot_target,
                             tVectorXd &qdot_target, tVectorXd &q_target,
@@ -132,5 +139,6 @@ protected:
     void UpdateReferenceTraj();
     void ClearDrawPoints();
     void DrawContactPoints();
+    void DrawRefTrajContactPoints();
     void DrawPoint(const tVector3d &pos, double r = 0.05);
 };

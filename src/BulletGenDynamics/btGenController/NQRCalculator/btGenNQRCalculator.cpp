@@ -334,60 +334,6 @@ void btGenNQRCalculator::CalcNQRRiccati(tNQRFrameInfo *cur_info,
 //     }
 // }
 
-// /**
-//  * \brief           Load the supposed contact points from file
-// */
-// void btGenNQRCalculator::InitSupposdedContactPoints(
-//     const std::string &conf_path)
-// {
-//     mSupposedContactPt.clear();
-//     Json::Value root;
-//     btJsonUtil::LoadJson(conf_path, root);
-//     std::string skeleton_path =
-//         btJsonUtil::ParseAsString("skeleton_path", root);
-//     int num = btJsonUtil::ParseAsInt("num_of_supposed_contact_points", root);
-//     const Json::Value &lst =
-//         btJsonUtil::ParseAsValue("supposed_contact_point_lst", root);
-
-//     if (skeleton_path != this->mModel->GetCharFile())
-//     {
-//         std::cout << "[error] nqr supposed contact skeleton file inconsistent "
-//                   << skeleton_path << " != " << mModel->GetCharFile()
-//                   << std::endl;
-//         exit(0);
-//     }
-//     if (num != lst.size())
-//     {
-//         std::cout << "[error] the supposed contact points num is "
-//                      "consistent "
-//                   << num << " != " << lst.size() << std::endl;
-//         exit(1);
-//     }
-
-//     for (int i = 0; i < num; i++)
-//     {
-//         auto cur_pt = lst[i];
-//         std::string link_name = btJsonUtil::ParseAsString("link_name", cur_pt);
-//         int link_id = btJsonUtil::ParseAsInt("link_id", cur_pt);
-//         tVector3d local_pos = btJsonUtil::ReadVectorJson(
-//                                   btJsonUtil::ParseAsValue("local_pos", cur_pt))
-//                                   .segment(0, 3);
-
-//         // check link id and link name
-//         auto link = mModel->GetLinkById(link_id);
-//         if (link->GetName() != link_name)
-//         {
-//             std::cout << "[error] nqr supposed pt: the given link name "
-//                       << link_name << " != "
-//                       << " model link name " << link->GetName() << std::endl;
-//             exit(1);
-//         }
-
-//         mSupposedContactPt.push_back(new tSupposedContactPt(
-//             this->mModel, link_id, btMathUtil::Expand(local_pos, 1)));
-//     }
-// }
-
 /**
  * \brief       Check the solution of riccati equation in each frame
 */
