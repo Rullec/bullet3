@@ -57,11 +57,11 @@ btGenMBContactForce::btGenMBContactForce(btGenRobotCollider *collider,
     : btGenContactForce(collider, f, world_pos, is_self_collision)
 {
     mLinkId = collider->mLinkId;
-    mLocalPos = btMathUtil::Expand(local_pos, 1) ;
+    mLocalPos = btMathUtil::Expand(local_pos, 1);
 }
 // const std::string log_path = "debug_solve_new.txt";
 btGenContactSolver::btGenContactSolver(const std::string &config_path,
-                                       btDiscreteDynamicsWorld *world)
+                                       btGeneralizeWorld *world)
 {
     // std::ofstream fout(log_path);
     // fout << "";
@@ -104,7 +104,8 @@ btGenContactSolver::btGenContactSolver(const std::string &config_path,
 
     // other stuff
     mEnableDebugOutput = btJsonUtil::ParseAsBool("enable_debug_output", config);
-    mWorld = world;
+    mGenWorld = world;
+    mWorld = world->GetInternalWorld();
     mLCPSolver =
         BuildLCPSolver(btJsonUtil::ParseAsString("lcp_solver_type", config));
 
@@ -342,6 +343,10 @@ void btGenContactSolver::ConstraintSetup()
                     normal_vel_convert_result_based_vec,
                     tangent_vel_convert_result_based_mat,
                     tangent_vel_convert_result_based_vec);
+        }
+        if (mEnableConvertMatTest == true)
+        {
+            printf("[log] LCP Convert Mat verified succ\n");
         }
     }
 }
@@ -1268,4 +1273,36 @@ void btGenContactSolver::VerifySolution()
 
     PopState("verify");
     // exit(0);
+}
+
+/**
+ * \brief           Collect multibody from all of collision datas
+*/
+cRobotModelDynamics *btGenContactSolver::CollectMultibody()
+{
+    cRobotModelDynamics *model = nullptr;
+    for (auto &data : this->mColGroupData)
+    {
+        btGenRobotCollider *collider =
+            dynamic_cast<btGenRobotCollider *>(data->mBody);
+
+        // if it is robot collider
+        if (collider != nullptr)
+        {
+            // if empty, directly give the value
+            if (model == nullptr)
+            {
+                model = collider->mModel;
+            }
+            else
+            {
+                // else, there are many model, exit
+                std::cout
+                    << "[error] btGenContactSolver::CollectMultibody: there "
+                       "are multiple models in the collision world\n";
+                exit(0);
+            }
+        }
+    }
+    return model;
 }

@@ -42,7 +42,7 @@ public:
     void Update(double dt);
     void UpdateMultibodyVelocityDebug(double dt);
     void UpdateMultibodyVelocityAndTransformDebug(double dt);
-    tVectorXd CalcControlForce(const tVectorXd &Q_contact);
+    tVectorXd CalcControlForce(const tVectorXd &Q_contact, bool verbose = true);
     tVectorXd GetPrevControlForce();
     tVectorXd CalcLCPResidual(double dt) const;
     tMatrixXd CalcLCPPartBPrefix() const;

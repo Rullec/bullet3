@@ -1,9 +1,11 @@
 #pragma once
 #include "BulletGenDynamics/btGenUtil/BulletUtil.h"
 #include "BulletGenDynamics/btGenUtil/MathUtil.h"
+#include "BulletGenDynamics/btGenWorld.h"
 #include "ConstraintData.h"
 
-class btDiscreteDynamicsWorld;
+class btGeneralizeWorld;
+// class btDiscreteDynamicsWorld;
 class btPersistentManifold;
 class btGenRigidBody;
 // class cNativeLemkeLCPSolver;
@@ -61,7 +63,7 @@ public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     btGenContactSolver(const std::string &config_path,
-                       btDiscreteDynamicsWorld *world);
+                       btGeneralizeWorld *world);
     virtual ~btGenContactSolver();
 
     void ConstraintProcess(float dt);
@@ -95,6 +97,7 @@ protected:
     bool mEnableSILCPComparision; // compare the result of SI and LCP
     double mDiagonalEps;
 
+    btGeneralizeWorld *mGenWorld;
     btDiscreteDynamicsWorld *mWorld;
     cLCPSolverBase *mLCPSolver;
 
@@ -154,7 +157,7 @@ protected:
     void ClearAllConstraintForce();
     void ConstraintFinished();
     void CalcCMats(tMatrixXd &C_lambda, tMatrixXd &C_mufn, tMatrixXd &C_c);
-    void CollectMultibody();
+    cRobotModelDynamics *CollectMultibody();
     void RebuildColObjData();
     void DeleteColObjData();
     void DeleteConstraintData();
@@ -182,5 +185,6 @@ protected:
         const tMatrixXd &normal_mat, const tVectorXd &normal_vec,
         const tMatrixXd &tan_mat, const tVectorXd &tan_vec);
     void TestSICartesianConvertMatAndVec();
+    void TestAddContactAwareForceIfPossible(const tEigenArr<tVector> & contact_forces, const std::vector<int> & );
     bool IsMultibodyAndVelMax(btGenCollisionObject *body);
 };

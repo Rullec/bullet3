@@ -52,11 +52,15 @@ void btGenContactSolver::TestCartesianForceToCartesianVel()
     }
 
     // apply active force
+    tEigenArr<tVector> AppliedActiveForce(0);
+    std::vector<int> AppliedGenForce(0);
     for (int i = 0; i < mNumContactPoints; i++)
     {
-        auto &data = mContactConstraintData[i];
-        data->ApplyForceCartersian(
+        AppliedActiveForce.push_back(
             btMathUtil::Expand(x_lcp.segment(3 * i, 3), 0));
+        auto &data = mContactConstraintData[i];
+        data->ApplyForceCartersian(btMathUtil::Expand(
+            x_lcp.segment(3 * i, 3), 0)); // apply catesian force
     }
     // std::cout << "only contact force Q = " <<
     // mMultibodyArray[0]->GetGeneralizedForce().transpose() << std::endl;
@@ -65,7 +69,11 @@ void btGenContactSolver::TestCartesianForceToCartesianVel()
     {
         auto &data = mJointLimitConstraintData[i];
         data->ApplyGeneralizedForce(x_lcp[3 * mNumContactPoints + i]);
+        AppliedGenForce.push_back(x_lcp[3 * mNumContactPoints + i]);
     }
+    // if the contact aware if enabled, we need to add control force
+    TestAddContactAwareForceIfPossible(AppliedActiveForce, AppliedGenForce);
+
     // std::cout << "Q = " <<
     // mMultibodyArray[0]->GetGeneralizedForce().transpose() << std::endl;
 
@@ -225,10 +233,14 @@ void btGenContactSolver::TestCartesianForceToCartesianRelVel(
 
     // apply active force for contact forces
     int n_self_collision = 0;
+    tEigenArr<tVector> AppliedActiveForce(0);
+    std::vector<int> AppliedGenForce(0);
     for (int i = 0; i < mNumContactPoints; i++)
     {
         auto &data = mContactConstraintData[i];
         data->ApplyForceCartersian(
+            btMathUtil::Expand(x_lcp.segment(3 * i, 3), 0));
+        AppliedActiveForce.push_back(
             btMathUtil::Expand(x_lcp.segment(3 * i, 3), 0));
         if (data->mIsSelfCollision)
             n_self_collision++;
@@ -238,8 +250,11 @@ void btGenContactSolver::TestCartesianForceToCartesianRelVel(
     for (int i = 0; i < mNumJointLimitConstraints; i++)
     {
         auto &data = mJointLimitConstraintData[i];
+        AppliedGenForce.push_back(x_lcp[3 * mNumContactPoints + i]);
         data->ApplyGeneralizedForce(x_lcp[3 * mNumContactPoints + i]);
     }
+
+    TestAddContactAwareForceIfPossible(AppliedActiveForce, AppliedGenForce);
 
     // get the true vel and update
     UpdateVelocity(cur_dt);
@@ -257,8 +272,8 @@ void btGenContactSolver::TestCartesianForceToCartesianRelVel(
             bool err = false;
             err = true;
             std::cout
-                << "error convert cartesian force to rel vel: for contact " << i
-                << "---------------\n";
+                << "[error] convert cartesian force to rel vel: for contact "
+                << i << "---------------\n";
             std::cout << "pred rel vel = " << pred_relvel.transpose()
                       << std::endl;
             std::cout << "true rel vel = " << true_relvel.transpose()
@@ -340,10 +355,14 @@ void btGenContactSolver::TestCartesianForceToNormalAndTangetRelVel(
     }
 
     // apply active force
+    tEigenArr<tVector> AppliedActiveForce(0);
+    std::vector<int> AppliedGenForce(0);
     for (int i = 0; i < mNumContactPoints; i++)
     {
         auto &data = mContactConstraintData[i];
         data->ApplyForceCartersian(
+            btMathUtil::Expand(x_lcp.segment(3 * i, 3), 0));
+        AppliedActiveForce.push_back(
             btMathUtil::Expand(x_lcp.segment(3 * i, 3), 0));
     }
 
@@ -351,7 +370,9 @@ void btGenContactSolver::TestCartesianForceToNormalAndTangetRelVel(
     {
         auto &data = mJointLimitConstraintData[i];
         data->ApplyGeneralizedForce(x_lcp[mNumContactPoints * 3 + i]);
+        AppliedGenForce.push_back(x_lcp[mNumContactPoints * 3 + i]);
     }
+    TestAddContactAwareForceIfPossible(AppliedActiveForce, AppliedGenForce);
 
     // get the true vel and update
     UpdateVelocity(cur_dt);
@@ -485,6 +506,9 @@ void btGenContactSolver::TestCartesianForceToNormalAndTangetResultBasedRelVel(
     }
 
     // apply active force
+
+    tEigenArr<tVector> AppliedActiveForce(0);
+    std::vector<int> AppliedGenForce(0);
     for (int i = 0; i < mNumContactPoints; i++)
     {
         auto &data = mContactConstraintData[i];
@@ -501,6 +525,7 @@ void btGenContactSolver::TestCartesianForceToNormalAndTangetResultBasedRelVel(
         }
         data->ApplyForceCartersian(
             btMathUtil::Expand(applied_force.segment(3 * i, 3), 0));
+        AppliedActiveForce.push_back(btMathUtil::Expand(applied_force.segment(3 * i, 3), 0));
     }
 
     // apply joint torque
@@ -508,7 +533,10 @@ void btGenContactSolver::TestCartesianForceToNormalAndTangetResultBasedRelVel(
     {
         auto &data = mJointLimitConstraintData[i];
         data->ApplyGeneralizedForce(x_lcp(single_size * mNumContactPoints + i));
+        AppliedGenForce.push_back(x_lcp(single_size * mNumContactPoints + i));
     }
+    TestAddContactAwareForceIfPossible(AppliedActiveForce, AppliedGenForce);
+
     UpdateVelocity(cur_dt);
 
     // get the true vel and update
@@ -632,4 +660,79 @@ void btGenContactSolver::TestCartesianForceToNormalAndTangetResultBasedRelVel(
 
     // exit(0);
     PopState("TestCartesianForceToNormalAndTangetResultBasedRelVel");
+}
+
+/**
+ * \brief       Given current randomed contact_force and constraint_gen_force, this function calculate the contact-aware control force and applied
+ * \param contact_forces        contact forces on each contact point, size = mNumContactPoints
+ * \param constraint_forces     gen constarint forces, size should be zero at this moment
+ * 
+*/
+#include "BulletGenDynamics/btGenController/btGenContactAwareController.h"
+void btGenContactSolver::TestAddContactAwareForceIfPossible(
+    const tEigenArr<tVector> &contact_forces,
+    const std::vector<int> &constraint_forces)
+{
+    // 1. judge if multibody & contact aware is enable. if not, return
+    cRobotModelDynamics *model = CollectMultibody();
+    if (model == nullptr || model->GetEnableContactAwareController() == false)
+        return;
+
+    // 2. confirm the constraint forces size = 0. if not, exit
+    if (constraint_forces.size() != 0)
+    {
+        printf("[error] TestAddContactAwareForceIfPossible: constraint force "
+               "size %d unsupported\n",
+               constraint_forces.size());
+        exit(0);
+    }
+
+    // 3. calculate contact-aware control force
+    tVectorXd control_force;
+    {
+        // 3.1 get controller
+        btGenContactAwareController *controller =
+            mGenWorld->GetContactAwareController();
+        assert(controller != nullptr);
+
+        // 3.2 collect contact forces
+        assert(contact_forces.size() == this->mNumContactPoints);
+        tVectorXd gen_contact_force = tVectorXd::Zero(model->GetNumOfFreedom());
+        for (int i = 0; i < mNumContactPoints; i++)
+        {
+            const auto &data = mContactConstraintData[i];
+            tVector3d force = contact_forces[i].segment(0, 3);
+            tMatrixXd jac;
+            if (data->mTypeA == eColObjType::RobotCollder)
+            {
+                tVector3d global_pos = data->mContactPtOnA.segment(0, 3);
+                int link_id =
+                    dynamic_cast<btGenRobotCollider *>(data->mBodyA)->mLinkId;
+                model->ComputeJacobiByGivenPointTotalDOFWorldFrame(
+                    link_id, global_pos, jac);
+                gen_contact_force += jac.transpose() * force;
+            }
+            if (data->mTypeB == eColObjType::RobotCollder)
+            {
+                force *= -1;
+                tVector3d global_pos = data->mContactPtOnB.segment(0, 3);
+                int link_id =
+                    dynamic_cast<btGenRobotCollider *>(data->mBodyB)->mLinkId;
+                model->ComputeJacobiByGivenPointTotalDOFWorldFrame(
+                    link_id, global_pos, jac);
+                gen_contact_force += jac.transpose() * force;
+            }
+        }
+        // 3.3 fetch control force
+        control_force = controller->CalcControlForce(gen_contact_force, false);
+    }
+    // 4. apply the contact-aware control force and return
+    // std::cout << "[debug] TestAddContactAwareCtrlForce = "
+    //           << control_force.transpose() << std::endl;
+    int num_of_actuated_freedom = model->GetNumOfFreedom() - 6;
+    assert(num_of_actuated_freedom == control_force.size());
+    for (int i = 0; i < num_of_actuated_freedom; i++)
+    {
+        model->ApplyGeneralizedForce(i + 6, control_force[i]);
+    }
 }

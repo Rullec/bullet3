@@ -202,8 +202,7 @@ void btGeneralizeWorld::Init(const std::string &config_path)
 
     if (mContactMode == LCPMode)
     {
-        mLCPContactSolver =
-            new btGenContactSolver(mLCPConfigPath, mInternalWorld);
+        mLCPContactSolver = new btGenContactSolver(mLCPConfigPath, this);
     }
 
     // if (mEnablePDControl)

@@ -338,7 +338,8 @@ void btGenContactAwareController::PostProcess()
  * (generalized), calculate and apply the active control torque
  */
 tVectorXd
-btGenContactAwareController::CalcControlForce(const tVectorXd &Q_contact)
+btGenContactAwareController::CalcControlForce(const tVectorXd &Q_contact,
+                                              bool verbose /* = true*/)
 {
     if (mEnableOnlyTargetController == true)
     {
@@ -395,41 +396,32 @@ btGenContactAwareController::CalcControlForce(const tVectorXd &Q_contact)
 
     mFeatureVector->CalcEnergy(mCtrlForce, Q_contact);
 
-    // mFeatureVector->DebugFullMinimiumIsTheSameAsTheRefTraj(mCtrlForce,
-    //                                                        Q_contact);
-    tVectorXd mocap_contact_force =
-        mRefTraj->GetGenContactForce(mRefFrameId - 1, mModel);
-    tVectorXd mocap_control_force =
-        mRefTraj->GetGenControlForce(mRefFrameId - 1, mModel);
-    // std::cout << "[mocap] contact force = " << mocap_contact_force.transpose()
-    //           << std::endl;
-    // std::cout << "[mocap] control force = " << mocap_control_force.transpose()
-    //           << std::endl;
+    if (verbose == true)
+    {
+        // mFeatureVector->DebugFullMinimiumIsTheSameAsTheRefTraj(mCtrlForce, Q_contact);
+        tVectorXd mocap_contact_force =
+            mRefTraj->GetGenContactForce(mRefFrameId - 1, mModel);
+        tVectorXd mocap_control_force =
+            mRefTraj->GetGenControlForce(mRefFrameId - 1, mModel);
+        // std::cout << "[mocap] contact force = " << mocap_contact_force.transpose()
+        //           << std::endl;
+        // std::cout << "[mocap] control force = " << mocap_control_force.transpose()
+        //           << std::endl;
 
-    tVectorXd contact_force_diff = mocap_contact_force - Q_contact;
-    tVectorXd control_force_diff = mocap_control_force - Q_active;
-    std::cout << "[log] contact_force diff_percent = "
-              << contact_force_diff.norm() /
-                     (mocap_contact_force.norm() + 1e-8) * 100
-              << std::endl;
-    std::cout << "[log] control_force diff_percent = "
-              << control_force_diff.norm() /
-                     (mocap_control_force.norm() + 1e-8) * 100
-              << std::endl;
-    // fout << "[log] contact_force diff_percent = "
-    //      << contact_force_diff.norm() / (mocap_contact_force.norm() + 1e-8) *
-    //             100
-    //      << std::endl;
-    // fout << "[log] control_force diff_percent = "
-    //      << control_force_diff.norm() / (mocap_control_force.norm() + 1e-8) *
-    //             100
-    //      << std::endl;
-    // fout.close();
+        tVectorXd contact_force_diff = mocap_contact_force - Q_contact;
+        tVectorXd control_force_diff = mocap_control_force - Q_active;
+        std::cout << "[log] contact_force diff_percent = "
+                  << contact_force_diff.norm() /
+                         (mocap_contact_force.norm() + 1e-8) * 100
+                  << std::endl;
+        std::cout << "[log] control_force diff_percent = "
+                  << control_force_diff.norm() /
+                         (mocap_control_force.norm() + 1e-8) * 100
+                  << std::endl;
+    }
     // check the contact force & control force that is calculated by the full minimium of optimization problem
     // it should be the same as the contact force in the ref traj
     // but, it will be different from the new LCP solved result
-    {
-    }
     // mFeatureVector->DebugPosFeatureDFdtauIsZero(mCtrlForce, Q_contact);
     // mFeatureVector->DebugVelFeatureDFdtauIsZero(mCtrlForce, Q_contact);
     // mFeatureVector->DebugAccelFeatureDFdtauIsZero(mCtrlForce, Q_contact);

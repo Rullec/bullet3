@@ -1,7 +1,7 @@
 {
     "enable_gravity": true,
-    "collision_detection_mode_from": "Native",
-    "collision_detection_mode": "FromTheTraj",
+    "collision_detection_mode": "Native",
+    "collision_detection_mode_from": "FromTheTraj",
     "collision_detection_mode_supposed": "OnlySupposedPoint",
     "contact_response_mode": "LCP",
     "contact_response_mode_lcp": "No",
