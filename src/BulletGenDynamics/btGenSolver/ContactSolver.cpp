@@ -1280,26 +1280,34 @@ void btGenContactSolver::VerifySolution()
 */
 cRobotModelDynamics *btGenContactSolver::CollectMultibody()
 {
+    // THIS FUNCTION DOESN"T WORK WELL WHEN DRAE CHAR IS ENABLED
     cRobotModelDynamics *model = nullptr;
-    for (auto &data : this->mColGroupData)
+
+    // for (auto &data : this->mColGroupData)
+    for (int i = 0; i < mColGroupData.size(); i++)
     {
+        const auto &data = mColGroupData[i];
         btGenRobotCollider *collider =
             dynamic_cast<btGenRobotCollider *>(data->mBody);
 
         // if it is robot collider
         if (collider != nullptr)
         {
+
             // if empty, directly give the value
             if (model == nullptr)
             {
                 model = collider->mModel;
             }
-            else
+            else if (model != collider->mModel)
             {
                 // else, there are many model, exit
                 std::cout
                     << "[error] btGenContactSolver::CollectMultibody: there "
                        "are multiple models in the collision world\n";
+                std::cout << "legacy model = " << model
+                          << " cur collider model = " << collider->mModel
+                          << std::endl;
                 exit(0);
             }
         }

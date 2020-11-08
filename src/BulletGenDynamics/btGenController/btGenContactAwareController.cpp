@@ -422,14 +422,15 @@ btGenContactAwareController::CalcControlForce(const tVectorXd &Q_contact,
     // check the contact force & control force that is calculated by the full minimium of optimization problem
     // it should be the same as the contact force in the ref traj
     // but, it will be different from the new LCP solved result
+    std::cout << "[warn] begin to verify whether the dFdtau is zero\n";
     // mFeatureVector->DebugPosFeatureDFdtauIsZero(mCtrlForce, Q_contact);
     // mFeatureVector->DebugVelFeatureDFdtauIsZero(mCtrlForce, Q_contact);
-    // mFeatureVector->DebugAccelFeatureDFdtauIsZero(mCtrlForce, Q_contact);
+    mFeatureVector->DebugAccelFeatureDFdtauIsZero(mCtrlForce, Q_contact);
     // mFeatureVector->DebugTauFeatureDFdtauIsZero(mCtrlForce, Q_contact);
     // when we get the control force, we can evaluate the energy term in btGenFeatureArray then evaulate the control result immediately
-    // std::cout
-    //     << "[warn] begin to verify whether the solution is a local minimium\n";
-    // mFeatureVector->VerifyTheSolutionIsLocalMin(Q_active, Q_contact);
+    std::cout
+        << "[warn] begin to verify whether the solution is a local minimium\n";
+    mFeatureVector->VerifyTheSolutionIsLocalMin(Q_active, Q_contact);
 
     return Q_active;
 }
@@ -1056,7 +1057,7 @@ std::string btGenContactAwareController::GetSupposedContactInfo()
 /**
  * \brief       check the different between model and ref traj
 */
-void btGenContactAwareController::CheckTheDiff(bool output/* = false*/)
+void btGenContactAwareController::CheckTheDiff(bool output /* = false*/)
 {
     tVectorXd qddot = mModel->Getqddot();
     tVectorXd q = mModel->Getq(), qdot = mModel->Getqdot();

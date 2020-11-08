@@ -2,7 +2,7 @@
     "lcp_solver_type": "NativeLemke",
     "lcp_solver_type_bak": "odeDantzig",
     "enable_multibody_self_collision": true,
-    "enable_convert_mat_test": false,
+    "enable_convert_mat_test": true,
     "enable_lcp_calculation": true,
     "enable_contact_lcp": true,
     "enable_frictional_lcp": true,

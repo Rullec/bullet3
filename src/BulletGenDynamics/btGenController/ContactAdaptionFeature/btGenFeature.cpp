@@ -840,21 +840,21 @@ void btGenFeatureArray::EvalConvertMatFromForceToq(
  * 2. The formulaes of H, E, f. W_1, W_2, W_3 are the weight vector for accel,
  * vel and pos feature respectively
  *
- *      E = (D_\alpha^T * W_1^T * W_1 * D_\alpha + D_\nu^T * W_2^T * W_2 * D_\nu
+ *      E = (D_\alpha^T * W_1 * D_\alpha + D_\nu^T * W_2 * D_\nu
  *
- *          + D_\phi^T * W_3^T * W_3 * D_\phi + W_tau^T * W_tau)
+ *          + D_\phi^T * W_3 * D_\phi + W_tau^T * W_tau)
  *
- *      F = D_\alpha^T * W_1^T * W_1 * M_\alpha + D_\nu^T * W_2^T * W_2 * M_\nu
+ *      F = D_\alpha^T * W_1 * M_\alpha + D_\nu^T * W_2 * M_\nu
  *
- *          + D_\phi^T * W_3^T * W_3 * M_\phi
+ *          + D_\phi^T * W_3 * M_\phi
  *
  *      f =  W_tau^T * W_tau * \tilde{\tau}
  *
- *          - D_\alpha^T * W_1^T * W_1 * (n_\alpha - \tilde{\alpha})
+ *          - D_\alpha^T * W_1 * (n_\alpha - \tilde{\alpha})
  *
- *          - D_\nu^T * W_2^T * W_2 * (n_\nu - \tilde{\nu})
+ *          - D_\nu^T * W_2 * (n_\nu - \tilde{\nu})
  *
- *          - D_\phi^T * W_3^T * W_3 * (n_\phi - \tilde{\phi})
+ *          - D_\phi^T * W_3 * (n_\phi - \tilde{\phi})
  *
  *      H = E^{-1} * F
  */
@@ -928,43 +928,31 @@ void btGenFeatureArray::EvalDynamicTerms(const tVectorXd &ref_accel_feature,
         auto &pos_feature = mFeatureArrays[0], &vel_feature = mFeatureArrays[1],
              &accel_feature = mFeatureArrays[2];
 
-        tMatrixXd W1TW1 = 2 * (accel_feature->mWeight.cwiseProduct(
-                                   accel_feature->mWeight))
-                                  .asDiagonal(),
-                  W2TW2 =
-                      2 *
-                      (vel_feature->mWeight.cwiseProduct(vel_feature->mWeight))
-                          .asDiagonal(),
-                  W3TW3 =
-                      2 *
-                      (pos_feature->mWeight.cwiseProduct(pos_feature->mWeight))
-                          .asDiagonal(),
-                  WtauTWtau =
-                      2 * (mWeight_tau.cwiseProduct(mWeight_tau)).asDiagonal();
+        tMatrixXd W1 = accel_feature->mWeight.asDiagonal(),
+                  W2 = vel_feature->mWeight.asDiagonal(),
+                  W3 = pos_feature->mWeight.asDiagonal(),
+                  Wtau = mWeight_tau.asDiagonal();
 
         {
-            E.noalias() = WtauTWtau
+            E.noalias() = Wtau
 
-                          + D_alpha.transpose() * W1TW1 * D_alpha +
-                          D_nu.transpose() * W2TW2 * D_nu +
-                          D_phi.transpose() * W3TW3 * D_phi;
+                          + D_alpha.transpose() * W1 * D_alpha +
+                          D_nu.transpose() * W2 * D_nu +
+                          D_phi.transpose() * W3 * D_phi;
         }
 
-        tMatrixXd F = D_alpha.transpose() * W1TW1 * M_alpha +
-                      D_nu.transpose() * W2TW2 * M_nu +
-                      D_phi.transpose() * W3TW3 * M_phi;
+        tMatrixXd F = D_alpha.transpose() * W1 * M_alpha +
+                      D_nu.transpose() * W2 * M_nu +
+                      D_phi.transpose() * W3 * M_phi;
         // std::cout << "F = " << F << std::endl;
         /*
-        
-                    const tVectorXd f_local = N.transpose() * Minv.transpose() *
-                                      alpha_weight.transpose() * alpha_weight *
-                                      (Cqdot - QG + mTargetAccel);
-                                      
-                                      */
-        f = WtauTWtau * ref_tau -
-            D_alpha.transpose() * W1TW1 * (n_alpha - ref_accel_feature) -
-            D_nu.transpose() * W2TW2 * (n_nu - ref_vel_feature) -
-            D_phi.transpose() * W3TW3 * (n_phi - ref_pos_feature);
+            const tVectorXd f_local = N.transpose() * Minv.transpose()
+                * alpha_weight * (Cqdot - QG + mTargetAccel);                              
+        */
+        f = Wtau * ref_tau -
+            D_alpha.transpose() * W1 * (n_alpha - ref_accel_feature) -
+            D_nu.transpose() * W2 * (n_nu - ref_vel_feature) -
+            D_phi.transpose() * W3 * (n_phi - ref_pos_feature);
         // std::cout << "f = " << f.transpose() << std::endl;
         H = -E.inverse() * F;
         // std::cout << "H = " << H << std::endl;
@@ -1517,15 +1505,14 @@ void btGenFeatureArray::DebugAccelFeatureDFdtauIsZero(
               P = M_q_to_feature * M_tau_to_q;
     tVectorXd R = M_q_to_feature * R_force_to_q + R_q_to_feature;
     // tMatrixXd part1 =
-    //     2 * A1.transpose() * alpha_weight.transpose() * alpha_weight;
+    //     2 * A1.transpose() * alpha_weight;
     // tMatrixXd part2a = A1;
     // tMatrixXd part2b = A2;
     // tVectorXd part3 = b1 - alpha_feature->mRefFeature;
     // std::cout << "O norm " << O.norm() << std::endl;
     // std::cout << "P norm " << P.norm() << std::endl;
     // std::cout << "R norm " << R.norm() << std::endl;
-    tVectorXd res = 2 * P.transpose() * alpha_weight.transpose() *
-                    alpha_weight *
+    tVectorXd res = P.transpose() * alpha_weight *
                     (O * contact_force + P * control_force + R -
                      alpha_feature->mRefFeature);
     std::cout << "res = " << res.transpose() << std::endl;
@@ -1610,12 +1597,9 @@ void btGenFeatureArray::DebugAccelFeatureDFdtauIsZero(
         }
 
         {
-            const tMatrixXd E_local =
-                P.transpose() * alpha_weight.transpose() * alpha_weight * P;
-            const tMatrixXd F_local =
-                P.transpose() * alpha_weight.transpose() * alpha_weight * O;
-            const tVectorXd f_local = -P.transpose() *
-                                      alpha_weight.transpose() * alpha_weight *
+            const tMatrixXd E_local = P.transpose() * alpha_weight * P;
+            const tMatrixXd F_local = P.transpose() * alpha_weight * O;
+            const tVectorXd f_local = -P.transpose() * alpha_weight *
                                       (R - alpha_feature->mRefFeature);
             const tMatrixXd H_local = -E_local.inverse() * F_local;
 
@@ -1672,8 +1656,7 @@ void btGenFeatureArray::DebugTauFeatureDFdtauIsZero(
         }
     }
     tMatrixXd tau_weight = mWeight_tau.asDiagonal();
-    tVectorXd res =
-        2 * tau_weight.transpose() * tau_weight * (control_force - mTargetTau);
+    tVectorXd res = tau_weight * (control_force - mTargetTau);
 
     std::cout << "res = " << res.transpose() << std::endl;
     if (res.norm() > 1e-8)
@@ -1778,8 +1761,8 @@ void btGenFeatureArray::DebugVelFeatureDFdtauIsZero(
 
     // 4. shape the dF/d\tau formula
     tMatrixXd vel_weight = vel_feature->mWeight.asDiagonal();
-    tMatrixXd part1 = M_tau_to_q.transpose() * M_q_to_feature.transpose() *
-                      vel_weight.transpose() * vel_weight;
+    tMatrixXd part1 =
+        M_tau_to_q.transpose() * M_q_to_feature.transpose() * vel_weight;
     tMatrixXd part2_1 = M_q_to_feature * M_contact_to_q;
     tMatrixXd part2_2 = M_q_to_feature * M_tau_to_q;
     tVectorXd part3 = M_q_to_feature * R_force_to_q + R_q_to_feature -
@@ -1865,12 +1848,10 @@ void btGenFeatureArray::DebugVelFeatureDFdtauIsZero(
                           << std::endl;
                 std::cout << "[verify] E = " << E_local.norm() << std::endl;
                 std::cout << "[verify] D_nu = " << part2_2.norm() << std::endl;
-                std::cout << "[verify] D_nu.T * W2TW2 legacy = " << part1.norm()
+                std::cout << "[verify] D_nu.T * W2 legacy = " << part1.norm()
                           << std::endl;
-                // std::cout << "[verify] D_nu.T * W2TW2 new = " << (part2_2.transpose() * ).norm() << std::endl;
-                std::cout << "[verify] W2TW2 = "
-                          << (vel_weight.transpose() * vel_weight).norm()
-                          << std::endl;
+                // std::cout << "[verify] D_nu.T * W2 new = " << (part2_2.transpose() * ).norm() << std::endl;
+                std::cout << "[verify] W2 = " << vel_weight.norm() << std::endl;
 
                 exit(0);
             }
@@ -1994,7 +1975,7 @@ void btGenFeatureArray::DebugPosFeatureDFdtauIsZero(
 
     // 4. begin to form the dFdtau convert matrices
     tMatrixXd part1 = M_tau_to_q.transpose() * M_q_to_feature.transpose() *
-                      pos_weight.transpose() * pos_weight,
+                      pos_weight,
               part21 = M_q_to_feature * M_tau_to_q,
               part22 = M_q_to_feature * M_contact_to_q;
     tVectorXd part3 = M_q_to_feature * R_force_to_q + R_q_to_feature -
@@ -2139,13 +2120,13 @@ void btGenFeatureArray::DebugFullMinimiumIsTheSameAsTheRefTraj(
 
     tMatrixXd accel_weight = accel_feature->mWeight.asDiagonal();
 
-    tMatrixXd A = S.transpose() * accel_weight.transpose() * accel_weight * S;
-    tVectorXd res = S.transpose() * accel_weight.transpose() * accel_weight *
-                    (R - accel_feature->mRefFeature);
+    tMatrixXd A = S.transpose() * accel_weight * S;
+    tVectorXd res =
+        S.transpose() * accel_weight * (R - accel_feature->mRefFeature);
 
     // std::cout << "part1 = \n" << part1 << std::endl;
     // std::cout << "part1 inv = \n" << part1.inverse() << std::endl;
-    // tMatrixXd part2 = S.transpose() * accel_weight.transpose() * accel_weight;
+    // tMatrixXd part2 = S.transpose() * accel_weight;
     // tVectorXd X = part1.inverse() * part2 * (accel_feature->mRefFeature - R);
     Eigen::FullPivLU<tMatrixXd> lu(A);
     tVectorXd X_new = lu.solve(-res);
@@ -2244,8 +2225,7 @@ double btGenFeatureArray::CalcAccelFeatureEnergy(const tVectorXd &control_force,
 
     const tVectorXd &accel_diff = accel_now - mFeatureArrays[2]->mRefFeature;
     const tMatrixXd &weight = mFeatureArrays[2]->mWeight.asDiagonal();
-    tVectorXd energy =
-        (accel_diff.transpose() * 2 * weight.transpose() * weight * accel_diff);
+    tVectorXd energy = (accel_diff.transpose() * weight * accel_diff);
 
     // std::cout << "[calcE] accel weight = " << weight.transpose() << std::endl;
     // std::cout << "[calcE] accel target = " << accel_diff.transpose() << std::endl;
@@ -2272,12 +2252,9 @@ void btGenFeatureArray::EvalHEfForOnlyAccelJointFeature(const tMatrixXd &res_H,
     const tVectorXd &QG_Cqdot = mModel->CalcGenGravity(mGravity) -
                                 mModel->GetCoriolisMatrix() * mModel->Getqdot();
     const tVectorXd &ref_feature = mFeatureArrays[2]->mRefFeature;
-    tMatrixXd F = mN.transpose() * Minv.transpose() * 2 *
-                  accel_weight.transpose() * accel_weight * Minv;
-    tMatrixXd E = mN.transpose() * Minv.transpose() * 2 *
-                  accel_weight.transpose() * accel_weight * Minv * mN;
-    tVectorXd f = -mN.transpose() * Minv.transpose() * 2 *
-                  accel_weight.transpose() * accel_weight *
+    tMatrixXd F = mN.transpose() * Minv.transpose() * accel_weight * Minv;
+    tMatrixXd E = mN.transpose() * Minv.transpose() * accel_weight * Minv * mN;
+    tVectorXd f = -mN.transpose() * Minv.transpose() * accel_weight *
                   (Minv * QG_Cqdot - ref_feature);
     tMatrixXd H = -E.inverse() * F;
     // begin to compare
