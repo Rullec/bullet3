@@ -22,7 +22,12 @@ public:
         PenaltyMode,
         SequentialImpulseMode
     };
-
+    enum eIntegrationScheme
+    {
+        INVALID_SCHEME = 0,
+        SEMI_IMPLICIT, // v_{t+1} = v_t + dt * a_t;  x_{t+1} = x_t + dt * v_{t+1}
+        INVERSE_SEMI_IMPLICIT, // x_{t+1} = x_t + dt * v_t; v_{t+1} = v_t + dt * a_t
+    };
     // struct tParams
     // {
     // 	tParams();
@@ -68,6 +73,7 @@ public:
     btDefaultCollisionConfiguration *GetConfiguration();
     eContactResponseMode GetContactResponseMode() const;
     void SetEnableContacrAwareControl();
+    eIntegrationScheme GetIntegrationScheme() const;
 
 protected:
     btDiscreteDynamicsWorld *mInternalWorld;
@@ -77,6 +83,7 @@ protected:
     std::vector<btGenRigidBody *> mSimObjs;
     cRobotModelDynamics *mMultibody;
     btTraj *mGuideTraj;
+    eIntegrationScheme mIntegrationScheme; // the option of integration scheme
     // btGenPDController* mPDController;
     double mTime;
     int mFrameId;
@@ -152,10 +159,9 @@ protected:
     // tVectorXd DebugConvertCartesianContactForceToGenForce(
     //     const tVectorXd &new_q, const std::vector<btGenMBContactForce *> &fs);
     // tVectorXd DebugGetGenControlForce(int ref_frameid);
-    void Update(double dt);
-    // void UpdateTransform(double dt);
+    void UpdateSemiImplicit(double dt);
+    void UpdateTransform(double dt);
     void UpdateVelocityInternal(double dt);
-    void UpdateVelocityInternalWithoutCoriolis(double dt);
     void PostUpdate(double dt);
 
     // sim record
@@ -174,6 +180,7 @@ protected:
     tEigenArr<tFrameInfo> mFrameInfo;
     void CollectFrameInfo(double dt);
     void WriteFrameInfo(const std::string &path);
+    static eIntegrationScheme BuildIntegrationScheme(const std::string &type);
     // void InitGuideTraj();
     // void ApplyGuideAction();
     // void CheckGuideTraj();

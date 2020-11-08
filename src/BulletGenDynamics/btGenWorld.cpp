@@ -34,6 +34,7 @@ btGeneralizeWorld::btGeneralizeWorld()
     mGround = nullptr;
     mGuideTraj = nullptr;
     mFrameId = 0;
+    mIntegrationScheme = eIntegrationScheme::INVALID_SCHEME;
 }
 
 btGeneralizeWorld::~btGeneralizeWorld()
@@ -169,13 +170,16 @@ void btGeneralizeWorld::Init(const std::string &config_path)
             // mMBUpdateVelWithoutCoriolis =
             // btJsonUtil::ParseAsDouble("mb_update_velocity_without_coriolis",
             // config_js);
-            mEnablePeturb =
-                btJsonUtil::ParseAsDouble("enable_perturb", config_js);
+            mIntegrationScheme = btGeneralizeWorld::BuildIntegrationScheme(
+                btJsonUtil::ParseAsString("integration_scheme", config_js));
+
+            btJsonUtil::ParseAsDouble("enable_perturb", config_js);
             // mEnablePDControl = btJsonUtil::ParseAsBool("enable_pd_control",
             // config_js); mPDControllerPath =
             // btJsonUtil::ParseAsString("controller_path", config_js);
             mLCPConfigPath =
                 btJsonUtil::ParseAsString("lcp_config_path", config_js);
+
             mDebugThreeContactForces = btJsonUtil::ParseAsBool(
                 "debug_three_contact_forces", config_js);
         }
@@ -241,7 +245,7 @@ void btGeneralizeWorld::AddGround(double height)
     // }
 }
 
-const btCollisionObject *btGeneralizeWorld ::GetGround() const
+const btCollisionObject *btGeneralizeWorld::GetGround() const
 {
     return this->mGround;
 }
@@ -332,38 +336,6 @@ void btGeneralizeWorld::AddMultibody(const std::string &skeleton_name)
     if (mMultibody != nullptr)
         delete mMultibody;
 
-    // const std::string prefix = "../DeepMimic/data/0424/characters/";
-    // std::string skeleton_name = prefix;
-    // switch (num)
-    // {
-    // 	case 0:
-    // 		skeleton_name += "skeleton_box.json";
-    // 		break;
-    // 	case 1:
-    // 		skeleton_name += "skeleton_042302_revised_0_obj.json";
-    // 		break;
-    // 	case 2:
-    // 		skeleton_name += "skeleton_042302_revised_1_obj.json";
-    // 		break;
-    // 	case 3:
-    // 		skeleton_name += "skeleton_042302_revised_2_obj.json";
-    // 		break;
-    // 	case 4:
-    // 		skeleton_name += "skeleton_042302_revised_leftleg.json";
-    // 		break;
-    // 	case 5:
-    // 		skeleton_name += "skeleton_042302_4_links.json";
-    // 		break;
-    // 	case 8:
-    // 		skeleton_name += "skeleton_042302_revised_legs.json";
-    // 		break;
-    // 	case 20:
-    // 		skeleton_name += "skeleton_042302_revised.json";
-    // 		break;
-    // 	default:
-    // 		skeleton_name += "skeleton_sphere.json";
-    // 		break;
-    // }
     mMultibody = new cRobotModelDynamics();
     mMultibody->Init(skeleton_name.c_str(), mMBScale, ModelType::JSON);
     mMultibody->SetComputeSecondDerive(true);
@@ -399,10 +371,6 @@ void btGeneralizeWorld::AddMultibody(cRobotModelDynamics *model)
     if (mMultibody == nullptr)
         delete mMultibody;
     mMultibody = model;
-    // mMultibody->SetComputeSecondDerive(true);
-    // mMultibody->SetDampingCoeff(mMBDamping1, mMBDamping2);
-    // mMultibody->SetAngleClamp(mMBEAngleClamp);
-    // mMultibody->SetMaxVel(mMBMaxVel);
 }
 
 cRobotModelDynamics *btGeneralizeWorld::GetMultibody() { return mMultibody; }
@@ -433,15 +401,80 @@ void btGeneralizeWorld::StepSimulation(double dt)
     }
     else
     {
-        ApplyGravity();
-        CollisionDetect();
-        UpdateController(dt);
-        // ApplyGuideAction();
-        CollisionResponse(dt);
-        // CheckGuideTraj();
+        /*
+            semi implicit: 
 
-        Update(dt);
-        PostUpdate(dt);
+                1. calc accel in current x_t and v_t
+                2. update v_{t+1} = v_t + dt * a_t
+                3. update x_{t+1} = x_t + dt * v_{t+1}
+        */
+        if (mIntegrationScheme == eIntegrationScheme::SEMI_IMPLICIT)
+        {
+            ApplyGravity();
+            CollisionDetect();
+            UpdateController(dt);
+            // ApplyGuideAction();
+            CollisionResponse(dt);
+            // CheckGuideTraj();
+
+            UpdateSemiImplicit(dt);
+            PostUpdate(dt);
+        }
+        else if (mIntegrationScheme ==
+                 eIntegrationScheme::INVERSE_SEMI_IMPLICIT)
+        {
+            /*
+            inverse semi implicit: 
+
+                1. update x_{t+1} = x_t + dt * v_t
+                2. calc accel in current x_{t+1} and v_t, a_t = a_t(x_{t+1}, v_t)
+                3. update v_{t+1} = v_t + dt * a_t
+            */
+            // 1. update transform
+            UpdateTransform(dt);
+
+            // 2. apply gravity, collision detect
+            ApplyGravity();
+            CollisionDetect();
+
+            // 3. update controller, do collision response
+            UpdateController(dt);
+            CollisionResponse(dt);
+
+            // 4. update velocity
+            {
+                // 4.1 rigid bodies
+                for (auto &obj : mSimObjs)
+                {
+                    obj->UpdateVelocity(dt);
+                    obj->WriteTransAndVelToBullet();
+                }
+                // 4.2 multibody
+                if (mMultibody)
+                {
+                    if (mMBEnableContactAwareLCP == false)
+                    {
+                        mMultibody->UpdateVelocity(dt, false);
+                    }
+                    else
+                    {
+                        // only update velocity in the controller, then do some double-check work
+                        mMultibody->GetContactAwareController()
+                            ->UpdateMultibodyInverseSemiImplicit(dt);
+                    }
+                    if (mMultibody->IsGeneralizedMaxVel())
+                    {
+                        std::cout << "[warn] multibody exceed max vel = "
+                                  << mMultibody->Getqdot().cwiseAbs().maxCoeff()
+                                  << std::endl;
+                        // if (mEnablePauseWhenMaxVel) gPauseSimulation = true;
+                        // exit(0);
+                    }
+                }
+            }
+            // 5. post update
+            PostUpdate(dt);
+        }
     }
 
     mFrameId++;
@@ -971,18 +1004,24 @@ void btGeneralizeWorld::CollisionResponseLCP(double dt)
 
 void btGeneralizeWorld::CollisionResposeSI(double dt) {}
 
-// 4. update transform, semi-implicit
-// void btGeneralizeWorld::UpdateTransform(double dt)
-// {
-// 	for (auto& obj : mSimObjs)
-// 	{
-// 		obj->UpdateTransform(dt);
-// 		obj->WriteTransAndVelToBullet();
-// 	}
+/**
+ * \brief           Update the transform (0 order info) in simulation env by current vel
+*/
+void btGeneralizeWorld::UpdateTransform(double dt)
+{
+    for (auto &obj : mSimObjs)
+    {
+        obj->UpdateTransform(dt);
+        obj->WriteTransAndVelToBullet();
+    }
 
-// 	if (mMultibody) mMultibody->UpdateTransform(dt);
-// }
+    if (mMultibody)
+        mMultibody->UpdateTransform(dt);
+}
 
+/**
+ * \brief           Update the velocity of each object by current force (accel)
+*/
 void btGeneralizeWorld::UpdateVelocityInternal(double dt)
 {
     for (auto &obj : mSimObjs)
@@ -993,17 +1032,13 @@ void btGeneralizeWorld::UpdateVelocityInternal(double dt)
     }
 }
 
-void btGeneralizeWorld::UpdateVelocityInternalWithoutCoriolis(double dt)
-{
-    for (auto &obj : mSimObjs)
-        obj->UpdateVelocity(dt);
-    if (mMultibody)
-    {
-        mMultibody->UpdateVelocityWithoutCoriolis(dt);
-    }
-}
-
-void btGeneralizeWorld::Update(double dt)
+/**
+ * \brief           Update rigid & multibodies' trans and vel by current force (accel)
+ * 1. a_t = a_t(f_t, \tau_t)
+ * 2. v_{t+1} = v_t + dt * a_t
+ * 3. x_{t+1} = x_t + dt * v_{t+1}
+*/
+void btGeneralizeWorld::UpdateSemiImplicit(double dt)
 {
     // all forces has been recorded now
     if (mMBEnableCollectFrameInfo)
@@ -1028,56 +1063,14 @@ void btGeneralizeWorld::Update(double dt)
     // for multibody
     if (mMultibody)
     {
-        // if (mMBEnableRk4)
-        // {
-        // 	mMultibody->UpdateRK4(dt);
-        // }
-        // else
-        // {
-        // 	// std::cout << "[bt] old q = " <<
-        // mMultibody->Getq().transpose() << std::endl;
-        // 	// std::cout << "[bt] old qdot = " <<
-        // mMultibody->Getqdot().transpose() << std::endl;
-
-        // 	// std::cout << "[bt] new q = " <<
-        // mMultibody->Getq().transpose() << std::endl;
-        // 	// std::cout << "[bt] new qdot = " <<
-        // mMultibody->Getqdot().transpose() << std::endl;
-        // }
-        // std::cout << "[preupdate] q = " << mMultibody->Getq().transpose() <<
-        // std::endl; std::cout << "[preupdate] qdot = " <<
-        // mMultibody->Getqdot().transpose() << std::endl; std::cout <<
-        // "[preupdate] gen force = " <<
-        // mMultibody->GetGeneralizedForce().transpose() << std::endl; std::cout
-        // << "[preupdate] qddot = " << mMultibody->Getqddot().transpose() <<
-        // std::endl; std::cout << "[preupdate] M = " <<
-        // mMultibody->GetMassMatrix() << std::endl; std::cout << "[preupdate] C
-        // = " << mMultibody->GetCoriolisMatrix() << std::endl;
-        // {
-        // 	std::cout << "two time update\n";
-        // 	if (mMBEnableContactAwareLCP == false)
-        // 	{
-        // 		mMultibody->UpdateVelocity(dt);
-        // 	}
-        // 	else
-        // 	{
-        // 		mMultibody->GetContactAwareController()->UpdateMultibodyVelocityDebug(dt);
-        // 	}
-        // 	mMultibody->UpdateTransform(dt);
-        // }
-
+        if (mMBEnableContactAwareLCP == false)
         {
-            // std::cout << "one time update\n";
-            if (mMBEnableContactAwareLCP == false)
-            {
-                mMultibody->UpdateVelocityAndTransform(dt);
-            }
-            else
-            {
-                mMultibody->GetContactAwareController()
-                    ->UpdateMultibodyVelocityAndTransformDebug(dt);
-            }
-            // mMultibody->UpdateTransform(dt);
+            mMultibody->UpdateVelocityAndTransform(dt);
+        }
+        else
+        {
+            mMultibody->GetContactAwareController()
+                ->UpdateMultibodySemiImplicit(dt);
         }
 
         if (mMultibody->IsGeneralizedMaxVel())
@@ -1524,3 +1517,28 @@ void btGeneralizeWorld::SetEnableContacrAwareControl()
 // 		}
 // 	}
 // }
+
+btGeneralizeWorld::eIntegrationScheme
+btGeneralizeWorld::GetIntegrationScheme() const
+{
+    return this->mIntegrationScheme;
+}
+
+btGeneralizeWorld::eIntegrationScheme
+btGeneralizeWorld::BuildIntegrationScheme(const std::string &type)
+{
+    if (type == "semi_implicit")
+    {
+        return eIntegrationScheme::SEMI_IMPLICIT;
+    }
+    else if (type == "inverse_semi_implicit")
+    {
+        return eIntegrationScheme::INVERSE_SEMI_IMPLICIT;
+    }
+    else
+    {
+        printf("[error] Unrecognized integraion scheme %s\n", type.c_str());
+        exit(0);
+    }
+    return btGeneralizeWorld::eIntegrationScheme::INVALID_SCHEME;
+}

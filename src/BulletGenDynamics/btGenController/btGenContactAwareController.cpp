@@ -536,82 +536,25 @@ void btGenContactAwareController::ReadConfig(const std::string &config)
 
 //     mModel->UpdateVelocity(dt, false);
 // }
+
 /**
- * \brief					Update the multibody velocity,
- * used in debug mode
- */
-void btGenContactAwareController::UpdateMultibodyVelocityAndTransformDebug(
-    double dt)
+ * \brief           Update the multibody info in INVERSE semi-implicit scheme (which means only update velocity and do syncronization here)
+*/
+void btGenContactAwareController::UpdateMultibodyInverseSemiImplicit(double dt)
 {
-    tVectorXd qddot = mModel->Getqddot();
+    mModel->UpdateVelocity(dt);
+    CheckTheDiff(false);
+    CheckAndSyncCharByRefTraj();
+}
+
+/**
+ * \brief					Update the multibody in semi implicit scheme
+ */
+void btGenContactAwareController::UpdateMultibodySemiImplicit(double dt)
+{
     mModel->UpdateVelocityAndTransform(dt);
-    tVectorXd q = mModel->Getq(), qdot = mModel->Getqdot();
-    if (mOutputControlDiff == true)
-    {
-        // std::ofstream fout(mOutputControlDiffFile, std::ios::app);
-        // fout << "[ref] qddot diff = " << (cur_qddot -
-        // ref_qddot).transpose()
-        // << std::endl; fout.close(); std::cout << "[ref] qddot = " <<
-        // ref_qddot.transpose() << std::endl; std::cout << "[true] qddot = "
-        // <<
-        // cur_qddot.transpose() << std::endl;
-
-        const tVectorXd &ref_traj_q = mRefTraj->mq[mRefFrameId],
-                        ref_traj_qdot = mRefTraj->mqdot[mRefFrameId],
-                        ref_traj_qddot = mRefTraj->mqddot[mRefFrameId - 1];
-        // std::ofstream fout(debug_path, std::ios::app);
-        // fout << "[numeric] ref q = " << ref_traj_q.transpose() << std::endl;
-        // fout << "[numeric] ref qdot = " << ref_traj_qdot.transpose()
-        //      << std::endl;
-        // fout << "[numeric] ref qddot = " << ref_traj_qddot.transpose()
-        //      << std::endl;
-        // fout << "[numeric] ctrl_res q = " << q.transpose() << std::endl;
-        // fout << "[numeric] ctrl_res qdot = " << qdot.transpose() << std::endl;
-        // fout << "[numeric] ctrl_res qddot = " << qddot.transpose() << std::endl;
-
-        {
-            tVectorXd q_diff = q - ref_traj_q, qdot_diff = qdot - ref_traj_qdot,
-                      qddot_diff = qddot - ref_traj_qddot;
-
-            // std::cout << "[debug] ctrl_res and ref_traj q diff "
-            //           << q_diff.norm() << " qdot diff " << qdot_diff.norm()
-            //           << " qddot diff = " << qddot_diff.norm() << " "
-            //           << "total err" << std::endl;
-        }
-
-        {
-            tVectorXd q_diff = q - mTargetPos, qdot_diff = qdot - mTargetVel,
-                      qddot_diff = qddot - mTargetAccel;
-
-            // std::cout << "[debug] ctrl_res and target_traj q diff "
-            //           << q_diff.norm() << " qdot diff " << qdot_diff.norm()
-            //           << " qddot diff = " << qddot_diff.norm() << " "
-            //           << "ca err" << std::endl;
-        }
-
-        {
-            tVectorXd q_diff = ref_traj_q - mTargetPos,
-                      qdot_diff = ref_traj_qdot - mTargetVel,
-                      qddot_diff = ref_traj_qddot - mTargetAccel;
-
-            // std::cout << "[debug] ref_traj and target_traj q diff "
-            //           << q_diff.norm() << " qdot diff " << qdot_diff.norm()
-            //           << " qddot diff = " << qddot_diff.norm() << " "
-            //           << "FBF err" << std::endl;
-        }
-    }
-    // std::cout << "mEnable sync traj per = " << mEnableSyncTrajPeriodly
-    //           << ", internal frame id " << mInternalFrameId
-    //           << ", sync period = " << mSyncTrajPeriod << std::endl;
-
-    if (mEnableSyncTrajPeriodly == true && mRefFrameId % mSyncTrajPeriod == 0)
-    {
-        std::cout << "[sync] ref frame " << mRefFrameId << ", sync traj period "
-                  << mSyncTrajPeriod << std::endl;
-
-        mModel->SetqAndqdot(mRefTraj->mq[mRefFrameId],
-                            mRefTraj->mqdot[mRefFrameId]);
-    }
+    CheckTheDiff(false);
+    CheckAndSyncCharByRefTraj();
 }
 
 /**
@@ -1108,4 +1051,82 @@ btGenTargetCalculator *btGenContactAwareController::CreateTargetCalculator(
 std::string btGenContactAwareController::GetSupposedContactInfo()
 {
     return this->mMigratecontactInfoPath;
+}
+
+/**
+ * \brief       check the different between model and ref traj
+*/
+void btGenContactAwareController::CheckTheDiff(bool output/* = false*/)
+{
+    tVectorXd qddot = mModel->Getqddot();
+    tVectorXd q = mModel->Getq(), qdot = mModel->Getqdot();
+    if (mOutputControlDiff == true)
+    {
+        // std::ofstream fout(mOutputControlDiffFile, std::ios::app);
+        // fout << "[ref] qddot diff = " << (cur_qddot -
+        // ref_qddot).transpose()
+        // << std::endl; fout.close(); std::cout << "[ref] qddot = " <<
+        // ref_qddot.transpose() << std::endl; std::cout << "[true] qddot = "
+        // <<
+        // cur_qddot.transpose() << std::endl;
+
+        const tVectorXd &ref_traj_q = mRefTraj->mq[mRefFrameId],
+                        ref_traj_qdot = mRefTraj->mqdot[mRefFrameId],
+                        ref_traj_qddot = mRefTraj->mqddot[mRefFrameId - 1];
+        // std::ofstream fout(debug_path, std::ios::app);
+        // fout << "[numeric] ref q = " << ref_traj_q.transpose() << std::endl;
+        // fout << "[numeric] ref qdot = " << ref_traj_qdot.transpose()
+        //      << std::endl;
+        // fout << "[numeric] ref qddot = " << ref_traj_qddot.transpose()
+        //      << std::endl;
+        // fout << "[numeric] ctrl_res q = " << q.transpose() << std::endl;
+        // fout << "[numeric] ctrl_res qdot = " << qdot.transpose() << std::endl;
+        // fout << "[numeric] ctrl_res qddot = " << qddot.transpose() << std::endl;
+
+        {
+            tVectorXd q_diff = q - ref_traj_q, qdot_diff = qdot - ref_traj_qdot,
+                      qddot_diff = qddot - ref_traj_qddot;
+
+            // std::cout << "[debug] ctrl_res and ref_traj q diff "
+            //           << q_diff.norm() << " qdot diff " << qdot_diff.norm()
+            //           << " qddot diff = " << qddot_diff.norm() << " "
+            //           << "total err" << std::endl;
+        }
+
+        {
+            tVectorXd q_diff = q - mTargetPos, qdot_diff = qdot - mTargetVel,
+                      qddot_diff = qddot - mTargetAccel;
+
+            // std::cout << "[debug] ctrl_res and target_traj q diff "
+            //           << q_diff.norm() << " qdot diff " << qdot_diff.norm()
+            //           << " qddot diff = " << qddot_diff.norm() << " "
+            //           << "ca err" << std::endl;
+        }
+
+        {
+            tVectorXd q_diff = ref_traj_q - mTargetPos,
+                      qdot_diff = ref_traj_qdot - mTargetVel,
+                      qddot_diff = ref_traj_qddot - mTargetAccel;
+
+            // std::cout << "[debug] ref_traj and target_traj q diff "
+            //           << q_diff.norm() << " qdot diff " << qdot_diff.norm()
+            //           << " qddot diff = " << qddot_diff.norm() << " "
+            //           << "FBF err" << std::endl;
+        }
+    }
+}
+
+/**
+ * \brief           Check the ref frame id and the synchronization frequency
+*/
+void btGenContactAwareController::CheckAndSyncCharByRefTraj()
+{
+    if (mEnableSyncTrajPeriodly == true && mRefFrameId % mSyncTrajPeriod == 0)
+    {
+        std::cout << "[sync] ref frame " << mRefFrameId << ", sync traj period "
+                  << mSyncTrajPeriod << std::endl;
+
+        mModel->SetqAndqdot(mRefTraj->mq[mRefFrameId],
+                            mRefTraj->mqdot[mRefFrameId]);
+    }
 }

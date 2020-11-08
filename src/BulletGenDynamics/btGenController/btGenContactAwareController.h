@@ -40,8 +40,8 @@ public:
                  const std::string &mOutputTraj, bool enable_output = false);
     const btTraj *GetRefTraj() const;
     void Update(double dt);
-    void UpdateMultibodyVelocityDebug(double dt);
-    void UpdateMultibodyVelocityAndTransformDebug(double dt);
+    void UpdateMultibodyInverseSemiImplicit(double dt);
+    void UpdateMultibodySemiImplicit(double dt);
     tVectorXd CalcControlForce(const tVectorXd &Q_contact, bool verbose = true);
     tVectorXd GetPrevControlForce();
     tVectorXd CalcLCPResidual(double dt) const;
@@ -141,4 +141,6 @@ protected:
     void DrawContactPoints();
     void DrawRefTrajContactPoints();
     void DrawPoint(const tVector3d &pos, double r = 0.05);
+    void CheckTheDiff(bool output = false);
+    void CheckAndSyncCharByRefTraj();
 };
