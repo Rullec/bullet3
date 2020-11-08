@@ -1,6 +1,6 @@
 {
     "feature_vector_file_full": "./examples/CustomEngine/ctrl_configs/features/pos_feature_full.json",
-    "feature_vector_file": "examples/CustomEngine/ctrl_configs/features/legs/accel_feature_legs.json",
+    "feature_vector_file": "examples/CustomEngine/ctrl_configs/features/legs/angle_accel_feature_legs.json",
     "feature_vector_file_oneleg": "examples/CustomEngine/ctrl_configs/features/oneleg/angle_accel.json",
     "feature_vector_file_3links": "examples/CustomEngine/ctrl_configs/features/3links_robot/accel.json",
     "feature_vector_file_legs": "examples/CustomEngine/ctrl_configs/features/2links/accel.json",
