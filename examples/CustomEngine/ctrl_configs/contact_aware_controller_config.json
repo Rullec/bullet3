@@ -6,7 +6,7 @@
     "feature_vector_file_legs": "examples/CustomEngine/ctrl_configs/features/2links/accel.json",
     "feature_vector_file_box": "examples/CustomEngine/ctrl_configs/features/box/accel.json",
     "resolve_control_tau": false,
-    "draw_reference_traj_character": false,
+    "draw_reference_traj_character": true,
     "draw_target_FBF_character": false,
     "max_frame": 2000,
     "start_frame": 1,
