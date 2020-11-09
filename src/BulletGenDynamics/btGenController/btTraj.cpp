@@ -221,7 +221,7 @@ btTraj::~btTraj()
 }
 #include <algorithm>
 bool btTraj::LoadTraj(const std::string &path, cRobotModelDynamics *model,
-                      int max_frame /* = -1*/)
+                      std::string target_scheme, int max_frame /* = -1*/)
 {
     mTrajPath = path;
     model->PushState("load_traj");
@@ -246,6 +246,14 @@ bool btTraj::LoadTraj(const std::string &path, cRobotModelDynamics *model,
         exit(0);
     }
 
+    mIntegrationScheme = btJsonUtil::ParseAsString("integration_scheme", root);
+    if (mIntegrationScheme != target_scheme)
+    {
+        printf("[error] LoadTraj loaded scheme %s != current simulation scheme "
+               "%s\n",
+               mIntegrationScheme.c_str(), target_scheme.c_str());
+        exit(1);
+    }
     Json::Value data_lst = btJsonUtil::ParseAsValue("list", root);
     mNumOfFrames = data_lst.size();
     if (max_frame != -1)
@@ -382,7 +390,7 @@ bool btTraj::LoadTraj(const std::string &path, cRobotModelDynamics *model,
                       << offset << std::endl;
         }
     }
-    // calcualte qdot and qddot
+    // calcualte qdot and qddot: default semi implicit, but sometimes this will be the inverse semi implicit, we needs to change it
 
     for (int frame_id = 1; frame_id < mNumOfFrames; frame_id++)
         mqdot[frame_id] = (mq[frame_id] - mq[frame_id - 1]) / mTimestep;
@@ -423,6 +431,7 @@ bool btTraj::SaveTraj(const std::string &path, cRobotModelDynamics *model)
     Json::Value root;
     root["version"] = 2;
     root["list"] = Json::arrayValue;
+    root["integration_scheme"] = mIntegrationScheme;
 
     for (int i = 0; i < mNumOfFrames; i++)
     {

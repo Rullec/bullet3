@@ -246,7 +246,10 @@ void btGenContactAwareController::LoadTraj(const std::string &path)
         std::cout << "controller LoadTraj but mModel is empty\n";
         exit(0);
     }
-    mRefTraj->LoadTraj(path, mModel, mMaxFrame);
+    mRefTraj->LoadTraj(path, mModel,
+                       btGeneralizeWorld::GetIntegrationSchemeStr(
+                           mWorld->GetIntegrationScheme()),
+                       mMaxFrame);
     // resolve the active force
     if (mResolveControlToruqe)
         ResolveActiveForce();
@@ -255,7 +258,10 @@ void btGenContactAwareController::LoadTraj(const std::string &path)
         btTrajContactMigrator::MigrateTrajContactByGivenInfo(
             mModel, mRefTraj, mMigratecontactInfoPath);
     // load the saved traj in order to shape that
-    mOutputTraj->LoadTraj(path, mModel, mMaxFrame);
+    mOutputTraj->LoadTraj(path, mModel,
+                          btGeneralizeWorld::GetIntegrationSchemeStr(
+                              mWorld->GetIntegrationScheme()),
+                          mMaxFrame);
     mOutputTraj->Reshape(std::min(mMaxFrame, mRefTraj->mNumOfFrames));
 }
 
@@ -742,6 +748,9 @@ void btGenContactAwareController::Reset()
     {
         std::cout << "[controller] Save traj v2 to " << mOutputTrajPath
                   << std::endl;
+        mOutputTraj->mIntegrationScheme =
+            btGeneralizeWorld::GetIntegrationSchemeStr(
+                mWorld->GetIntegrationScheme());
         mOutputTraj->SaveTraj(mOutputTrajPath, mModel);
     }
     else

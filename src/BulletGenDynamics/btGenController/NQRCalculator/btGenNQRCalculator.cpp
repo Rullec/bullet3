@@ -130,6 +130,9 @@ void btGenNQRCalculator::CalcTarget(double dt, int target_frame_id,
         //           << std::endl;
     }
     mModel->PopState("apply_target_try");
+
+    printf("[warn] NQR calculator is disable, we fetch to goal target from the "
+           "MOCAP directly\n");
 }
 int btGenNQRCalculator::GetCalculatedNumOfContact() const { return -1; }
 void btGenNQRCalculator::ControlByAdaptionController()

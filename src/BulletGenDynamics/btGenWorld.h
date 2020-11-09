@@ -74,6 +74,7 @@ public:
     eContactResponseMode GetContactResponseMode() const;
     void SetEnableContacrAwareControl();
     eIntegrationScheme GetIntegrationScheme() const;
+    static std::string GetIntegrationSchemeStr(eIntegrationScheme);
 
 protected:
     btDiscreteDynamicsWorld *mInternalWorld;

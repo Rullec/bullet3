@@ -1542,3 +1542,25 @@ btGeneralizeWorld::BuildIntegrationScheme(const std::string &type)
     }
     return btGeneralizeWorld::eIntegrationScheme::INVALID_SCHEME;
 }
+
+std::string btGeneralizeWorld::GetIntegrationSchemeStr(
+    btGeneralizeWorld::eIntegrationScheme scheme)
+{
+    std::string str = "";
+    switch (scheme)
+    {
+    case btGeneralizeWorld::eIntegrationScheme::SEMI_IMPLICIT:
+        str = "semi_implicit";
+        break;
+    case btGeneralizeWorld::eIntegrationScheme::INVERSE_SEMI_IMPLICIT:
+        str = "inverse_semi_implicit";
+        break;
+
+    default:
+        printf("[error] GetIntegrationSchemeStr invalid scheme %d",
+               static_cast<int>(scheme));
+        exit(0);
+        break;
+    }
+    return str;
+}

@@ -9,7 +9,7 @@ struct btTraj
     btTraj();
     ~btTraj();
     bool LoadTraj(const std::string &path, cRobotModelDynamics *model,
-                  int max_frame = -1);
+                  std::string check_integration_scheme, int max_frame = -1);
     bool SaveTraj(const std::string &path, cRobotModelDynamics *model);
     void Reshape(int num_of_frame_new);
     double GetTimeLength() const;
@@ -23,6 +23,7 @@ struct btTraj
     tVectorXd GetGenControlForce(int frame_id, cRobotModelDynamics *model);
     std::string GetLoadPath() const;
     std::string GetOutputPath() const;
+    std::string mIntegrationScheme;
     int mNumOfFrames;
     tEigenArr<tVectorXd> mq, mqdot, mqddot;
     tEigenArr<tVectorXd> mTruthJointForceVec;
