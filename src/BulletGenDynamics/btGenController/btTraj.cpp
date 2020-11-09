@@ -395,7 +395,7 @@ bool btTraj::LoadTraj(const std::string &path, cRobotModelDynamics *model,
     {
         CalcVelAccelSemiImplicit();
     }
-    else if (target_scheme == "inv_semi_implicit")
+    else if (target_scheme == "inverse_semi_implicit")
     {
         CalcVelAccelInvSemiImplicit();
     }

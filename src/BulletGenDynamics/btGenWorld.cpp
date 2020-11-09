@@ -401,80 +401,81 @@ void btGeneralizeWorld::StepSimulation(double dt)
     }
     else
     {
+        // /*
+        //     semi implicit:
+
+        //         1. calc accel in current x_t and v_t
+        //         2. update v_{t+1} = v_t + dt * a_t
+        //         3. update x_{t+1} = x_t + dt * v_{t+1}
+        // */
+        // if (mIntegrationScheme == eIntegrationScheme::SEMI_IMPLICIT)
+        // {
+        //     ApplyGravity();
+        //     CollisionDetect();
+        //     UpdateController(dt);
+        //     // ApplyGuideAction();
+        //     CollisionResponse(dt);
+        //     // CheckGuideTraj();
+
+        //     UpdateSemiImplicit(dt);
+        //     PostUpdate(dt);
+        // }
+        // else if (mIntegrationScheme ==
+        //          eIntegrationScheme::INVERSE_SEMI_IMPLICIT)
+        // {
+
+        // }
         /*
-            semi implicit: 
-
-                1. calc accel in current x_t and v_t
-                2. update v_{t+1} = v_t + dt * a_t
-                3. update x_{t+1} = x_t + dt * v_{t+1}
-        */
-        if (mIntegrationScheme == eIntegrationScheme::SEMI_IMPLICIT)
-        {
-            ApplyGravity();
-            CollisionDetect();
-            UpdateController(dt);
-            // ApplyGuideAction();
-            CollisionResponse(dt);
-            // CheckGuideTraj();
-
-            UpdateSemiImplicit(dt);
-            PostUpdate(dt);
-        }
-        else if (mIntegrationScheme ==
-                 eIntegrationScheme::INVERSE_SEMI_IMPLICIT)
-        {
-            /*
             inverse semi implicit: 
 
                 1. update x_{t+1} = x_t + dt * v_t
                 2. calc accel in current x_{t+1} and v_t, a_t = a_t(x_{t+1}, v_t)
                 3. update v_{t+1} = v_t + dt * a_t
             */
-            // 1. update transform
-            UpdateTransform(dt);
+        // 1. update transform
+        UpdateTransform(dt);
 
-            // 2. apply gravity, collision detect
-            ApplyGravity();
-            CollisionDetect();
+        // 2. apply gravity, collision detect
+        ApplyGravity();
+        CollisionDetect();
 
-            // 3. update controller, do collision response
-            UpdateController(dt);
-            CollisionResponse(dt);
+        // 3. update controller, do collision response
+        UpdateController(dt);
+        CollisionResponse(dt);
 
-            // 4. update velocity
+        // 4. update velocity
+        {
+            // 4.1 rigid bodies
+            for (auto &obj : mSimObjs)
             {
-                // 4.1 rigid bodies
-                for (auto &obj : mSimObjs)
+                obj->UpdateVelocity(dt);
+                obj->WriteTransAndVelToBullet();
+            }
+            // 4.2 multibody
+            if (mMultibody)
+            {
+                if (mMBEnableContactAwareLCP == false)
                 {
-                    obj->UpdateVelocity(dt);
-                    obj->WriteTransAndVelToBullet();
+                    mMultibody->UpdateVelocity(dt, false);
                 }
-                // 4.2 multibody
-                if (mMultibody)
+                else
                 {
-                    if (mMBEnableContactAwareLCP == false)
-                    {
-                        mMultibody->UpdateVelocity(dt, false);
-                    }
-                    else
-                    {
-                        // only update velocity in the controller, then do some double-check work
-                        mMultibody->GetContactAwareController()
-                            ->UpdateMultibodyInverseSemiImplicit(dt);
-                    }
-                    if (mMultibody->IsGeneralizedMaxVel())
-                    {
-                        std::cout << "[warn] multibody exceed max vel = "
-                                  << mMultibody->Getqdot().cwiseAbs().maxCoeff()
-                                  << std::endl;
-                        // if (mEnablePauseWhenMaxVel) gPauseSimulation = true;
-                        // exit(0);
-                    }
+                    // only update velocity in the controller, then do some double-check work
+                    mMultibody->GetContactAwareController()
+                        ->UpdateMultibodyInverseSemiImplicit(dt);
+                }
+                if (mMultibody->IsGeneralizedMaxVel())
+                {
+                    std::cout << "[warn] multibody exceed max vel = "
+                              << mMultibody->Getqdot().cwiseAbs().maxCoeff()
+                              << std::endl;
+                    // if (mEnablePauseWhenMaxVel) gPauseSimulation = true;
+                    // exit(0);
                 }
             }
-            // 5. post update
-            PostUpdate(dt);
         }
+        // 5. post update
+        PostUpdate(dt);
     }
 
     mFrameId++;
