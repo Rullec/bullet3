@@ -25,8 +25,8 @@ public:
     enum eIntegrationScheme
     {
         INVALID_SCHEME = 0,
-        SEMI_IMPLICIT, // v_{t+1} = v_t + dt * a_t;  x_{t+1} = x_t + dt * v_{t+1}
-        INVERSE_SEMI_IMPLICIT, // x_{t+1} = x_t + dt * v_t; v_{t+1} = v_t + dt * a_t
+        SEMI_IMPLICIT, // v_{t+1} = v_t + dt * a_t;  x_{t+1} = x_t + dt * v_{t+1}. vel integrated first
+        INVERSE_SEMI_IMPLICIT, // x_{t+1} = x_t + dt * v_t; v_{t+1} = v_t + dt * a_t. pos integrated first
     };
     // struct tParams
     // {

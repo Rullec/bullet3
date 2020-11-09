@@ -39,4 +39,6 @@ protected:
     void CheckFrameId(int frame_id, std::string prefix) const;
     void CheckModelState(int frame_id, cRobotModelDynamics *model,
                          std::string prefix);
+    void CalcVelAccelSemiImplicit();
+    void CalcVelAccelInvSemiImplicit();
 };

@@ -390,15 +390,21 @@ bool btTraj::LoadTraj(const std::string &path, cRobotModelDynamics *model,
                       << offset << std::endl;
         }
     }
-    // calcualte qdot and qddot: default semi implicit, but sometimes this will be the inverse semi implicit, we needs to change it
-
-    for (int frame_id = 1; frame_id < mNumOfFrames; frame_id++)
-        mqdot[frame_id] = (mq[frame_id] - mq[frame_id - 1]) / mTimestep;
-
-    for (int frame_id = 1; frame_id < mNumOfFrames - 1; frame_id++)
-        mqddot[frame_id] =
-            (-2 * mq[frame_id] + mq[frame_id - 1] + mq[frame_id + 1]) /
-            (mTimestep * mTimestep);
+    // calcualte qdot and qddot: default semi implicit, but sometimes this will be the inverse semi implicit
+    if (target_scheme == "semi_implicit")
+    {
+        CalcVelAccelSemiImplicit();
+    }
+    else if (target_scheme == "inv_semi_implicit")
+    {
+        CalcVelAccelInvSemiImplicit();
+    }
+    else
+    {
+        printf("[error] LoadTraj: Unsupported scheme %s\n",
+               target_scheme.c_str());
+        exit(0);
+    }
     // get all contact forces, sort and find some biggest
     // {
     //     tEigenArr<btGenContactForce *> forces(0);
@@ -700,3 +706,49 @@ void btTraj::CheckModelState(int frame_id, cRobotModelDynamics *model,
 
 std::string btTraj::GetLoadPath() const { return mTrajPath; }
 std::string btTraj::GetOutputPath() const { return mOutputPath; }
+
+/**
+ * \brief               In semi-implicit integration scheme, the definition of vel and accel are:
+ * vel_{t+1} = (x_{t+1} - x_t) / dt
+ * accel_t = (vel_{t+1} - vel_{t})/dt
+ * 
+ * x range [0, N-1]
+ * v range [1, N-1]
+ * a range [1, N-2]
+*/
+void btTraj::CalcVelAccelSemiImplicit()
+{
+    // 1. calculate the velocity
+    for (int i = 1; i < mNumOfFrames; i++)
+    {
+        mqdot[i] = (mq[i] - mq[i - 1]) / mTimestep;
+    }
+
+    // 2. calculate the accel
+    for (int i = 1; i < mNumOfFrames - 1; i++)
+    {
+        mqddot[i] = (mqdot[i + 1] - mqdot[i]) / mTimestep;
+    }
+}
+
+/**
+ * \brief               In inverse semi-implicit integration scheme, the definition of vel and accel are:
+ * vel_t = (x_{t+1} - x_t) / dt
+ * accel_t = (vel_{t+1} - vel_{t})/dt
+ * x range [0, N-1]
+ * v range [0, N-2]
+ * a range [0, N-3]
+*/
+void btTraj::CalcVelAccelInvSemiImplicit()
+{
+    // 1. calculate the velocity
+    for (int i = 0; i < mNumOfFrames - 1; i++)
+    {
+        mqdot[i] = (mq[i + 1] - mq[i]) / mTimestep;
+    }
+    // 2. calculate the accel
+    for (int i = 0; i < mNumOfFrames - 2; i++)
+    {
+        mqddot[i] = (mqdot[i + 1] - mqdot[i]) / mTimestep;
+    }
+}
