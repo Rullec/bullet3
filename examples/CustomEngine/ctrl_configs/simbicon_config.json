@@ -1,3 +1,6 @@
 {
-    "ctrl_type" : "SimbiconController"
+    "ctrl_type": "SimbiconController",
+    "pd_controller_path": "pd_controller_path",
+    "FSM": {},
+    "balance_control": {}
 }

@@ -309,6 +309,7 @@ void CustomEngineMainDemo::Test()
     int dof = mb->GetNumOfFreedom();
     tVectorXd q = tVectorXd::Random(dof), qdot = tVectorXd::Random(dof);
     mb->SetqAndqdot(q, qdot);
+
     // for (int i = 0; i < mb->GetNumOfLinks(); i++)
     // {
     //     auto link = dynamic_cast<Link *>(mb->GetLinkById(i));
@@ -331,8 +332,9 @@ void CustomEngineMainDemo::Test()
     // mb->TestThirdJacobian();
     // mb->TestdJdotdqdot();
     // mb->TestDCoriolisMatrixDq();
-    mb->TestDCoriolisMatrixDqdot();
-
+    // mb->TestDCoriolisMatrixDqdot();
+    // mb->TestSetFreedomValueAndDot();
+    mb->TestConvertGenForceToJointTorque();
     std::cout << "test done\n";
     exit(0);
 }

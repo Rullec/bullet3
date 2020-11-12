@@ -375,6 +375,7 @@ void btGeneralizeWorld::AddMultibody(const std::string &skeleton_name)
     mMultibody->InitSimVars(mInternalWorld, mMBZeroInitPose, mMBZeroInitPoseVel,
                             true);
     this->m_dispatcher->SetModel(mMultibody);
+
     // if (mMBEnableGuideAction == true)
     // {
     //     InitGuideTraj();
@@ -1198,7 +1199,7 @@ void btGeneralizeWorld::WriteFrameInfo(const std::string &path)
     std::ofstream fout(path);
     root["link_num"] = mMultibody->GetNumOfLinks();
     root["dof_num"] = mMultibody->GetNumOfFreedom();
-    root["frame_num"] = mFrameInfo.size();
+    root["frame_num"] = static_cast<int>(mFrameInfo.size());
     Json::Value FrameArray = Json::arrayValue;
     for (auto &item : mFrameInfo)
     {

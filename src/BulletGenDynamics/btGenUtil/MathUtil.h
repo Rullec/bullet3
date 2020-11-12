@@ -27,6 +27,26 @@ template <typename T>
 using tEigenArr = std::vector<T, Eigen::aligned_allocator<T>>;
 typedef tEigenArr<tVector> tVectorArr;
 
+#if defined(_WIN32)
+#define BTGEN_UNREACHABLE __assume(0);
+#else
+#define BTGEN_UNREACHABLE __builtin_unreachable();
+#endif
+
+#define BTGEN_ASSERT_INFO(x, ...)                                              \
+    {                                                                          \
+        bool ___ret___ = static_cast<bool>(x);                                 \
+        if (!___ret___)                                                        \
+        {                                                                      \
+            printf("[error] %s:%d  assert %s failed\n", __FILE__, __LINE__,    \
+                   __VA_ARGS__);                                               \
+            exit(0);                                                           \
+            BTGEN_UNREACHABLE;                                                 \
+        }                                                                      \
+    }
+
+#define BTGEN_ASSERT(x) BTGEN_ASSERT_INFO((x), #x)
+
 // "XYZ" -> R = Rz * Ry * Rx -> p' = Rp
 enum btRotationOrder
 {
@@ -39,6 +59,7 @@ class btMathUtil
 public:
     static tMatrix RotMat(const tQuaternion &quater);
     static tQuaternion RotMatToQuaternion(const tMatrix &mat);
+    static tQuaternion RotMat3dToQuaternion(const tMatrix3d &mat);
     static tQuaternion CoefToQuaternion(const tVector &);
     static tQuaternion AxisAngleToQuaternion(const tVector &angvel);
     static tQuaternion EulerAnglesToQuaternion(const tVector &vec,
@@ -55,7 +76,11 @@ public:
     static tVector QuatRotVec(const tQuaternion &, const tVector &vec);
     static tVector QuaternionToEulerAngles(const tQuaternion &,
                                            const btRotationOrder &order);
-
+    static void EulerToAxisAngle(const tVector &euler, tVector &out_axis,
+                                 double &out_theta,
+                                 const btRotationOrder gRotationOrder);
+    static tVector EulerangleToAxisAngle(const tVector &euler,
+                                         const btRotationOrder gRotationOrder);
     static tMatrix EulerAnglesToRotMat(const tVector &euler,
                                        const btRotationOrder &order);
     static tMatrix EulerAnglesToRotMatDot(const tVector &euler,
@@ -84,6 +109,8 @@ public:
     static bool IsHomogeneousPos(const tVector &pos, bool exit_if_not = true);
     static bool IsSkewMatrix(const tMatrix3d &mat, double eps);
     // static void RoundZero(tMatrixXd &mat, double threshold = 1e-10);
+    static tVector ConvertEulerAngleVelToAxisAngleVel(const tVector & q_euler, const tVector &qdot_euler,
+                                                      btRotationOrder order);
 
     template <typename T>
     static void RoundZero(T &mat, double threshold = 1e-10)

@@ -1022,7 +1022,13 @@ void cRobotModel::LoadJsonModel(const char *file_path, double model_scale)
         double torque_lim = (*itr)["TorqueLim"].asDouble();
         double diff_weight = (*itr)["DiffWeight"].asDouble();
 
-        int joint_type = joint_type_map[(*itr)["Type"].asString()];
+        std::string type_str = (*itr)["Type"].asString();
+        if (joint_type_map.find(type_str) == joint_type_map.end())
+        {
+            printf("[error] no type called %s\n", type_str.c_str());
+            exit(0);
+        }
+        int joint_type = joint_type_map[type_str];
 
         if (param.name == "root_joint")
         {
@@ -2269,6 +2275,12 @@ void cRobotModel::ComputeCoriolisMatrix(tVectorXd &q_dot)
             link->ComputedJkvdot_dq(q_dot, tVector3d::Zero());
             link->ComputedJkwdot_dq(q_dot);
         }
+    }
+
+    // set the qdot into the freedoms. the joint chain share the same freedoms point with this map below
+    for (auto &f : freedoms)
+    {
+        f.second->vdot = q_dot[f.first];
     }
 }
 

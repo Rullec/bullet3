@@ -54,6 +54,8 @@ public:
     // void SetAngleClamp(bool);
     void SetMaxVel(double);
     const tMatrixXd &GetDampingMatrix() const { return mDampingMatrix; }
+    void ConvertGenForceToCartesianForceTorque(const tVectorXd &gen_force, tEigenArr<tVector3d> & joint_torques, tVector3d & root_force, tVector3d & root_torque) const;
+    void TestConvertGenForceToJointTorque();
     void TestJacobian();
     void TestSecondJacobian();
     void TestReducedAPI();
@@ -62,6 +64,8 @@ public:
     void TestdJdotdqdot();
     void TestDCoriolisMatrixDq();
     void TestDCoriolisMatrixDqdot();
+    void TestSetFreedomValueAndDot();
+    void TestJointLocalJkw();
     void ComputeDCoriolisMatrixDq(const tVectorXd &qdot, EIGEN_V_MATXD &dCdq);
     void ComputeDCoriolisMatrixDqdot(EIGEN_V_MATXD &dCdqdot);
     tMatrixXd GetInvMassMatrix();
