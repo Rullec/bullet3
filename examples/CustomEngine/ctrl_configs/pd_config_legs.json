@@ -1,0 +1,62 @@
+{
+    "ctrl_type" : "PDController",
+    "enable_stable_pd": false,
+    "PDControllers": [
+        {
+            "ID": 0,
+            "Name": "root",
+            "Kp": 100,
+            "Kd": 10,
+            "TargetTheta0": 0,
+            "UseWorldCoord": 0
+        },
+        {
+            "ID": 1,
+            "Name": "RightLeg",
+            "Kp": 100,
+            "Kd": 10,
+            "TargetTheta0": 0,
+            "UseWorldCoord": 0
+        },
+        {
+            "ID": 2,
+            "Name": "RightFoot",
+            "Kp": 100,
+            "Kd": 10,
+            "TargetTheta0": 0,
+            "UseWorldCoord": 0
+        },
+        {
+            "ID": 3,
+            "Name": "RFootTongue",
+            "Kp": 100,
+            "Kd": 2,
+            "TargetTheta0": 0,
+            "UseWorldCoord": 0
+        },
+        {
+            "ID": 4,
+            "Name": "LeftLeg",
+            "Kp": 100,
+            "Kd": 10,
+            "TargetTheta0": 0,
+            "UseWorldCoord": 0
+        },
+        {
+            "ID": 5,
+            "Name": "LeftFoot",
+            "Kp": 100,
+            "Kd": 10,
+            "TargetTheta0": 0,
+            "UseWorldCoord": 0
+        },
+        {
+            "ID": 6,
+            "Name": "LFootTongue",
+            "Kp": 100,
+            "Kd": 2,
+            "TargetTheta0": 0,
+            "UseWorldCoord": 0
+        }
+    ]
+}

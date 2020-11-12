@@ -53,6 +53,9 @@ public:
     double GetLinkMaxLength() const;
     int GetColGroup() const;
     void SetColGroup(int);
+    virtual const tMatrixXd &GetLocalJkw() const override final;
+    virtual void ComputeLocalJkw()
+        override final; // compute local jkw, w.r.t only himself's dof
     tMatrixXd GetTotalDofdJKv_dq(int target_dof_id) const;
     tMatrixXd GetTotalDofdJKw_dq(int target_dof_id) const;
     tMatrixXd GetddJKv_dqq(int i, int j) const;
@@ -68,6 +71,13 @@ public:
 
     EIGEN_V_MATXD GetddJKw_dqq_last_channel(int channel_id);
 
+    // ================ forbidden methods begin ===============
+    virtual void SetFreedomValueDot(int id, double v) override final;
+    virtual void GetFreedomValueDot(int id, double &v) const override final;
+    virtual void SetFreedomValueDot(std::vector<double> &v) override final;
+    virtual void
+    GetFreedomValueDot(std::vector<double> &v) const override final;
+    // ================ forbidden methods end ===============
 protected:
     tVector3d link_vel, link_omega; // the lin vel and ang vel w.r.t the COM of
                                     // this link in world frame

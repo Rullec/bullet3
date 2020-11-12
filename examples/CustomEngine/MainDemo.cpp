@@ -120,7 +120,7 @@ void CustomEngineMainDemo::initPhysics()
     if (physics_param->mAddMultibody)
     {
         mGenWorld->AddMultibody(physics_param->mMultibodyPath);
-
+        
         // add controller
         if (physics_param->mEnableController)
         {
@@ -309,30 +309,32 @@ void CustomEngineMainDemo::Test()
     int dof = mb->GetNumOfFreedom();
     tVectorXd q = tVectorXd::Random(dof), qdot = tVectorXd::Random(dof);
     mb->SetqAndqdot(q, qdot);
+
     // for (int i = 0; i < mb->GetNumOfLinks(); i++)
     // {
     //     auto link = dynamic_cast<Link *>(mb->GetLinkById(i));
     //     std::cout << "link " << i << " M = \n"
     //               << link->GetMassMatrix() << std::endl;
     // }
-    // mb->TestdMassMatrixdq();
-    // mb->TestSecondJacobian();
-    // mb->TestThirdJacobian();
-    // mb->TestdJdotdq();
-    // mb->TestThirdJacobian();
-    // mb->TestdJdotdq();
-    // mb->TestThirdJacobian();
-    // mb->TestdJdotdq();
-    // mb->TestJacobian();
+    mb->TestdMassMatrixdq();
+    mb->TestSecondJacobian();
+    mb->TestThirdJacobian();
+    mb->TestdJdotdq();
+    mb->TestThirdJacobian();
+    mb->TestdJdotdq();
+    mb->TestThirdJacobian();
+    mb->TestdJdotdq();
+    mb->TestJacobian();
 
-    // mb->TestdJdotdq();
-    // mb->TestSecondJacobian();
-    // mb->TestReducedAPI();
-    // mb->TestThirdJacobian();
-    // mb->TestdJdotdqdot();
-    // mb->TestDCoriolisMatrixDq();
+    mb->TestdJdotdq();
+    mb->TestSecondJacobian();
+    mb->TestReducedAPI();
+    mb->TestThirdJacobian();
+    mb->TestdJdotdqdot();
+    mb->TestDCoriolisMatrixDq();
     mb->TestDCoriolisMatrixDqdot();
-
+    mb->TestSetFreedomValueAndDot();
+    mb->TestConvertGenForceToJointTorque();
     std::cout << "test done\n";
     exit(0);
 }

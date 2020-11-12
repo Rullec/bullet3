@@ -13,18 +13,24 @@ public:
 
     void Tell() override;
     Freedom *AddFreedom(Freedom &f) override;
-    int GetNumOfFreedom() override;
+    int GetNumOfFreedom() const override;
     void SetFreedomValue(int id, double v) override;
-    void GetFreedomValue(int id, double &v) override;
+    void GetFreedomValue(int id, double &v) const override;
 
     void SetFreedomValue(std::vector<double> &v) override;
-    void GetFreedomValue(std::vector<double> &v) override;
+    void GetFreedomValue(std::vector<double> &v) const override;
+
+    virtual void SetFreedomValueDot(int id, double v) override final;
+    virtual void GetFreedomValueDot(int id, double &v) const override final;
+    virtual void SetFreedomValueDot(std::vector<double> &v) override final;
+    virtual void
+    GetFreedomValueDot(std::vector<double> &v) const override final;
 
     void CleanGradient() override;
 
     Freedom *GetFreedoms(int order) override;
     Freedom *GetFreedomByAxis(tVector3d axis, int type = REVOLUTE) override;
-
+    int GetOffset() const;
     void InitTerms() override;
     void InitMatrix();
 
@@ -39,6 +45,7 @@ public:
     void ComputeGlobalTransformFirstDerive(); //
 
     // =============Second order derivative=============
+    virtual void ComputeLocalJkw() override final;
     void ComputeLocalSecondDeriveMatrix();
     virtual void ComputeLocalTransformSecondDerive();
     void ComputeGlobalTransformSecondDerive();
@@ -49,6 +56,7 @@ public:
     void ComputeGlobalTransformThirdDerive();
 
     virtual void GetRotations(tMatrix3d &m);
+    virtual tMatrix3d GetRotations();
 
     void ComputeJacobiByGivenPointTotalDOF(tMatrixXd &j,
                                            const tVector &p) const override;
@@ -62,6 +70,7 @@ public:
     void ComputeLocalTransform() override;
     void ComputeGlobalTransform() override;
 
+    virtual const tMatrixXd &GetLocalJkw() const override final;
     virtual const tMatrix &GetMWQQ(int i, int j) const override;
     virtual const tMatrix &GetMWQQQ(int i, int j, int k) const override;
     const tMatrix &GetMTQ(int i) const;
@@ -73,11 +82,11 @@ public:
     double GetTorqueLim() const;
     void SetDiffWeight(double lim);
     double GetDiffWeight() const;
-
-    void SetJointVel(const tVector3d &vel_);
-    void SetJointOmega(const tVector3d &omega_);
-    tVector3d GetJointVel() const;
-    tVector3d GetJointOmega() const;
+    tVectorXd GetJointLocalVel() const;
+    // void SetJointVel(const tVector3d &vel_);
+    // void SetJointOmega(const tVector3d &omega_);
+    // tVector3d GetJointVel() const;
+    // tVector3d GetJointOmega() const;
 
 protected:
     std::vector<Freedom>
@@ -109,7 +118,7 @@ protected:
 
     // the linear velocity and angular velocity of the COM of this joint in
     // world frame
-    tVector3d mJointVel, mJointOmega;
+    // tVector3d mJointVel, mJointOmega;
 
     // method
     void ComputeLocalTransformThirdDeriveSpherical();

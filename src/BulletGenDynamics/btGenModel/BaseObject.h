@@ -49,13 +49,14 @@ enum JointType
     INVALID_JOINT = -1,
     NONE_JOINT,
     LIMIT_NONE_JOINT,
+    BIPEDAL_NONE_JOINT,
     SPHERICAL_JOINT,
     REVOLUTE_JOINT,
     FIXED_JOINT,
     TOTAL_JOINT_TYPE
 };
 const std::string joint_type_keys[TOTAL_JOINT_TYPE] = {
-    "none", "limit_none", "spherical", "revolute", "fixed"};
+    "none", "limit_none", "bipedal_none", "spherical", "revolute", "fixed"};
 struct BaseObjectParams
 {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
@@ -107,11 +108,12 @@ struct Freedom
 {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
     double v;
+    double vdot;
     tVector3d axis;
     tVector3d grad;
     double lb;
     double ub;
-    unsigned id;
+    unsigned id; // global freedom id in the whole multibody
     int type = REVOLUTE;
     std::string name;
     void clear_grad() { grad = tVector3d::Zero(3); }
@@ -119,8 +121,9 @@ struct Freedom
     Freedom() = default;
 
     Freedom(const Freedom &other)
-        : v(other.v), axis(other.axis), grad(other.grad), lb(other.lb),
-          ub(other.ub), id(other.id), type(other.type), name(other.name)
+        : v(other.v), vdot(other.vdot), axis(other.axis), grad(other.grad),
+          lb(other.lb), ub(other.ub), id(other.id), type(other.type),
+          name(other.name)
     {
     }
 };
@@ -159,7 +162,7 @@ public:
     tMatrix GetModelMatrix() const;
     tVector3d GetWorldPos();
     tMatrix3d GetWorldOrientation();
-    virtual int GetNumOfFreedom();
+    virtual int GetNumOfFreedom() const;
     virtual Freedom *GetFreedoms(int order) { return nullptr; }
     void SetParentJoint(BaseObject *parent_joint)
     {
@@ -167,14 +170,18 @@ public:
     }
     BaseObject *GetChild(int order);
     virtual void SetFreedomValue(int id, double v) {}
-    virtual void GetFreedomValue(int id, double &v) {}
+    virtual void GetFreedomValue(int id, double &v) const {}
+    virtual void SetFreedomValueDot(int id, double v) = 0;
+    virtual void GetFreedomValueDot(int id, double &v) const = 0;
     virtual Freedom *GetFreedomByAxis(tVector3d axis, int type = REVOLUTE)
     {
         return nullptr;
     }
     virtual void SetFreedomValue(std::vector<double> &v) {}
+    virtual void GetFreedomValue(std::vector<double> &v) const {}
+    virtual void SetFreedomValueDot(std::vector<double> &v) = 0;
+    virtual void GetFreedomValueDot(std::vector<double> &v) const = 0;
     void SetPos(const tVector3d &pos);
-    virtual void GetFreedomValue(std::vector<double> &v) {}
     void SetInertiaTensorBody(tMatrix3d &I) { this->Ibody = I; }
     const tMatrix3d &GetInertiaTensorBody() { return this->Ibody; }
     virtual bool IsJoint() const = 0;
@@ -222,7 +229,9 @@ public:
                                             const tVector &p) const {};
     virtual void ComputeLocalTransform();
     virtual void ComputeGlobalTransform();
-    virtual void ComputeJKw();
+    virtual void
+    ComputeLocalJkw() = 0;     // compute local jkw, w.r.t only himself's dof
+    virtual void ComputeJKw(); // compute global jkw, w.r.t all dependent dof
     virtual void ComputeJKv();
     virtual void ComputeJK();
     virtual void ComputeJK_dot();
@@ -242,7 +251,7 @@ public:
         return neg_init_rotation_matrix_4x4;
     };
 
-    int GetId() const { return id; }
+    int GetId() const { return mId; }
     int GetParentId() const { return parent_id; }
     void SetLocalRot(const tVector3d &local_rot);
     void UpdateShape(BaseObjectShapeParam &param);
@@ -252,6 +261,7 @@ public:
     void SetJointType(JointType type) { joint_type = type; }
 
     void ComputeIbody();
+    virtual const tMatrixXd &GetLocalJkw() const = 0;
     const tMatrixXd &GetJKw() const { return JK_w; }
     const tMatrixXd &GetJKv() const { return JK_v; }
     const tMatrixXd &GetJK() const { return JK; }
@@ -279,7 +289,7 @@ public:
     tVectorXd GetShortedFreedom(const tVectorXd &qx_log) const;
 
 protected:
-    int id;
+    int mId;
     int parent_id;
     std::string name;                   // Name
     tVector3d local_pos;                // Local Pos wrt parent links's center
@@ -330,7 +340,9 @@ protected:
     // ========================For Torque minimization=============================
     tMatrix3d Ibody;
     int shape_type;
-    tMatrixXd JK_w;
+    tMatrixXd
+        JK_w_local; // local jkw in joint's frame, w.r.t joint himself's freedom
+    tMatrixXd JK_w; // global jkw in world frame, w.r.t all dependent freedoms
     tMatrixXd JK_v;
     tMatrixXd JK_v_dot; // \dot{Jkv} in global freedoms
     tMatrixXd JK_w_dot;

@@ -27,6 +27,7 @@ public:
     ebtGenControllerType GetCtrlType() const;
 
 protected:
+    double mTime;
     cRobotModelDynamics *mModel;
     btGeneralizeWorld *mWorld;
     ebtGenControllerType mCtrlType;

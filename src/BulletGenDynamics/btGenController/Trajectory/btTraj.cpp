@@ -149,7 +149,7 @@ tVectorXd ConvertPoseToq(const tVectorXd &pose, cRobotModelDynamics *model)
             pose_dof = 4;
             q_dof = 3;
             if (pose_st + pose_dof > pose.size() || q_dof + q_st > q.size())
-                std::cout << "［error] ConvertPoseToq failed, joint id "
+                std::cout << "error] ConvertPoseToq failed, joint id "
                           << joint_id << " cause an illegal dof, exit\n",
                     exit(0);
             else
@@ -179,14 +179,27 @@ tVectorXd ConvertPoseToq(const tVectorXd &pose, cRobotModelDynamics *model)
         }
         break;
         case JointType::FIXED_JOINT:
+        {
             pose_dof = 0;
             q_dof = 0;
-            break;
+        }
+        break;
+        case JointType::BIPEDAL_NONE_JOINT:
+        {
+            pose_dof = 3;
+            q_dof = 3;
+            q.segment(q_st, 3) = pose.segment(pose_st, 3);
+            // std::cout << "bipedal none pose = "
+            //           << pose.segment(pose_st, 3).transpose();
+            // exit(0);
+        }
+        break;
         default:
             std::cout
                 << "［error] ConvertPoseToq failed, joint id joint id joint id "
                 << joint_id << " cause an illegal dof, type "
                 << cur_joint->GetJointType() << std::endl;
+            BTGEN_ASSERT(false);
             break;
         }
 
@@ -354,7 +367,8 @@ bool btTraj::LoadTraj(const std::string &path, cRobotModelDynamics *model,
 
         // set up the joint force (gen force) vector
         int num_of_freedom = model->GetNumOfFreedom();
-        int num_of_actuated_freedom = num_of_freedom - 6;
+        int root_freedom = model->GetRoot()->GetNumOfFreedom();
+        int num_of_actuated_freedom = num_of_freedom - root_freedom;
         mTruthJointForceVec[frame_id] =
             tVectorXd::Zero(num_of_actuated_freedom);
         int offset = 0;
@@ -362,7 +376,8 @@ bool btTraj::LoadTraj(const std::string &path, cRobotModelDynamics *model,
         {
             int actuated_joint_id = i - 1;
             auto joint = dynamic_cast<Joint *>(model->GetJointById(i));
-            if (joint->GetJointType() == JointType::NONE_JOINT)
+            if (joint->GetJointType() == JointType::NONE_JOINT ||
+                joint->GetJointType() == JointType::BIPEDAL_NONE_JOINT)
                 continue;
             int joint_dof = joint->GetNumOfFreedom();
             mTruthJointForceVec[frame_id].segment(offset, joint_dof) =
@@ -434,7 +449,8 @@ bool btTraj::SaveTraj(const std::string &path, cRobotModelDynamics *model)
         data_perframe["timestep"] = this->mTimestep;
         data_perframe["truth_action"] =
             btJsonUtil::BuildVectorJsonValue(this->mAction[i]);
-        data_perframe["contact_num"] = this->mContactForce[i].size();
+        data_perframe["contact_num"] =
+            static_cast<int>(mContactForce[i].size());
         data_perframe["contact_info"] = Json::arrayValue;
         for (auto &f : mContactForce[i])
         {

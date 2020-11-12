@@ -1,5 +1,6 @@
 {
-    "lcp_solver_type": "NativeLemke",
+    "lcp_solver_type": "btPath",
+    "lcp_solver_type_bb": "NativeLemke",
     "lcp_solver_type_bak": "odeDantzig",
     "enable_multibody_self_collision": true,
     "enable_convert_mat_test": false,
@@ -16,6 +17,6 @@
     "enable_si_lcp_comparision": false,
     "enable_debug_output": false,
     "diagonal_eps": 0.001,
-    "mu": 0.8,
+    "mu": 1,
     "num_of_friction_cone": 4
 }

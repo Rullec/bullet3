@@ -375,6 +375,7 @@ void btGeneralizeWorld::AddMultibody(const std::string &skeleton_name)
     mMultibody->InitSimVars(mInternalWorld, mMBZeroInitPose, mMBZeroInitPoseVel,
                             true);
     this->m_dispatcher->SetModel(mMultibody);
+
     // if (mMBEnableGuideAction == true)
     // {
     //     InitGuideTraj();
@@ -1198,7 +1199,7 @@ void btGeneralizeWorld::WriteFrameInfo(const std::string &path)
     std::ofstream fout(path);
     root["link_num"] = mMultibody->GetNumOfLinks();
     root["dof_num"] = mMultibody->GetNumOfFreedom();
-    root["frame_num"] = mFrameInfo.size();
+    root["frame_num"] = static_cast<int>(mFrameInfo.size());
     Json::Value FrameArray = Json::arrayValue;
     for (auto &item : mFrameInfo)
     {
@@ -1444,3 +1445,23 @@ void btGeneralizeWorld::AddController(const std::string &path)
 // 		}
 // 	}
 // }
+
+/**
+ * \brief           
+*/
+int btGeneralizeWorld::GetTwoObjsNumOfContact(const btCollisionObject *b0,
+                                              const btCollisionObject *b1)
+{
+    int num_of_manifold = m_dispatcher->getNumManifolds();
+    for (int i = 0; i < num_of_manifold; i++)
+    {
+        auto mani = m_dispatcher->getManifoldByIndexInternal(i);
+
+        if ((mani->getBody0() == b0 && mani->getBody1() == b1) ||
+            (mani->getBody0() == b1 && mani->getBody1() == b0))
+        {
+            return mani->getNumContacts();
+        }
+    }
+    return 0;
+}

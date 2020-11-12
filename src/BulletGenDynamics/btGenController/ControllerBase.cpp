@@ -11,6 +11,7 @@ btGenControllerBase::btGenControllerBase(ebtGenControllerType type,
 void btGenControllerBase::Init(cRobotModelDynamics *model,
                                const std::string &conf)
 {
+    mTime = 0;
     mModel = model;
 }
 
@@ -19,4 +20,8 @@ ebtGenControllerType btGenControllerBase::GetCtrlType() const
     return mCtrlType;
 }
 
-void btGenControllerBase::Update(double dt) { mCurdt = dt; }
+void btGenControllerBase::Update(double dt)
+{
+    mCurdt = dt;
+    mTime += dt;
+}

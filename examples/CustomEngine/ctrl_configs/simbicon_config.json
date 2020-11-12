@@ -1,3 +1,54 @@
 {
-    "ctrl_type" : "SimbiconController"
+    "ctrl_type": "SimbiconController",
+    "pd_controller_path": "examples/CustomEngine/ctrl_configs/pd_config_legs.json",
+    "FSM": {
+        "state_traj_path": "examples/CustomEngine/ctrl_configs/simbicon_target_jog.json",
+        "num_of_states": 4,
+        "states": [
+            {
+                "state_id": 0,
+                "conditions": [
+                    {
+                        "condition_type": "ElapsedTime",
+                        "elapsed_time": 0.5,
+                        "target_state_id": 1
+                    }
+                ]
+            },
+            {
+                "state_id": 1,
+                "conditions": [
+                    {
+                        "condition_type": "LinkContact",
+                        "contact_link_name": "RFootTongue",
+                        "target_state_id": 2
+                    }
+                ]
+            },
+            {
+                "state_id": 2,
+                "conditions": [
+                    {
+                        "condition_type": "ElapsedTime",
+                        "elapsed_time": 0.5,
+                        "target_state_id": 3
+                    }
+                ]
+            },
+            {
+                "state_id": 3,
+                "conditions": [
+                    {
+                        "condition_type": "LinkContact",
+                        "contact_link_name": "LFootTongue",
+                        "target_state_id": 0
+                    }
+                ]
+            }
+        ]
+    },
+    "balance_control": {
+        "Cd": 0.6,
+        "Cv": 0.4
+    }
 }

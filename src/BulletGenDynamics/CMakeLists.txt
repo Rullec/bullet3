@@ -16,6 +16,7 @@ SET(
 	./btGenModel/RobotModelDynamics.cpp
 	./btGenModel/RootJoint.cpp
 	./btGenModel/LimitRootJoint.cpp
+	./btGenModel/BipedalRootJoint.cpp
 	./btGenModel/SimObj.cpp
 	./btGenModel/tools.cpp
 	btGenModel/Tinyxml/tinystr.cpp
@@ -67,6 +68,7 @@ SET(
 	./btGenController/ControllerBase.cpp
 	./btGenController/BuildController.cpp
 	./btGenController/PDController/btGenPDController.cpp
+	./btGenController/PDController/JointPDCtrl.cpp
 	./btGenController/ContactAwareController/btGenContactAwareController.cpp
 	./btGenController/ContactAwareController/btGenTargetCalculator.cpp
 	./btGenController/ContactAwareController/ContactAdaptionFeature/btGenFeature.cpp
@@ -80,6 +82,8 @@ SET(
 	./btGenController/ContactAwareController/QPSolver/QuadProgQPSolver.cpp
 	./btGenController/ContactAwareController/QPSolver/eiquadprog.hpp
 	./btGenController/SimbiconController/SimbiconController.cpp
+	./btGenController/SimbiconController/FSM.cpp
+	./btGenController/SimbiconController/FSMUtil.cpp
 	./btGenController/Trajectory/btTraj.cpp
 	./btGenController/Trajectory/btTrajContactMigrator.cpp
 )
@@ -124,7 +128,10 @@ link_libraries(${JSONCPP_LIBRARIES})
 ADD_LIBRARY(BulletGenDynamics ${BulletGenDynamics_SRCS})
 target_link_libraries(BulletGenDynamics ${JSONCPP_LIBRARIES})
 target_link_libraries(BulletGenDynamics ${matlab_lib})
-target_link_libraries(BulletGenDynamics stdc++fs)
+if(NOT APPLE)
+	target_link_libraries(BulletGenDynamics stdc++fs)
+endif()
+target_link_libraries(BulletGenDynamics BulletCollision BulletDynamics)
 
 if (BUILD_SHARED_LIBS)
   target_link_libraries(BulletGenDynamics Bullet3Geometry)

@@ -72,6 +72,8 @@ public:
     void AddController(const std::string &path);
     bool HasController() const;
     bool HasContactAwareController() const;
+    int GetTwoObjsNumOfContact(const btCollisionObject *b1,
+                          const btCollisionObject *b2);
 
 protected:
     btDiscreteDynamicsWorld *mInternalWorld;
@@ -97,7 +99,7 @@ protected:
     // bool mMBEnableContactAwareLCP;
 
     // std::string mControllerConfig; //
-    bool mEnablePeturb;            // enable external perturb
+    bool mEnablePeturb; // enable external perturb
     btCollisionObject *mGround;
     bool mMBEnableCollectFrameInfo; // collect frame info and save
     bool mEnablePauseWhenMaxVel;

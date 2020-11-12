@@ -559,7 +559,6 @@ void cRobotModelDynamics::ApplyJointTorque(int joint_id, const tVector &torque)
                   << std::endl;
         exit(0);
     }
-
     // one pair of opposite torque
     int parent_id = GetJointById(joint_id)->GetParentId(), child_id = joint_id;
     // std::cout << "[debug] add joint torque for parent " << parent_id << ": "
@@ -2008,4 +2007,259 @@ void cRobotModelDynamics::TestdJdotdqdot()
         std::cout << "[log] Test dJdotdqdot for link " << link_id << " succ\n";
         PopState("test_djdotdqdot");
     }
+}
+
+/**
+ * \brief       Test the joint's get & set freedoms' APIs work fine
+*/
+void cRobotModelDynamics::TestSetFreedomValueAndDot()
+{
+    PushState("test_state");
+    // 1. random a q and qdot, set them
+    tVectorXd q = tVectorXd::Random(num_of_freedom),
+              qdot = tVectorXd::Random(num_of_freedom);
+    SetqAndqdot(q, qdot);
+    // 2. check the model's freedoms v and vdot
+    double eps = 1e-15;
+    for (int i = 0; i < num_of_freedom; i++)
+    {
+        BTGEN_ASSERT(freedoms[i]->id == i);
+        double v_diff = std::fabs(freedoms[i]->v - q[i]),
+               vdot_diff = std::fabs(freedoms[i]->vdot - qdot[i]);
+        if (v_diff > eps || vdot_diff > eps)
+        {
+            printf("[error] TestSetFreedomValueAndDot failed, for dof %d vdiff "
+                   "%.5f, vdotdiff %.5f\n",
+                   i, v_diff, vdot_diff);
+
+            std::cout << "set q = " << q.transpose() << std::endl;
+            std::cout << "freedoms i = " << freedoms[i]->v << std::endl;
+            std::cout << "q i = " << q[i] << std::endl;
+            exit(0);
+        }
+    }
+
+    // 3. check the v and vdot in each joint
+    for (int i = 0; i < GetNumOfJoint(); i++)
+    {
+        auto joint = dynamic_cast<Joint *>(GetJointById(i));
+        int local_dof = joint->GetNumOfFreedom();
+        int offset = joint->GetFreedoms(0)->id;
+        for (int j = 0; j < local_dof; j++)
+        {
+            double get_q, get_qdot;
+            joint->GetFreedomValue(j, get_q);
+            joint->GetFreedomValueDot(j, get_qdot);
+
+            double target_q = q[offset + j], target_qdot = qdot[offset + j];
+            double q_diff = std::fabs(get_q - target_q),
+                   qdot_diff = std::fabs(get_qdot - target_qdot);
+            if (q_diff > eps || qdot_diff > eps)
+            {
+                printf("[error] TestSetFreedomValueAndDot failed, for dof %d "
+                       "qdiff "
+                       "%.5f, qdotdiff %.5f\n",
+                       i, q_diff, qdot_diff);
+                exit(0);
+            }
+        }
+    }
+
+    printf("[log] TestSetFreedomValueAndDot succ\n");
+    PopState("test_state");
+}
+
+/**
+ * \brief           Test the Jkw_local for each joint
+ * 
+ * Jkw_local is the local jacobian of orientation w.r.t joint's own freedom
+ * 
+ * w_local = Jkw_local * qdot_local
+*/
+void cRobotModelDynamics::TestJointLocalJkw()
+{
+    PushState("test_joint_local_jkw");
+    tVectorXd q_old = tVectorXd::Random(num_of_freedom);
+    tVectorXd qdot = tVectorXd::Random(num_of_freedom);
+
+    double eps = 1e-3;
+    for (int i = 0; i < GetNumOfJoint(); i++)
+    {
+        auto joint = dynamic_cast<Joint *>(GetJointById(i));
+        // 1. get its current orientation R_old, get its current jkw_local, calculate the local angular vel w_local_pred
+        SetqAndqdot(q_old, qdot);
+        tMatrix3d R_old = joint->GetRotations();
+        tMatrixXd Jkw_local = joint->GetLocalJkw();
+        tVector3d omega_local_pred =
+            Jkw_local *
+            qdot.segment(joint->GetOffset(), joint->GetNumOfFreedom());
+
+        // 2. given eps, forward q_old by qdot, set new q
+        tVectorXd q_new = q_old + eps * qdot;
+        SetqAndqdot(q_new, qdot);
+        // 3. get its current orientation R_new, calculate the angular velocity by w_local_true = R_new - R_old
+        tMatrix3d R_new = joint->GetRotations();
+        tVector omega_local_true =
+            btMathUtil::QuaternionToAxisAngle(
+                btMathUtil::RotMat3dToQuaternion(R_new * R_old.inverse())) /
+            eps;
+
+        // 4. compare, give the result
+
+        tVector diff =
+            omega_local_true - btMathUtil::Expand(omega_local_pred, 0);
+
+        if (diff.norm() > eps)
+        {
+            std::cout << "[error] for joint " << i
+                      << " local_omega_pred = " << omega_local_pred.transpose()
+                      << " local_omega_true = " << omega_local_true.transpose()
+                      << std::endl;
+            std::cout << "diff = " << diff.transpose() << std::endl;
+            exit(0);
+        }
+        printf("[log] test joint %d local Jkw succ\n", i);
+    }
+    printf("[log] test local Jkw succ\n");
+    PopState("test_joint_local_jkw");
+}
+
+/**
+ * \brief               convert a gen force to joint torque (these two set are isomorphic)
+ * \param joint_torques the result torque array, length = num_joint - 1 (except root joint, underactuated)
+ * \param root_force    the cartesian force on root joint
+ * \param root_torque   the cartesian torque on root joint
+*/
+void cRobotModelDynamics::ConvertGenForceToCartesianForceTorque(
+    const tVectorXd &gen_force, tEigenArr<tVector3d> &joint_torques,
+    tVector3d &root_force, tVector3d &root_torque) const
+{
+    BTGEN_ASSERT(gen_force.size() == num_of_freedom);
+    joint_torques.clear();
+
+    // 1. handle the force & torque on root
+    {
+        auto root_link = GetLinkById(0);
+        auto root_type = root_link->GetParent()->GetJointType();
+        const tMatrixXd &root_jwT = root_link->GetJKw().transpose(),
+                        &root_jvT = root_link->GetJKv().transpose();
+        switch (root_type)
+
+        {
+        case JointType::NONE_JOINT:
+        {
+
+            root_force = gen_force.segment(0, 3);
+            root_torque = root_jwT.block(3, 0, 3, 3).inverse() *
+                          (gen_force.segment(3, 3) -
+                           root_jvT.block(3, 0, 3, 3) * root_force);
+        }
+        break;
+        case JointType::BIPEDAL_NONE_JOINT:
+        {
+            // X axis rotation, and Y & Z translation
+            // std::cout << "root jwT = \n " << root_jwT << std::endl;
+            // std::cout << "root jvT = \n " << root_jvT << std::endl;
+            root_force.setZero();
+            root_force.segment(1, 2) = gen_force.segment(0, 2);
+            root_torque.setZero();
+            root_torque[0] =
+                gen_force[2] - (root_jvT.block(0, 0, 3, 3) * root_force)[2];
+        }
+        break;
+        default:
+            BTGEN_ASSERT(false);
+            break;
+        }
+    }
+    // 2. handle others
+    for (int i = 1; i < GetNumOfJoint(); i++)
+    {
+        auto joint = dynamic_cast<Joint *>(GetJointById(i));
+        int offset = joint->GetOffset();
+        int size = joint->GetNumOfFreedom();
+
+        int parent_link_id = joint->GetParentId();
+        int child_link_id = joint->GetId();
+
+        const tMatrixXd &child_link_jw = GetLinkById(child_link_id)->GetJKw();
+        const tMatrixXd &parent_link_jw = GetLinkById(parent_link_id)->GetJKw();
+
+        // we assume that the torque jacobian has only some critical columns to be nonzeros
+        tMatrixXd torque_jacobian = child_link_jw - parent_link_jw;
+        // std::cout << "for joint " << i << " torque jacobian = \n " << torque_jacobian.transpose() << std::endl;
+        tMatrixXd nonzero_jacobian = torque_jacobian.block(0, offset, 3, size);
+        {
+            torque_jacobian.block(0, offset, 3, size).setZero();
+
+            BTGEN_ASSERT(torque_jacobian.norm() < 1e-6);
+        }
+        tVector3d torque = tVector3d::Zero();
+        tVectorXd gen_force_joint = gen_force.segment(offset, size);
+        if (size == 3)
+        {
+            torque = nonzero_jacobian.transpose().inverse() * gen_force_joint;
+        }
+        else if (size == 1)
+        {
+            tVector3d local_axis = joint->GetFreedoms(0)->axis;
+            tVector3d global_axis = joint->GetWorldOrientation() * local_axis;
+
+            double value =
+                gen_force_joint[0] / global_axis.dot(nonzero_jacobian.col(0));
+            torque = value * global_axis;
+        }
+        else
+        {
+            printf("unsupported gen force convert type\n");
+            exit(0);
+        }
+        joint_torques.push_back(torque);
+    }
+}
+
+/**
+ * \brief           Verify the a generalize force (with no root term) is isomophic to the cartesian joint torque set
+*/
+void cRobotModelDynamics::TestConvertGenForceToJointTorque()
+{
+    this->PushState("test_convert_gen_force");
+    ClearForce();
+    tVectorXd gen_force = tVectorXd::Random(num_of_freedom);
+
+    // std::cout << "root jkw = \n"
+    //           << GetLinkById(0)->GetJKw() << std::endl;
+    // std::cout << "root jkv = \n"
+    //           << GetLinkById(0)->GetJKv() << std::endl;
+
+    // 1. get the cartesian joint torques
+    tEigenArr<tVector3d> joint_torques;
+    tVector3d root_force, root_torque;
+    ConvertGenForceToCartesianForceTorque(gen_force, joint_torques, root_force,
+                                          root_torque);
+
+    // 2. calculate the gen force from the joint torques
+    BTGEN_ASSERT(joint_torques.size() == GetNumOfJoint() - 1);
+    ApplyJointTorque(0, btMathUtil::Expand(root_torque, 0));
+    ApplyForce3d(0, root_force, GetLinkById(0)->GetWorldPos());
+    for (int i = 1; i < GetNumOfJoint(); i++)
+    {
+        ApplyJointTorque(i, btMathUtil::Expand(joint_torques[i - 1], 0));
+    }
+
+    tVectorXd gen_force_restored = GetGeneralizedForce();
+    tVectorXd diff = gen_force_restored - gen_force;
+    if (diff.norm() > 1e-6)
+    {
+        std::cout << "[error] gen force raw = " << gen_force.transpose()
+                  << std::endl;
+        std::cout << "[error] gen force new = "
+                  << gen_force_restored.transpose() << std::endl;
+        std::cout << "[error] gen force diff = "
+                  << (gen_force - gen_force_restored).transpose() << std::endl;
+        exit(0);
+    }
+    printf("[log] test convert gen force succ\n");
+
+    this->PopState("test_convert_gen_force");
 }
