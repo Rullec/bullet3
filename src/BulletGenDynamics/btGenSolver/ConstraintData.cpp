@@ -1,5 +1,5 @@
 #include "ConstraintData.h"
-#include "BulletGenDynamics/btGenController/btGenContactAwareController.h"
+#include "BulletGenDynamics/btGenController/ContactAwareController/btGenContactAwareController.h"
 #include "BulletGenDynamics/btGenModel/RobotCollider.h"
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
 #include "BulletGenDynamics/btGenModel/SimObj.h"

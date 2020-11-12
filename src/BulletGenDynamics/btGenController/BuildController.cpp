@@ -1,0 +1,41 @@
+#include "BulletGenDynamics/btGenController/BuildController.h"
+#include "BulletGenDynamics/btGenController/ContactAwareController/btGenContactAwareController.h"
+#include "BulletGenDynamics/btGenController/ControllerBase.h"
+#include "BulletGenDynamics/btGenController/SimbiconController/SimbiconController.h"
+#include "BulletGenDynamics/btGenUtil/JsonUtil.h"
+btGenControllerBase *BuildController(btGeneralizeWorld *world,
+                                     const std::string &path)
+{
+    Json::Value root;
+    btJsonUtil::LoadJson(path, root);
+
+    std::string type = btJsonUtil::ParseAsString("ctrl_type", root);
+
+    btGenControllerBase *ctrl = nullptr;
+    for (int i = 0; i < ebtGenControllerType::BTGEN_NUM_CONTROLLER_TYPE; i++)
+    {
+        if (type == gbtGenControllerTypeStr[i])
+        {
+            switch (static_cast<ebtGenControllerType>(i))
+            {
+            case ebtGenControllerType::PDController:
+                printf("[error] PD Controller hasn't been supported\n");
+                break;
+            case ebtGenControllerType::ContactAwareController:
+                ctrl = new btGenContactAwareController(world);
+                break;
+            case ebtGenControllerType::SimbiconController:
+                ctrl = new btGenSimbiconController(world);
+                break;
+            default:
+                break;
+            }
+        }
+    }
+    if (ctrl == nullptr)
+    {
+        printf("[error] BuildController type %s failed\n", type.c_str());
+        exit(1);
+    }
+    return ctrl;
+}

@@ -1,4 +1,5 @@
 #pragma once
+#include "BulletGenDynamics/btGenController/ControllerBase.h"
 #include "BulletGenDynamics/btGenUtil/JsonUtil.h"
 #include "BulletGenDynamics/btGenUtil/MathUtil.h"
 /**
@@ -13,7 +14,7 @@ class cRobotModelDynamics;
 class btGenFBFTargetCalculator;
 class btCollisionObject;
 class btGenTargetCalculator;
-class btGenContactAwareController
+class btGenContactAwareController : public btGenControllerBase
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
@@ -34,12 +35,13 @@ public:
     // guide_traj, double W, double Wm);
     btGenContactAwareController(btGeneralizeWorld *world);
     ~btGenContactAwareController();
-    void Init(cRobotModelDynamics *mModel, const std::string &config_file);
+    virtual void Init(cRobotModelDynamics *mModel,
+                      const std::string &config_file) override;
     // int GetInternalFrameId() const;
     void SetTraj(const std::string &mRefTrajPath,
                  const std::string &mOutputTraj, bool enable_output = false);
     const btTraj *GetRefTraj() const;
-    void Update(double dt);
+    virtual void Update(double dt) override;
     void UpdateMultibodyVelocityDebug(double dt);
     void UpdateMultibodyVelocityAndTransformDebug(double dt);
     tVectorXd CalcControlForce(const tVectorXd &Q_contact, bool verbose = true);
@@ -47,7 +49,7 @@ public:
     tVectorXd CalcLCPResidual(double dt) const;
     tMatrixXd CalcLCPPartBPrefix() const;
     bool IsEnd();
-    void Reset();
+    virtual void Reset() override;
     btGenTargetCalculator *GetTargetCalculator();
     void SetBulletGUIHelperInterface(struct GUIHelperInterface *inter);
     int GetRefFrameId() const { return mRefFrameId; }
@@ -56,7 +58,6 @@ public:
     // N, tVectorXd& b);
 
 protected:
-    double mCurdt;
     bool mHasRefTraj;
     int mSimFrameId; // simulation id, +=1 per frame
     int mRefFrameId; // the frame id of target in ref traj
@@ -87,8 +88,7 @@ protected:
     bool
         mEnableDrawRefTrajContactPoints; // enable drawing contact points in ref traj
     int mSyncTrajPeriod; // the sync period speicifed by config file
-    cRobotModelDynamics *mModel;
-    btGeneralizeWorld *mWorld;
+
     btGenFeatureArray *mFeatureVector;
     btGenTargetCalculator *mTargetCalculator;
     bool mEnableStateSave;

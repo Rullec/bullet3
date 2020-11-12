@@ -1,4 +1,4 @@
-#include "BulletGenDynamics/btGenController/btTraj.h"
+#include "BulletGenDynamics/btGenController/Trajectory/btTraj.h"
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
 #include "BulletGenDynamics/btGenWorld.h"
 #include "btCharContactPoint.h"

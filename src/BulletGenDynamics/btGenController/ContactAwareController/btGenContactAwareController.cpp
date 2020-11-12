@@ -1,10 +1,10 @@
 #include "btGenContactAwareController.h"
 #include "../examples/CommonInterfaces/CommonGUIHelperInterface.h"
-#include "BulletGenDynamics/btGenController/ContactAdaptionFeature/btGenFeature.h"
-#include "BulletGenDynamics/btGenController/FBFCalculator/btGenFrameByFrameCalculator.h"
-#include "BulletGenDynamics/btGenController/NQRCalculator/btGenNQRCalculator.h"
-#include "BulletGenDynamics/btGenController/btTraj.h"
-#include "BulletGenDynamics/btGenController/btTrajContactMigrator.h"
+#include "BulletGenDynamics/btGenController/ContactAwareController/ContactAdaptionFeature/btGenFeature.h"
+#include "BulletGenDynamics/btGenController/ContactAwareController/FBFCalculator/btGenFrameByFrameCalculator.h"
+#include "BulletGenDynamics/btGenController/ContactAwareController/NQRCalculator/btGenNQRCalculator.h"
+#include "BulletGenDynamics/btGenController/Trajectory/btTraj.h"
+#include "BulletGenDynamics/btGenController/Trajectory/btTrajContactMigrator.h"
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
 #include "BulletGenDynamics/btGenSolver/ContactSolver.h"
 #include "BulletGenDynamics/btGenUtil/JsonUtil.h"
@@ -19,6 +19,7 @@ tVectorXd ConvertPoseToq(const tVectorXd &pose, cRobotModelDynamics *model);
 std::string debug_path = "numeric.log";
 btGenContactAwareController::btGenContactAwareController(
     btGeneralizeWorld *world)
+    : btGenControllerBase(ebtGenControllerType::ContactAwareController, world)
 {
     mCurdt = 0;
     mHasRefTraj = false;
@@ -37,8 +38,6 @@ btGenContactAwareController::btGenContactAwareController(
     mEnableSyncTrajPeriodly = false;
     mSyncTrajPeriod = 100;
 
-    mModel = nullptr;
-    mWorld = world;
     mFeatureVector = new btGenFeatureArray();
     mTargetCalculator = nullptr;
     mOutputTraj = nullptr;
@@ -132,8 +131,8 @@ void btGenContactAwareController::SetTraj(const std::string &ref_traj,
 void btGenContactAwareController::Init(cRobotModelDynamics *model_,
                                        const std::string &contact_aware_config)
 {
+    btGenControllerBase::Init(model_, contact_aware_config);
     ReadConfig(contact_aware_config);
-    mModel = model_;
 
     num_of_freedom = mModel->GetNumOfFreedom();
     num_of_underactuated_freedom = num_of_freedom - 6;
@@ -200,6 +199,7 @@ void btGenContactAwareController::Update(double dt)
     std::cout << "---------------------frame " << mSimFrameId << " ref "
               << mRefFrameId << std::endl;
 
+    btGenControllerBase::Update(dt);
     // 1. pre update, check the preliminary
     PreUpdate(dt);
 

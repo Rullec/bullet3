@@ -668,7 +668,7 @@ void btGenContactSolver::TestCartesianForceToNormalAndTangetResultBasedRelVel(
  * \param constraint_forces     gen constarint forces, size should be zero at this moment
  * 
 */
-#include "BulletGenDynamics/btGenController/btGenContactAwareController.h"
+#include "BulletGenDynamics/btGenController/ContactAwareController/btGenContactAwareController.h"
 void btGenContactSolver::TestAddContactAwareForceIfPossible(
     const tEigenArr<tVector> &contact_forces,
     const std::vector<int> &constraint_forces)

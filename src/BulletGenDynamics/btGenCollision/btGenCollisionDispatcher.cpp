@@ -1,8 +1,8 @@
 #include "btGenCollisionDispatcher.h"
 #include "BulletCollision/BroadphaseCollision/btBroadphaseProxy.h"
-#include "BulletGenDynamics/btGenController/btGenContactAwareController.h"
-#include "BulletGenDynamics/btGenController/btTraj.h"
-#include "BulletGenDynamics/btGenController/btTrajContactMigrator.h"
+#include "BulletGenDynamics/btGenController/ContactAwareController/btGenContactAwareController.h"
+#include "BulletGenDynamics/btGenController/Trajectory/btTraj.h"
+#include "BulletGenDynamics/btGenController/Trajectory/btTrajContactMigrator.h"
 #include "BulletGenDynamics/btGenModel/RobotCollider.h"
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
 #include "BulletGenDynamics/btGenUtil/JsonUtil.h"
@@ -22,7 +22,7 @@ btGenCollisionDispatcher::btGenCollisionDispatcher(
     ParseConf(conf);
 }
 
-void btGenCollisionDispatcher::SetController(btGenContactAwareController *ctrl)
+void btGenCollisionDispatcher::SetController(btGenControllerBase *ctrl)
 {
     mController = ctrl;
 }
@@ -48,27 +48,35 @@ void btGenCollisionDispatcher::Update()
     {
         std::cout << "[warn] collision dispatcher works in " << mCollisionType
                   << " mode\n";
-        if (mController == nullptr)
+        auto contact_aware_controller =
+            dynamic_cast<btGenContactAwareController *>(mController);
+        if (contact_aware_controller == nullptr)
         {
-            std::cout << "[error] btGenCollisionDispatcher: controller cannot "
+            std::cout << "[error] btGenCollisionDispatcher: contact aware ctrl "
+                         "cannot "
                          "be null when the mode = "
                       << mCollisionType << std::endl;
+            exit(0);
         }
         ClearModelRelatedContact();
-        RestoreContactInfoFromTraj();
+        RestoreContactInfoFromTraj(contact_aware_controller);
     }
     else if (mCollisionType == "OnlySupposedPoint")
     {
         std::cout << "[warn] collision dispatcher works in " << mCollisionType
                   << " mode\n";
-        if (mController == nullptr)
+        auto contact_aware_controller =
+            dynamic_cast<btGenContactAwareController *>(mController);
+        if (contact_aware_controller == nullptr)
         {
-            std::cout << "[error] btGenCollisionDispatcher: controller cannot "
+            std::cout << "[error] btGenCollisionDispatcher: contact aware ctrl "
+                         "cannot "
                          "be null when the mode = "
                       << mCollisionType << std::endl;
+            exit(0);
         }
         ClearModelRelatedContact();
-        AddContactInfoFromSupposedInfo();
+        AddContactInfoFromSupposedInfo(contact_aware_controller);
     }
     else
     {
@@ -142,10 +150,11 @@ void btGenCollisionDispatcher::ClearModelRelatedContact()
 /**
  * \brief       restore contact info from the ref traj
 */
-void btGenCollisionDispatcher::RestoreContactInfoFromTraj()
+void btGenCollisionDispatcher::RestoreContactInfoFromTraj(
+    btGenContactAwareController *contact_aware_ctrl)
 {
-    auto mRefTraj = mController->GetRefTraj();
-    int frameid = mController->GetRefFrameId();
+    auto mRefTraj = contact_aware_ctrl->GetRefTraj();
+    int frameid = contact_aware_ctrl->GetRefFrameId();
     // btTraj * mRefTraj =
     const auto &contact_force_array = mRefTraj->mContactForce[frameid];
 
@@ -189,10 +198,12 @@ void btGenCollisionDispatcher::RestoreContactInfoFromTraj()
  * if collided, add them in the manifold
  * else continue
 */
-void btGenCollisionDispatcher::AddContactInfoFromSupposedInfo()
+void btGenCollisionDispatcher::AddContactInfoFromSupposedInfo(
+    btGenContactAwareController *contact_aware_ctrl)
 {
     // 1. get the supposed info, which means that, we should check the file and reload it
-    std::string supposed_contact_path = mController->GetSupposedContactInfo();
+    std::string supposed_contact_path =
+        contact_aware_ctrl->GetSupposedContactInfo();
     btTrajContactMigrator::tGivenContactPtInfo info =
         btTrajContactMigrator::LoadGivenContactPts(mModel,
                                                    supposed_contact_path);

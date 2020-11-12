@@ -11,8 +11,8 @@
 #include "../CommonInterfaces/CommonRigidBodyBase.h"
 #include "BulletDynamics/MLCPSolvers/btMLCPSolver.h"
 #include "BulletDynamics/MLCPSolvers/btSolveProjectedGaussSeidel.h"
-#include "BulletGenDynamics/btGenController/FBFCalculator/btGenFrameByFrameCalculator.h"
-#include "BulletGenDynamics/btGenController/btGenContactAwareController.h"
+#include "BulletGenDynamics/btGenController/ContactAwareController/FBFCalculator/btGenFrameByFrameCalculator.h"
+#include "BulletGenDynamics/btGenController/ContactAwareController/btGenContactAwareController.h"
 #include "BulletGenDynamics/btGenUtil/JsonUtil.h"
 #include "BulletGenDynamics/btGenWorld.h"
 #include <fstream>
@@ -44,6 +44,8 @@ struct CustomEngineMainDemo : public CommonRigidBodyBase
         double mDefaultTimestep;
         int mPauseFrame;
         bool mEnableContactAwareControl;
+        bool mEnableController;
+        std::string mControllerConfigPath;
         bool mRealTimeSim;
         tParams(const std::string &path);
     };
@@ -118,14 +120,28 @@ void CustomEngineMainDemo::initPhysics()
     if (physics_param->mAddMultibody)
     {
         mGenWorld->AddMultibody(physics_param->mMultibodyPath);
-        // Test();
-        if (physics_param->mEnableContactAwareControl)
+
+        // add controller
+        if (physics_param->mEnableController)
         {
-            mGenWorld->SetEnableContacrAwareControl();
-            mAwareController = mGenWorld->GetContactAwareController();
-            mAwareController->SetTraj(gContactAwareTraj, "tmp_traj.json", true);
-            mAwareController->SetBulletGUIHelperInterface(m_guiHelper);
+            mGenWorld->AddController(physics_param->mControllerConfigPath);
+
+            // if it is the contact aware controller, has some speical settings
+            if (physics_param->mEnableContactAwareControl)
+            {
+                if (mGenWorld->HasContactAwareController() == false)
+                {
+                    printf(
+                        "[error] illegal contact aware controller setting\n");
+                    exit(0);
+                }
+                mAwareController = mGenWorld->GetContactAwareController();
+                mAwareController->SetTraj(gContactAwareTraj, "tmp_traj.json",
+                                          true);
+                mAwareController->SetBulletGUIHelperInterface(m_guiHelper);
+            }
         }
+        // Test();
     }
 
     if (physics_param->mEnableGround)
@@ -182,14 +198,23 @@ CustomEngineMainDemo::tParams::tParams(const std::string &path)
     mEnableObjPerturb = json_root["enable_obj_perturb"].asBool();
     mDefaultTimestep = json_root["default_timestep"].asDouble();
     mPauseFrame = json_root["pause_frame"].asInt();
-    mEnableContactAwareControl =
-        btJsonUtil::ParseAsBool("enable_contact_aware_control", json_root);
     gEnablePauseWhenSolveError =
         json_root["enable_pause_when_solved_wrong"].asBool();
     gEnableResolveWhenSolveError =
         json_root["enable_resolve_when_solved_wrong"].asBool();
     gContactAwareTraj = json_root["contact_aware_ref_traj"].asString();
     mRealTimeSim = btJsonUtil::ParseAsBool("real_time_sim", json_root);
+    mEnableController = btJsonUtil::ParseAsBool("enable_controller", json_root);
+
+    mControllerConfigPath = btJsonUtil::ParseAsString("ctrl_config", json_root);
+    mEnableContactAwareControl =
+        btJsonUtil::ParseAsBool("enable_contact_aware_control", json_root);
+    if (mEnableContactAwareControl == true && mEnableController == false)
+    {
+        printf("[error] Maindemo: contact aware is enabled but controller is "
+               "disabled, illegal\n");
+        exit(0);
+    }
     // gOutputLogPath = json_root["output_log_path"].asString();
 }
 
@@ -307,7 +332,7 @@ void CustomEngineMainDemo::Test()
     // mb->TestdJdotdqdot();
     // mb->TestDCoriolisMatrixDq();
     mb->TestDCoriolisMatrixDqdot();
-    
+
     std::cout << "test done\n";
     exit(0);
 }

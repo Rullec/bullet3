@@ -1,6 +1,6 @@
-#include "BulletGenDynamics/btGenController/NQRCalculator/btGenNQRCalculator.h"
+#include "BulletGenDynamics/btGenController/ContactAwareController/NQRCalculator/btGenNQRCalculator.h"
 #include "BulletCollision/CollisionDispatch/btCollisionObject.h"
-#include "BulletGenDynamics/btGenController/btTraj.h"
+#include "BulletGenDynamics/btGenController/Trajectory/btTraj.h"
 #include "BulletGenDynamics/btGenModel/Link.h"
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
 #include "BulletGenDynamics/btGenUtil/BulletUtil.h"

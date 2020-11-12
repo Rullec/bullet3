@@ -1,8 +1,8 @@
 #pragma once
 #include "BulletCollision/CollisionDispatch/btCollisionDispatcher.h"
 #include "BulletGenDynamics/btGenUtil/MathUtil.h"
-#include <string>
 #include <map>
+#include <string>
 namespace Json
 {
 class Value;
@@ -12,12 +12,13 @@ class btGenRobotCollider;
 class btTraj;
 class btGeneralizeWorld;
 class btGenContactAwareController;
+class btGenControllerBase;
 class btGenCollisionDispatcher : public btCollisionDispatcher
 {
 public:
     btGenCollisionDispatcher(const Json::Value &conf, btGeneralizeWorld *world,
                              btCollisionConfiguration *collisionConfiguration);
-    void SetController(btGenContactAwareController *ctrl);
+    void SetController(btGenControllerBase *ctrl);
     void SetModel(cRobotModelDynamics *model);
     virtual ~btGenCollisionDispatcher();
     void Update();
@@ -26,13 +27,13 @@ protected:
     void ParseConf(const Json::Value &conf);
     std::string mCollisionType;
     cRobotModelDynamics *mModel;
-    btGenContactAwareController *mController;
+    btGenControllerBase *mController;
 
     btGeneralizeWorld *mWorld;
 
     void ClearModelRelatedContact();
-    void RestoreContactInfoFromTraj();
-    void AddContactInfoFromSupposedInfo();
+    void RestoreContactInfoFromTraj(btGenContactAwareController * contact_aware_ctrl);
+    void AddContactInfoFromSupposedInfo(btGenContactAwareController * contact_aware_ctrl);
 
     // =============
     btPersistentManifold *

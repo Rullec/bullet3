@@ -1,10 +1,11 @@
 #include "btGenWorld.h"
 #include "BulletGenDynamics/btGenCollision/btGenCollisionDispatcher.h"
+#include "BulletGenDynamics/btGenController/BuildController.h"
 #include "BulletGenDynamics/btGenController/PDController/btGenPDController.h"
-#include "BulletGenDynamics/btGenController/btTraj.h"
+#include "BulletGenDynamics/btGenController/Trajectory/btTraj.h"
 #include "BulletGenDynamics/btGenModel/EulerAngelRotationMatrix.h"
 #include "BulletGenDynamics/btGenUtil/TimeUtil.hpp"
-#include "btGenController/btGenContactAwareController.h"
+#include "btGenController/ContactAwareController/btGenContactAwareController.h"
 #include "btGenModel/RobotModelDynamics.h"
 #include "btGenModel/SimObj.h"
 #include "btGenSolver/ContactSolver.h"
@@ -70,7 +71,7 @@ btGeneralizeWorld::~btGeneralizeWorld()
 
     delete mLCPContactSolver;
     delete mGuideTraj;
-    delete mControlController;
+    delete mCtrl;
 }
 
 void btGeneralizeWorld::Init(const std::string &config_path)
@@ -145,7 +146,7 @@ void btGeneralizeWorld::Init(const std::string &config_path)
             mMBEpsDiagnoalMassMat = btJsonUtil::ParseAsDouble(
                 "mb_add_eps_at_diagnoal_mass_mat", config_js);
             mMBMaxVel = btJsonUtil::ParseAsDouble("mb_max_vel", config_js);
-            mMBEnableContactAwareLCP = false;
+            // mMBEnableContactAwareLCP = false;
             // mMBEnableContactAwareLCP = btJsonUtil::ParseAsBool(
             //     "mb_enable_contact_aware_lcp", config_js);
             // mMBEnableGuideAction =
@@ -157,8 +158,8 @@ void btGeneralizeWorld::Init(const std::string &config_path)
             // 	std::cout << "[error] the guided action & contact aware LCP
             // cannot be opened simutaneously.\n"; 	exit(0);
             // }
-            mContactAwareConfig = btJsonUtil::ParseAsString(
-                "contact_aware_lcp_config", config_js);
+            // mControllerConfig =
+            //     btJsonUtil::ParseAsString("controller_config", config_js);
             // mMBContactAwareW =
             // btJsonUtil::ParseAsDouble("mb_contact_aware_lcp_W", config_js);
             // mMBContactAwareWm =
@@ -176,8 +177,8 @@ void btGeneralizeWorld::Init(const std::string &config_path)
             // btJsonUtil::ParseAsString("controller_path", config_js);
             mLCPConfigPath =
                 btJsonUtil::ParseAsString("lcp_config_path", config_js);
-            mDebugThreeContactForces = btJsonUtil::ParseAsBool(
-                "debug_three_contact_forces", config_js);
+            // mDebugThreeContactForces = btJsonUtil::ParseAsBool(
+            //     "debug_three_contact_forces", config_js);
         }
 
         mLCPContactSolver = nullptr;
@@ -209,7 +210,7 @@ void btGeneralizeWorld::Init(const std::string &config_path)
     // {
     // 	mPDController = new btGenPDController(mPDControllerPath);
     // }
-    mControlController = nullptr;
+    mCtrl = nullptr;
     // mControlController = new btGenContactAwareController();
     // SetEnableContacrAwareControl();
 }
@@ -459,7 +460,14 @@ std::vector<btGenContactForce *> btGeneralizeWorld::GetContactForces() const
 
 btGenContactAwareController *btGeneralizeWorld::GetContactAwareController()
 {
-    return mControlController;
+    if (HasContactAwareController() == false)
+    {
+        printf("[error] GetContactAwareController cannot be called because "
+               "there is no consistent controller\n");
+        exit(0);
+        return nullptr;
+    }
+    return dynamic_cast<btGenContactAwareController *>(mCtrl);
 }
 std::vector<btPersistentManifold *>
 btGeneralizeWorld::GetContactManifolds() const
@@ -622,10 +630,8 @@ void btGeneralizeWorld::ApplyGravity()
  */
 void btGeneralizeWorld::UpdateController(double dt)
 {
-    if (mMBEnableContactAwareLCP)
-    {
-        mControlController->Update(dt);
-    }
+    if (HasController() == true)
+        mCtrl->Update(dt);
 }
 
 // 2. collision detect, collect contact info
@@ -1028,56 +1034,15 @@ void btGeneralizeWorld::Update(double dt)
     // for multibody
     if (mMultibody)
     {
-        // if (mMBEnableRk4)
-        // {
-        // 	mMultibody->UpdateRK4(dt);
-        // }
-        // else
-        // {
-        // 	// std::cout << "[bt] old q = " <<
-        // mMultibody->Getq().transpose() << std::endl;
-        // 	// std::cout << "[bt] old qdot = " <<
-        // mMultibody->Getqdot().transpose() << std::endl;
 
-        // 	// std::cout << "[bt] new q = " <<
-        // mMultibody->Getq().transpose() << std::endl;
-        // 	// std::cout << "[bt] new qdot = " <<
-        // mMultibody->Getqdot().transpose() << std::endl;
-        // }
-        // std::cout << "[preupdate] q = " << mMultibody->Getq().transpose() <<
-        // std::endl; std::cout << "[preupdate] qdot = " <<
-        // mMultibody->Getqdot().transpose() << std::endl; std::cout <<
-        // "[preupdate] gen force = " <<
-        // mMultibody->GetGeneralizedForce().transpose() << std::endl; std::cout
-        // << "[preupdate] qddot = " << mMultibody->Getqddot().transpose() <<
-        // std::endl; std::cout << "[preupdate] M = " <<
-        // mMultibody->GetMassMatrix() << std::endl; std::cout << "[preupdate] C
-        // = " << mMultibody->GetCoriolisMatrix() << std::endl;
-        // {
-        // 	std::cout << "two time update\n";
-        // 	if (mMBEnableContactAwareLCP == false)
-        // 	{
-        // 		mMultibody->UpdateVelocity(dt);
-        // 	}
-        // 	else
-        // 	{
-        // 		mMultibody->GetContactAwareController()->UpdateMultibodyVelocityDebug(dt);
-        // 	}
-        // 	mMultibody->UpdateTransform(dt);
-        // }
-
+        if (HasContactAwareController() == false)
         {
-            // std::cout << "one time update\n";
-            if (mMBEnableContactAwareLCP == false)
-            {
-                mMultibody->UpdateVelocityAndTransform(dt);
-            }
-            else
-            {
-                mMultibody->GetContactAwareController()
-                    ->UpdateMultibodyVelocityAndTransformDebug(dt);
-            }
-            // mMultibody->UpdateTransform(dt);
+            mMultibody->UpdateVelocityAndTransform(dt);
+        }
+        else
+        {
+            mMultibody->GetContactAwareController()
+                ->UpdateMultibodyVelocityAndTransformDebug(dt);
         }
 
         if (mMultibody->IsGeneralizedMaxVel())
@@ -1141,113 +1106,68 @@ void btGeneralizeWorld::PopStatePostColliison()
     }
 }
 
-/**
- * \brief               Given the control force, calculate the current contact forces 
- *  Note that these contact forces are calculated in non-contact-aware environmentI
-*/
-std::vector<btGenContactForce *> btGeneralizeWorld::DebugGetContactForces(
-    double dt, const std::vector<btGenConstraintGeneralizedForce *> &gen_forces)
-{
-    // 2. save the current model state, save the env setting (contact aware or not)
-    bool world_enable_contact_aware = mMBEnableContactAwareLCP;
-    bool model_enable_contact_aware =
-        mMultibody->GetEnableContactAwareController();
-    mMultibody->PushState("debug_get_contact_force");
-    // 3. apply the control force
-    for (auto &f : gen_forces)
-    {
-        mMultibody->ApplyGeneralizedForce(f->dof_id, f->value);
-    }
-
-    // 4. change the env to non-contact-aware environment, collect the reaction contact force,
-    mMultibody->SetEnableContactAwareController(false);
-    mMBEnableContactAwareLCP = false;
-
-    // 5. record the reaction contact force
-    mLCPContactSolver->ConstraintProcess(dt);
-    std::vector<btGenContactForce *> contact_forces =
-        mLCPContactSolver->GetContactForces();
-
-    // 6. resotre the model state, and the env setting
-    mMultibody->PopState("debug_get_contact_force");
-    mMultibody->SetEnableContactAwareController(model_enable_contact_aware);
-    mMBEnableContactAwareLCP = world_enable_contact_aware;
-    // 7. return the contact forces
-    return contact_forces;
-}
-
-std::vector<btGenContactForce *>
-btGeneralizeWorld::DebugGetContactForces(double dt,
-                                         const tVectorXd &control_force)
-{
-    // 1. make sure the length of control for = actuated dof
-    int num_of_freedom = mMultibody->GetNumOfFreedom();
-    int num_of_actuated_freedom = num_of_freedom - 6;
-
-    if (control_force.size() != num_of_actuated_freedom)
-    {
-        std::cout << "[error] DebugGetContactForces: control force length "
-                     "inconsistent "
-                  << control_force << " != " << num_of_actuated_freedom
-                  << std::endl;
-        exit(0);
-    }
-
-    // 1. convert the gen forces to a single control force vector
-    std::vector<btGenConstraintGeneralizedForce *> gen_forces(0);
-    for (int i = 0; i < control_force.size(); i++)
-    {
-        gen_forces.push_back(new btGenConstraintGeneralizedForce(
-            mMultibody, i + 6, control_force[i]));
-    }
-
-    // 2. call another API, return
-    return DebugGetContactForces(dt, gen_forces);
-}
-
-// tVectorXd btGeneralizeWorld::DebugConvertCartesianContactForceToGenForce(
-//     const tVectorXd &new_q, const std::vector<btGenContactForce *> &fs)
+// /**
+//  * \brief               Given the control force, calculate the current contact forces
+//  *  Note that these contact forces are calculated in non-contact-aware environmentI
+// */
+// std::vector<btGenContactForce *> btGeneralizeWorld::DebugGetContactForces(
+//     double dt, const std::vector<btGenConstraintGeneralizedForce *> &gen_forces)
 // {
-//     // 1. save state
-//     mMultibody->PushState("debug_convert_cartesian_contact_force");
-//     // set new state
-//     mMultibody->SetqAndqdot(new_q, mMultibody->Getqdot());
-
-//     // calc the gen force
-//     tVectorXd Q = tVectorXd::Zero(mMultibody->GetNumOfFreedom());
-//     // std::cout << "----------begin to convert the cartesian contact "
-//     //              "forces----------\n";
-//     for (auto f : fs)
+//     // 2. save the current model state, save the env setting (contact aware or not)
+//     bool world_enable_contact_aware = mMBEnableContactAwareLCP;
+//     bool model_enable_contact_aware =
+//         mMultibody->GetEnableContactAwareController();
+//     mMultibody->PushState("debug_get_contact_force");
+//     // 3. apply the control force
+//     for (auto &f : gen_forces)
 //     {
-//         if (f->mObj->GetType() == eColObjType::RobotCollder)
-//         {
-//             auto collider = dynamic_cast<btGenRobotCollider *>(f->mObj);
-//             tMatrixXd jac;
-//             mMultibody->ComputeJacobiByGivenPointTotalDOFWorldFrame(
-//                 collider->mLinkId, f->mWorldPos.segment(0, 3), jac);
-//             Q += jac.transpose() * f->mForce.segment(0, 3);
-//         }
+//         mMultibody->ApplyGeneralizedForce(f->dof_id, f->value);
 //     }
-//     // restore state
-//     mMultibody->PopState("debug_convert_cartesian_contact_force");
 
-//     // return the gen force
-//     return Q;
+//     // 4. change the env to non-contact-aware environment, collect the reaction contact force,
+//     mMultibody->SetEnableContactAwareController(false);
+//     mMBEnableContactAwareLCP = false;
+
+//     // 5. record the reaction contact force
+//     mLCPContactSolver->ConstraintProcess(dt);
+//     std::vector<btGenContactForce *> contact_forces =
+//         mLCPContactSolver->GetContactForces();
+
+//     // 6. resotre the model state, and the env setting
+//     mMultibody->PopState("debug_get_contact_force");
+//     mMultibody->SetEnableContactAwareController(model_enable_contact_aware);
+//     mMBEnableContactAwareLCP = world_enable_contact_aware;
+//     // 7. return the contact forces
+//     return contact_forces;
 // }
 
-// void btGeneralizeWorld::DebugPrintContactForce(
-//     const std::vector<btGenMBContactForce *> &fs)
+// std::vector<btGenContactForce *>
+// btGeneralizeWorld::DebugGetContactForces(double dt,
+//                                          const tVectorXd &control_force)
 // {
-//     for (auto &x : fs)
+//     // 1. make sure the length of control for = actuated dof
+//     int num_of_freedom = mMultibody->GetNumOfFreedom();
+//     int num_of_actuated_freedom = num_of_freedom - 6;
+
+//     if (control_force.size() != num_of_actuated_freedom)
 //     {
-//         if (x->mObj->GetType() == eColObjType::RobotCollder)
-//             std::cout << x->mForce.transpose() << std::endl;
+//         std::cout << "[error] DebugGetContactForces: control force length "
+//                      "inconsistent "
+//                   << control_force << " != " << num_of_actuated_freedom
+//                   << std::endl;
+//         exit(0);
 //     }
-// }
-// tVectorXd btGeneralizeWorld::DebugGetGenControlForce(int ref_frameid)
-// {
-//     return mControlController->GetRefTraj()->GetGenControlForce(ref_frameid,
-//                                                              mMultibody);
+
+//     // 1. convert the gen forces to a single control force vector
+//     std::vector<btGenConstraintGeneralizedForce *> gen_forces(0);
+//     for (int i = 0; i < control_force.size(); i++)
+//     {
+//         gen_forces.push_back(new btGenConstraintGeneralizedForce(
+//             mMultibody, i + 6, control_force[i]));
+//     }
+
+//     // 2. call another API, return
+//     return DebugGetContactForces(dt, gen_forces);
 // }
 
 void btGeneralizeWorld::CollectFrameInfo(double dt)
@@ -1427,18 +1347,18 @@ void btGeneralizeWorld::Reset()
     mMultibody->SyncToBullet();
 }
 
-void btGeneralizeWorld::SetEnableContacrAwareControl()
+bool btGeneralizeWorld::HasController() const { return mCtrl != nullptr; }
+bool btGeneralizeWorld::HasContactAwareController() const
 {
-    std::cout << "btGeneralizeWorld::SetEnableContacrAwareControl is called\n";
-    if (mControlController != nullptr || mMBEnableContactAwareLCP == true)
-    {
-        std::cout << "[error] control controller exists, exit...\n";
-        exit(0);
-    }
-    mMBEnableContactAwareLCP = true;
-    mControlController = new btGenContactAwareController(this);
-    mControlController->Init(this->mMultibody, mContactAwareConfig);
-    m_dispatcher->SetController(mControlController);
+    return this->HasController() &&
+           mCtrl->GetCtrlType() == ebtGenControllerType::ContactAwareController;
+}
+void btGeneralizeWorld::AddController(const std::string &path)
+{
+    // 1. build & init the controller
+    mCtrl = BuildController(this, path);
+    mCtrl->Init(mMultibody, path);
+    m_dispatcher->SetController(mCtrl);
 }
 
 // /**

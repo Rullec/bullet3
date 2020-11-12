@@ -1,5 +1,5 @@
 #pragma once
-#include "BulletGenDynamics/btGenController/btGenTargetCalculator.h"
+#include "BulletGenDynamics/btGenController/ContactAwareController/btGenTargetCalculator.h"
 
 /**
  * Nonlinear quadratic regular implemention based on 2009 TOG "Contact-aware Nonlinear Control of Dynamic Characters"

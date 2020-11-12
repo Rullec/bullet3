@@ -10,8 +10,8 @@
 #include "../CommonInterfaces/CommonRigidBodyBase.h"
 #include "BulletDynamics/MLCPSolvers/btMLCPSolver.h"
 #include "BulletDynamics/MLCPSolvers/btSolveProjectedGaussSeidel.h"
-#include "BulletGenDynamics/btGenController/FBFCalculator/btGenFrameByFrameCalculator.h"
-#include "BulletGenDynamics/btGenController/btGenContactAwareController.h"
+#include "BulletGenDynamics/btGenController/ContactAwareController/FBFCalculator/btGenFrameByFrameCalculator.h"
+#include "BulletGenDynamics/btGenController/ContactAwareController/btGenContactAwareController.h"
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
 #include "BulletGenDynamics/btGenUtil/JsonUtil.h"
 #include "BulletGenDynamics/btGenWorld.h"
@@ -104,9 +104,9 @@ void initPhysics()
     if (physics_param->mAddMultibody)
     {
         mGenWorld->AddMultibody(physics_param->mMultibodyPath);
-        mGenWorld->SetEnableContacrAwareControl();
-        mController = mGenWorld->GetContactAwareController();
-        mController->SetTraj(gContactAwareTraj, "tmp_traj.json", true);
+        // mGenWorld->AddController();
+        // mController = mGenWorld->GetContactAwareController();
+        // mController->SetTraj(gContactAwareTraj, "tmp_traj.json", true);
     }
 
     if (physics_param->mEnableGround)

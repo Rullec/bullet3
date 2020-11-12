@@ -9,6 +9,7 @@ class cRobotModelDynamics;
 class btGenContactForce;
 class btGenConstraintGeneralizedForce;
 class btGenCollisionDispatcher;
+class btGenControllerBase;
 class btGenContactAwareController;
 class btTraj;
 class btGeneralizeWorld
@@ -67,7 +68,10 @@ public:
     btGenCollisionDispatcher *GetDispatcher();
     btDefaultCollisionConfiguration *GetConfiguration();
     eContactResponseMode GetContactResponseMode() const;
-    void SetEnableContacrAwareControl();
+    // void SetEnableContactAwareControl();
+    void AddController(const std::string &path);
+    bool HasController() const;
+    bool HasContactAwareController() const;
 
 protected:
     btDiscreteDynamicsWorld *mInternalWorld;
@@ -89,29 +93,19 @@ protected:
     // bool mMBEnableRk4;
     double mMBEpsDiagnoalMassMat;
     double mMBMaxVel;
-    bool mDebugThreeContactForces;
-    bool mMBEnableContactAwareLCP;
-    // bool mMBEnableGuideAction;
-    // std::string mGuidedActionTrajFile;
-    std::string mContactAwareConfig;
-    // double mMBContactAwareW;
-    // double mMBContactAwareWm;
-    // std::string mContactAwareGuideTraj;
-    // bool mMBUpdateVelWithoutCoriolis;
-    bool mEnablePeturb;
-    // bool mEnablePDControl;
-    // std::string mPDControllerPath;
+    // bool mDebugThreeContactForces;
+    // bool mMBEnableContactAwareLCP;
 
-    // bool mMBEAngleClamp;
-    // bool mMBTestJacobian;
+    // std::string mControllerConfig; //
+    bool mEnablePeturb;            // enable external perturb
     btCollisionObject *mGround;
-    bool mMBEnableCollectFrameInfo;
+    bool mMBEnableCollectFrameInfo; // collect frame info and save
     bool mEnablePauseWhenMaxVel;
     int mMBCollectFrameNum;
     double mMBScale;
     eContactResponseMode mContactMode;
     btGenContactSolver *mLCPContactSolver;
-    btGenContactAwareController *mControlController;
+    btGenControllerBase *mCtrl; // character controller
     std::string mLCPConfigPath;
     std::vector<btPersistentManifold *> mManifolds;
     std::vector<btGenContactForce *> mContactForces;
@@ -143,11 +137,11 @@ protected:
     void CollisionResposeSI(double dt);
     void PushStatePreCollision();
     void PopStatePostColliison();
-    std::vector<btGenContactForce *>
-    DebugGetContactForces(double dt, const tVectorXd &control_force);
-    std::vector<btGenContactForce *> DebugGetContactForces(
-        double dt,
-        const std::vector<btGenConstraintGeneralizedForce *> &gen_forces);
+    // std::vector<btGenContactForce *>
+    // DebugGetContactForces(double dt, const tVectorXd &control_force);
+    // std::vector<btGenContactForce *> DebugGetContactForces(
+    //     double dt,
+    //     const std::vector<btGenConstraintGeneralizedForce *> &gen_forces);
     // void DebugPrintContactForce(const std::vector<btGenMBContactForce *> &fs);
     // tVectorXd DebugConvertCartesianContactForceToGenForce(
     //     const tVectorXd &new_q, const std::vector<btGenMBContactForce *> &fs);

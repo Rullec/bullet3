@@ -64,22 +64,24 @@ SET(
 
 SET(
 	BulletGenPDControler_SRCS
-	./btGenController/btGenContactAwareController.cpp
-	./btGenController/btGenTargetCalculator.cpp
-	./btGenController/ContactAdaptionFeature/btGenFeature.cpp
-	./btGenController/ContactAdaptionFeature/btGenFeatureUtils.cpp
+	./btGenController/ControllerBase.cpp
+	./btGenController/BuildController.cpp
 	./btGenController/PDController/btGenPDController.cpp
-	./btGenController/FBFCalculator/btGenFBFConstraint.cpp
-	./btGenController/FBFCalculator/btGenFBFEnergyTerm.cpp
-	./btGenController/FBFCalculator/btGenFrameByFrameCalculator.cpp
-	./btGenController/FBFCalculator/btGenFrameByFrameCalculatorTerm.cpp
-	./btGenController/FBFCalculator/btCharContactPoint.cpp
-	./btGenController/NQRCalculator/btGenNQRCalculator.cpp
-	# ./btGenController/QPSolver/MatlabQPSolver.cpp
-	./btGenController/QPSolver/QuadProgQPSolver.cpp
-	./btGenController/QPSolver/eiquadprog.hpp
-	./btGenController/btTraj.cpp
-	./btGenController/btTrajContactMigrator.cpp
+	./btGenController/ContactAwareController/btGenContactAwareController.cpp
+	./btGenController/ContactAwareController/btGenTargetCalculator.cpp
+	./btGenController/ContactAwareController/ContactAdaptionFeature/btGenFeature.cpp
+	./btGenController/ContactAwareController/ContactAdaptionFeature/btGenFeatureUtils.cpp
+	./btGenController/ContactAwareController/FBFCalculator/btGenFBFConstraint.cpp
+	./btGenController/ContactAwareController/FBFCalculator/btGenFBFEnergyTerm.cpp
+	./btGenController/ContactAwareController/FBFCalculator/btGenFrameByFrameCalculator.cpp
+	./btGenController/ContactAwareController/FBFCalculator/btGenFrameByFrameCalculatorTerm.cpp
+	./btGenController/ContactAwareController/FBFCalculator/btCharContactPoint.cpp
+	./btGenController/ContactAwareController/NQRCalculator/btGenNQRCalculator.cpp
+	./btGenController/ContactAwareController/QPSolver/QuadProgQPSolver.cpp
+	./btGenController/ContactAwareController/QPSolver/eiquadprog.hpp
+	./btGenController/SimbiconController/SimbiconController.cpp
+	./btGenController/Trajectory/btTraj.cpp
+	./btGenController/Trajectory/btTrajContactMigrator.cpp
 )
 
 # if (UNIX)

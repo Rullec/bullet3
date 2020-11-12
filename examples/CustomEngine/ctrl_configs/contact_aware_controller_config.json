@@ -1,4 +1,5 @@
 {
+    "ctrl_type" : "ContactAwareController",
     "feature_vector_file_full": "./examples/CustomEngine/ctrl_configs/features/pos_feature_full.json",
     "feature_vector_file": "examples/CustomEngine/ctrl_configs/features/legs/accel_feature_legs.json",
     "feature_vector_file_oneleg": "examples/CustomEngine/ctrl_configs/features/oneleg/angle_accel.json",

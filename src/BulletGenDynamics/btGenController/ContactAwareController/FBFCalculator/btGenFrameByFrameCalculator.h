@@ -1,5 +1,5 @@
 #pragma once
-#include "BulletGenDynamics/btGenController/btGenTargetCalculator.h"
+#include "BulletGenDynamics/btGenController/ContactAwareController/btGenTargetCalculator.h"
 class QuadProgQPSolver;
 class btCharContactPt;
 class btGenFrameByFrameConstraint;

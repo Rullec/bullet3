@@ -1,5 +1,5 @@
-#include "btTrajContactMigrator.h"
-#include "BulletGenDynamics/btGenController/btTraj.h"
+#include "BulletGenDynamics/btGenController/Trajectory/btTrajContactMigrator.h"
+#include "BulletGenDynamics/btGenController/Trajectory/btTraj.h"
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
 #include "BulletGenDynamics/btGenUtil/FileUtil.h"
 #include "BulletGenDynamics/btGenUtil/JsonUtil.h"

@@ -1,4 +1,4 @@
-#include "BulletGenDynamics/btGenController/btGenTargetCalculator.h"
+#include "BulletGenDynamics/btGenController/ContactAwareController/btGenTargetCalculator.h"
 #include "../examples/CommonInterfaces/CommonGUIHelperInterface.h"
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
 #include "BulletGenDynamics/btGenWorld.h"
