@@ -1,5 +1,8 @@
 #include "BulletGenDynamics/btGenController/ControllerBase.h"
 
+/**
+ * \brief       2007 SIGGRAPH paper SIMBICON reimplemention, Kangkang Yin. et al
+*/
 class btGenSimbiconController : public btGenControllerBase
 {
 public:
@@ -10,4 +13,5 @@ public:
     virtual void Reset() override;
 
 protected:
+    
 };
