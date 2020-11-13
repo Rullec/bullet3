@@ -62,6 +62,7 @@ public:
     void TestdJdotdqdot();
     void TestDCoriolisMatrixDq();
     void TestDCoriolisMatrixDqdot();
+    void TestSetFreedomValueAndDot();
     void ComputeDCoriolisMatrixDq(const tVectorXd &qdot, EIGEN_V_MATXD &dCdq);
     void ComputeDCoriolisMatrixDqdot(EIGEN_V_MATXD &dCdqdot);
     tMatrixXd GetInvMassMatrix();

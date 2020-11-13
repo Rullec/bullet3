@@ -398,14 +398,6 @@ void Joint::ComputeGlobalTransformFirstDerive()
                             mWq[i + prev_freedoms]);
         }
     }
-    if (0 == id)
-    {
-        for (int i = local_freedom + prev_freedoms; i < total_freedoms; i++)
-        {
-            std::cout << "[joint] dRdq for dof " << i
-                      << " nnorm should be 0 = " << mWq[i].norm() << std::endl;
-        }
-    }
 }
 
 /**
@@ -740,23 +732,66 @@ const tMatrixXd &Joint::GetJKDot() const
 
 int Joint::GetNumOfFreedom() { return static_cast<int>(freedoms.size()); }
 
-void Joint::SetFreedomValue(int id, double v) { freedoms[id].v = v; }
+/**
+ * \brief           Set a single freedom value of this joint
+ * \param id        the LOCAL id of target dof we want to set, beginning from 0 -> DOF of this joint
+ *                  NOT GLOBAL!
+*/
+void Joint::SetFreedomValue(int id, double v)
+{
+    if (id >= freedoms.size())
+    {
+        printf("[error] Joint %d SetFreedomValue id %d exceed the dof num %d\n",
+               this->mId, id, GetNumOfFreedom());
+        exit(1);
+    }
+    freedoms[id].v = v;
+}
 
-void Joint::GetFreedomValue(int id, double &v) { v = freedoms[id].v; }
+/**
+ * \brief           Get a single freedom value of this joint
+ * \param id        the LOCAL id of target dof we want to get, beginning from 0 -> DOF of this joint
+ *                  NOT GLOBAL!
+*/
+void Joint::GetFreedomValue(int id, double &v)
+{
+    if (id >= freedoms.size())
+    {
+        printf("[error] Joint %d GetFreedomValue id %d exceed the dof num %d\n",
+               this->mId, id, GetNumOfFreedom());
+        exit(1);
+    }
+    v = freedoms[id].v;
+}
 
+/**
+ * \brief           Set all of the freedom values of this joint
+ * \param v         a vector whose length is the same as the DOF number of this joint
+*/
 void Joint::SetFreedomValue(std::vector<double> &v)
 {
-    for (auto &f : freedoms)
+    if (v.size() != freedoms.size())
     {
-        f.v = v[f.id];
+        printf("[error] Joint %d SetFreedomValue size %d != the dof num %d\n",
+               this->mId, v.size(), GetNumOfFreedom());
+        exit(1);
+    }
+    for (int i = 0; i < GetNumOfFreedom(); i++)
+    {
+        this->freedoms[i].v = v[i];
     }
 }
 
+/**
+ * \brief           Get all of the freedom values of this joint
+ * \param v         a ref vector, it will be changed in this function
+*/
 void Joint::GetFreedomValue(std::vector<double> &v)
 {
-    for (auto &f : freedoms)
+    v.resize(freedoms.size());
+    for (int i = 0; i < GetNumOfFreedom(); i++)
     {
-        v[f.id] = f.v;
+        v[i] = freedoms[i].v;
     }
 }
 
@@ -768,11 +803,11 @@ void Joint::CleanGradient()
     }
 }
 
-void Joint::SetJointVel(const tVector3d &vel_) { mJointVel = vel_; }
-void Joint::SetJointOmega(const tVector3d &omega_) { mJointOmega = omega_; }
-tVector3d Joint::GetJointVel() const { return mJointVel; }
+// void Joint::SetJointVel(const tVector3d &vel_) { mJointVel = vel_; }
+// void Joint::SetJointOmega(const tVector3d &omega_) { mJointOmega = omega_; }
+// tVector3d Joint::GetJointVel() const { return mJointVel; }
 
-tVector3d Joint::GetJointOmega() const { return mJointOmega; }
+// tVector3d Joint::GetJointOmega() const { return mJointOmega; }
 void Joint::SetTorqueLim(double lim) { mTorqueLim = lim; }
 
 double Joint::GetTorqueLim() const { return mTorqueLim; }
@@ -1012,4 +1047,69 @@ const tMatrix &Joint::GetMTQQQ(int i, int j, int k) const
         exit(1);
     }
     return mTqqq[i][j][k];
+}
+
+/**
+ * \brief           Set the freedom's velocity value "vdot". 
+ * they are elements in generalize velocity 
+ * \param dof_id    the same as in SetFreedomValue
+*/
+void Joint::SetFreedomValueDot(int dof_id, double vdot)
+{
+    if (dof_id >= freedoms.size())
+    {
+        printf(
+            "[error] Joint %d SetFreedomValueDot id %d exceed the dof num %d\n",
+            mId, dof_id, GetNumOfFreedom());
+        exit(1);
+    }
+    freedoms[dof_id].vdot = vdot;
+}
+
+/**
+ * \brief           Get the freedom's velocity value "vdot"
+ * \param dof_id    the same as in SetFreedomValue
+*/
+void Joint::GetFreedomValueDot(int dof_id, double &vdot)
+{
+    if (dof_id >= freedoms.size())
+    {
+        printf(
+            "[error] Joint %d GetFreedomValueDot id %d exceed the dof num %d\n",
+            mId, dof_id, GetNumOfFreedom());
+        exit(1);
+    }
+    vdot = freedoms[dof_id].vdot;
+}
+
+/**
+ * \brief           Set the freedom's velocity value vector "vdot"
+ * \param vdot      the same as in SetFreedomValue
+*/
+void Joint::SetFreedomValueDot(std::vector<double> &vdot)
+{
+    if (vdot.size() != freedoms.size())
+    {
+        printf(
+            "[error] Joint %d SetFreedomValueDot size %d != the dof num %d\n",
+            this->mId, vdot.size(), GetNumOfFreedom());
+        exit(1);
+    }
+    for (int i = 0; i < freedoms.size(); i++)
+    {
+        freedoms[i].vdot = vdot[i];
+    }
+}
+
+/**
+ * \brief           Get the freedom's velocity value vector "vdot"
+ * \param vdot      the same as in GetFreedomValueDot
+*/
+void Joint::GetFreedomValueDot(std::vector<double> &vdot)
+{
+    vdot.resize(freedoms.size());
+    for (int i = 0; i < freedoms.size(); i++)
+    {
+        vdot[i] = freedoms[i].vdot;
+    }
 }

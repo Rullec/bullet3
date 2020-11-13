@@ -2009,3 +2009,58 @@ void cRobotModelDynamics::TestdJdotdqdot()
         PopState("test_djdotdqdot");
     }
 }
+
+/**
+ * \brief       Test the joint's get & set freedoms' APIs work fine
+*/
+void cRobotModelDynamics::TestSetFreedomValueAndDot()
+{
+    PushState("test_state");
+    // 1. random a q and qdot, set them
+    tVectorXd q = tVectorXd::Random(num_of_freedom),
+              qdot = tVectorXd::Random(num_of_freedom);
+    SetqAndqdot(q, qdot);
+    // 2. check the model's freedoms v and vdot
+    double eps = 1e-15;
+    for (int i = 0; i < num_of_freedom; i++)
+    {
+        double v_diff = std::fabs(freedoms[i]->v - q[i]),
+               vdot_diff = std::fabs(freedoms[i]->vdot - qdot[i]);
+        if (v_diff > eps || vdot_diff > eps)
+        {
+            printf("[error] TestSetFreedomValueAndDot failed, for dof %d vdiff "
+                   "%.5f, vdotdiff %.5f\n",
+                   i, v_diff, vdot_diff);
+            exit(0);
+        }
+    }
+
+    // 3. check the v and vdot in each joint
+    for (int i = 0; i < GetNumOfJoint(); i++)
+    {
+        auto joint = dynamic_cast<Joint *>(GetJointById(i));
+        int local_dof = joint->GetNumOfFreedom();
+        int offset = joint->GetFreedoms(0)->id;
+        for (int j = 0; j < local_dof; j++)
+        {
+            double get_q, get_qdot;
+            joint->GetFreedomValue(j, get_q);
+            joint->GetFreedomValueDot(j, get_qdot);
+
+            double target_q = q[offset + j], target_qdot = qdot[offset + j];
+            double q_diff = std::fabs(get_q - target_q),
+                   qdot_diff = std::fabs(get_qdot - target_qdot);
+            if (q_diff > eps || qdot_diff > eps)
+            {
+                printf("[error] TestSetFreedomValueAndDot failed, for dof %d "
+                       "qdiff "
+                       "%.5f, qdotdiff %.5f\n",
+                       i, q_diff, qdot_diff);
+                exit(0);
+            }
+        }
+    }
+
+    printf("[log] TestSetFreedomValueAndDot succ\n");
+    PopState("test_state");
+}

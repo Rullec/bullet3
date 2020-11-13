@@ -41,8 +41,7 @@ public:
     BaseObject *GetLink(std::string name) const;
 
     int GetNumOfFreedom() const;
-    void Apply(const std::vector<double> &ang, int st,
-               bool compute_gradient);
+    void Apply(const std::vector<double> &ang, int st, bool compute_gradient);
     void Apply(const std::vector<double> &ang, tVector3d cycle_step, int st,
                bool compute_gradient);
     void Apply(const tVectorXd &ang, bool compute_gradient);
@@ -60,8 +59,8 @@ public:
                                                      const tVector3d &point,
                                                      tMatrixXd &j) const;
     void ComputeJacobiByGivenPointTotalDOFLinkLocalFrame(int link_id,
-                                                     const tVector3d &point,
-                                                     tMatrixXd &j) const;
+                                                         const tVector3d &point,
+                                                         tMatrixXd &j) const;
     // void ComputeJacobiByGivenPointTotalDOFLocalFrame(int link_id, const
     // tVector3d& point, tMatrixXd& j) const;
     void ComputeCoMJacobi(tMatrixXd &j);

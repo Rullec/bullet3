@@ -385,7 +385,7 @@ BaseObject *BaseObject::GetFirstChild()
 }
 
 BaseObject::BaseObject(const BaseObjectParams &param)
-    : id(0), parent_id(-1), name(param.name), local_pos(param.local_pos),
+    : mId(0), parent_id(-1), name(param.name), local_pos(param.local_pos),
       parent(nullptr), mesh_scale(param.mesh_scale),
       mesh_rotation(param.mesh_rotation), mesh(param.mesh),
       render_struct(nullptr), mass(param.mass), parent_joint(nullptr),
@@ -428,7 +428,7 @@ BaseObject::BaseObject(const BaseObjectParams &param)
 }
 
 BaseObject::BaseObject(const BaseObjectJsonParam &param)
-    : id(param.id), parent_id(param.parent_id), name(param.name),
+    : mId(param.id), parent_id(param.parent_id), name(param.name),
       local_pos(param.local_pos), parent(nullptr), mesh_scale(param.mesh_scale),
       mesh_rotation(param.mesh_rot), mesh(param.mesh), render_struct(nullptr),
       mass(param.mass), parent_joint(nullptr), total_freedoms(-1),

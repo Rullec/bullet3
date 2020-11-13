@@ -1291,3 +1291,24 @@ void Link::ComputedCoriolisMatrixdqdotReduced(tEigenArr<tMatrixXd> &dCdqdot)
             (Mck * dJkdotdqdot + dTildeOmega_dqdot * Mck * JkT.transpose());
     }
 }
+
+void Link::SetFreedomValueDot(int id, double v)
+{
+    printf("[error] SetFreedomValueDot is prohibited for Links\n");
+    exit(0);
+}
+void Link::GetFreedomValueDot(int id, double &v)
+{
+    printf("[error] GetFreedomValueDot is prohibited for Links\n");
+    exit(0);
+}
+void Link::SetFreedomValueDot(std::vector<double> &v)
+{
+    printf("[error] SetFreedomValueDot is prohibited for Links\n");
+    exit(0);
+}
+void Link::GetFreedomValueDot(std::vector<double> &v)
+{
+    printf("[error] GetFreedomValueDot is prohibited for Links\n");
+    exit(0);
+}

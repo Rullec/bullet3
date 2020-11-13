@@ -107,11 +107,12 @@ struct Freedom
 {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
     double v;
+    double vdot;
     tVector3d axis;
     tVector3d grad;
     double lb;
     double ub;
-    unsigned id;
+    unsigned id;    // global freedom id in the whole multibody
     int type = REVOLUTE;
     std::string name;
     void clear_grad() { grad = tVector3d::Zero(3); }
@@ -119,8 +120,9 @@ struct Freedom
     Freedom() = default;
 
     Freedom(const Freedom &other)
-        : v(other.v), axis(other.axis), grad(other.grad), lb(other.lb),
-          ub(other.ub), id(other.id), type(other.type), name(other.name)
+        : v(other.v), vdot(other.vdot), axis(other.axis), grad(other.grad),
+          lb(other.lb), ub(other.ub), id(other.id), type(other.type),
+          name(other.name)
     {
     }
 };
@@ -168,13 +170,17 @@ public:
     BaseObject *GetChild(int order);
     virtual void SetFreedomValue(int id, double v) {}
     virtual void GetFreedomValue(int id, double &v) {}
+    virtual void SetFreedomValueDot(int id, double v) = 0;
+    virtual void GetFreedomValueDot(int id, double &v) = 0;
     virtual Freedom *GetFreedomByAxis(tVector3d axis, int type = REVOLUTE)
     {
         return nullptr;
     }
     virtual void SetFreedomValue(std::vector<double> &v) {}
-    void SetPos(const tVector3d &pos);
     virtual void GetFreedomValue(std::vector<double> &v) {}
+    virtual void SetFreedomValueDot(std::vector<double> &v) = 0;
+    virtual void GetFreedomValueDot(std::vector<double> &v) = 0;
+    void SetPos(const tVector3d &pos);
     void SetInertiaTensorBody(tMatrix3d &I) { this->Ibody = I; }
     const tMatrix3d &GetInertiaTensorBody() { return this->Ibody; }
     virtual bool IsJoint() const = 0;
@@ -242,7 +248,7 @@ public:
         return neg_init_rotation_matrix_4x4;
     };
 
-    int GetId() const { return id; }
+    int GetId() const { return mId; }
     int GetParentId() const { return parent_id; }
     void SetLocalRot(const tVector3d &local_rot);
     void UpdateShape(BaseObjectShapeParam &param);
@@ -279,7 +285,7 @@ public:
     tVectorXd GetShortedFreedom(const tVectorXd &qx_log) const;
 
 protected:
-    int id;
+    int mId;
     int parent_id;
     std::string name;                   // Name
     tVector3d local_pos;                // Local Pos wrt parent links's center

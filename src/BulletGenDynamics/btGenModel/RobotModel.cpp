@@ -2270,6 +2270,12 @@ void cRobotModel::ComputeCoriolisMatrix(tVectorXd &q_dot)
             link->ComputedJkwdot_dq(q_dot);
         }
     }
+
+    // set the qdot into the freedoms. the joint chain share the same freedoms point with this map below
+    for (auto &f : freedoms)
+    {
+        f.second->vdot = q_dot[f.first];
+    }
 }
 
 void cRobotModel::SetOmega(EIGEN_V_tVector &omega, int st_joint)

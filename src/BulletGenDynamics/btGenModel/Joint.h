@@ -20,6 +20,11 @@ public:
     void SetFreedomValue(std::vector<double> &v) override;
     void GetFreedomValue(std::vector<double> &v) override;
 
+    virtual void SetFreedomValueDot(int id, double v) override final;
+    virtual void GetFreedomValueDot(int id, double &v) override final;
+    virtual void SetFreedomValueDot(std::vector<double> &v) override final;
+    virtual void GetFreedomValueDot(std::vector<double> &v) override final;
+
     void CleanGradient() override;
 
     Freedom *GetFreedoms(int order) override;
@@ -74,10 +79,10 @@ public:
     void SetDiffWeight(double lim);
     double GetDiffWeight() const;
 
-    void SetJointVel(const tVector3d &vel_);
-    void SetJointOmega(const tVector3d &omega_);
-    tVector3d GetJointVel() const;
-    tVector3d GetJointOmega() const;
+    // void SetJointVel(const tVector3d &vel_);
+    // void SetJointOmega(const tVector3d &omega_);
+    // tVector3d GetJointVel() const;
+    // tVector3d GetJointOmega() const;
 
 protected:
     std::vector<Freedom>
