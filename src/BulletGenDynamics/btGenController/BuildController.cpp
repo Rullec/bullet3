@@ -3,6 +3,7 @@
 #include "BulletGenDynamics/btGenController/ControllerBase.h"
 #include "BulletGenDynamics/btGenController/SimbiconController/SimbiconController.h"
 #include "BulletGenDynamics/btGenUtil/JsonUtil.h"
+#include "BulletGenDynamics/btGenController/PDController/btGenPDController.h"
 btGenControllerBase *BuildController(btGeneralizeWorld *world,
                                      const std::string &path)
 {
@@ -19,7 +20,7 @@ btGenControllerBase *BuildController(btGeneralizeWorld *world,
             switch (static_cast<ebtGenControllerType>(i))
             {
             case ebtGenControllerType::PDController:
-                printf("[error] PD Controller hasn't been supported\n");
+                ctrl = new btGenPDController(world);
                 break;
             case ebtGenControllerType::ContactAwareController:
                 ctrl = new btGenContactAwareController(world);

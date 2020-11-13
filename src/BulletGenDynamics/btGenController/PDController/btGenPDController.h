@@ -3,6 +3,15 @@
 
 class cRobotModelDynamics;
 class btGeneralizeWorld;
+class Joint;
+class btGenJointPDCtrl;
+struct btGenPDForce
+{
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    tVector mForce; // cartesian force (torque) on this joint
+    Joint *mJoint;  // joint pointer
+};
+
 class btGenPDController : public btGenControllerBase
 {
 public:
@@ -15,13 +24,13 @@ public:
     virtual void Reset() override;
     void SetPDTargetq(const tVectorXd &q);
     void SetPDTargetqdot(const tVectorXd &qdot);
-    void ApplyGeneralizedTau(double timestep);
+    void CalculateControlForces(double dt, tEigenArr<btGenPDForce> &pd_forces);
 
 protected:
-    cRobotModelDynamics *mModel;
-    double mTorqueLim; // max torque limit for stability
-    double mKpConstant, mKdConstant;
-    tVectorXd mKp, mKd; // PD coefs
-    tVectorXd mTargetq, mTargetqdot;
-    bool mEnableSPD; // enable stable pd control
+    tVectorXd mTargetq, mTargetqdot; // target q and target qdot (gen coordinate and gen vel)
+    bool mEnableSPD;                 // enable stable pd control or not
+    std::vector<btGenJointPDCtrl *> mExpJointPDControllers;
+    void ParseConfig(const std::string &string);
+    void CalculateControlForcesSPD(double dt, tEigenArr<btGenPDForce> &pd_forces);
+    void CalculateControlForcesExp(tEigenArr<btGenPDForce> &pd_forces);
 };

@@ -434,7 +434,7 @@ bool btTraj::SaveTraj(const std::string &path, cRobotModelDynamics *model)
         data_perframe["timestep"] = this->mTimestep;
         data_perframe["truth_action"] =
             btJsonUtil::BuildVectorJsonValue(this->mAction[i]);
-        data_perframe["contact_num"] = this->mContactForce[i].size();
+        data_perframe["contact_num"] = static_cast<int>(mContactForce[i].size());
         data_perframe["contact_info"] = Json::arrayValue;
         for (auto &f : mContactForce[i])
         {

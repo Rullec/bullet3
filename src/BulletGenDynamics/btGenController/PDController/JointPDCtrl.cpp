@@ -4,7 +4,7 @@
 #include <iostream>
 
 btGenJointPDCtrl::btGenJointPDCtrl(Joint *joint, double kp, double kd,
-                                   double force_lim)
+                                   double force_lim, bool use_world) : mUseWorldCoord(use_world)
 {
     mJoint = joint;
     mKp = kp;
@@ -16,7 +16,7 @@ void btGenJointPDCtrl::SetKp(double Kp) { mKp = Kp; }
 void btGenJointPDCtrl::SetKd(double Kd) { mKd = Kd; }
 double btGenJointPDCtrl::GetKp(double Kp) const { return mKp; }
 double btGenJointPDCtrl::GetKd(double Kd) const { return mKd; }
-
+bool btGenJointPDCtrl::GetUseWorldCoord() const { return this->mUseWorldCoord; }
 /**
  * \brief           Set the target (euler) angle in q (generalized coordinate)
  * for spherical joint, it is 3x1 vector euler angles
@@ -54,12 +54,21 @@ tVector btGenJointPDCtrl::CalcControlForce() const
     switch (mJoint->GetJointType())
     {
     case JointType::NONE_JOINT:
-
+        ControlForceNone(force);
         break;
-
+    case JointType::SPHERICAL_JOINT:
+        ControlForceSpherical(force);
+        break;
+    case JointType::REVOLUTE_JOINT:
+        ControlForceRevolute(force);
+        break;
+    case JointType::FIXED_JOINT:
+        ControlForceFixed(force);
     default:
+        BTGEN_ASSERT(false);
         break;
     }
+    return force;
 }
 
 /**
@@ -123,9 +132,11 @@ void btGenJointPDCtrl::ControlForceNone(tVector &force) const
     tVector3d cur_joint_vel = this->mJoint->GetJointLocalVel().segment(3, 3);
     // transform joint vel to omega
     tVector3d target_omega = btMathUtil::ConvertEulerAngleVelToAxisAngleVel(
-        target_joint_vel, btRotationOrder::bt_XYZ);
+                                 btMathUtil::Expand(target_joint_vel, 0), btRotationOrder::bt_XYZ)
+                                 .segment(0, 3);
     tVector3d cur_omega = btMathUtil::ConvertEulerAngleVelToAxisAngleVel(
-        cur_joint_vel, btRotationOrder::bt_XYZ);
+                              btMathUtil::Expand(cur_joint_vel, 0), btRotationOrder::bt_XYZ)
+                              .segment(0, 3);
     tVector3d omega_diff = target_omega - cur_omega;
     tVector3d local_force = mKp * orient_diff + mKd * omega_diff;
 
@@ -176,9 +187,11 @@ void btGenJointPDCtrl::ControlForceSpherical(tVector &force) const
     tVector3d target_joint_vel = mTargetVel.segment(0, 3);
     tVector3d cur_joint_vel = mJoint->GetJointLocalVel().segment(0, 3);
     tVector3d target_omega = btMathUtil::ConvertEulerAngleVelToAxisAngleVel(
-        target_joint_vel, btRotationOrder::bt_XYZ);
+                                 btMathUtil::Expand(target_joint_vel, 0), btRotationOrder::bt_XYZ)
+                                 .segment(0, 3);
     tVector3d cur_omega = btMathUtil::ConvertEulerAngleVelToAxisAngleVel(
-        cur_joint_vel, btRotationOrder::bt_XYZ);
+                              btMathUtil::Expand(cur_joint_vel, 0), btRotationOrder::bt_XYZ)
+                              .segment(0, 3);
 
     // 2. calc the diff
     tVector3d omega_diff = target_omega - cur_omega;

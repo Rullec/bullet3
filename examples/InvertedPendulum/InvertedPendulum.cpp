@@ -61,7 +61,7 @@ protected:
     // float mTime;
 };
 extern bool gPauseSimulation;
-#include "valgrind/callgrind.h"
+// #include "valgrind/callgrind.h"
 
 void InvertedPendulum::stepSimulation(float dt)
 {

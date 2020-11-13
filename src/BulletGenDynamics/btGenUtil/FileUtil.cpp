@@ -156,12 +156,24 @@ void btFileUtil::CopyFile(const std::string &ori_name,
         exit(1);
     }
 
+#ifndef __APPLE__
     if (false == std::experimental::filesystem::copy_file(ori_name, des_name))
     {
         printf("[error] CopyFile: from %s to %s failed", ori_name.c_str(), des_name.c_str());
         exit(1);
     }
+#else
+#include <fstream>
 
+    std::ifstream src(ori_name);
+    std::ofstream dst(des_name);
+    if (src.fail() || dst.fail())
+    {
+        printf("[error] CopyFile: from %s to %s failed", ori_name.c_str(), des_name.c_str());
+        exit(1);
+    }
+    dst << src.rdbuf();
+#endif
     printf("[log] CopyFile: from %s to %s succ", __ORDER_BIG_ENDIAN__, des_name.c_str());
 }
 
@@ -296,9 +308,17 @@ bool btFileUtil::ValidateFilePath(const std::string &file_name)
 std::string btFileUtil::ConcatFilename(const std::string &dir_,
                                        const std::string &file_)
 {
+    std::string final_name = "";
+#ifndef __APPLE__
     std::experimental::filesystem::path dir(dir_), file(file_);
     std::experimental::filesystem::path full_path = dir / file;
-    return full_path.string();
+    final_name = full_path.string();
+#else
+    if (dir_[dir_.size() - 1] != '/')
+        final_name = dir_ + "/" + file_;
+#endif
+
+    return final_name;
 }
 
 void btFileUtil::FindLine(std::ifstream &f_stream, int line)

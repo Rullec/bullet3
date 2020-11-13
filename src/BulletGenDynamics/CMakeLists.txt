@@ -67,6 +67,7 @@ SET(
 	./btGenController/ControllerBase.cpp
 	./btGenController/BuildController.cpp
 	./btGenController/PDController/btGenPDController.cpp
+	./btGenController/PDController/JointPDCtrl.cpp
 	./btGenController/ContactAwareController/btGenContactAwareController.cpp
 	./btGenController/ContactAwareController/btGenTargetCalculator.cpp
 	./btGenController/ContactAwareController/ContactAdaptionFeature/btGenFeature.cpp
@@ -124,7 +125,10 @@ link_libraries(${JSONCPP_LIBRARIES})
 ADD_LIBRARY(BulletGenDynamics ${BulletGenDynamics_SRCS})
 target_link_libraries(BulletGenDynamics ${JSONCPP_LIBRARIES})
 target_link_libraries(BulletGenDynamics ${matlab_lib})
-target_link_libraries(BulletGenDynamics stdc++fs)
+if(NOT APPLE)
+	target_link_libraries(BulletGenDynamics stdc++fs)
+endif()
+target_link_libraries(BulletGenDynamics BulletCollision BulletDynamics)
 
 if (BUILD_SHARED_LIBS)
   target_link_libraries(BulletGenDynamics Bullet3Geometry)

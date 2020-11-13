@@ -1198,7 +1198,7 @@ void btGeneralizeWorld::WriteFrameInfo(const std::string &path)
     std::ofstream fout(path);
     root["link_num"] = mMultibody->GetNumOfLinks();
     root["dof_num"] = mMultibody->GetNumOfFreedom();
-    root["frame_num"] = mFrameInfo.size();
+    root["frame_num"] = static_cast<int>(mFrameInfo.size());
     Json::Value FrameArray = Json::arrayValue;
     for (auto &item : mFrameInfo)
     {
