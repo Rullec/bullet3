@@ -112,7 +112,7 @@ struct Freedom
     tVector3d grad;
     double lb;
     double ub;
-    unsigned id;    // global freedom id in the whole multibody
+    unsigned id; // global freedom id in the whole multibody
     int type = REVOLUTE;
     std::string name;
     void clear_grad() { grad = tVector3d::Zero(3); }
@@ -161,7 +161,7 @@ public:
     tMatrix GetModelMatrix() const;
     tVector3d GetWorldPos();
     tMatrix3d GetWorldOrientation();
-    virtual int GetNumOfFreedom();
+    virtual int GetNumOfFreedom() const;
     virtual Freedom *GetFreedoms(int order) { return nullptr; }
     void SetParentJoint(BaseObject *parent_joint)
     {
@@ -169,17 +169,17 @@ public:
     }
     BaseObject *GetChild(int order);
     virtual void SetFreedomValue(int id, double v) {}
-    virtual void GetFreedomValue(int id, double &v) {}
+    virtual void GetFreedomValue(int id, double &v) const {}
     virtual void SetFreedomValueDot(int id, double v) = 0;
-    virtual void GetFreedomValueDot(int id, double &v) = 0;
+    virtual void GetFreedomValueDot(int id, double &v) const = 0;
     virtual Freedom *GetFreedomByAxis(tVector3d axis, int type = REVOLUTE)
     {
         return nullptr;
     }
     virtual void SetFreedomValue(std::vector<double> &v) {}
-    virtual void GetFreedomValue(std::vector<double> &v) {}
+    virtual void GetFreedomValue(std::vector<double> &v) const {}
     virtual void SetFreedomValueDot(std::vector<double> &v) = 0;
-    virtual void GetFreedomValueDot(std::vector<double> &v) = 0;
+    virtual void GetFreedomValueDot(std::vector<double> &v) const = 0;
     void SetPos(const tVector3d &pos);
     void SetInertiaTensorBody(tMatrix3d &I) { this->Ibody = I; }
     const tMatrix3d &GetInertiaTensorBody() { return this->Ibody; }

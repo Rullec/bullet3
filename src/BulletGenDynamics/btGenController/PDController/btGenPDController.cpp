@@ -2,14 +2,9 @@
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
 #include "BulletGenDynamics/btGenUtil/JsonUtil.h"
 #include <iostream>
-btGenPDController::btGenPDController(const std::string &config)
+btGenPDController::btGenPDController(btGeneralizeWorld *world)
+    : btGenControllerBase(ebtGenControllerType::PDController, world)
 {
-    Json::Value root;
-    btJsonUtil::LoadJson(config, root);
-    mEnableSPD = btJsonUtil::ParseAsBool("enable_stable_pd", root);
-    mTorqueLim = btJsonUtil::ParseAsDouble("torque_lim", root);
-    mKpConstant = btJsonUtil::ParseAsDouble("kp", root);
-    mKdConstant = btJsonUtil::ParseAsDouble("kd", root);
     mTargetq.resize(0);
     mTargetqdot.resize(0);
     mKp.resize(0);
@@ -18,16 +13,12 @@ btGenPDController::btGenPDController(const std::string &config)
 
 btGenPDController::~btGenPDController() {}
 
-bool btGenPDController::Init(cRobotModelDynamics *model)
+void btGenPDController::Init(cRobotModelDynamics *model,
+                             const std::string &config)
 {
-    mModel = model;
-    int dofs = model->GetNumOfFreedom();
-    mKp.resize(dofs);
-    mKp.fill(mKpConstant);
-    mKd.resize(dofs);
-    mKd.fill(mKdConstant);
+    btGenControllerBase::Init(model, config);
 
-    return true;
+    // 1.
 }
 
 /**
@@ -41,8 +32,7 @@ void btGenPDController::SetPDTargetqdot(const tVectorXd &qdot)
 }
 
 /**
- * \brief               Calculate the generalized control torque and apply it to
- * the robot model
+ * \brief               Calculate the generalized control torque and apply it to the robot model
  */
 void btGenPDController::ApplyGeneralizedTau(double timestep)
 {
@@ -99,4 +89,13 @@ void btGenPDController::ApplyGeneralizedTau(double timestep)
         mModel->ApplyGeneralizedForce(i, tau[i]);
 
     std::cout << "PD controller apply tau = " << tau.transpose() << std::endl;
+}
+
+void btGenPDController::Update(double dt) 
+{
+
+}
+void btGenPDController::Reset() 
+{
+
 }

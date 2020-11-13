@@ -610,3 +610,80 @@ bool btMathUtil::IsSkewMatrix(const tMatrix3d &mat, double eps)
 {
     return (mat + mat.transpose()).cwiseAbs().maxCoeff() < eps;
 }
+
+void btMathUtil::EulerToAxisAngle(const tVector &euler, tVector &out_axis,
+                                  double &out_theta,
+                                  const btRotationOrder gRotationOrder)
+{
+
+    if (gRotationOrder == btRotationOrder::bt_XYZ)
+    {
+        double x = euler[0];
+        double y = euler[1];
+        double z = euler[2];
+
+        double sinx = std::sin(x);
+        double cosx = std::cos(x);
+        double siny = std::sin(y);
+        double cosy = std::cos(y);
+        double sinz = std::sin(z);
+        double cosz = std::cos(z);
+
+        double c =
+            (cosy * cosz + sinx * siny * sinz + cosx * cosz + cosx * cosy - 1) *
+            0.5;
+        c = std::max(c, -1.0);
+        c = std::min(c, 1.0);
+
+        out_theta = std::acos(c);
+        if (std::abs(out_theta) < 0.00001)
+        {
+            out_axis = tVector(0, 0, 1, 0);
+        }
+        else
+        {
+            double m21 = sinx * cosy - cosx * siny * sinz + sinx * cosz;
+            double m02 = cosx * siny * cosz + sinx * sinz + siny;
+            double m10 = cosy * sinz - sinx * siny * cosz + cosx * sinz;
+            double denom = std::sqrt(m21 * m21 + m02 * m02 + m10 * m10);
+            out_axis[0] = m21 / denom;
+            out_axis[1] = m02 / denom;
+            out_axis[2] = m10 / denom;
+            out_axis[3] = 0;
+        }
+    }
+    else
+    {
+        std::cout << "[error] cMathUtil::EulerToAxisAngle: Unsupported "
+                     "rotation order"
+                  << std::endl;
+        exit(1);
+    }
+}
+
+tVector btMathUtil::EulerangleToAxisAngle(const tVector &euler,
+                                          const btRotationOrder gRotationOrder)
+{
+    tVector axis = tVector::Zero();
+    double angle = 0;
+    btMathUtil::EulerToAxisAngle(euler, axis, angle, gRotationOrder);
+    return axis * angle;
+}
+
+tVector btMathUtil::ConvertEulerAngleVelToAxisAngleVel(const tVector &ea_vel,
+                                                       btRotationOrder order)
+{
+    if (std::fabs(ea_vel[3]) > 1e-10)
+    {
+        printf("[error] ConvertEulerAngleVelToAxisAngleVel input vel is not "
+               "3x1\n");
+        exit(0);
+    }
+
+    // std::cout << "euler anble vel = " << ea_vel.transpose() << std::endl;
+    double dt = 1e-2;
+
+    tVector aa_vel = btMathUtil::EulerangleToAxisAngle(ea_vel * dt, order) / dt;
+    // std::cout << "aa vel = " << aa_vel.transpose() << std::endl;
+    return aa_vel;
+}

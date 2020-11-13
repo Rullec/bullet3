@@ -1297,7 +1297,7 @@ void Link::SetFreedomValueDot(int id, double v)
     printf("[error] SetFreedomValueDot is prohibited for Links\n");
     exit(0);
 }
-void Link::GetFreedomValueDot(int id, double &v)
+void Link::GetFreedomValueDot(int id, double &v) const
 {
     printf("[error] GetFreedomValueDot is prohibited for Links\n");
     exit(0);
@@ -1307,7 +1307,7 @@ void Link::SetFreedomValueDot(std::vector<double> &v)
     printf("[error] SetFreedomValueDot is prohibited for Links\n");
     exit(0);
 }
-void Link::GetFreedomValueDot(std::vector<double> &v)
+void Link::GetFreedomValueDot(std::vector<double> &v) const
 {
     printf("[error] GetFreedomValueDot is prohibited for Links\n");
     exit(0);

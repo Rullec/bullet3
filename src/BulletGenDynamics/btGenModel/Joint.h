@@ -13,17 +13,18 @@ public:
 
     void Tell() override;
     Freedom *AddFreedom(Freedom &f) override;
-    int GetNumOfFreedom() override;
+    int GetNumOfFreedom() const override;
     void SetFreedomValue(int id, double v) override;
-    void GetFreedomValue(int id, double &v) override;
+    void GetFreedomValue(int id, double &v) const override;
 
     void SetFreedomValue(std::vector<double> &v) override;
-    void GetFreedomValue(std::vector<double> &v) override;
+    void GetFreedomValue(std::vector<double> &v) const override;
 
     virtual void SetFreedomValueDot(int id, double v) override final;
-    virtual void GetFreedomValueDot(int id, double &v) override final;
+    virtual void GetFreedomValueDot(int id, double &v) const override final;
     virtual void SetFreedomValueDot(std::vector<double> &v) override final;
-    virtual void GetFreedomValueDot(std::vector<double> &v) override final;
+    virtual void
+    GetFreedomValueDot(std::vector<double> &v) const override final;
 
     void CleanGradient() override;
 
@@ -78,7 +79,7 @@ public:
     double GetTorqueLim() const;
     void SetDiffWeight(double lim);
     double GetDiffWeight() const;
-
+    tVectorXd GetJointLocalVel() const;
     // void SetJointVel(const tVector3d &vel_);
     // void SetJointOmega(const tVector3d &omega_);
     // tVector3d GetJointVel() const;
@@ -114,7 +115,7 @@ protected:
 
     // the linear velocity and angular velocity of the COM of this joint in
     // world frame
-    tVector3d mJointVel, mJointOmega;
+    // tVector3d mJointVel, mJointOmega;
 
     // method
     void ComputeLocalTransformThirdDeriveSpherical();

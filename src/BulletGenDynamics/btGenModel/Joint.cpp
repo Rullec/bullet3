@@ -730,7 +730,7 @@ const tMatrixXd &Joint::GetJKDot() const
     return mWqq[0][0];
 }
 
-int Joint::GetNumOfFreedom() { return static_cast<int>(freedoms.size()); }
+int Joint::GetNumOfFreedom() const { return static_cast<int>(freedoms.size()); }
 
 /**
  * \brief           Set a single freedom value of this joint
@@ -753,7 +753,7 @@ void Joint::SetFreedomValue(int id, double v)
  * \param id        the LOCAL id of target dof we want to get, beginning from 0 -> DOF of this joint
  *                  NOT GLOBAL!
 */
-void Joint::GetFreedomValue(int id, double &v)
+void Joint::GetFreedomValue(int id, double &v) const
 {
     if (id >= freedoms.size())
     {
@@ -786,7 +786,7 @@ void Joint::SetFreedomValue(std::vector<double> &v)
  * \brief           Get all of the freedom values of this joint
  * \param v         a ref vector, it will be changed in this function
 */
-void Joint::GetFreedomValue(std::vector<double> &v)
+void Joint::GetFreedomValue(std::vector<double> &v) const
 {
     v.resize(freedoms.size());
     for (int i = 0; i < GetNumOfFreedom(); i++)
@@ -1070,7 +1070,7 @@ void Joint::SetFreedomValueDot(int dof_id, double vdot)
  * \brief           Get the freedom's velocity value "vdot"
  * \param dof_id    the same as in SetFreedomValue
 */
-void Joint::GetFreedomValueDot(int dof_id, double &vdot)
+void Joint::GetFreedomValueDot(int dof_id, double &vdot) const
 {
     if (dof_id >= freedoms.size())
     {
@@ -1105,11 +1105,29 @@ void Joint::SetFreedomValueDot(std::vector<double> &vdot)
  * \brief           Get the freedom's velocity value vector "vdot"
  * \param vdot      the same as in GetFreedomValueDot
 */
-void Joint::GetFreedomValueDot(std::vector<double> &vdot)
+void Joint::GetFreedomValueDot(std::vector<double> &vdot) const
 {
     vdot.resize(freedoms.size());
     for (int i = 0; i < freedoms.size(); i++)
     {
         vdot[i] = freedoms[i].vdot;
     }
+}
+
+/**
+ * \brief           Get the freedom velocity of this joint
+ * 
+ * For spherical joint, it's [xdot, ydot, zdot]
+ * For revolute joint, it is [xdot]
+ * For root joint, it 's [txdot, tydot, tzdot, xdot, ydot, zdot]
+ * For fixed joint, 0 vector
+*/
+tVectorXd Joint::GetJointLocalVel() const
+{
+    std::vector<double> vel;
+    GetFreedomValueDot(vel);
+    tVectorXd res = tVectorXd::Zero(vel.size());
+    for (int i = 0; i < vel.size(); i++)
+        res[i] = vel[i];
+    return res;
 }

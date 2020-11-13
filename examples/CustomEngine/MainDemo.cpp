@@ -331,7 +331,8 @@ void CustomEngineMainDemo::Test()
     // mb->TestThirdJacobian();
     // mb->TestdJdotdqdot();
     // mb->TestDCoriolisMatrixDq();
-    mb->TestDCoriolisMatrixDqdot();
+    // mb->TestDCoriolisMatrixDqdot();
+    mb->TestSetFreedomValueAndDot();
 
     std::cout << "test done\n";
     exit(0);

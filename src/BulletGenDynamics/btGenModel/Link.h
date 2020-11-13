@@ -70,9 +70,10 @@ public:
 
     // ================ forbidden methods begin ===============
     virtual void SetFreedomValueDot(int id, double v) override final;
-    virtual void GetFreedomValueDot(int id, double &v) override final;
+    virtual void GetFreedomValueDot(int id, double &v) const override final;
     virtual void SetFreedomValueDot(std::vector<double> &v) override final;
-    virtual void GetFreedomValueDot(std::vector<double> &v) override final;
+    virtual void
+    GetFreedomValueDot(std::vector<double> &v) const override final;
     // ================ forbidden methods end ===============
 protected:
     tVector3d link_vel, link_omega; // the lin vel and ang vel w.r.t the COM of

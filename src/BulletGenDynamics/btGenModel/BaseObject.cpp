@@ -143,7 +143,7 @@ void BaseObject::SetLocalPos(const tVector3d &local_pos)
     this->local_pos = local_pos;
 }
 
-int BaseObject::GetNumOfFreedom() { return -1; }
+int BaseObject::GetNumOfFreedom() const { return -1; }
 
 BaseObject *BaseObject::GetChild(int order)
 {
