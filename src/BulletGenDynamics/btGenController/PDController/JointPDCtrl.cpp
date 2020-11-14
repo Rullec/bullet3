@@ -118,17 +118,22 @@ void btGenJointPDCtrl::ControlForceNone(tVector &force,
 
         omega = Trans(joint_vel), here we need to transform the joint vel to local joint omega
     */
-    tVector3d target_joint_vel = local_target_vel.segment(3, 3);
-    tVector3d cur_joint_vel = this->mJoint->GetJointLocalVel().segment(3, 3);
+    tVectorXd target_joint_vel = local_target_vel;
+    tVectorXd cur_joint_vel = mJoint->GetJointLocalVel();
     // transform joint vel to omega
-    tVector3d target_omega =
-        btMathUtil::ConvertEulerAngleVelToAxisAngleVel(
-            btMathUtil::Expand(target_joint_vel, 0), btRotationOrder::bt_XYZ)
-            .segment(0, 3);
-    tVector3d cur_omega =
-        btMathUtil::ConvertEulerAngleVelToAxisAngleVel(
-            btMathUtil::Expand(cur_joint_vel, 0), btRotationOrder::bt_XYZ)
-            .segment(0, 3);
+    // tVector3d target_omega =
+    //     btMathUtil::ConvertEulerAngleVelToAxisAngleVel(
+    //         btMathUtil::Expand(target_joint_vel, 0), btRotationOrder::bt_XYZ)
+    //         .segment(0, 3);
+    // tVector3d cur_omega =
+    //     btMathUtil::ConvertEulerAngleVelToAxisAngleVel(
+    //         btMathUtil::Expand(cur_joint_vel, 0), btRotationOrder::bt_XYZ)
+    //         .segment(0, 3);
+    // std::cout << "root local jkw = \n" << mJoint->GetLocalJkw() << std::endl;
+    tVector3d target_omega = mJoint->GetLocalJkw() * local_target_vel;
+    tVector3d cur_omega = mJoint->GetLocalJkw() * cur_joint_vel;
+    // std::cout << "root local jkw = \n" << mJoint->GetLocalJkw() << std::endl;
+    // exit(0);
     tVector3d omega_diff = target_omega - cur_omega;
     tVector3d local_force = mKp * orient_diff + mKd * omega_diff;
 
@@ -182,21 +187,25 @@ void btGenJointPDCtrl::ControlForceSpherical(
     // joint omega: angular velocity
     tVector3d target_joint_vel = local_target_vel.segment(0, 3);
     tVector3d cur_joint_vel = mJoint->GetJointLocalVel().segment(0, 3);
-    tVector3d target_omega =
-        btMathUtil::ConvertEulerAngleVelToAxisAngleVel(
-            btMathUtil::Expand(target_joint_vel, 0), btRotationOrder::bt_XYZ)
-            .segment(0, 3);
-    tVector3d cur_omega =
-        btMathUtil::ConvertEulerAngleVelToAxisAngleVel(
-            btMathUtil::Expand(cur_joint_vel, 0), btRotationOrder::bt_XYZ)
-            .segment(0, 3);
+    // tVector3d target_omega =
+    //     btMathUtil::ConvertEulerAngleVelToAxisAngleVel(
+    //         btMathUtil::Expand(target_joint_vel, 0), btRotationOrder::bt_XYZ)
+    //         .segment(0, 3);
+    // tVector3d cur_omega =
+    //     btMathUtil::ConvertEulerAngleVelToAxisAngleVel(
+    //         btMathUtil::Expand(cur_joint_vel, 0), btRotationOrder::bt_XYZ)
+    //         .segment(0, 3);
+    tVector3d target_omega = mJoint->GetLocalJkw() * target_joint_vel;
+    tVector3d cur_omega = mJoint->GetLocalJkw() * cur_joint_vel;
 
     // 2. calc the diff
     tVector3d omega_diff = target_omega - cur_omega;
     tVector3d orient_diff = btMathUtil::QuaternionToAxisAngle(
                                 target_orient * cur_orient.conjugate())
                                 .segment(0, 3);
-
+    // std::cout << "target omega = " << target_omega.transpose() << std::endl;
+    // std::cout << "cur omega = " << cur_omega.transpose() << std::endl;
+    // std::cout << "omega diff = " << omega_diff.transpose() << std::endl;
     tVector3d local_force = mKp * orient_diff + mKd * omega_diff;
 
     // 3. global control force
@@ -262,12 +271,12 @@ void btGenJointPDCtrl::CalcLocalControlTarget(
             tVector3d axis = mJoint->GetFreedoms(0)->axis;
             BTGEN_ASSERT(std::fabs(axis.norm() - 1) < 1e-10);
             double target_angle = local_target_aa.dot(axis);
-            printf("revolute target angle PD is %.3f\n", target_angle);
-            std::cout << "axis = " << axis.transpose() << std::endl;
-            std::cout << "local target aa = " << local_target_aa.transpose()
-                      << std::endl;
-            std::cout << "joint current value = " << mJoint->GetFreedoms(0)->v
-                      << std::endl;
+            // printf("revolute target angle PD is %.3f\n", target_angle);
+            // std::cout << "axis = " << axis.transpose() << std::endl;
+            // std::cout << "local target aa = " << local_target_aa.transpose()
+            //           << std::endl;
+            // std::cout << "joint current value = " << mJoint->GetFreedoms(0)->v
+            //           << std::endl;
             control_target = tVectorXd::Ones(1) * target_angle;
         }
         break;
@@ -307,7 +316,6 @@ void btGenJointPDCtrl::BuildTargetPose(tVectorXd &q)
         CalcLocalControlTarget(joint_target, tar_world_orient);
         // 3. write the local target back
         q.segment(mJoint->GetOffset(), GetCtrlDims()) = joint_target;
-        // 4. resotre q (fastest way)
     }
 }
 void btGenJointPDCtrl::BuildTargetVel(tVectorXd &qdot)

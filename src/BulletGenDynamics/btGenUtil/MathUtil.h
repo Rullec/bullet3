@@ -109,7 +109,7 @@ public:
     static bool IsHomogeneousPos(const tVector &pos, bool exit_if_not = true);
     static bool IsSkewMatrix(const tMatrix3d &mat, double eps);
     // static void RoundZero(tMatrixXd &mat, double threshold = 1e-10);
-    static tVector ConvertEulerAngleVelToAxisAngleVel(const tVector &ea_vel,
+    static tVector ConvertEulerAngleVelToAxisAngleVel(const tVector & q_euler, const tVector &qdot_euler,
                                                       btRotationOrder order);
 
     template <typename T>

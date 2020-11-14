@@ -676,10 +676,12 @@ tVector btMathUtil::EulerangleToAxisAngle(const tVector &euler,
     return axis * angle;
 }
 
-tVector btMathUtil::ConvertEulerAngleVelToAxisAngleVel(const tVector &ea_vel,
-                                                       btRotationOrder order)
+tVector btMathUtil::ConvertEulerAngleVelToAxisAngleVel(
+    const tVector &q_euler, const tVector &qdot_euler, btRotationOrder order)
 {
-    if (std::fabs(ea_vel[3]) > 1e-10)
+    std::cout << "this function needs to rewrite, it's wrong\n";
+    exit(0);
+    if (std::fabs(qdot_euler[3]) > 1e-10)
     {
         printf("[error] ConvertEulerAngleVelToAxisAngleVel input vel is not "
                "3x1\n");
@@ -689,7 +691,8 @@ tVector btMathUtil::ConvertEulerAngleVelToAxisAngleVel(const tVector &ea_vel,
     // std::cout << "euler anble vel = " << ea_vel.transpose() << std::endl;
     double dt = 1e-2;
 
-    tVector aa_vel = btMathUtil::EulerangleToAxisAngle(ea_vel * dt, order) / dt;
+    tVector aa_vel =
+        btMathUtil::EulerangleToAxisAngle(qdot_euler * dt, order) / dt;
     // std::cout << "aa vel = " << aa_vel.transpose() << std::endl;
     return aa_vel;
 }

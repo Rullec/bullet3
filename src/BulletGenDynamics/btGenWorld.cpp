@@ -375,6 +375,7 @@ void btGeneralizeWorld::AddMultibody(const std::string &skeleton_name)
     mMultibody->InitSimVars(mInternalWorld, mMBZeroInitPose, mMBZeroInitPoseVel,
                             true);
     this->m_dispatcher->SetModel(mMultibody);
+
     // if (mMBEnableGuideAction == true)
     // {
     //     InitGuideTraj();
