@@ -228,7 +228,9 @@ public:
                                             const tVector &p) const {};
     virtual void ComputeLocalTransform();
     virtual void ComputeGlobalTransform();
-    virtual void ComputeJKw();
+    virtual void
+    ComputeLocalJkw() = 0;     // compute local jkw, w.r.t only himself's dof
+    virtual void ComputeJKw(); // compute global jkw, w.r.t all dependent dof
     virtual void ComputeJKv();
     virtual void ComputeJK();
     virtual void ComputeJK_dot();
@@ -258,6 +260,7 @@ public:
     void SetJointType(JointType type) { joint_type = type; }
 
     void ComputeIbody();
+    virtual const tMatrixXd &GetLocalJkw() const = 0;
     const tMatrixXd &GetJKw() const { return JK_w; }
     const tMatrixXd &GetJKv() const { return JK_v; }
     const tMatrixXd &GetJK() const { return JK; }
@@ -336,7 +339,9 @@ protected:
     // ========================For Torque minimization=============================
     tMatrix3d Ibody;
     int shape_type;
-    tMatrixXd JK_w;
+    tMatrixXd
+        JK_w_local; // local jkw in joint's frame, w.r.t joint himself's freedom
+    tMatrixXd JK_w; // global jkw in world frame, w.r.t all dependent freedoms
     tMatrixXd JK_v;
     tMatrixXd JK_v_dot; // \dot{Jkv} in global freedoms
     tMatrixXd JK_w_dot;

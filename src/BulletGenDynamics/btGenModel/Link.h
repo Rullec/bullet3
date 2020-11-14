@@ -53,6 +53,9 @@ public:
     double GetLinkMaxLength() const;
     int GetColGroup() const;
     void SetColGroup(int);
+    virtual const tMatrixXd &GetLocalJkw() const override final;
+    virtual void ComputeLocalJkw()
+        override final; // compute local jkw, w.r.t only himself's dof
     tMatrixXd GetTotalDofdJKv_dq(int target_dof_id) const;
     tMatrixXd GetTotalDofdJKw_dq(int target_dof_id) const;
     tMatrixXd GetddJKv_dqq(int i, int j) const;

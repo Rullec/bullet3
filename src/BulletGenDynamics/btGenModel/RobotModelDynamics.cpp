@@ -2064,3 +2064,58 @@ void cRobotModelDynamics::TestSetFreedomValueAndDot()
     printf("[log] TestSetFreedomValueAndDot succ\n");
     PopState("test_state");
 }
+
+/**
+ * \brief           Test the Jkw_local for each joint
+ * 
+ * Jkw_local is the local jacobian of orientation w.r.t joint's own freedom
+ * 
+ * w_local = Jkw_local * qdot_local
+*/
+void cRobotModelDynamics::TestJointLocalJkw()
+{
+    PushState("test_joint_local_jkw");
+    tVectorXd q_old = tVectorXd::Random(num_of_freedom);
+    tVectorXd qdot = tVectorXd::Random(num_of_freedom);
+
+    double eps = 1e-3;
+    for (int i = 0; i < GetNumOfJoint(); i++)
+    {
+        auto joint = dynamic_cast<Joint *>(GetJointById(i));
+        // 1. get its current orientation R_old, get its current jkw_local, calculate the local angular vel w_local_pred
+        SetqAndqdot(q_old, qdot);
+        tMatrix3d R_old = joint->GetRotations();
+        tMatrixXd Jkw_local = joint->GetLocalJkw();
+        tVector3d omega_local_pred =
+            Jkw_local *
+            qdot.segment(joint->GetOffset(), joint->GetNumOfFreedom());
+
+        // 2. given eps, forward q_old by qdot, set new q
+        tVectorXd q_new = q_old + eps * qdot;
+        SetqAndqdot(q_new, qdot);
+        // 3. get its current orientation R_new, calculate the angular velocity by w_local_true = R_new - R_old
+        tMatrix3d R_new = joint->GetRotations();
+        tVector omega_local_true =
+            btMathUtil::QuaternionToAxisAngle(
+                btMathUtil::RotMat3dToQuaternion(R_new * R_old.inverse())) /
+            eps;
+
+        // 4. compare, give the result
+
+        tVector diff =
+            omega_local_true - btMathUtil::Expand(omega_local_pred, 0);
+
+        if (diff.norm() > eps)
+        {
+            std::cout << "[error] for joint " << i
+                      << " local_omega_pred = " << omega_local_pred.transpose()
+                      << " local_omega_true = " << omega_local_true.transpose()
+                      << std::endl;
+            std::cout << "diff = " << diff.transpose() << std::endl;
+            exit(0);
+        }
+        printf("[log] test joint %d local Jkw succ\n", i);
+    }
+    printf("[log] test local Jkw succ\n");
+    PopState("test_joint_local_jkw");
+}

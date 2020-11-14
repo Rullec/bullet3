@@ -100,6 +100,7 @@ void Joint::InitMatrix()
     mTq.resize(local_freedom, tMatrix::Zero());
     mWq.resize(total_freedoms, tMatrix::Zero());
 
+    JK_w_local.resize(3, local_freedom);
     JK_w.resize(3, global_freedom);
     JK_v.resize(3, global_freedom);
     JK.resize(6, global_freedom);
@@ -178,6 +179,7 @@ void Joint::UpdateState(bool compute_gradient)
         ComputeLocalTransformFirstDerive();
         ComputeGlobalTransformFirstDerive();
 
+        ComputeLocalJkw();
         ComputeJKv();
         ComputeJKw();
         ComputeJK();
@@ -321,7 +323,6 @@ void Joint::GetRotations(tMatrix3d &m)
         m = rotation_matrix.topLeftCorner<3, 3>() * m;
     }
 }
-
 
 tMatrix3d Joint::GetRotations()
 {
@@ -1151,5 +1152,39 @@ int Joint::GetOffset() const
     else
     {
         return dependent_dof_id[dependent_dof_id.size() - 1];
+    }
+}
+
+/**
+ * \brief           Get the local jkw of this joint
+ * 
+ * [w_local]    = dRdt * R^T
+ *  w_local     = [dRdq * R^T] * qdot
+ *              = Jw_local * qdot
+*/
+const tMatrixXd &Joint::GetLocalJkw() const { return this->JK_w_local; }
+
+/**
+ * \brief           Compute the local jkw of this joint
+ * [w_local]    = dRdt * R^T
+ *  w_local     = [dRdq * R^T] * qdot
+ *              = Jw_local * qdot
+*/
+void Joint::ComputeLocalJkw()
+{
+    JK_w_local.setZero();
+    // 1. get the local rotation
+    tMatrix3d local_rotation = GetRotations();
+    for (int i = 0; i < this->local_freedom; i++)
+    {
+        // 1. get the dRdq * RT
+
+        tMatrix3d dRdq_RT =
+            mTq[i].topLeftCorner<3, 3>() * local_rotation.transpose();
+
+        // 2. check that it's a skew matrix
+        // 3. extract the skew vector and put it into the matrix's column
+        tVector col = btMathUtil::SkewMatToVector(dRdq_RT);
+        JK_w_local.col(i) = col.segment(0, 3);
     }
 }

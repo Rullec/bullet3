@@ -45,6 +45,7 @@ public:
     void ComputeGlobalTransformFirstDerive(); //
 
     // =============Second order derivative=============
+    virtual void ComputeLocalJkw() override final;
     void ComputeLocalSecondDeriveMatrix();
     virtual void ComputeLocalTransformSecondDerive();
     void ComputeGlobalTransformSecondDerive();
@@ -69,6 +70,7 @@ public:
     void ComputeLocalTransform() override;
     void ComputeGlobalTransform() override;
 
+    virtual const tMatrixXd &GetLocalJkw() const override final;
     virtual const tMatrix &GetMWQQ(int i, int j) const override;
     virtual const tMatrix &GetMWQQQ(int i, int j, int k) const override;
     const tMatrix &GetMTQ(int i) const;

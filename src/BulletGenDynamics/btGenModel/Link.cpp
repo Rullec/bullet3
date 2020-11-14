@@ -1312,3 +1312,26 @@ void Link::GetFreedomValueDot(std::vector<double> &v) const
     printf("[error] GetFreedomValueDot is prohibited for Links\n");
     exit(0);
 }
+
+/**
+ * \brief           Get the local jkw of this link (prohibited at this moment)
+*/
+const tMatrixXd &Link::GetLocalJkw() const
+{
+    printf(
+        "[error] Cannot get local jkw for links, it hasn't been implemented\n");
+    BTGEN_ASSERT(false);
+    exit(0);
+    return this->JK_w_local;
+}
+
+/**
+ * \brief           Prohibited method forl ink
+*/
+void Link::ComputeLocalJkw()
+{
+    printf("[error] Cannot compute local jkw for links, it hasn't been "
+           "implemented\n");
+    BTGEN_ASSERT(false);
+    exit(0);
+}
