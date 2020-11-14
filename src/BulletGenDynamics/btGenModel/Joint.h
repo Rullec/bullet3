@@ -55,6 +55,7 @@ public:
     void ComputeGlobalTransformThirdDerive();
 
     virtual void GetRotations(tMatrix3d &m);
+    virtual tMatrix3d GetRotations();
 
     void ComputeJacobiByGivenPointTotalDOF(tMatrixXd &j,
                                            const tVector &p) const override;

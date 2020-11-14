@@ -27,10 +27,17 @@ public:
     void CalculateControlForces(double dt, tEigenArr<btGenPDForce> &pd_forces);
 
 protected:
-    tVectorXd mTargetq, mTargetqdot; // target q and target qdot (gen coordinate and gen vel)
-    bool mEnableSPD;                 // enable stable pd control or not
+    tVectorXd mTargetqCur,
+        mTargetqdotCur; // current target q and target qdot (gen coordinate and gen vel), time variant
+    tVectorXd mTargetqSet,
+        mTargetqdotSet; // setted target q and target qdot (gen coordinate and gen vel), fixed if not being set again
+
+    bool mEnableSPD; // enable stable pd control or not
     std::vector<btGenJointPDCtrl *> mExpJointPDControllers;
     void ParseConfig(const std::string &string);
-    void CalculateControlForcesSPD(double dt, tEigenArr<btGenPDForce> &pd_forces);
+    void BuildTargetPose(tVectorXd &pose);
+    void BuildTargetVel(tVectorXd &vel);
+    void CalculateControlForcesSPD(double dt,
+                                   tEigenArr<btGenPDForce> &pd_forces);
     void CalculateControlForcesExp(tEigenArr<btGenPDForce> &pd_forces);
 };

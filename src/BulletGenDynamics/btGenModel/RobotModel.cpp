@@ -1022,7 +1022,13 @@ void cRobotModel::LoadJsonModel(const char *file_path, double model_scale)
         double torque_lim = (*itr)["TorqueLim"].asDouble();
         double diff_weight = (*itr)["DiffWeight"].asDouble();
 
-        int joint_type = joint_type_map[(*itr)["Type"].asString()];
+        std::string type_str = (*itr)["Type"].asString();
+        if (joint_type_map.find(type_str) == joint_type_map.end())
+        {
+            printf("[error] no type called %s\n", type_str.c_str());
+            exit(0);
+        }
+        int joint_type = joint_type_map[type_str];
 
         if (param.name == "root_joint")
         {

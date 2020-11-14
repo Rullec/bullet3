@@ -8,8 +8,10 @@
 btGenPDController::btGenPDController(btGeneralizeWorld *world)
     : btGenControllerBase(ebtGenControllerType::PDController, world)
 {
-    mTargetq.resize(0);
-    mTargetqdot.resize(0);
+    mTargetqSet.resize(0);
+    mTargetqdotSet.resize(0);
+    mTargetqCur.resize(0);
+    mTargetqdotCur.resize(0);
     mExpJointPDControllers.clear();
 }
 
@@ -35,21 +37,38 @@ void btGenPDController::Init(cRobotModelDynamics *model,
  */
 void btGenPDController::SetPDTargetq(const tVectorXd &q)
 {
-    mTargetq = q;
+    mTargetqSet = q;
 
-    if (mEnableSPD == false)
-    {
-        // if SPD is disabled, dispatch the target q to each joint
-        int num_of_freedom = mModel->GetNumOfFreedom();
-        BTGEN_ASSERT(mTargetq.size() == num_of_freedom);
-
-        for (auto pd_ctrl : mExpJointPDControllers)
-        {
-            auto joint = pd_ctrl->GetJoint();
-            pd_ctrl->SetTargetTheta(
-                q.segment(joint->GetOffset(), joint->GetNumOfFreedom()));
-        }
-    }
+    // if (mEnableSPD == false)
+    // {
+    //     // if SPD is disabled, dispatch the target q to each joint
+    //     int num_of_freedom = mModel->GetNumOfFreedom();
+    //     BTGEN_ASSERT(mTargetq.size() == num_of_freedom);
+    //     tVectorXd old_q = mModel->Getq();
+    //     mModel->Apply(mTargetq, false);
+    //     for (auto pd_ctrl : mExpJointPDControllers)
+    //     {
+    //         auto joint = pd_ctrl->GetJoint();
+    //         if (pd_ctrl->GetUseWorldCoord() == false)
+    //         {
+    //             pd_ctrl->SetTargetTheta(q);
+    //         }
+    //         else
+    //         {
+    //             printf("[debug] for joint %d, use world coord PD control, "
+    //                    "begin to set PD target q\n",
+    //                    joint->GetId());
+    //             // get the target world rotation of this joint
+    //             // convert it to quaternion, then set it to the controller
+    //             pd_ctrl->SetTargetTheta(btMathUtil::QuaternionToCoef(
+    //                 btMathUtil::RotMat3dToQuaternion(
+    //                     joint->GetWorldOrientation())));
+    //             std::cout << "world target = "
+    //                       << pd_ctrl->GetTargetTheta().transpose() << std::endl;
+    //         }
+    //     }
+    //     mModel->Apply(old_q, false);
+    // }
 }
 
 /**
@@ -57,20 +76,19 @@ void btGenPDController::SetPDTargetq(const tVectorXd &q)
 */
 void btGenPDController::SetPDTargetqdot(const tVectorXd &qdot)
 {
-    mTargetqdot = qdot;
+    mTargetqdotSet = qdot;
 
-    if (mEnableSPD == false)
-    {
-        // if SPD is disabled, dispatch the target qdot to each joint's PD Controller
-        int num_of_freedom = mModel->GetNumOfFreedom();
-        BTGEN_ASSERT(mTargetqdot.size() == num_of_freedom);
-        for (auto &pd_ctrl : mExpJointPDControllers)
-        {
-            auto joint = pd_ctrl->GetJoint();
-            pd_ctrl->SetTargetVel(
-                qdot.segment(joint->GetOffset(), joint->GetNumOfFreedom()));
-        }
-    }
+    // if (mEnableSPD == false)
+    // {
+    //     // if SPD is disabled, dispatch the target qdot to each joint's PD Controller
+    //     int num_of_freedom = mModel->GetNumOfFreedom();
+    //     BTGEN_ASSERT(mTargetqdot.size() == num_of_freedom);
+    //     for (auto &pd_ctrl : mExpJointPDControllers)
+    //     {
+    //         auto joint = pd_ctrl->GetJoint();
+    //         pd_ctrl->SetTargetVel(qdot);
+    //     }
+    // }
 }
 
 // /**
@@ -133,28 +151,40 @@ void btGenPDController::SetPDTargetqdot(const tVectorXd &qdot)
 //     std::cout << "PD controller apply tau = " << tau.transpose() << std::endl;
 // }
 
+/**
+ * \brief           Update the PD Controller
+*/
 void btGenPDController::Update(double dt)
 {
     printf("pd controller update dt %.5f\n", dt);
-    // set target q and target qdot
-    // int num_of_freedom = mModel->GetNumOfFreedom();
-    // tVectorXd q_tar = tVectorXd::Zero(num_of_freedom),
-    //           qdot_tar = tVectorXd::Zero(num_of_freedom);
-    // SetPDTargetq(q_tar);
-    // SetPDTargetqdot(qdot_tar);
 
-    // calculate the control force
-    tEigenArr<btGenPDForce> forces;
-    CalculateControlForces(dt, forces);
-
-    // apply the control force
-    BTGEN_ASSERT(forces.size() == mModel->GetNumOfJoint());
-    for (int i = 0; i < forces.size(); i++)
+    // 1. build target pose (from joints), change the target pose if some controllers are using world coordinate
+    mTargetqCur = mTargetqSet;
+    mTargetqdotCur = mTargetqdotSet;
+    BuildTargetPose(mTargetqCur);
+    BuildTargetPose(mTargetqdotCur);
+    // 2. if not SPD, set the target pose into joints' controllers, then calculate pd forces respectively
+    if (mEnableSPD == false)
     {
-        auto joint = forces[i].mJoint;
-        std::cout << "[pd] apply joint " << joint->GetId()
-                  << " force = " << forces[i].mForce.transpose() << std::endl;
-        mModel->ApplyJointTorque(joint->GetId(), forces[i].mForce);
+        // 3. if SPD, put the revised target pose into
+        // calculate the control force
+        tEigenArr<btGenPDForce> forces;
+        CalculateControlForces(dt, forces);
+
+        // apply the control force
+        BTGEN_ASSERT(forces.size() == mModel->GetNumOfJoint());
+        for (int i = 0; i < forces.size(); i++)
+        {
+            auto joint = forces[i].mJoint;
+            std::cout << "[pd] apply joint " << joint->GetId()
+                      << " force = " << forces[i].mForce.transpose()
+                      << std::endl;
+            mModel->ApplyJointTorque(joint->GetId(), forces[i].mForce);
+        }
+    }
+    else
+    {
+        printf("spd hasn't been done\n");
     }
 }
 void btGenPDController::Reset() {}
@@ -175,6 +205,8 @@ void btGenPDController::ParseConfig(const std::string &string)
     int num_of_joint = this->mModel->GetNumOfJoint();
     BTGEN_ASSERT(joint_pd_controllers.size() == num_of_joint);
 
+    tVectorXd init_target_q = tVectorXd::Zero(mModel->GetNumOfFreedom());
+    tVectorXd init_target_qdot = tVectorXd::Zero(mModel->GetNumOfFreedom());
     for (auto &single : joint_pd_controllers)
     {
         int joint_id = btJsonUtil::ParseAsInt("ID", single);
@@ -189,18 +221,24 @@ void btGenPDController::ParseConfig(const std::string &string)
 
         // keep the input order is ascending
         BTGEN_ASSERT(joint_id == mExpJointPDControllers.size());
-        auto new_ctrl = new btGenJointPDCtrl(
-            cur_joint, kp, kd, cur_joint->GetTorqueLim(), use_world_coord);
-        new_ctrl->SetTargetTheta(target_theta_init *
-                                 tVectorXd::Ones(new_ctrl->GetCtrlDims()));
-        new_ctrl->SetTargetVel(tVectorXd::Zero(new_ctrl->GetCtrlDims()));
-
+        auto new_ctrl =
+            new btGenJointPDCtrl(mModel, cur_joint, kp, kd,
+                                 cur_joint->GetTorqueLim(), use_world_coord);
+        init_target_q
+            .segment(cur_joint->GetOffset(), cur_joint->GetNumOfFreedom())
+            .fill(target_theta_init);
+        init_target_qdot
+            .segment(cur_joint->GetOffset(), cur_joint->GetNumOfFreedom())
+            .fill(0);
         mExpJointPDControllers.push_back(new_ctrl);
         printf("[log] joint %d kp %.1f kd %.1f, torque lim %.1f, world_coord "
                "%s \n",
                joint_id, kp, kd, cur_joint->GetTorqueLim(),
                use_world_coord ? "true" : "false");
     }
+
+    SetPDTargetq(init_target_q);
+    SetPDTargetqdot(init_target_qdot);
 }
 
 /**
@@ -238,8 +276,24 @@ void btGenPDController::CalculateControlForcesExp(
     for (int i = 0; i < mExpJointPDControllers.size(); i++)
     {
         const auto &pd_ctrl = mExpJointPDControllers[i];
-        pd_force.mForce = pd_ctrl->CalcControlForce();
+        pd_force.mForce =
+            pd_ctrl->CalcControlForce(mTargetqCur, mTargetqdotCur);
         pd_force.mJoint = pd_ctrl->GetJoint();
         pd_force_array.push_back(pd_force);
+    }
+}
+
+void btGenPDController::BuildTargetPose(tVectorXd &pose)
+{
+    for (auto &ctrl : mExpJointPDControllers)
+    {
+        ctrl->BuildTargetPose(pose);
+    }
+}
+void btGenPDController::BuildTargetVel(tVectorXd &vel)
+{
+    for (auto &ctrl : mExpJointPDControllers)
+    {
+        ctrl->BuildTargetPose(vel);
     }
 }

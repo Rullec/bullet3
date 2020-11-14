@@ -3,11 +3,11 @@
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
 #include <Eigen/StdVector>
-#define THROW_IF(val) \
-    if (val)          \
+#define THROW_IF(val)                                                          \
+    if (val)                                                                   \
         throw "[error] in " __FUNCTION__;
-#define THROW_IF_LOG(val, log) \
-    if (val)                   \
+#define THROW_IF_LOG(val, log)                                                 \
+    if (val)                                                                   \
         throw "[error] in " + __FUNCTION__ + log;
 // #define M_PI  3.14159265358979323
 
@@ -33,14 +33,16 @@ typedef tEigenArr<tVector> tVectorArr;
 #define BTGEN_UNREACHABLE __builtin_unreachable();
 #endif
 
-#define BTGEN_ASSERT_INFO(x, ...)                                                         \
-    {                                                                                     \
-        bool ___ret___ = static_cast<bool>(x);                                            \
-        if (!___ret___)                                                                   \
-        {                                                                                 \
-            printf("[error] %s:%d  assert %s failed\n", __FILE__, __LINE__, __VA_ARGS__); \
-            BTGEN_UNREACHABLE;                                                            \
-        }                                                                                 \
+#define BTGEN_ASSERT_INFO(x, ...)                                              \
+    {                                                                          \
+        bool ___ret___ = static_cast<bool>(x);                                 \
+        if (!___ret___)                                                        \
+        {                                                                      \
+            printf("[error] %s:%d  assert %s failed\n", __FILE__, __LINE__,    \
+                   __VA_ARGS__);                                               \
+            exit(0);                                                           \
+            BTGEN_UNREACHABLE;                                                 \
+        }                                                                      \
     }
 
 #define BTGEN_ASSERT(x) BTGEN_ASSERT_INFO((x), #x)
@@ -57,6 +59,7 @@ class btMathUtil
 public:
     static tMatrix RotMat(const tQuaternion &quater);
     static tQuaternion RotMatToQuaternion(const tMatrix &mat);
+    static tQuaternion RotMat3dToQuaternion(const tMatrix3d &mat);
     static tQuaternion CoefToQuaternion(const tVector &);
     static tQuaternion AxisAngleToQuaternion(const tVector &angvel);
     static tQuaternion EulerAnglesToQuaternion(const tVector &vec,
@@ -85,8 +88,7 @@ public:
     static tVector AngularVelToqdot(const tVector &omega, const tVector &cur_q,
                                     const btRotationOrder &order);
     static tMatrix VectorToSkewMat(const tVector &);
-    template <typename T>
-    static tVector SkewMatToVector(const T &mat)
+    template <typename T> static tVector SkewMatToVector(const T &mat)
     {
         // verify mat is a skew matrix
         assert((mat + mat.transpose()).norm() < 1e-10);
@@ -115,27 +117,23 @@ public:
     {
         mat = (threshold < mat.array().abs()).select(mat, 0.0f);
     }
-    template <typename T>
-    static tVector Expand(const T &vec, double n)
+    template <typename T> static tVector Expand(const T &vec, double n)
     {
         return tVector(vec[0], vec[1], vec[2], n);
     }
 
-    template <typename T>
-    static tMatrix ExpandMat(const T &mat)
+    template <typename T> static tMatrix ExpandMat(const T &mat)
     {
         tMatrix tmp = tMatrix::Zero();
         tmp.block(0, 0, 3, 3) = mat.block(0, 0, 3, 3);
         return tmp;
     }
 
-    template <typename T>
-    static int sign(const T &x)
+    template <typename T> static int sign(const T &x)
     {
         return (x > 0) ? 1 : ((x < 0) ? -1 : 0);
     }
-    template <typename T>
-    static void Swap(T &a, T &b)
+    template <typename T> static void Swap(T &a, T &b)
     {
         T tmp = a;
         a = b;

@@ -322,6 +322,13 @@ void Joint::GetRotations(tMatrix3d &m)
     }
 }
 
+
+tMatrix3d Joint::GetRotations()
+{
+    tMatrix3d m;
+    GetRotations(m);
+    return m;
+}
 /**
  * \brief					compute mTq, d(local_rot)/dq, 
  *                          local_rot = Rz * Ry * Rx

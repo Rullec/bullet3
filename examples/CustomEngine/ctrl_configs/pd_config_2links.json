@@ -16,7 +16,7 @@
             "Kp": 100,
             "Kd": 1,
             "TargetTheta0": 0,
-            "UseWorldCoord": 0
+            "UseWorldCoord": 1
         }
     ]
 }

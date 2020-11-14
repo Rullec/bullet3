@@ -25,7 +25,13 @@ tMatrix btMathUtil::RotMat(const tQuaternion &quater_)
     return res;
 }
 
-tQuaternion btMathUtil::RotMatToQuaternion(const tMatrix &mat)
+tQuaternion btMathUtil::RotMatToQuaternion(const tMatrix &mat4)
+{
+    tMatrix3d mat3 = mat4.block(0, 0, 3, 3);
+    return RotMat3dToQuaternion(mat3);
+}
+
+tQuaternion btMathUtil::RotMat3dToQuaternion(const tMatrix3d &mat)
 {
     // http://www.iri.upc.edu/files/scidoc/2068-Accurate-Computation-of-Quaternions-from-Rotation-Matrices.pdf
     double eta = 0;
