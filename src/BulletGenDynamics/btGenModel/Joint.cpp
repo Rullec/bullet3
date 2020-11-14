@@ -1131,3 +1131,18 @@ tVectorXd Joint::GetJointLocalVel() const
         res[i] = vel[i];
     return res;
 }
+
+/**
+ * \brief           Get the freedom offset of this joint in global freedom sequence
+*/
+int Joint::GetOffset() const
+{
+    if (freedoms.size() != 0)
+    {
+        return freedoms[0].id;
+    }
+    else
+    {
+        return dependent_dof_id[dependent_dof_id.size() - 1];
+    }
+}

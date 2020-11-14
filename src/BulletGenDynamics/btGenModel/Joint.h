@@ -30,7 +30,7 @@ public:
 
     Freedom *GetFreedoms(int order) override;
     Freedom *GetFreedomByAxis(tVector3d axis, int type = REVOLUTE) override;
-
+    int GetOffset() const;
     void InitTerms() override;
     void InitMatrix();
 

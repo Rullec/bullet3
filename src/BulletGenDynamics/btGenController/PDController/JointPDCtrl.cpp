@@ -4,7 +4,8 @@
 #include <iostream>
 
 btGenJointPDCtrl::btGenJointPDCtrl(Joint *joint, double kp, double kd,
-                                   double force_lim, bool use_world) : mUseWorldCoord(use_world)
+                                   double force_lim, bool use_world)
+    : mUseWorldCoord(use_world)
 {
     mJoint = joint;
     mKp = kp;
@@ -50,6 +51,8 @@ Joint *btGenJointPDCtrl::GetJoint() const { return mJoint; }
 */
 tVector btGenJointPDCtrl::CalcControlForce() const
 {
+    CheckCtrlDims(mTargetVel, "CalcControlForce_vel");
+    CheckCtrlDims(mTargetTheta, "CalcControlForce_theta");
     tVector force = tVector::Zero();
     switch (mJoint->GetJointType())
     {
@@ -67,6 +70,11 @@ tVector btGenJointPDCtrl::CalcControlForce() const
     default:
         BTGEN_ASSERT(false);
         break;
+    }
+
+    if (force.norm() > mForceLim)
+    {
+        force = force.normalized() * mForceLim;
     }
     return force;
 }
@@ -131,12 +139,14 @@ void btGenJointPDCtrl::ControlForceNone(tVector &force) const
     tVector3d target_joint_vel = mTargetVel.segment(3, 3);
     tVector3d cur_joint_vel = this->mJoint->GetJointLocalVel().segment(3, 3);
     // transform joint vel to omega
-    tVector3d target_omega = btMathUtil::ConvertEulerAngleVelToAxisAngleVel(
-                                 btMathUtil::Expand(target_joint_vel, 0), btRotationOrder::bt_XYZ)
-                                 .segment(0, 3);
-    tVector3d cur_omega = btMathUtil::ConvertEulerAngleVelToAxisAngleVel(
-                              btMathUtil::Expand(cur_joint_vel, 0), btRotationOrder::bt_XYZ)
-                              .segment(0, 3);
+    tVector3d target_omega =
+        btMathUtil::ConvertEulerAngleVelToAxisAngleVel(
+            btMathUtil::Expand(target_joint_vel, 0), btRotationOrder::bt_XYZ)
+            .segment(0, 3);
+    tVector3d cur_omega =
+        btMathUtil::ConvertEulerAngleVelToAxisAngleVel(
+            btMathUtil::Expand(cur_joint_vel, 0), btRotationOrder::bt_XYZ)
+            .segment(0, 3);
     tVector3d omega_diff = target_omega - cur_omega;
     tVector3d local_force = mKp * orient_diff + mKd * omega_diff;
 
@@ -180,25 +190,28 @@ void btGenJointPDCtrl::ControlForceSpherical(tVector &force) const
     tQuaternion target_orient = btMathUtil::EulerAnglesToQuaternion(
         btMathUtil::Expand(target_orient_xyz, 0), btRotationOrder::bt_XYZ);
     tQuaternion cur_orient =
-        btMathUtil::RotMatToQuaternion(this->mJoint->GetGlobalTransform());
+        btMathUtil::RotMatToQuaternion(this->mJoint->GetLocalTransform());
 
     // joint vel: xdot, ydot, zdot of euler angles
     // joint omega: angular velocity
     tVector3d target_joint_vel = mTargetVel.segment(0, 3);
     tVector3d cur_joint_vel = mJoint->GetJointLocalVel().segment(0, 3);
-    tVector3d target_omega = btMathUtil::ConvertEulerAngleVelToAxisAngleVel(
-                                 btMathUtil::Expand(target_joint_vel, 0), btRotationOrder::bt_XYZ)
-                                 .segment(0, 3);
-    tVector3d cur_omega = btMathUtil::ConvertEulerAngleVelToAxisAngleVel(
-                              btMathUtil::Expand(cur_joint_vel, 0), btRotationOrder::bt_XYZ)
-                              .segment(0, 3);
+    tVector3d target_omega =
+        btMathUtil::ConvertEulerAngleVelToAxisAngleVel(
+            btMathUtil::Expand(target_joint_vel, 0), btRotationOrder::bt_XYZ)
+            .segment(0, 3);
+    tVector3d cur_omega =
+        btMathUtil::ConvertEulerAngleVelToAxisAngleVel(
+            btMathUtil::Expand(cur_joint_vel, 0), btRotationOrder::bt_XYZ)
+            .segment(0, 3);
 
     // 2. calc the diff
     tVector3d omega_diff = target_omega - cur_omega;
     tVector3d orient_diff = btMathUtil::QuaternionToAxisAngle(
                                 target_orient * cur_orient.conjugate())
                                 .segment(0, 3);
-    tVector3d local_force = mKp * orient_diff + this->mKd * omega_diff;
+
+    tVector3d local_force = mKp * orient_diff + mKd * omega_diff;
 
     // 3. global control force
     tVector3d global_force = mJoint->GetWorldOrientation() * local_force;
