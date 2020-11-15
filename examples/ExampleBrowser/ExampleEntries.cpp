@@ -178,6 +178,7 @@ static ExampleEntry gDefaultExamples[] =
 		ExampleEntry(0, "Inverse Dynamics"),
 		ExampleEntry(1, "Inverse Dynamics URDF", "Create a btMultiBody from URDF. Create an inverse MultiBodyTree model from that. Use either decoupled PD control or computed torque control using the inverse model to track joint position targets", InverseDynamicsExampleCreateFunc, BT_ID_LOAD_URDF),
 		ExampleEntry(1, "Inverse Dynamics Prog", "Create a btMultiBody programatically. Create an inverse MultiBodyTree model from that. Use either decoupled PD control or computed torque control using the inverse model to track joint position targets", InverseDynamicsExampleCreateFunc, BT_ID_PROGRAMMATICALLY),
+		ExampleEntry(2, "Inverse Dynamics Spherical", "Create a btMultiBody programatically with spherical joints. Create an inverse MultiBodyTree model from that.", InverseDynamicsExampleCreateFunc, BT_ID_SPHERICAL),
 
 		ExampleEntry(0, "Inverse Kinematics"),
 		ExampleEntry(1, "SDLS", "Selectively Damped Least Squares by Sam Buss. Example configures the IK tree of a Kuka IIWA", InverseKinematicsExampleCreateFunc, IK_SDLS),

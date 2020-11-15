@@ -112,6 +112,7 @@ InverseDynamicsExample::~InverseDynamicsExample()
 
 //todo(erwincoumans) Quick hack, reference to InvertedPendulumPDControl implementation. Will create a separate header/source file for this.
 btMultiBody* createInvertedPendulumMultiBody(btMultiBodyDynamicsWorld* world, GUIHelperInterface* guiHelper, const btTransform& baseWorldTrans, bool fixedBase);
+btMultiBody* createSphericalMultiBody(btMultiBodyDynamicsWorld* world, GUIHelperInterface* guiHelper, int numLinks);
 
 void InverseDynamicsExample::initPhysics()
 {
@@ -183,6 +184,12 @@ void InverseDynamicsExample::initPhysics()
 			btTransform baseWorldTrans;
 			baseWorldTrans.setIdentity();
 			m_multiBody = createInvertedPendulumMultiBody(m_dynamicsWorld, m_guiHelper, baseWorldTrans, false);
+			break;
+		}
+		case BT_ID_SPHERICAL:
+		{
+			int numLinks = 3;
+			m_multiBody = createSphericalMultiBody(m_dynamicsWorld, m_guiHelper, numLinks);
 			break;
 		}
 		default:
