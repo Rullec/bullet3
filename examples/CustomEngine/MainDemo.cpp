@@ -120,7 +120,7 @@ void CustomEngineMainDemo::initPhysics()
     if (physics_param->mAddMultibody)
     {
         mGenWorld->AddMultibody(physics_param->mMultibodyPath);
-
+        Test();
         // add controller
         if (physics_param->mEnableController)
         {
@@ -332,8 +332,8 @@ void CustomEngineMainDemo::Test()
     // mb->TestdJdotdqdot();
     // mb->TestDCoriolisMatrixDq();
     // mb->TestDCoriolisMatrixDqdot();
-    mb->TestSetFreedomValueAndDot();
-
+    // mb->TestSetFreedomValueAndDot();
+    mb->TestConvertGenForceToJointTorque();
     std::cout << "test done\n";
     exit(0);
 }

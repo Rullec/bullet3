@@ -54,7 +54,7 @@ public:
     // void SetAngleClamp(bool);
     void SetMaxVel(double);
     const tMatrixXd &GetDampingMatrix() const { return mDampingMatrix; }
-    void ConvertGenForceToJointTorque(const tVectorXd &gen_force) const;
+    void ConvertGenForceToJointTorque_N_1(const tVectorXd &gen_force, tEigenArr<tVector3d> & joint_torques) const;
     void TestConvertGenForceToJointTorque();
     void TestJacobian();
     void TestSecondJacobian();
