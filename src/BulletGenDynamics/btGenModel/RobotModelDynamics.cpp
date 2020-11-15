@@ -2119,3 +2119,33 @@ void cRobotModelDynamics::TestJointLocalJkw()
     printf("[log] test local Jkw succ\n");
     PopState("test_joint_local_jkw");
 }
+
+/**
+ * \brief               convert a gen force to joint torque (these two set are isomorphic)
+*/
+void cRobotModelDynamics::ConvertGenForceToJointTorque(
+    const tVectorXd &gen_force) const
+{
+    BTGEN_ASSERT(gen_force.size() == num_of_freedom - 6);
+    for (int i = 1; i < GetNumOfJoint(); i++)
+    {
+        auto joint = dynamic_cast<Joint *>(GetJointById(i));
+        int offset = joint->GetOffset();
+        int size = joint->GetNumOfFreedom();
+
+        int parent_link_id = joint->GetParentId();
+        int child_link_id = joint->GetId();
+
+        const tMatrixXd &child_link_jw = GetLinkById(child_link_id)->GetJKw();
+        const tMatrixXd &parent_link_jw = GetLinkById(parent_link_id)->GetJKw();
+
+        // we assume that the 
+        tMatrixXd torque_jacobian = child_link_jw - parent_link_jw;
+        // need to finish it...
+    }
+}
+
+/**
+ * \brief           Verify the a generalize force (with no root term) is isomophic to the cartesian joint torque set
+*/
+void cRobotModelDynamics::TestConvertGenForceToJointTorque() {}
