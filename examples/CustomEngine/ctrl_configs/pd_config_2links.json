@@ -1,6 +1,6 @@
 {
     "ctrl_type": "PDController",
-    "enable_stable_pd": false,
+    "enable_stable_pd": true,
     "PDControllers": [
         {
             "ID": 0,

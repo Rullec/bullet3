@@ -163,28 +163,19 @@ void btGenPDController::Update(double dt)
     mTargetqdotCur = mTargetqdotSet;
     BuildTargetPose(mTargetqCur);
     BuildTargetPose(mTargetqdotCur);
-    // 2. if not SPD, set the target pose into joints' controllers, then calculate pd forces respectively
-    if (mEnableSPD == false)
-    {
-        // 3. if SPD, put the revised target pose into
-        // calculate the control force
-        tEigenArr<btGenPDForce> forces;
-        CalculateControlForces(dt, forces);
+    // 2. calculate pd forces and apply
+    tEigenArr<btGenPDForce> forces;
+    CalculateControlForces(dt, forces);
 
-        // apply the control force
-        BTGEN_ASSERT(forces.size() == mModel->GetNumOfJoint());
-        for (int i = 0; i < forces.size(); i++)
-        {
-            auto joint = forces[i].mJoint;
-            std::cout << "[pd] apply joint " << joint->GetId()
-                      << " force = " << forces[i].mForce.transpose()
-                      << std::endl;
-            mModel->ApplyJointTorque(joint->GetId(), forces[i].mForce);
-        }
-    }
-    else
+    // apply the control force
+    BTGEN_ASSERT(forces.size() == mModel->GetNumOfJoint());
+    for (int i = 0; i < forces.size(); i++)
     {
-        printf("spd hasn't been done\n");
+        auto joint = forces[i].mJoint;
+        std::cout << "[pd] apply joint " << joint->GetId()
+                  << " force = " << forces[i].mForce.transpose()
+                  << std::endl;
+        mModel->ApplyJointTorque(joint->GetId(), forces[i].mForce);
     }
 }
 void btGenPDController::Reset() {}
@@ -257,11 +248,74 @@ void btGenPDController::CalculateControlForces(
 
 /**
  * \brief           Calcualte control forces by SPD (stable PD)
+ * For more details please check the note, velocity is forced to be zero in this implemention
+ * 
 */
 void btGenPDController::CalculateControlForcesSPD(
     double dt, tEigenArr<btGenPDForce> &pd_forces)
 {
-    BTGEN_ASSERT(false && "Hasn't been finished");
+
+    // 1. calculate SPD gen force by the formula
+    int dof = mModel->GetNumOfFreedom();
+    if (dof != mTargetqCur.size() || dof != mTargetqdotCur.size())
+    {
+        std::cout << "[error] btGenPDController::CalculateControlForcesSPD target q "
+                     "and qdot has no correct size\n";
+        exit(0);
+    }
+    tVectorXd q_cur = mModel->Getq(), qdot_cur = mModel->Getqdot();
+    tVectorXd q_next_err = mTargetqCur - (q_cur + dt * qdot_cur);
+    tVectorXd qdot_next_err = mTargetqdotCur - qdot_cur;
+
+    tVectorXd Kp = tVectorXd::Zero(dof),
+              Kd = tVectorXd::Zero(dof);
+    for (int i = 0; i < this->mExpJointPDControllers.size(); i++)
+    {
+        auto &joint_ctrl = mExpJointPDControllers[i];
+        const auto &joint = joint_ctrl->GetJoint();
+        Kp.segment(joint->GetOffset(), joint->GetNumOfFreedom()).fill(joint_ctrl->GetKp());
+        Kd.segment(joint->GetOffset(), joint->GetNumOfFreedom()).fill(joint_ctrl->GetKd());
+    }
+
+    Eigen::DiagonalMatrix<double, Eigen::Dynamic> Kp_mat = Kp.asDiagonal();
+    Eigen::DiagonalMatrix<double, Eigen::Dynamic> Kd_mat = Kd.asDiagonal();
+
+    // tVectorXd Q =
+    //     mKp.cwiseProduct(q_next_err) + mKd.cwiseProduct(qdot_next_err);
+    // std::cout << "Q = " << Q.transpose() << std::endl;
+    tMatrixXd M = mModel->GetMassMatrix();
+    M += dt * Kd_mat;
+
+    tVectorXd qddot_pred =
+        M.inverse() * (Kp_mat * q_next_err + Kd_mat * qdot_next_err -
+                       mModel->GetCoriolisMatrix() * qdot_cur);
+    // std::cout << "qddot pred = " << qddot_pred.transpose() << std::endl;
+    tVectorXd tau = Kp_mat * q_next_err + Kd_mat * (qdot_next_err - dt * qddot_pred);
+    BTGEN_ASSERT(tau.hasNaN() == false);
+
+    // 2. convert the gen force to individual joint forces
+    tEigenArr<tVector3d> joint_forces;
+    tVector3d root_force, root_torque;
+    mModel->ConvertGenForceToCartesianForceTorque(tau, joint_forces, root_force, root_torque);
+    // 3. convert joint forces to pd forces
+    BTGEN_ASSERT(joint_forces.size() == mModel->GetNumOfJoint() - 1);
+
+    pd_forces.clear();
+    btGenPDForce pd_force;
+    for (int i = 0; i < mModel->GetNumOfJoint(); i++)
+    {
+        pd_force.mJoint = this->mExpJointPDControllers[i]->GetJoint();
+        if (i == 0)
+        {
+            pd_force.mForce = btMathUtil::Expand(root_torque, 0);
+        }
+        else
+        {
+            pd_force.mForce = btMathUtil::Expand(joint_forces[i - 1], 0);
+            BTGEN_ASSERT(pd_force.mJoint->GetId() == i);
+        }
+        pd_forces.push_back(pd_force);
+    }
 }
 
 /**

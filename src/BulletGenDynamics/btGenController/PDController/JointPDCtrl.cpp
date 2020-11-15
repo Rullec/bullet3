@@ -18,8 +18,8 @@ btGenJointPDCtrl::btGenJointPDCtrl(cRobotModelDynamics *model, Joint *joint,
 
 void btGenJointPDCtrl::SetKp(double Kp) { mKp = Kp; }
 void btGenJointPDCtrl::SetKd(double Kd) { mKd = Kd; }
-double btGenJointPDCtrl::GetKp(double Kp) const { return mKp; }
-double btGenJointPDCtrl::GetKd(double Kd) const { return mKd; }
+double btGenJointPDCtrl::GetKp() const { return mKp; }
+double btGenJointPDCtrl::GetKd() const { return mKd; }
 bool btGenJointPDCtrl::GetUseWorldCoord() const { return this->mUseWorldCoord; }
 
 Joint *btGenJointPDCtrl::GetJoint() const { return mJoint; }

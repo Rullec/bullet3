@@ -561,7 +561,6 @@ void cRobotModelDynamics::ApplyJointTorque(int joint_id, const tVector &torque)
                   << std::endl;
         exit(0);
     }
-
     // one pair of opposite torque
     int parent_id = GetJointById(joint_id)->GetParentId(), child_id = joint_id;
     // std::cout << "[debug] add joint torque for parent " << parent_id << ": "
@@ -2143,13 +2142,25 @@ void cRobotModelDynamics::TestJointLocalJkw()
 /**
  * \brief               convert a gen force to joint torque (these two set are isomorphic)
  * \param joint_torques the result torque array, length = num_joint - 1 (except root joint, underactuated)
+ * \param root_force    the cartesian force on root joint
+ * \param root_torque   the cartesian torque on root joint
 */
-void cRobotModelDynamics::ConvertGenForceToJointTorque_N_1(
-    const tVectorXd &gen_force, tEigenArr<tVector3d> &joint_torques) const
+void cRobotModelDynamics::ConvertGenForceToCartesianForceTorque(
+    const tVectorXd &gen_force, tEigenArr<tVector3d> &joint_torques, tVector3d &root_force, tVector3d &root_torque) const
 {
     BTGEN_ASSERT(gen_force.size() == num_of_freedom);
-
     joint_torques.clear();
+
+    // 1. handle the force & torque on root
+    {
+        auto root_link = GetLinkById(0);
+        BTGEN_ASSERT(root_link->GetParent()->GetJointType() == JointType::NONE_JOINT);
+        const tMatrixXd &root_jwT = root_link->GetJKw().transpose(),
+                        &root_jvT = root_link->GetJKv().transpose();
+        root_force = gen_force.segment(0, 3);
+        root_torque = root_jwT.block(3, 0, 3, 3).inverse() * (gen_force.segment(3, 3) - root_jvT.block(3, 0, 3, 3) * root_force);
+    }
+    // 2. handle others
     for (int i = 1; i < GetNumOfJoint(); i++)
     {
         auto joint = dynamic_cast<Joint *>(GetJointById(i));
@@ -2202,17 +2213,26 @@ void cRobotModelDynamics::TestConvertGenForceToJointTorque()
     this->PushState("test_convert_gen_force");
     ClearForce();
     tVectorXd gen_force = tVectorXd::Random(num_of_freedom);
-    gen_force.segment(0, 6).setZero();
+
+    // std::cout << "root jkw = \n"
+    //           << GetLinkById(0)->GetJKw() << std::endl;
+    // std::cout << "root jkv = \n"
+    //           << GetLinkById(0)->GetJKv() << std::endl;
+
     // 1. get the cartesian joint torques
     tEigenArr<tVector3d> joint_torques;
-    ConvertGenForceToJointTorque_N_1(gen_force, joint_torques);
+    tVector3d root_force, root_torque;
+    ConvertGenForceToCartesianForceTorque(gen_force, joint_torques, root_force, root_torque);
 
     // 2. calculate the gen force from the joint torques
     BTGEN_ASSERT(joint_torques.size() == GetNumOfJoint() - 1);
+    ApplyJointTorque(0, btMathUtil::Expand(root_torque, 0));
+    ApplyForce3d(0, root_force, GetLinkById(0)->GetWorldPos());
     for (int i = 1; i < GetNumOfJoint(); i++)
     {
         ApplyJointTorque(i, btMathUtil::Expand(joint_torques[i - 1], 0));
     }
+
     tVectorXd gen_force_restored = GetGeneralizedForce();
     tVectorXd diff = gen_force_restored - gen_force;
     if (diff.norm() > 1e-6)

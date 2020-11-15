@@ -120,7 +120,7 @@ void CustomEngineMainDemo::initPhysics()
     if (physics_param->mAddMultibody)
     {
         mGenWorld->AddMultibody(physics_param->mMultibodyPath);
-        Test();
+        
         // add controller
         if (physics_param->mEnableController)
         {
@@ -309,6 +309,7 @@ void CustomEngineMainDemo::Test()
     int dof = mb->GetNumOfFreedom();
     tVectorXd q = tVectorXd::Random(dof), qdot = tVectorXd::Random(dof);
     mb->SetqAndqdot(q, qdot);
+    
     // for (int i = 0; i < mb->GetNumOfLinks(); i++)
     // {
     //     auto link = dynamic_cast<Link *>(mb->GetLinkById(i));

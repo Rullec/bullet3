@@ -14,8 +14,8 @@ public:
                      double force_lim, bool use_world_coord);
     void SetKp(double Kp);
     void SetKd(double Kd);
-    double GetKp(double Kp) const;
-    double GetKd(double Kd) const;
+    double GetKp() const;
+    double GetKd() const;
     bool GetUseWorldCoord() const;
     Joint *GetJoint() const;
     tVector CalcControlForce(const tVectorXd &q, const tVectorXd &qdot) const;
