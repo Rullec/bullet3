@@ -1445,3 +1445,24 @@ void btGeneralizeWorld::AddController(const std::string &path)
 // 		}
 // 	}
 // }
+
+/**
+ * \brief           
+*/
+bool btGeneralizeWorld::IsTwoObjsContact(const btCollisionObject *b0,
+                                         const btCollisionObject *b1)
+{
+    int num_of_manifold = m_dispatcher->getNumManifolds();
+    for (int i = 0; i < num_of_manifold; i++)
+    {
+        auto mani = m_dispatcher->getManifoldByIndexInternal(i);
+
+        if ((mani->getBody0() == b0 && mani->getBody1() == b1) ||
+            (mani->getBody0() == b1 && mani->getBody1() == b0))
+        {
+            if (mani->getNumContacts() != 0)
+                return true;
+        }
+    }
+    return false;
+}

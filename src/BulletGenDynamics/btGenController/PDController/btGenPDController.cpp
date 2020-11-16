@@ -33,7 +33,7 @@ void btGenPDController::Init(cRobotModelDynamics *model,
 
 /**
  * \brief               Set the PD target theta (gen coord)
- * \param q
+ * \param q             all local coordinate target q (it will be converted to world frame automatically in CalcContorlForces)
  */
 void btGenPDController::SetPDTargetq(const tVectorXd &q)
 {
@@ -153,16 +153,12 @@ void btGenPDController::SetPDTargetqdot(const tVectorXd &qdot)
 
 /**
  * \brief           Update the PD Controller
+ * 
 */
 void btGenPDController::Update(double dt)
 {
     // printf("pd controller update dt %.5f\n", dt);
 
-    // 1. build target pose (from joints), change the target pose if some controllers are using world coordinate
-    mTargetqCur = mTargetqSet;
-    mTargetqdotCur = mTargetqdotSet;
-    BuildTargetPose(mTargetqCur);
-    BuildTargetPose(mTargetqdotCur);
     // 2. calculate pd forces and apply
     tEigenArr<btGenPDForce> forces;
     CalculateControlForces(dt, forces);
@@ -185,7 +181,7 @@ void btGenPDController::Reset() {}
 void btGenPDController::ParseConfig(const std::string &string)
 {
     Json::Value root;
-    btJsonUtil::LoadJson(string, root);
+    BTGEN_ASSERT(btJsonUtil::LoadJson(string, root));
     mEnableSPD = btJsonUtil::ParseAsBool("enable_stable_pd", root);
 
     // load the PD controlelrs, and check the completeness
@@ -239,6 +235,12 @@ void btGenPDController::ParseConfig(const std::string &string)
 void btGenPDController::CalculateControlForces(
     double dt, tEigenArr<btGenPDForce> &pd_forces)
 {
+    // 1. build target pose (from joints), change the target pose if some controllers are using world coordinate
+    mTargetqCur = mTargetqSet;
+    mTargetqdotCur = mTargetqdotSet;
+    BuildTargetPose(mTargetqCur);
+    BuildTargetPose(mTargetqdotCur);
+
     if (mEnableSPD)
         CalculateControlForcesSPD(dt, pd_forces);
     else
@@ -340,6 +342,9 @@ void btGenPDController::CalculateControlForcesExp(
     }
 }
 
+/**
+ * \brief           convert the given fully local target pose, to a revised, local target pose which part of them are in world coordinate
+*/
 void btGenPDController::BuildTargetPose(tVectorXd &pose)
 {
     for (auto &ctrl : mExpJointPDControllers)
@@ -353,4 +358,9 @@ void btGenPDController::BuildTargetVel(tVectorXd &vel)
     {
         ctrl->BuildTargetPose(vel);
     }
+}
+
+std::vector<btGenJointPDCtrl *> &btGenPDController::GetJointPDCtrls()
+{
+    return mExpJointPDControllers;
 }

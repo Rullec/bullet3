@@ -17,6 +17,7 @@ public:
     double GetKp() const;
     double GetKd() const;
     bool GetUseWorldCoord() const;
+    void SetUseWorldCoord(bool val);
     Joint *GetJoint() const;
     tVector CalcControlForce(const tVectorXd &q, const tVectorXd &qdot) const;
     int GetCtrlDims() const;
@@ -28,7 +29,7 @@ protected:
     Joint *mJoint;
     double mKp, mKd;
     double mForceLim;
-    const bool mUseWorldCoord;
+    bool mUseWorldCoord;
     void CheckCtrlDims(const tVectorXd &var, std::string prefix) const;
     void ControlForceNone(tVector &force, const tVectorXd &local_target_theta,
                           const tVectorXd &local_target_vel) const;

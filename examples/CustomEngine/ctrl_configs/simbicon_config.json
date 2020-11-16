@@ -1,6 +1,30 @@
 {
     "ctrl_type": "SimbiconController",
-    "pd_controller_path": "pd_controller_path",
-    "FSM": {},
-    "balance_control": {}
+    "pd_controller_path": "examples/CustomEngine/ctrl_configs/pd_config_legs.json",
+    "FSM": {
+        "state_traj_path": "examples/CustomEngine/ctrl_configs/simbicon_targets.json",
+        "num_of_states": 4,
+        "states": [
+            {
+                "state_id": 0,
+                "conditions": []
+            },
+            {
+                "state_id": 1,
+                "conditions": []
+            },
+            {
+                "state_id": 2,
+                "conditions": []
+            },
+            {
+                "state_id": 3,
+                "conditions": []
+            }
+        ]
+    },
+    "balance_control": {
+        "Cd": 0.5,
+        "Cv": 0.2
+    }
 }

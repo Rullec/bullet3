@@ -25,6 +25,7 @@ public:
     void SetPDTargetq(const tVectorXd &q);
     void SetPDTargetqdot(const tVectorXd &qdot);
     void CalculateControlForces(double dt, tEigenArr<btGenPDForce> &pd_forces);
+    std::vector<btGenJointPDCtrl *> &GetJointPDCtrls();
 
 protected:
     tVectorXd mTargetqCur,

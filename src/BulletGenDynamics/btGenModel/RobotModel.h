@@ -98,7 +98,8 @@ public:
     // void GetTargetPosition(TargetPoint* tp, tVector3d& pos);
     // tVector3d GetTargetPosition(TargetPoint* tp);
     // void GetCoMPosition(CoMPoint* tp, tVector3d& pos);
-    tVector3d GetCoMPosition() const { return com; };
+    tVector3d GetCoMPosition() const;
+    tVector3d GetComVelocity() const;
     tVector3d GetObjectPos(std::string name, int type);
     void GetObjectGradient(std::string name, int type, tMatrixXd jac);
     int GetNumOfLinks() const { return static_cast<int>(link_chain.size()); }
@@ -176,6 +177,7 @@ protected:
     }
 
     void UpdateCoM();
+    void UpdateCoMVel();
     void UpdateMass();
 
     void SaveModel(const char *file);
@@ -192,7 +194,7 @@ protected:
                  tVector3d &local_rotation, const char *mesh_path,
                  tVector3f &mesh_rotation, tVector3f &mesh_scale, double mass);
 
-    void AddRootJoint(const char *root_name, JointType root_type);
+    void AddRootJoint(const char *root_name, JointType root_type, double root_torque_lim);
     void AddRootLink(const char *root_name = "root");
 
     void AddJoint(std::string joint_name, std::string father_name,
@@ -236,7 +238,7 @@ protected:
     std::vector<BaseObject *> joint_chain;
     std::vector<BaseObject *> link_chain;
 
-    tVector3d com;
+    tVector3d com, com_vel;
     tMatrix com_transform;
     double total_mass;
 

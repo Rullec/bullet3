@@ -22,6 +22,7 @@ double btGenJointPDCtrl::GetKp() const { return mKp; }
 double btGenJointPDCtrl::GetKd() const { return mKd; }
 bool btGenJointPDCtrl::GetUseWorldCoord() const { return this->mUseWorldCoord; }
 
+void btGenJointPDCtrl::SetUseWorldCoord(bool val) { mUseWorldCoord = val; }
 Joint *btGenJointPDCtrl::GetJoint() const { return mJoint; }
 
 /**
@@ -301,6 +302,14 @@ void btGenJointPDCtrl::CalcLocalControlTarget(
     }
 }
 
+/**
+ * \brief           given a local target pose (q, full size), 
+ * if the mUseWorldCoord = True, this function will convert
+ * the given target to another local given target, but can 
+ * make the target joint's world orientation
+ * is the same as desired
+ * \param q         ref to local target pose, return world-fitted local target pose
+*/
 void btGenJointPDCtrl::BuildTargetPose(tVectorXd &q)
 {
     if (mUseWorldCoord == true)

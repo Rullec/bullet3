@@ -43,8 +43,6 @@ btGenFSM::btGenFSM(btGeneralizeWorld *world, cRobotModelDynamics *model,
             mStateGraph.push_back(state);
         }
     }
-    printf("build FSM succ");
-    exit(0);
 }
 
 btGenFSM::~btGenFSM()
@@ -60,4 +58,9 @@ btGenFSM::~btGenFSM()
  * \param dt            timestep
  * \param target_pose   ref to character's target pose
 */
-void btGenFSM::Update(double dt, tVectorXd &target_pose) {}
+void btGenFSM::Update(double dt, tVectorXd &target_pose)
+{
+
+    printf("[error] FSM Update hasn't been finished\n");
+    exit(0);
+}

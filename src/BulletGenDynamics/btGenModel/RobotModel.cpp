@@ -332,7 +332,7 @@ void cRobotModel::Load(const char *model_file)
         }
     }
     //============================================================================
-    AddRootJoint("root", JointType::NONE_JOINT);
+    AddRootJoint("root", JointType::NONE_JOINT, 0);
 
     //==================================����joint=================================
     for (TiXmlElement *joint = robot_model->FirstChildElement("joint"); joint;
@@ -430,7 +430,8 @@ void cRobotModel::InsertFreedomMap(BaseObject *joint)
 /**
  * \brif						����Root Joint
  */
-void cRobotModel::AddRootJoint(const char *root_name, JointType root_joint_type)
+void cRobotModel::AddRootJoint(const char *root_name, JointType root_joint_type,
+                               double torque_lim)
 {
     BaseObjectParams param;
     // param.mesh = BaseRender::mesh_map.find("ball")->second;
@@ -468,6 +469,8 @@ void cRobotModel::AddRootJoint(const char *root_name, JointType root_joint_type)
         root->SetNumTotalFreedoms(root->GetNumOfFreedom());
         p->SetParent(root);
     }
+    dynamic_cast<Joint *>(root)->SetTorqueLim(torque_lim);
+    std::cout << "root torque lim = " << torque_lim << std::endl;
     InsertFreedomMap(root);
     num_of_freedom += root->GetNumOfFreedom();
     joints.insert(std::make_pair(param.name, root));
@@ -857,7 +860,7 @@ void cRobotModel::LoadAsf(const char *file_path)
     }
 
     // add root
-    AddRootJoint("root", JointType::NONE_JOINT);
+    AddRootJoint("root", JointType::NONE_JOINT, 0);
     AddRootLink("root");
     num_of_freedom = static_cast<int>(freedoms.size());
     joint_id_map.insert(std::make_pair(0, root));
@@ -994,6 +997,7 @@ void cRobotModel::LoadJsonModel(const char *file_path, double model_scale)
     // load joint
     double root_diff_weight = 0;
     JointType root_joint_type = JointType::INVALID_JOINT;
+    double root_torque_lim = 0;
     for (auto itr = joint_node.begin(); itr != joint_node.end(); ++itr)
     {
         BaseObjectJsonParam param;
@@ -1034,6 +1038,7 @@ void cRobotModel::LoadJsonModel(const char *file_path, double model_scale)
         {
             root_diff_weight = diff_weight;
             root_joint_type = static_cast<JointType>(joint_type);
+            root_torque_lim = torque_lim;
             continue;
         }
 
@@ -1064,7 +1069,7 @@ void cRobotModel::LoadJsonModel(const char *file_path, double model_scale)
     }
     // std::cout << "before add root joint, joint num = " << joint_node.size()
     // << std::endl;
-    AddRootJoint("root", root_joint_type);
+    AddRootJoint("root", root_joint_type, root_torque_lim);
     AddRootLink("root");
     UpdateFreedomId();
     joint_id_map.insert({root->GetId(), root});
@@ -1926,7 +1931,7 @@ void cRobotModel::Update(bool compute_gradient)
 }
 
 /**
- * \brief					��������λ��
+ * \brief					Update the COM position of robot
  */
 void cRobotModel::UpdateCoM()
 {
@@ -1938,6 +1943,21 @@ void cRobotModel::UpdateCoM()
         com += mass * pos;
     }
     com /= total_mass;
+}
+
+/**
+ * \brief                   Update the COM vel of robot
+*/
+void cRobotModel::UpdateCoMVel()
+{
+    com_vel.setZero();
+
+    for (auto &link : link_chain)
+    {
+        tVector3d vel = link->GetJKv() * mqdot;
+        com_vel += link->GetMass() * vel;
+    }
+    com_vel /= total_mass;
 }
 
 void cRobotModel::UpdateMass()
@@ -2282,6 +2302,8 @@ void cRobotModel::ComputeCoriolisMatrix(tVectorXd &q_dot)
     {
         f.second->vdot = q_dot[f.first];
     }
+    // update COM vel
+    UpdateCoMVel();
 }
 
 void cRobotModel::SetOmega(EIGEN_V_tVector &omega, int st_joint)
@@ -2915,3 +2937,6 @@ void cRobotModel::TestJointmWq(int id)
     Apply(q, true);
     printf("[log] TestmWq for joint %d succ\n", id);
 }
+
+tVector3d cRobotModel::GetCoMPosition() const { return com; }
+tVector3d cRobotModel::GetComVelocity() const { return com_vel; }
