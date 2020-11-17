@@ -2,6 +2,7 @@
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
 #include "BulletGenDynamics/btGenUtil/JsonUtil.h"
 #include "BulletGenDynamics/btGenUtil/MathUtil.h"
+#include "BulletGenDynamics/btGenWorld.h"
 
 /**
  * \brief               constructor of transition condition
@@ -66,8 +67,15 @@ void tContactCondition::Update(double dt)
 */
 int tContactCondition::GetTransitionTargetId() const
 {
-    BTGEN_ASSERT(false && "GetTransitionTargetId hasn't been implemented...");
-    return -1;
+    auto link_collider = mModel->GetLinkCollider(mLinkId);
+    auto ground = mWorld->GetGround();
+    int num = mWorld->GetTwoObjsNumOfContact(ground, link_collider);
+    if (num >= 3)
+    {
+        return this->mTargetStateId;
+    }
+    else
+        return -1;
 }
 
 void tContactCondition::Reset()
@@ -78,8 +86,11 @@ void tContactCondition::Reset()
 // ====================================== contact condition end ========================
 
 // ====================================== state begin ========================
-tState::tState(int state_id) : mStateId(state_id)
+tState::tState(int state_id, int default_swing_hip, int default_stance_hip)
+    : mStateId(state_id)
 {
+    mDefaultSwingHipId = default_swing_hip;
+    mDefaultStanceHipId = default_stance_hip;
     mTransitionConditions.clear();
 }
 
@@ -103,7 +114,7 @@ void tState::AddTransitionCondition(tTransitionCondition *cond)
 {
     mTransitionConditions.push_back(cond);
 }
-
+int tState::GetStateId() const { return mStateId; }
 /**
  * \brief           judge and find the target transition state at this moment
  * \return          return the target state id we want to trainsite to. -1 means no transition
@@ -126,9 +137,8 @@ int tState::GetTargetId() const
             if (cur_target != -1)
             {
                 printf("[error] tState: two or more conditions are activated "
-                       "in state %d\n",
+                       "in state %d, keep same\n",
                        this->mStateId);
-                exit(0);
             }
         }
     }
@@ -143,6 +153,9 @@ void tState::Print() const
     printf("[log] for state %d, it has %d conditions\n", mStateId,
            this->mTransitionConditions.size());
 }
+
+int tState::GetDefaultSwingHipId() const { return mDefaultSwingHipId; }
+int tState::GetDefaultStanceHipId() const { return mDefaultStanceHipId; }
 // ====================================== state end ========================
 
 // ====================================== BuildCondition begin ========================

@@ -23,6 +23,7 @@ public:
     int GetCtrlDims() const;
     void BuildTargetPose(tVectorXd &q);
     void BuildTargetVel(tVectorXd &qdot);
+    double GetForceLim() const;
 
 protected:
     cRobotModelDynamics *mModel;

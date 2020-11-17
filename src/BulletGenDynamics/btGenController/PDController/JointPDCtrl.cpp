@@ -66,7 +66,6 @@ tVector btGenJointPDCtrl::CalcControlForce(const tVectorXd &tar_q,
         BTGEN_ASSERT(false);
         break;
     }
-
     if (force.norm() > mForceLim)
     {
         force = force.normalized() * mForceLim;
@@ -137,11 +136,9 @@ void btGenJointPDCtrl::ControlForceNone(tVector &force,
     // exit(0);
     tVector3d omega_diff = target_omega - cur_omega;
     tVector3d local_force = mKp * orient_diff + mKd * omega_diff;
-
     // 5. convert joint local force to global frame, rotate
     tVector3d global_force =
         mJoint->GetGlobalTransform().block(0, 0, 3, 3) * local_force;
-
     force.segment(0, 3) = global_force;
 }
 
@@ -234,7 +231,6 @@ void btGenJointPDCtrl::CalcLocalControlTarget(
     // if this joint's target is in world coord, the local_control_target is the target global orientation of this joint, quaternio
     if (mUseWorldCoord == true)
     {
-
         /*
             calcualte the current local target 
 
@@ -246,6 +242,7 @@ void btGenJointPDCtrl::CalcLocalControlTarget(
         */
         tQuaternion cur_global_rot =
             btMathUtil::RotMat3dToQuaternion(mJoint->GetWorldOrientation());
+
         tQuaternion cur_local_rot =
             btMathUtil::RotMat3dToQuaternion(mJoint->GetRotations());
         tQuaternion cur_joint_rest_rot =
@@ -319,10 +316,13 @@ void btGenJointPDCtrl::BuildTargetPose(tVectorXd &q)
         mModel->Apply(q, false);
         tQuaternion tar_world_orient =
             btMathUtil::RotMat3dToQuaternion(mJoint->GetWorldOrientation());
+
         mModel->Apply(q_old, false);
         // 2. calculate the local target
         tVectorXd joint_target = q.segment(mJoint->GetOffset(), GetCtrlDims());
+
         CalcLocalControlTarget(joint_target, tar_world_orient);
+
         // 3. write the local target back
         q.segment(mJoint->GetOffset(), GetCtrlDims()) = joint_target;
     }
@@ -331,3 +331,5 @@ void btGenJointPDCtrl::BuildTargetVel(tVectorXd &qdot)
 {
     // doesn't have any change
 }
+
+double btGenJointPDCtrl::GetForceLim() const { return this->mForceLim; }

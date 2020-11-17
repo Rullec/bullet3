@@ -1,5 +1,6 @@
-#include <vector>
+#pragma once
 #include <string>
+#include <vector>
 class btGeneralizeWorld;
 class cRobotModelDynamics;
 enum eTransitionCondition
@@ -68,16 +69,20 @@ protected:
 */
 struct tState
 {
-    tState(int state_id);
+    tState(int state_id, int default_swing_hip, int default_stance_hip);
     ~tState();
 
     void Update(double dt);
     void AddTransitionCondition(tTransitionCondition *cond);
+    int GetStateId() const;
     int GetTargetId() const;
     void Print() const;
+    int GetDefaultSwingHipId() const;
+    int GetDefaultStanceHipId() const;
 
 protected:
     int mStateId;
+    int mDefaultSwingHipId, mDefaultStanceHipId;
     std::vector<tTransitionCondition *> mTransitionConditions;
 };
 

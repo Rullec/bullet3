@@ -7,19 +7,61 @@
         "states": [
             {
                 "state_id": 0,
-                "conditions": []
+                "conditions": [
+                    {
+                        "condition_type": "ElapsedTime",
+                        "elapsed_time": 0.5,
+                        "target_state_id": 1
+                    }
+                ],
+                "default_swing_hip": "RightLeg",
+                "default_stance_hip": "LeftLeg"
             },
             {
                 "state_id": 1,
-                "conditions": []
+                "conditions": [
+                    {
+                        "condition_type": "LinkContact",
+                        "contact_link_name": "RFootTongue",
+                        "target_state_id": 2
+                    },
+                    {
+                        "condition_type": "ElapsedTime",
+                        "elapsed_time": 0.5,
+                        "target_state_id": 2
+                    }
+                ],
+                "default_swing_hip": "RightLeg",
+                "default_stance_hip": "LeftLeg"
             },
             {
                 "state_id": 2,
-                "conditions": []
+                "conditions": [
+                    {
+                        "condition_type": "ElapsedTime",
+                        "elapsed_time": 0.5,
+                        "target_state_id": 3
+                    }
+                ],
+                "default_swing_hip": "LeftLeg",
+                "default_stance_hip": "RightLeg"
             },
             {
                 "state_id": 3,
-                "conditions": []
+                "conditions": [
+                    {
+                        "condition_type": "LinkContact",
+                        "contact_link_name": "LFootTongue",
+                        "target_state_id": 0
+                    },
+                    {
+                        "condition_type": "ElapsedTime",
+                        "elapsed_time": 0.5,
+                        "target_state_id": 0
+                    }
+                ],
+                "default_swing_hip": "LeftLeg",
+                "default_stance_hip": "RightLeg"
             }
         ]
     },

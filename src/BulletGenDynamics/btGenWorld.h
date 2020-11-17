@@ -72,7 +72,7 @@ public:
     void AddController(const std::string &path);
     bool HasController() const;
     bool HasContactAwareController() const;
-    bool IsTwoObjsContact(const btCollisionObject *b1,
+    int GetTwoObjsNumOfContact(const btCollisionObject *b1,
                           const btCollisionObject *b2);
 
 protected:

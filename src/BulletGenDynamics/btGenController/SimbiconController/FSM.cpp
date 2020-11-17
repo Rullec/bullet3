@@ -13,11 +13,11 @@ btGenFSM::btGenFSM(btGeneralizeWorld *world, cRobotModelDynamics *model,
 
     std::string state_traj_path =
         btJsonUtil::ParseAsString("state_traj_path", config);
-    btTraj *traj = new btTraj();
-    traj->LoadTraj(state_traj_path, mModel);
+    mStateTraj = new btTraj();
+    mStateTraj->LoadTraj(state_traj_path, mModel);
 
     int num_of_states = btJsonUtil::ParseAsInt("num_of_states", config);
-    BTGEN_ASSERT(num_of_states == traj->mNumOfFrames);
+    BTGEN_ASSERT(num_of_states == mStateTraj->mNumOfFrames);
 
     const Json::Value &states = btJsonUtil::ParseAsValue("states", config);
 
@@ -28,21 +28,32 @@ btGenFSM::btGenFSM(btGeneralizeWorld *world, cRobotModelDynamics *model,
     {
         const Json::Value &cur_state = states[i];
         int state_id = btJsonUtil::ParseAsInt("state_id", cur_state);
+        std::string default_swing_hip_name = btJsonUtil::ParseAsString(
+                        "default_swing_hip", cur_state),
+                    default_stance_hip_name = btJsonUtil::ParseAsString(
+                        "default_stance_hip", cur_state);
         BTGEN_ASSERT(state_id == i);
+        int default_swing_hipid =
+                this->mModel->GetLink(default_swing_hip_name)->GetId(),
+            default_stance_hipid =
+                this->mModel->GetLink(default_swing_hip_name)->GetId();
 
         const Json::Value &conditions =
             btJsonUtil::ParseAsValue("conditions", cur_state);
 
         BTGEN_ASSERT(conditions.isArray() == true);
-        tState *state = new tState(state_id);
+        tState *state =
+            new tState(state_id, default_swing_hipid, default_stance_hipid);
         for (auto &cond : conditions)
         {
             state->AddTransitionCondition(
                 BuildTransitionCondition(state_id, world, model, cond));
-            state->Print();
-            mStateGraph.push_back(state);
         }
+        mStateGraph.push_back(state);
+        state->Print();
     }
+
+    mCurState = mStateGraph[0];
 }
 
 btGenFSM::~btGenFSM()
@@ -60,7 +71,34 @@ btGenFSM::~btGenFSM()
 */
 void btGenFSM::Update(double dt, tVectorXd &target_pose)
 {
+    mCurState->Update(dt);
+    int target_state_id = mCurState->GetTargetId();
+    if (target_state_id == -1)
+    {
+        printf("[FSM] target state id = -1, keep in the same state\n");
+    }
+    else
+    {
+        printf("[FSM] target state id = %d, transfer\n", target_state_id);
+        mCurState = mStateGraph[target_state_id];
+    }
 
-    printf("[error] FSM Update hasn't been finished\n");
-    exit(0);
+    target_pose = mStateTraj->mq[mCurState->GetStateId()];
+    std::cout << "[FSM] target pose = " << target_pose.transpose() << std::endl;
 }
+
+/**
+ * \brief               Set the init pose by current state
+*/
+void btGenFSM::InitPose()
+{
+    tVectorXd q = mStateTraj->mq[mCurState->GetStateId()],
+              qdot = tVectorXd::Zero(q.size());
+    std::cout << "[FSM] init q = " << q.transpose() << std::endl;
+    mModel->SetqAndqdot(q, qdot);
+}
+
+/**
+ * \brief               Get the current state in FSM
+*/
+tState *btGenFSM::GetCurrentState() { return this->mCurState; }

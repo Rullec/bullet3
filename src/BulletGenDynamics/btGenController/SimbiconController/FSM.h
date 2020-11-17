@@ -6,6 +6,7 @@ namespace Json
 {
 class Value;
 }
+class btTraj;
 
 /**
  * \brief       Finite state machine used in SIMBICON controller
@@ -16,11 +17,14 @@ public:
     btGenFSM(btGeneralizeWorld *world, cRobotModelDynamics *model,
              const Json::Value &config);
     ~btGenFSM();
+    void InitPose();
     void Update(double dt, tVectorXd &target_pose);
+    tState *GetCurrentState();
 
 protected:
     btGeneralizeWorld *mWorld;
     cRobotModelDynamics *mModel;
     tState *mCurState;
+    btTraj *mStateTraj;
     std::vector<tState *> mStateGraph;
 };

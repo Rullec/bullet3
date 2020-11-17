@@ -239,7 +239,7 @@ void btGenPDController::CalculateControlForces(
     mTargetqCur = mTargetqSet;
     mTargetqdotCur = mTargetqdotSet;
     BuildTargetPose(mTargetqCur);
-    BuildTargetPose(mTargetqdotCur);
+    BuildTargetVel(mTargetqdotCur);
 
     if (mEnableSPD)
         CalculateControlForcesSPD(dt, pd_forces);
@@ -356,7 +356,7 @@ void btGenPDController::BuildTargetVel(tVectorXd &vel)
 {
     for (auto &ctrl : mExpJointPDControllers)
     {
-        ctrl->BuildTargetPose(vel);
+        ctrl->BuildTargetVel(vel);
     }
 }
 

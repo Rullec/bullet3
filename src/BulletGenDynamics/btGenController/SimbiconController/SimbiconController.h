@@ -33,4 +33,6 @@ protected:
     void UpdateSwingStance();
     void UpdatePDController(const tVectorXd &tar_pose);
     int GetEndeffector(int id) const;
+    void RestrictRootPose();
+    bool IsFallDown() const;
 };
