@@ -476,7 +476,7 @@ void cRobotModel::AddRootJoint(const char *root_name, JointType root_joint_type,
         p->SetParent(root);
     }
     dynamic_cast<Joint *>(root)->SetTorqueLim(torque_lim);
-    std::cout << "root torque lim = " << torque_lim << std::endl;
+    // std::cout << "root torque lim = " << torque_lim << std::endl;
     InsertFreedomMap(root);
     num_of_freedom += root->GetNumOfFreedom();
     joints.insert(std::make_pair(param.name, root));

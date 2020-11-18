@@ -1,11 +1,10 @@
 {
     "ctrl_type": "SimbiconController",
-    "corresponding_char_path": "../DeepMimic/data/1111/characters/skeleton_bipedal_legs_bigroot.json",
+    "corresponding_char_path": "../DeepMimic/data/1111/characters/skeleton_legs_bigroot.json",
     "pd_controller_path": "examples/CustomEngine/ctrl_configs/pd_config_legs.json",
     "ignore_balance_control_in_0_2_state": false,
     "FSM": {
-        "state_traj_path_jog": "examples/CustomEngine/ctrl_configs/simbicon_target_bipedal_jog.json",
-        "state_traj_path": "examples/CustomEngine/ctrl_configs/simbicon_targets.json",
+        "state_traj_path": "examples/CustomEngine/ctrl_configs/simbicon_target_jog.json",
         "num_of_states": 4,
         "states": [
             {

@@ -10,7 +10,7 @@
     "enable_contact_aware_control": false,
     "contact_aware_ref_traj": "../DeepMimic/data/id_test/sample_legs/traj_legs_51668091.json",
     "ctrl_config_aware": "examples/CustomEngine/ctrl_configs/contact_aware_controller_config.json",
-    "ctrl_config": "examples/CustomEngine/ctrl_configs/simbicon_bipedal_config.json",
+    "ctrl_config": "examples/CustomEngine/ctrl_configs/simbicon_configs/bipedal/simbicon_bipedal_config.json",
     "obj_num": 10,
     "obj_type": "ball",
     "obj_type_bak": "cube",

@@ -89,6 +89,7 @@ void btGenSimbiconController::Update(double dt)
     printf("-------------simbicon update cur time %.3f cur state "
            "%d--------------\n",
            mTime, mFSM->GetCurrentState()->GetStateId());
+
     btGenControllerBase::Update(dt);
     if (IsFallDown() == true)
     {
@@ -433,7 +434,7 @@ void btGenSimbiconController::UpdateRefModel()
     BaseObject *joint = mRefTrajModel->GetJointById(0);
     int move_dof_id = -1;
     if (joint->GetJointType() == JointType::NONE_JOINT)
-        move_dof_id = 3;
+        move_dof_id = 1;
     else if (joint->GetJointType() == JointType::BIPEDAL_NONE_JOINT)
         move_dof_id = 0;
     double move_distance = 1;
