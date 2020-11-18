@@ -70,7 +70,7 @@ int tContactCondition::GetTransitionTargetId() const
     auto link_collider = mModel->GetLinkCollider(mLinkId);
     auto ground = mWorld->GetGround();
     int num = mWorld->GetTwoObjsNumOfContact(ground, link_collider);
-    if (num >= 3)
+    if (num > 0)
     {
         return this->mTargetStateId;
     }
@@ -86,11 +86,9 @@ void tContactCondition::Reset()
 // ====================================== contact condition end ========================
 
 // ====================================== state begin ========================
-tState::tState(int state_id, int default_swing_hip, int default_stance_hip)
-    : mStateId(state_id)
+tState::tState(int state_id) : mStateId(state_id)
 {
-    mDefaultSwingHipId = default_swing_hip;
-    mDefaultStanceHipId = default_stance_hip;
+
     mTransitionConditions.clear();
 }
 
@@ -154,8 +152,11 @@ void tState::Print() const
            this->mTransitionConditions.size());
 }
 
-int tState::GetDefaultSwingHipId() const { return mDefaultSwingHipId; }
-int tState::GetDefaultStanceHipId() const { return mDefaultStanceHipId; }
+void tState::Reset()
+{
+    for (auto &x : mTransitionConditions)
+        x->Reset();
+}
 // ====================================== state end ========================
 
 // ====================================== BuildCondition begin ========================

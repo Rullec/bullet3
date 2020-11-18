@@ -19,6 +19,7 @@ public:
     ~btGenFSM();
     void InitPose();
     void Update(double dt, tVectorXd &target_pose);
+    tVectorXd GetTargetPose();
     tState *GetCurrentState();
 
 protected:

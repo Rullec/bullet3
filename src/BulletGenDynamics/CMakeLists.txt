@@ -16,6 +16,7 @@ SET(
 	./btGenModel/RobotModelDynamics.cpp
 	./btGenModel/RootJoint.cpp
 	./btGenModel/LimitRootJoint.cpp
+	./btGenModel/BipedalRootJoint.cpp
 	./btGenModel/SimObj.cpp
 	./btGenModel/tools.cpp
 	btGenModel/Tinyxml/tinystr.cpp

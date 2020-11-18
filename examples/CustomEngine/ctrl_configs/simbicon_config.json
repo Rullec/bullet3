@@ -2,7 +2,7 @@
     "ctrl_type": "SimbiconController",
     "pd_controller_path": "examples/CustomEngine/ctrl_configs/pd_config_legs.json",
     "FSM": {
-        "state_traj_path": "examples/CustomEngine/ctrl_configs/simbicon_targets.json",
+        "state_traj_path": "examples/CustomEngine/ctrl_configs/simbicon_target_jog.json",
         "num_of_states": 4,
         "states": [
             {
@@ -13,9 +13,7 @@
                         "elapsed_time": 0.5,
                         "target_state_id": 1
                     }
-                ],
-                "default_swing_hip": "RightLeg",
-                "default_stance_hip": "LeftLeg"
+                ]
             },
             {
                 "state_id": 1,
@@ -24,15 +22,8 @@
                         "condition_type": "LinkContact",
                         "contact_link_name": "RFootTongue",
                         "target_state_id": 2
-                    },
-                    {
-                        "condition_type": "ElapsedTime",
-                        "elapsed_time": 0.5,
-                        "target_state_id": 2
                     }
-                ],
-                "default_swing_hip": "RightLeg",
-                "default_stance_hip": "LeftLeg"
+                ]
             },
             {
                 "state_id": 2,
@@ -42,9 +33,7 @@
                         "elapsed_time": 0.5,
                         "target_state_id": 3
                     }
-                ],
-                "default_swing_hip": "LeftLeg",
-                "default_stance_hip": "RightLeg"
+                ]
             },
             {
                 "state_id": 3,
@@ -53,20 +42,13 @@
                         "condition_type": "LinkContact",
                         "contact_link_name": "LFootTongue",
                         "target_state_id": 0
-                    },
-                    {
-                        "condition_type": "ElapsedTime",
-                        "elapsed_time": 0.5,
-                        "target_state_id": 0
                     }
-                ],
-                "default_swing_hip": "LeftLeg",
-                "default_stance_hip": "RightLeg"
+                ]
             }
         ]
     },
     "balance_control": {
-        "Cd": 0.5,
-        "Cv": 0.2
+        "Cd": 0.6,
+        "Cv": 0.4
     }
 }

@@ -5,6 +5,12 @@
 #include "Joint.h"
 #include "Printer.h"
 
+/**
+ * \brief       Limit Root joint, has only one X translation freedom, with no rotation freedom
+ * DOF: 1
+ * Rotation: None
+ * Translation: X
+*/
 class LimitRootJoint : public Joint
 {
 

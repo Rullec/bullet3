@@ -34,6 +34,9 @@ protected:
     void CheckCtrlDims(const tVectorXd &var, std::string prefix) const;
     void ControlForceNone(tVector &force, const tVectorXd &local_target_theta,
                           const tVectorXd &local_target_vel) const;
+    void ControlForceBipedalNone(tVector &force,
+                                 const tVectorXd &local_target_theta,
+                                 const tVectorXd &local_target_vel) const;
     void ControlForceRevolute(tVector &force,
                               const tVectorXd &local_target_theta,
                               const tVectorXd &local_target_vel) const;

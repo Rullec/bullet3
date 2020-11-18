@@ -273,10 +273,8 @@ void cRobotModelDynamics::TestJacobian()
 
         if (err > 1e-5)
         {
-            std::cout << "jac pred = \n"
-                      << jac_pred << std::endl;
-            std::cout << "jac truth = \n"
-                      << jac_truth << std::endl;
+            std::cout << "jac pred = \n" << jac_pred << std::endl;
+            std::cout << "jac truth = \n" << jac_truth << std::endl;
 
             std::cout << "error test jacobian in link " << link_id << std::endl;
         }
@@ -1164,8 +1162,7 @@ void cRobotModelDynamics::TestRotationChar()
     tMatrix new_rotation =
         diff_rot * old_rotation *
         btMathUtil::ExpandMat(link->GetMeshRotation()).transpose();
-    std::cout << "new rot = \n"
-              << new_rotation << std::endl;
+    std::cout << "new rot = \n" << new_rotation << std::endl;
 
     tVector new_euler_angles = btMathUtil::QuaternionToEulerAngles(
         btMathUtil::RotMatToQuaternion(new_rotation), btRotationOrder::bt_XYZ);
@@ -1190,8 +1187,7 @@ void cRobotModelDynamics::TestRotationChar()
 
     // 4. given new link vel to qdot
 
-    std::cout << "root link jkv = \n"
-              << link->GetJKv() << std::endl;
+    std::cout << "root link jkv = \n" << link->GetJKv() << std::endl;
     mqdot.segment(3, 3) =
         link->GetJKw().block(0, 3, 3, 3).inverse() * new_link_omega;
     mqdot.segment(0, 3) =
@@ -1437,14 +1433,10 @@ void cRobotModelDynamics::TestLinkddJvddq(int id)
             {
                 printf("[error] link %d ddJvdq%dq%d diff norm %.10f\n", id, j,
                        i, diff_norm);
-                std::cout << "ana = \n"
-                          << ana_i[j] << std::endl;
-                std::cout << "num = \n"
-                          << num_i[j] << std::endl;
-                std::cout << "dJvdq new = \n"
-                          << dJvdq_new[j] << std::endl;
-                std::cout << "dJvdq old = \n"
-                          << dJvdq_old[j] << std::endl;
+                std::cout << "ana = \n" << ana_i[j] << std::endl;
+                std::cout << "num = \n" << num_i[j] << std::endl;
+                std::cout << "dJvdq new = \n" << dJvdq_new[j] << std::endl;
+                std::cout << "dJvdq old = \n" << dJvdq_old[j] << std::endl;
                 exit(0);
             }
             // if (id == 0 && j == 3 && i == 0)
@@ -1490,10 +1482,8 @@ void cRobotModelDynamics::TestLinkddJwddq(int id)
             {
                 printf("[error] link %d ddJwdq%dq%d diff norm %.10f\n", id, j,
                        i, diff_norm);
-                std::cout << "ana = \n"
-                          << ana_i[j] << std::endl;
-                std::cout << "num = \n"
-                          << num_i[j] << std::endl;
+                std::cout << "ana = \n" << ana_i[j] << std::endl;
+                std::cout << "num = \n" << num_i[j] << std::endl;
                 exit(0);
             }
         }
@@ -1538,10 +1528,8 @@ void cRobotModelDynamics::TestDCoriolisMatrixDq()
         {
             std::cout << "[error] TestDCDq global dof " << i
                       << " dCdq diff norm = " << norm << std::endl;
-            std::cout << "ana = \n"
-                      << dCdq[i] << std::endl;
-            std::cout << "num = \n"
-                      << dCdq_num << std::endl;
+            std::cout << "ana = \n" << dCdq[i] << std::endl;
+            std::cout << "num = \n" << dCdq_num << std::endl;
             exit(1);
         }
         // std::cout << "[log] dof " << i << " dCdq succ\n";
@@ -1819,10 +1807,8 @@ void cRobotModelDynamics::TestLinkdJdotdq(int id)
         {
             printf("[error] link %d djwdotdq%d diff is too big %.10f\n", id,
                    total_i, djwdotdq_diff_norm);
-            std::cout << "num = \n"
-                      << djwdotdq_num << std::endl;
-            std::cout << "ana = \n"
-                      << dJkwdotdq[total_i] << std::endl;
+            std::cout << "num = \n" << djwdotdq_num << std::endl;
+            std::cout << "ana = \n" << dJkwdotdq[total_i] << std::endl;
             exit(0);
         }
         q_old[global_i] -= eps;
@@ -1915,10 +1901,8 @@ void cRobotModelDynamics::TestReducedAPI()
                           << " dof " << dof
                           << " dJvdq diff norm = " << dJvdq_diff_norm
                           << std::endl;
-                std::cout << "ana = \n"
-                          << dJkvdq[dof] << std::endl;
-                std::cout << "num = \n"
-                          << dJvdq_num << std::endl;
+                std::cout << "ana = \n" << dJkvdq[dof] << std::endl;
+                std::cout << "num = \n" << dJvdq_num << std::endl;
                 exit(1);
             }
             if (dJwdq_diff_norm > 10 * eps)
@@ -1966,10 +1950,8 @@ void cRobotModelDynamics::TestDCoriolisMatrixDq_global_link(int id)
         {
             std::cout << "[error] TestDCDq global for link " << id << " dof "
                       << total_i << " dCdq diff norm = " << norm << std::endl;
-            std::cout << "ana = \n"
-                      << dCdq_reduced[total_i] << std::endl;
-            std::cout << "num = \n"
-                      << dCdq_num << std::endl;
+            std::cout << "ana = \n" << dCdq_reduced[total_i] << std::endl;
+            std::cout << "num = \n" << dCdq_num << std::endl;
             exit(1);
         }
 
@@ -2015,10 +1997,8 @@ void cRobotModelDynamics::TestdJdotdqdot()
             {
                 printf("[error] dJkdotdqdot link %d dof %d diff norm %.10f\n",
                        link_id, dof, norm);
-                std::cout << "ana = \n"
-                          << dJkdotdqdot_ana[dof] << std::endl;
-                std::cout << "num = \n"
-                          << dJkdotdqdot_num << std::endl;
+                std::cout << "ana = \n" << dJkdotdqdot_ana[dof] << std::endl;
+                std::cout << "num = \n" << dJkdotdqdot_num << std::endl;
                 exit(1);
             }
 
@@ -2043,6 +2023,7 @@ void cRobotModelDynamics::TestSetFreedomValueAndDot()
     double eps = 1e-15;
     for (int i = 0; i < num_of_freedom; i++)
     {
+        BTGEN_ASSERT(freedoms[i]->id == i);
         double v_diff = std::fabs(freedoms[i]->v - q[i]),
                vdot_diff = std::fabs(freedoms[i]->vdot - qdot[i]);
         if (v_diff > eps || vdot_diff > eps)
@@ -2050,6 +2031,10 @@ void cRobotModelDynamics::TestSetFreedomValueAndDot()
             printf("[error] TestSetFreedomValueAndDot failed, for dof %d vdiff "
                    "%.5f, vdotdiff %.5f\n",
                    i, v_diff, vdot_diff);
+
+            std::cout << "set q = " << q.transpose() << std::endl;
+            std::cout << "freedoms i = " << freedoms[i]->v << std::endl;
+            std::cout << "q i = " << q[i] << std::endl;
             exit(0);
         }
     }
@@ -2146,7 +2131,8 @@ void cRobotModelDynamics::TestJointLocalJkw()
  * \param root_torque   the cartesian torque on root joint
 */
 void cRobotModelDynamics::ConvertGenForceToCartesianForceTorque(
-    const tVectorXd &gen_force, tEigenArr<tVector3d> &joint_torques, tVector3d &root_force, tVector3d &root_torque) const
+    const tVectorXd &gen_force, tEigenArr<tVector3d> &joint_torques,
+    tVector3d &root_force, tVector3d &root_torque) const
 {
     BTGEN_ASSERT(gen_force.size() == num_of_freedom);
     joint_torques.clear();
@@ -2154,11 +2140,37 @@ void cRobotModelDynamics::ConvertGenForceToCartesianForceTorque(
     // 1. handle the force & torque on root
     {
         auto root_link = GetLinkById(0);
-        BTGEN_ASSERT(root_link->GetParent()->GetJointType() == JointType::NONE_JOINT);
+        auto root_type = root_link->GetParent()->GetJointType();
         const tMatrixXd &root_jwT = root_link->GetJKw().transpose(),
                         &root_jvT = root_link->GetJKv().transpose();
-        root_force = gen_force.segment(0, 3);
-        root_torque = root_jwT.block(3, 0, 3, 3).inverse() * (gen_force.segment(3, 3) - root_jvT.block(3, 0, 3, 3) * root_force);
+        switch (root_type)
+
+        {
+        case JointType::NONE_JOINT:
+        {
+
+            root_force = gen_force.segment(0, 3);
+            root_torque = root_jwT.block(3, 0, 3, 3).inverse() *
+                          (gen_force.segment(3, 3) -
+                           root_jvT.block(3, 0, 3, 3) * root_force);
+        }
+        break;
+        case JointType::BIPEDAL_NONE_JOINT:
+        {
+            // X axis rotation, and Y & Z translation
+            // std::cout << "root jwT = \n " << root_jwT << std::endl;
+            // std::cout << "root jvT = \n " << root_jvT << std::endl;
+            root_force.setZero();
+            root_force.segment(1, 2) = gen_force.segment(0, 2);
+            root_torque.setZero();
+            root_torque[0] =
+                gen_force[2] - (root_jvT.block(0, 0, 3, 3) * root_force)[2];
+        }
+        break;
+        default:
+            BTGEN_ASSERT(false);
+            break;
+        }
     }
     // 2. handle others
     for (int i = 1; i < GetNumOfJoint(); i++)
@@ -2193,7 +2205,8 @@ void cRobotModelDynamics::ConvertGenForceToCartesianForceTorque(
             tVector3d local_axis = joint->GetFreedoms(0)->axis;
             tVector3d global_axis = joint->GetWorldOrientation() * local_axis;
 
-            double value = gen_force_joint[0] / global_axis.dot(nonzero_jacobian.col(0));
+            double value =
+                gen_force_joint[0] / global_axis.dot(nonzero_jacobian.col(0));
             torque = value * global_axis;
         }
         else
@@ -2222,7 +2235,8 @@ void cRobotModelDynamics::TestConvertGenForceToJointTorque()
     // 1. get the cartesian joint torques
     tEigenArr<tVector3d> joint_torques;
     tVector3d root_force, root_torque;
-    ConvertGenForceToCartesianForceTorque(gen_force, joint_torques, root_force, root_torque);
+    ConvertGenForceToCartesianForceTorque(gen_force, joint_torques, root_force,
+                                          root_torque);
 
     // 2. calculate the gen force from the joint torques
     BTGEN_ASSERT(joint_torques.size() == GetNumOfJoint() - 1);
@@ -2237,9 +2251,12 @@ void cRobotModelDynamics::TestConvertGenForceToJointTorque()
     tVectorXd diff = gen_force_restored - gen_force;
     if (diff.norm() > 1e-6)
     {
-        std::cout << "[error] gen force raw = " << gen_force.transpose() << std::endl;
-        std::cout << "[error] gen force new = " << gen_force_restored.transpose() << std::endl;
-        std::cout << "[error] gen force diff = " << (gen_force - gen_force_restored).transpose() << std::endl;
+        std::cout << "[error] gen force raw = " << gen_force.transpose()
+                  << std::endl;
+        std::cout << "[error] gen force new = "
+                  << gen_force_restored.transpose() << std::endl;
+        std::cout << "[error] gen force diff = "
+                  << (gen_force - gen_force_restored).transpose() << std::endl;
         exit(0);
     }
     printf("[log] test convert gen force succ\n");

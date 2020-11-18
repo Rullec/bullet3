@@ -180,7 +180,14 @@ void btGenContactSolver::ConstraintProcess(float dt_)
     // std::cout << "--------contact solver frame " << global_frame_id << "
     // ----------" << std::endl;
     cur_dt = dt_;
-
+    if (eLCPSolverType::BulletDantzig == mLCPSolver->GetType() &&
+        this->mMultibodyArray[0]->GetRoot()->GetJointType() !=
+            JointType::NONE_JOINT)
+    {
+        printf("[error] Dantzig solver cannot be used in None Joint case, "
+               "otherwise an NAN result would be solved\n");
+        BTGEN_ASSERT(false);
+    }
     // btTimeUtil::Begin("constraint_setup");
     ConstraintSetup();
     // btTimeUtil::End("constraint_setup");

@@ -49,13 +49,14 @@ enum JointType
     INVALID_JOINT = -1,
     NONE_JOINT,
     LIMIT_NONE_JOINT,
+    BIPEDAL_NONE_JOINT,
     SPHERICAL_JOINT,
     REVOLUTE_JOINT,
     FIXED_JOINT,
     TOTAL_JOINT_TYPE
 };
 const std::string joint_type_keys[TOTAL_JOINT_TYPE] = {
-    "none", "limit_none", "spherical", "revolute", "fixed"};
+    "none", "limit_none", "bipedal_none", "spherical", "revolute", "fixed"};
 struct BaseObjectParams
 {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;

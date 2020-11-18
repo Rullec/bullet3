@@ -28,22 +28,13 @@ btGenFSM::btGenFSM(btGeneralizeWorld *world, cRobotModelDynamics *model,
     {
         const Json::Value &cur_state = states[i];
         int state_id = btJsonUtil::ParseAsInt("state_id", cur_state);
-        std::string default_swing_hip_name = btJsonUtil::ParseAsString(
-                        "default_swing_hip", cur_state),
-                    default_stance_hip_name = btJsonUtil::ParseAsString(
-                        "default_stance_hip", cur_state);
         BTGEN_ASSERT(state_id == i);
-        int default_swing_hipid =
-                this->mModel->GetLink(default_swing_hip_name)->GetId(),
-            default_stance_hipid =
-                this->mModel->GetLink(default_swing_hip_name)->GetId();
 
         const Json::Value &conditions =
             btJsonUtil::ParseAsValue("conditions", cur_state);
 
         BTGEN_ASSERT(conditions.isArray() == true);
-        tState *state =
-            new tState(state_id, default_swing_hipid, default_stance_hipid);
+        tState *state = new tState(state_id);
         for (auto &cond : conditions)
         {
             state->AddTransitionCondition(
@@ -81,20 +72,28 @@ void btGenFSM::Update(double dt, tVectorXd &target_pose)
     {
         printf("[FSM] target state id = %d, transfer\n", target_state_id);
         mCurState = mStateGraph[target_state_id];
+        mCurState->Reset();
     }
 
-    target_pose = mStateTraj->mq[mCurState->GetStateId()];
-    std::cout << "[FSM] target pose = " << target_pose.transpose() << std::endl;
+    target_pose = GetTargetPose();
+    // std::cout << "[FSM] target pose = " << target_pose.transpose() << std::endl;
 }
 
+tVectorXd btGenFSM::GetTargetPose()
+{
+    return mStateTraj->mq[mCurState->GetStateId()];
+}
 /**
  * \brief               Set the init pose by current state
 */
 void btGenFSM::InitPose()
 {
-    tVectorXd q = mStateTraj->mq[mCurState->GetStateId()],
-              qdot = tVectorXd::Zero(q.size());
-    std::cout << "[FSM] init q = " << q.transpose() << std::endl;
+    // tVectorXd q = mStateTraj->mq[mCurState->GetStateId()],
+    //           qdot = tVectorXd::Zero(q.size());
+    // std::cout << "[FSM] init q = " << q.transpose() << std::endl;
+    tVectorXd q = tVectorXd::Zero(mModel->GetNumOfFreedom()),
+              qdot = tVectorXd::Zero(mModel->GetNumOfFreedom());
+    q[0] = 0.75;
     mModel->SetqAndqdot(q, qdot);
 }
 

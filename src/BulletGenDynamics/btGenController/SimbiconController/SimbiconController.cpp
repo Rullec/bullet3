@@ -39,7 +39,7 @@ void btGenSimbiconController::Init(cRobotModelDynamics *model,
     std::string char_file = model->GetCharFile();
     BTGEN_ASSERT(
         char_file ==
-        "../DeepMimic/data/1111/characters/skeleton_bipedal_legs.json");
+        "../DeepMimic/data/1111/characters/skeleton_bipedal_legs_bigroot.json");
 
     Json::Value root;
     btJsonUtil::LoadJson(conf, root);
@@ -59,6 +59,18 @@ void btGenSimbiconController::Init(cRobotModelDynamics *model,
     // 5. init pose
     {
         mFSM->InitPose();
+    }
+
+    // 6. create ref char
+    {
+        mRefTrajModel = new cRobotModelDynamics();
+
+        mRefTrajModel->Init(mModel->GetCharFile().c_str(), mModel->GetScale(),
+                            ModelType::JSON);
+        mRefTrajModel->InitSimVars(mWorld->GetInternalWorld(), true, true,
+                                   false);
+
+        mRefTrajModel->SetqAndqdot(mModel->Getq(), mModel->Getqdot());
     }
 }
 
@@ -83,13 +95,16 @@ void btGenSimbiconController::Update(double dt)
         exit(0);
     }
     // 0. make the root stay in YOZ plane and has no X translation
-    RestrictRootPose();
+    // RestrictRootPose();
     // 0. update hips
     UpdateSwingStance();
 
     // 1. update FSM, get the target pose
     tVectorXd target_pose;
     mFSM->Update(dt, target_pose);
+
+    // update target pose
+    UpdateRefModel();
 
     // 2. change the target pose by balance control policy
     BalanceUpdateTargetPose(target_pose);
@@ -199,7 +214,13 @@ void btGenSimbiconController::BalanceUpdateTargetPose(
         printf("[warn] swing/stance hip is -1, balance control disabled\n");
         return;
     }
-
+    auto cur_state = mFSM->GetCurrentState();
+    if (cur_state->GetStateId() != 1 && cur_state->GetStateId() != 3)
+    {
+        printf("[warn] balance control is ignored in state id %d temporarily\n",
+               cur_state->GetStateId());
+        return;
+    }
     auto swing_hip = dynamic_cast<Joint *>(mModel->GetJointById(mSwingHip));
     BTGEN_ASSERT(swing_hip->GetJointType() == JointType::REVOLUTE_JOINT);
 
@@ -275,17 +296,16 @@ void btGenSimbiconController::UpdateSwingStance()
         right_foot_id = GetEndeffector(right_hip_id);
 
     // then check whether this link is contacted with the ground
-    int left_foot_contact_num = mWorld->GetTwoObjsNumOfContact(
-        mWorld->GetGround(), mModel->GetLinkCollider(left_foot_id));
-    int right_foot_contact_num = mWorld->GetTwoObjsNumOfContact(
-        mWorld->GetGround(), mModel->GetLinkCollider(right_foot_id));
-    bool left_foot_contact = left_foot_contact_num >= 3;
-    bool right_foot_contact = right_foot_contact_num >= 3;
+    bool left_foot_contact =
+        mWorld->GetTwoObjsNumOfContact(
+            mWorld->GetGround(), mModel->GetLinkCollider(left_foot_id)) > 0;
+    bool right_foot_contact =
+        mWorld->GetTwoObjsNumOfContact(
+            mWorld->GetGround(), mModel->GetLinkCollider(right_foot_id)) > 0;
 
-    printf("[log] left foot contact num %d, case %s, right foot contact num "
-           "%d, case %s\n",
-           left_foot_contact_num, left_foot_contact ? "true" : "false",
-           right_foot_contact_num, right_foot_contact ? "true" : "false");
+    printf("[log] left foot contact %s, right foot contact %s\n",
+           left_foot_contact ? "true" : "false",
+           right_foot_contact ? "true" : "false");
 
     // if the configuration is wrong, set to -1
     // {
@@ -307,7 +327,7 @@ void btGenSimbiconController::UpdateSwingStance()
 
     // if the configuration is wrong, use the old configuration
     {
-        if (left_foot_contact == right_foot_contact)
+        if (left_foot_contact == false && right_foot_contact == false)
         {
             printf(
                 "[simbicon] illegal case: left and right foot contact case is "
@@ -316,45 +336,13 @@ void btGenSimbiconController::UpdateSwingStance()
 
             return;
         }
-
-        if (left_foot_contact == true)
-            mStanceHip = left_hip_id, mSwingHip = right_hip_id;
-        else
-            mSwingHip = left_hip_id, mStanceHip = right_hip_id;
     }
 
-    // if the configuration is wrong, use the default one
-    // {
-    //     if (left_foot_contact == right_foot_contact)
-    //     {
-    //         tState *state = mFSM->GetCurrentState();
-
-    //         mStanceHip = state->GetDefaultStanceHipId();
-    //         mSwingHip = state->GetDefaultSwingHipId();
-    //         printf(
-    //             "[simbicon] illegal case: left and right foot contact case is "
-    //             "the same, use the default swing %d stance %d\n",
-    //             mSwingHip, mStanceHip);
-
-    //         return;
-    //     }
-
-    //     if (left_foot_contact == true)
-    //         mStanceHip = left_hip_id, mSwingHip = right_hip_id;
-    //     else
-    //         mSwingHip = left_hip_id, mStanceHip = right_hip_id;
-    // }
-    // get the stance info from the state directly
-    // {
-    //     tState *state = mFSM->GetCurrentState();
-
-    //     mStanceHip = state->GetDefaultStanceHipId();
-    //     mSwingHip = state->GetDefaultSwingHipId();
-    //     printf("[log] cur state %d, stance hip %s, swing hip %s\n",
-    //            state->GetStateId(),
-    //            mModel->GetJointById(mStanceHip)->GetName().c_str(),
-    //            mModel->GetJointById(mSwingHip)->GetName().c_str());
-    // }
+    //
+    if (right_foot_contact == true)
+        mSwingHip = left_hip_id, mStanceHip = right_hip_id;
+    else
+        mStanceHip = left_hip_id, mSwingHip = right_hip_id;
 }
 
 /**
@@ -399,12 +387,13 @@ void btGenSimbiconController::UpdatePDController(const tVectorXd &tar_pose)
         int id = x->GetJoint()->GetId();
         if (id == this->mRootId || id == mSwingHip)
         {
-            printf("[log] Set joint %d PD control use world coord\n", id);
+            // printf("[log] Set joint %d PD control use world coord\n", id);
             x->SetUseWorldCoord(true);
         }
     }
 
-    std::cout << "PD target set q = " << tar_pose.transpose() << std::endl;
+    std::cout << "[log] final PD target = " << tar_pose.transpose()
+              << std::endl;
     mPDController->SetPDTargetq(tar_pose);
 }
 
@@ -414,6 +403,8 @@ void btGenSimbiconController::UpdatePDController(const tVectorXd &tar_pose)
 */
 void btGenSimbiconController::RestrictRootPose()
 {
+    BTGEN_ASSERT(mModel->GetJointById(0)->GetJointType() ==
+                 JointType::NONE_JOINT);
     tVectorXd q = mModel->Getq(), qdot = mModel->Getqdot();
     q[0] = 0;                  // translation: YOZ plane
     q.segment(4, 2).setZero(); // rotation: only x axis
@@ -427,6 +418,25 @@ void btGenSimbiconController::RestrictRootPose()
 */
 bool btGenSimbiconController::IsFallDown() const
 {
-    return mWorld->GetTwoObjsNumOfContact(mWorld->GetGround(),
-                                          mModel->GetLinkCollider(mRootId)) > 0;
+    int num = mWorld->GetTwoObjsNumOfContact(mWorld->GetGround(),
+                                             mModel->GetLinkCollider(mRootId));
+    return num > 0;
+}
+
+/**
+ * \brief           Update the pose of ref model (debugging purpose)
+*/
+void btGenSimbiconController::UpdateRefModel()
+{
+    BaseObject *joint = mRefTrajModel->GetJointById(0);
+    int move_dof_id = -1;
+    if (joint->GetJointType() == JointType::NONE_JOINT)
+        move_dof_id = 3;
+    else if (joint->GetJointType() == JointType::BIPEDAL_NONE_JOINT)
+        move_dof_id = 0;
+    double move_distance = 1;
+    tVectorXd tar_pose = mFSM->GetTargetPose();
+
+    tar_pose[move_dof_id] += move_distance;
+    mRefTrajModel->SetqAndqdot(tar_pose, mRefTrajModel->Getqdot());
 }

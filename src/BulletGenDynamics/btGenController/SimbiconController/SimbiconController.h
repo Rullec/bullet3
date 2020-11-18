@@ -23,6 +23,7 @@ public:
 protected:
     btGenFSM *mFSM; // finite state machine
     btGenPDController *mPDController;
+    cRobotModelDynamics *mRefTrajModel;
     int mRootId, mSwingHip,
         mStanceHip;  // the link/joint id of root, swing hip and stance hip
     double mCd, mCv; // balance control param
@@ -35,4 +36,5 @@ protected:
     int GetEndeffector(int id) const;
     void RestrictRootPose();
     bool IsFallDown() const;
+    void UpdateRefModel();
 };

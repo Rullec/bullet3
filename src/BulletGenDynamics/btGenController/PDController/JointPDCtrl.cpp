@@ -54,6 +54,9 @@ tVector btGenJointPDCtrl::CalcControlForce(const tVectorXd &tar_q,
     case JointType::NONE_JOINT:
         ControlForceNone(force, local_target_theta, local_target_vel);
         break;
+    case JointType::BIPEDAL_NONE_JOINT:
+        ControlForceBipedalNone(force, local_target_theta, local_target_vel);
+        break;
     case JointType::SPHERICAL_JOINT:
         ControlForceSpherical(force, local_target_theta, local_target_vel);
         break;
@@ -90,7 +93,7 @@ int btGenJointPDCtrl::GetCtrlDims() const { return mJoint->GetNumOfFreedom(); }
  * the virtual torque on the torso in world frame.
  * 
  * this function will calculate the virtual torque on none joint the same as a spherical joint 
- * in another word, only acount for the orientation target
+ * in another word, only account for the orientation target
 */
 void btGenJointPDCtrl::ControlForceNone(tVector &force,
                                         const tVectorXd &local_target_theta,
@@ -289,6 +292,16 @@ void btGenJointPDCtrl::CalcLocalControlTarget(
         case JointType::FIXED_JOINT:
             control_target = tVectorXd::Zero(0);
             break;
+        case JointType::BIPEDAL_NONE_JOINT:
+        {
+            control_target = tVectorXd::Zero(3);
+            tVector aa = btMathUtil::QuaternionToEulerAngles(
+                local_target, btRotationOrder::bt_XYZ);
+            BTGEN_ASSERT(std::fabs(aa[1]) < 1e-10);
+            BTGEN_ASSERT(std::fabs(aa[2]) < 1e-10);
+            control_target[2] = aa[0];
+        }
+        break;
         default:
             std::cout << "joint type " << mJoint->GetJointType()
                       << " unsupported in joint pd ctrl\n";
@@ -333,3 +346,33 @@ void btGenJointPDCtrl::BuildTargetVel(tVectorXd &qdot)
 }
 
 double btGenJointPDCtrl::GetForceLim() const { return this->mForceLim; }
+
+/**
+ * \brief           control the PD force for bipedal none joint
+ * 
+ * Usually the rootj oint is underactuated; but sometimes (such as in SIMBICON) 
+ * we still needs to compute the virtual PD control on that
+ * 
+ * This function calculates the control TORQUE (not cartesian force, but only torque) for bipedal root
+ * We assume that the only one rotational freedom in bipedal root is along with X-axis
+ * so the result torque looks like: [N, 0, 0] parallel with X-axis
+*/
+void btGenJointPDCtrl::ControlForceBipedalNone(
+    tVector &force, const tVectorXd &local_target_theta,
+    const tVectorXd &local_target_vel) const
+{
+    BTGEN_ASSERT(mJoint->GetJointType() == JointType::BIPEDAL_NONE_JOINT);
+    BTGEN_ASSERT(mJoint->GetNumOfFreedom() == 3);
+    BTGEN_ASSERT(local_target_theta.size() == 3);
+    auto rotate_freedom = mJoint->GetFreedoms(2);
+    BTGEN_ASSERT(rotate_freedom->type == REVOLUTE);
+    BTGEN_ASSERT((rotate_freedom->axis - tVector3d(1, 0, 0)).norm() < 1e-10);
+
+    double cur_theta = rotate_freedom->v, cur_vel = rotate_freedom->vdot;
+    double target_theta = local_target_theta[2],
+           target_vel = local_target_vel[2];
+
+    force.setZero();
+    force[0] = this->mKp * (target_theta - cur_theta) +
+               this->mKd * (target_vel - cur_vel);
+}

@@ -1,4 +1,5 @@
 #include "RobotModel.h"
+#include "BipedalRootJoint.h"
 #include "Joint.h"
 #include "LimitRootJoint.h"
 #include "Link.h"
@@ -423,6 +424,7 @@ void cRobotModel::InsertFreedomMap(BaseObject *joint)
     for (int i = 0; i < joint->GetNumOfFreedom(); i++)
     {
         Freedom *p = joint->GetFreedoms(i);
+        BTGEN_ASSERT(p->id == freedoms.size());
         freedoms.insert(std::make_pair(p->id, p));
     }
 }
@@ -452,6 +454,10 @@ void cRobotModel::AddRootJoint(const char *root_name, JointType root_joint_type,
         else if (root_joint_type == JointType::LIMIT_NONE_JOINT)
         {
             root = new LimitRootJoint(param, num_of_freedom);
+        }
+        else if (root_joint_type == JointType::BIPEDAL_NONE_JOINT)
+        {
+            root = new BipedalRootJoint(param, num_of_freedom);
         }
         else
         {
@@ -1344,7 +1350,7 @@ void cRobotModel::Apply(const tVectorXd &ang,
     std::vector<double> ang_vec(0);
     for (size_t i = 0; i < ang.size(); i++)
         ang_vec.push_back(ang[i]);
-    assert(ang_vec.size() == num_of_freedom);
+    BTGEN_ASSERT(ang_vec.size() == num_of_freedom);
     Apply(ang_vec, 0, compute_gradient);
 }
 
@@ -2241,6 +2247,7 @@ void cRobotModel::ComputeCoriolisMatrix(tVectorXd &q_dot)
 {
     // std::ofstream fout(coriolis_info, std::ios::app);
     // std::cout << "qdot = " << qdot.transpose() << std::endl;
+    BTGEN_ASSERT(q_dot.size() == num_of_freedom);
     coriolis_matrix.setZero();
 
     tVector3d p(0, 0, 0);

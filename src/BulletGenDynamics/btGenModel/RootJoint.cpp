@@ -166,6 +166,9 @@ void RootJoint::ComputeLocalTransformFirstDerive()
     // r_m[1] * r_m[0] * r_m_first_deriv[REVOLUTE_Z] * r_m[4] * r_m[3];
 }
 
+/**
+ * \brief               Compute the dd(local_transform)/dqidqj
+*/
 void RootJoint::ComputeLocalTransformSecondDerive()
 {
     xconventionRotation_dxdx(r_m_second_deriv[REVOLUTE_X],

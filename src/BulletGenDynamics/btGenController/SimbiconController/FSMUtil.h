@@ -69,7 +69,7 @@ protected:
 */
 struct tState
 {
-    tState(int state_id, int default_swing_hip, int default_stance_hip);
+    tState(int state_id);
     ~tState();
 
     void Update(double dt);
@@ -77,12 +77,10 @@ struct tState
     int GetStateId() const;
     int GetTargetId() const;
     void Print() const;
-    int GetDefaultSwingHipId() const;
-    int GetDefaultStanceHipId() const;
+    void Reset();
 
 protected:
     int mStateId;
-    int mDefaultSwingHipId, mDefaultStanceHipId;
     std::vector<tTransitionCondition *> mTransitionConditions;
 };
 
