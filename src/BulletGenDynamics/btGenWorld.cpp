@@ -8,6 +8,7 @@
 #include "btGenController/ContactAwareController/btGenContactAwareController.h"
 #include "btGenModel/RobotModelDynamics.h"
 #include "btGenModel/SimObj.h"
+#include "btGenSolver/ContactManager.h"
 #include "btGenSolver/ContactSolver.h"
 #include "btGenUtil/JsonUtil.h"
 #include "btGenUtil/MathUtil.h"
@@ -34,6 +35,7 @@ btGeneralizeWorld::btGeneralizeWorld()
     mMultibody = nullptr;
     mGround = nullptr;
     mGuideTraj = nullptr;
+    mContactManager = nullptr;
     mFrameId = 0;
 }
 
@@ -72,6 +74,7 @@ btGeneralizeWorld::~btGeneralizeWorld()
     delete mLCPContactSolver;
     delete mGuideTraj;
     delete mCtrl;
+    delete mContactManager;
 }
 
 void btGeneralizeWorld::Init(const std::string &config_path)
@@ -211,6 +214,7 @@ void btGeneralizeWorld::Init(const std::string &config_path)
     // 	mPDController = new btGenPDController(mPDControllerPath);
     // }
     mCtrl = nullptr;
+    mContactManager = new btGenContactManager(this);
     // mControlController = new btGenContactAwareController();
     // SetEnableContacrAwareControl();
 }
@@ -424,8 +428,9 @@ void OutputDynamicsFTestJson(cRobotModelDynamics *, const std::string &path);
 void btGeneralizeWorld::StepSimulation(double dt)
 {
     // btTimeUtil::Begin("stepsim");
-    // std::cout << "------------------begin step simulation for frame " <<
-    // mFrameId << " time " << mTime << "------------------\n"; std::cout <<
+    // std::cout << "------------------begin step simulation for frame "
+    //           << mFrameId << " time " << mTime << "------------------\n";
+    // std::cout <<
     // "[bt] col obj num = " << mInternalWorld->getNumCollisionObjects() <<
     // std::endl; std::cout << "[bt update] q0 = " <<
     // mMultibody->Getq().transpose() << std::endl; btTimeUtil::Begin("step");
@@ -459,6 +464,7 @@ std::vector<btGenContactForce *> btGeneralizeWorld::GetContactForces() const
     return mContactForces;
 }
 
+btGenControllerBase *btGeneralizeWorld::GetController() { return mCtrl; }
 btGenContactAwareController *btGeneralizeWorld::GetContactAwareController()
 {
     if (HasContactAwareController() == false)
@@ -817,31 +823,6 @@ void btGeneralizeWorld::CollisionResponse(double dt)
     {
         t->model->ApplyGeneralizedForce(t->dof_id, t->value);
     }
-    // restore state
-    // PopStatePostColliison();
-
-    // apply these contact forces
-    // std::cout << "[bt] num of contact forces = " << mContactForces.size() <<
-    // std::endl;
-
-    // std::cout << "[btGenWorld] frame " << global_frame_id << " q = " <<
-    // mMultibody->Getq().transpose() << std::endl; std::cout << "[btGenWorld]
-    // frame " << global_frame_id << " qdot = " <<
-    // mMultibody->Getqdot().transpose() << std::endl; std::cout <<
-    // "[btGenWorld] frame " << global_frame_id << " qddot = " <<
-    // mMultibody->Getqddot().transpose() << std::endl; std::cout <<
-    // "[btGenWorld] frame " << global_frame_id << " M = \n"
-    // 		  << mMultibody->GetMassMatrix() << std::endl;
-    // std::cout << "[btGenWorld] frame " << global_frame_id << " C = \n"
-    // 		  << mMultibody->GetCoriolisMatrix() << std::endl;
-
-    // std::cout << "[bt] after constraint, Q = " <<
-    // mMultibody->GetGeneralizedForce().transpose() << std::endl; std::ofstream
-    // fout(log_path, std::ios::app); fout << "------frame " << global_frame_id
-    // << "------\n"; fout << "q = " << mMultibody->Getq().transpose() <<
-    // std::endl; fout << "qdot = " << mMultibody->Getqdot().transpose() <<
-    // std::endl; fout << "Q = " <<
-    // mMultibody->GetGeneralizedForce().transpose() << std::endl; fout.close();
 }
 
 extern btGenRigidBody *UpcastRigidBody(const btCollisionObject *col);
@@ -1354,6 +1335,12 @@ bool btGeneralizeWorld::HasContactAwareController() const
     return this->HasController() &&
            mCtrl->GetCtrlType() == ebtGenControllerType::ContactAwareController;
 }
+
+btGenContactManager *btGeneralizeWorld::GetContactManager() const
+{
+    return mContactManager;
+}
+
 void btGeneralizeWorld::AddController(const std::string &path)
 {
     // 1. build & init the controller
@@ -1445,23 +1432,3 @@ void btGeneralizeWorld::AddController(const std::string &path)
 // 		}
 // 	}
 // }
-
-/**
- * \brief           
-*/
-int btGeneralizeWorld::GetTwoObjsNumOfContact(const btCollisionObject *b0,
-                                              const btCollisionObject *b1)
-{
-    int num_of_manifold = m_dispatcher->getNumManifolds();
-    for (int i = 0; i < num_of_manifold; i++)
-    {
-        auto mani = m_dispatcher->getManifoldByIndexInternal(i);
-
-        if ((mani->getBody0() == b0 && mani->getBody1() == b1) ||
-            (mani->getBody0() == b1 && mani->getBody1() == b0))
-        {
-            return mani->getNumContacts();
-        }
-    }
-    return 0;
-}

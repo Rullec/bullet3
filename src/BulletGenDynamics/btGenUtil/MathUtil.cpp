@@ -146,6 +146,24 @@ tQuaternion btMathUtil::AxisAngleToQuaternion(const tVector &angvel)
                        norm_angvel[2] * sin_theta_2);
 }
 
+tMatrix btMathUtil::AxisAngleToRotmat(const tVector &angvel)
+{
+    return btMathUtil::RotMat(AxisAngleToQuaternion(angvel));
+}
+
+tVector btMathUtil::RotmatToEulerAngle(const tMatrix &rotmat,
+                                       btRotationOrder order)
+{
+    return btMathUtil::QuaternionToEulerAngles(
+        btMathUtil::RotMatToQuaternion(rotmat), order);
+}
+
+tVector btMathUtil::AxisAngleToEulerAngle(const tVector &aa,
+                                          btRotationOrder order)
+{
+    return btMathUtil::QuaternionToEulerAngles(
+        btMathUtil::AxisAngleToQuaternion(aa), order);
+}
 tVector btMathUtil::QuaternionToAxisAngle(const tQuaternion &quater)
 {
     /* 	quater = [w, x, y, z]
@@ -550,6 +568,11 @@ tMatrix xconventionRotation_mimic_dx(double x)
     return output;
 }
 
+/**
+ * \brief			Calculate the rotmat which can rotate the "up" vector to "dir" vector
+ * \param dir       target direction
+ * \param up        original vector
+*/
 tMatrix btMathUtil::DirToRotMat(const tVector &dir, const tVector &up)
 {
     tVector Y_normal = up;

@@ -62,6 +62,10 @@ public:
     static tQuaternion RotMat3dToQuaternion(const tMatrix3d &mat);
     static tQuaternion CoefToQuaternion(const tVector &);
     static tQuaternion AxisAngleToQuaternion(const tVector &angvel);
+    static tMatrix AxisAngleToRotmat(const tVector &angvel);
+    static tVector RotmatToEulerAngle(const tMatrix &rotmat, btRotationOrder order);
+    static tVector AxisAngleToEulerAngle(const tVector &aa,
+                                         btRotationOrder order);
     static tQuaternion EulerAnglesToQuaternion(const tVector &vec,
                                                const btRotationOrder &order);
     static tQuaternion MinusQuaternion(const tQuaternion &quad);
@@ -109,7 +113,8 @@ public:
     static bool IsHomogeneousPos(const tVector &pos, bool exit_if_not = true);
     static bool IsSkewMatrix(const tMatrix3d &mat, double eps);
     // static void RoundZero(tMatrixXd &mat, double threshold = 1e-10);
-    static tVector ConvertEulerAngleVelToAxisAngleVel(const tVector & q_euler, const tVector &qdot_euler,
+    static tVector ConvertEulerAngleVelToAxisAngleVel(const tVector &q_euler,
+                                                      const tVector &qdot_euler,
                                                       btRotationOrder order);
 
     template <typename T>

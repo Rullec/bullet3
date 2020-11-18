@@ -61,6 +61,22 @@ struct tContactCondition : public tTransitionCondition
 protected:
     btGeneralizeWorld *mWorld;
     cRobotModelDynamics *mModel;
+    /*
+        in order to get a stable result, we should not 
+        transite to a new state at once 
+        when the interested link get contact with ground, 
+
+        we must wait, unitl the contact force is big enough (exceed the threshold mMinContactForceThreshold)
+        default 20 N
+    */
+    double mMinContactForceThreshold;
+
+    /*
+        in order to get a stable result, we must stay at this state for a minimium period, which is "mMinElaspedTimeThreshold"
+        default 0.05s
+    */
+    double mMinElaspedTimeThreshold;
+    double mCurTime; // current elasped time
     int mLinkId;
 };
 
@@ -69,18 +85,23 @@ protected:
 */
 struct tState
 {
-    tState(int state_id);
+    tState(int state_id, int default_stance, std::string stance_update_mode);
     ~tState();
 
     void Update(double dt);
     void AddTransitionCondition(tTransitionCondition *cond);
     int GetStateId() const;
     int GetTargetId() const;
+    int GetDefaultStance() const;
+    int CalcNewStance(int old_stance) const;
     void Print() const;
     void Reset();
 
 protected:
     int mStateId;
+    std::string mStanceUpdateMode;
+    int mDefaultStance;
+
     std::vector<tTransitionCondition *> mTransitionConditions;
 };
 

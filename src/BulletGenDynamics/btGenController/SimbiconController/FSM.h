@@ -8,6 +8,8 @@ class Value;
 }
 class btTraj;
 
+#define BTGEN_LEFT_STANCE 0
+#define BTGEN_RIGHT_STANCE 1
 /**
  * \brief       Finite state machine used in SIMBICON controller
 */
@@ -17,8 +19,8 @@ public:
     btGenFSM(btGeneralizeWorld *world, cRobotModelDynamics *model,
              const Json::Value &config);
     ~btGenFSM();
-    void InitPose();
-    void Update(double dt, tVectorXd &target_pose);
+    void Init(int &default_stance);
+    void Update(double dt, tVectorXd &target_pose, int &stance);
     tVectorXd GetTargetPose();
     tState *GetCurrentState();
 

@@ -29,6 +29,7 @@ SET(
 	BulletGenSolver_SRCS
 	./btGenSolver/ConstraintData.cpp
 	./btGenSolver/ContactSolver.cpp
+	./btGenSolver/ContactManager.cpp
 	./btGenSolver/ContactSolverTest.cpp
 	./btGenSolver/LCPSolverBase.cpp
 	./btGenSolver/SequentialImpulsePlugin.cpp
@@ -53,6 +54,7 @@ SET(
 	btGenUtil/MathUtil.cpp
 	btGenUtil/TimeUtil.cpp
 	btGenUtil/FileUtil.cpp
+	btGenUtil/BulletUtil.cpp
 )
 
 
@@ -68,6 +70,7 @@ SET(
 	./btGenController/ControllerBase.cpp
 	./btGenController/BuildController.cpp
 	./btGenController/PDController/btGenPDController.cpp
+	./btGenController/PDController/btGenSimbiconSPDController.cpp
 	./btGenController/PDController/JointPDCtrl.cpp
 	./btGenController/ContactAwareController/btGenContactAwareController.cpp
 	./btGenController/ContactAwareController/btGenTargetCalculator.cpp
@@ -81,7 +84,7 @@ SET(
 	./btGenController/ContactAwareController/NQRCalculator/btGenNQRCalculator.cpp
 	./btGenController/ContactAwareController/QPSolver/QuadProgQPSolver.cpp
 	./btGenController/ContactAwareController/QPSolver/eiquadprog.hpp
-	./btGenController/SimbiconController/SimbiconController.cpp
+	./btGenController/SimbiconController/SimbiconControllerBase.cpp
 	./btGenController/SimbiconController/FSM.cpp
 	./btGenController/SimbiconController/FSMUtil.cpp
 	./btGenController/Trajectory/btTraj.cpp

@@ -20,6 +20,7 @@ public:
     void SetFreedomValue(std::vector<double> &v) override;
     void GetFreedomValue(std::vector<double> &v) const override;
 
+    bool GetIsRootJoint() const override final;
     virtual void SetFreedomValueDot(int id, double v) override final;
     virtual void GetFreedomValueDot(int id, double &v) const override final;
     virtual void SetFreedomValueDot(std::vector<double> &v) override final;

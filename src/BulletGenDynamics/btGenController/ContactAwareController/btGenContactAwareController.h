@@ -51,7 +51,8 @@ public:
     bool IsEnd();
     virtual void Reset() override;
     btGenTargetCalculator *GetTargetCalculator();
-    void SetBulletGUIHelperInterface(struct GUIHelperInterface *inter);
+    virtual void SetBulletGUIHelperInterface(
+        struct GUIHelperInterface *inter) override final;
     int GetRefFrameId() const { return mRefFrameId; }
     std::string GetSupposedContactInfo();
     // void GetAdviseInfo(tMatrixXd& C, tMatrixXd& D, tMatrixXd& E, tMatrixXd&
@@ -112,12 +113,7 @@ protected:
     tVectorXd mf; // convert vector, please check the Note for more details
     tVectorXd mTargetAccel, mTargetVel, mTargetPos, mTargetTau;
 
-    // draw contact points utils
-    struct GUIHelperInterface *mBulletGUIHelper;
-    std::vector<btCollisionObject *> mDrawPointsList;
-
     // ----------------------- methods
-
     btGenTargetCalculator *CreateTargetCalculator(const std::string path) const;
     void PreUpdate(double dt);
     void PostUpdate();
@@ -137,8 +133,7 @@ protected:
     void LoadInitState();
 
     void UpdateReferenceTraj();
-    void ClearDrawPoints();
+
     void DrawContactPoints();
     void DrawRefTrajContactPoints();
-    void DrawPoint(const tVector3d &pos, double r = 0.05);
 };

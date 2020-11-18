@@ -182,6 +182,7 @@ void SimpleCamera::setCameraUpAxis(int upAxis)
 
 int SimpleCamera::getCameraUpAxis() const { return m_data->m_cameraUpAxis; }
 
+#include <iostream>
 void SimpleCamera::update()
 {
     b3Scalar yawRad =
@@ -223,6 +224,12 @@ void SimpleCamera::update()
 
     m_data->m_cameraForward =
         m_data->m_cameraTargetPosition - m_data->m_cameraPosition;
+    // printf("[camera] dist %.5f \n", m_data->m_cameraDistance);
+    // printf("[camera] yaw %.5f \n", m_data->m_yaw);
+    // printf("[camera] pitch %.5f \n", m_data->m_pitch);
+    // printf("[camera] pos %.5f %.5f %.5f \n", m_data->m_cameraPosition[0],
+    //        m_data->m_cameraPosition[1], m_data->m_cameraPosition[2]);
+
     if (m_data->m_cameraForward.length2() < B3_EPSILON)
     {
         m_data->m_cameraForward.setValue(1.f, 0.f, 0.f);

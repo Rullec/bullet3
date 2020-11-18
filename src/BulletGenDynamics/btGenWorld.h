@@ -12,6 +12,7 @@ class btGenCollisionDispatcher;
 class btGenControllerBase;
 class btGenContactAwareController;
 class btTraj;
+class btGenContactManager;
 class btGeneralizeWorld
 {
 public:
@@ -63,6 +64,7 @@ public:
     std::vector<btGenContactForce *> GetContactForces() const;
     std::vector<btPersistentManifold *> GetContactManifolds() const;
     btGenContactAwareController *GetContactAwareController();
+    btGenControllerBase *GetController();
     btDiscreteDynamicsWorld *GetInternalWorld();
     btBroadphaseInterface *GetBroadphase();
     btGenCollisionDispatcher *GetDispatcher();
@@ -72,8 +74,7 @@ public:
     void AddController(const std::string &path);
     bool HasController() const;
     bool HasContactAwareController() const;
-    int GetTwoObjsNumOfContact(const btCollisionObject *b1,
-                          const btCollisionObject *b2);
+    btGenContactManager *GetContactManager() const;
 
 protected:
     btDiscreteDynamicsWorld *mInternalWorld;
@@ -110,10 +111,12 @@ protected:
     btGenControllerBase *mCtrl; // character controller
     std::string mLCPConfigPath;
     std::vector<btPersistentManifold *> mManifolds;
-    std::vector<btGenContactForce *> mContactForces;
-    std::vector<btGenConstraintGeneralizedForce *> mConstraintGenalizedForce;
-    std::vector<btGenConstraintGeneralizedForce *> mContactAwareControlForce;
 
+    std::vector<btGenContactForce *> mContactForces; // all contact force
+    std::vector<btGenConstraintGeneralizedForce *>
+        mConstraintGenalizedForce; // multibody generalized force for joint limit
+    std::vector<btGenConstraintGeneralizedForce *> mContactAwareControlForce;
+    btGenContactManager *mContactManager;
     std::vector<btCollisionShape *> mCollisionShapeArray;
     void createRigidBody(double mass, const btTransform &startTransform,
                          btCollisionShape *shape, const std::string &name,
@@ -139,15 +142,6 @@ protected:
     void CollisionResposeSI(double dt);
     void PushStatePreCollision();
     void PopStatePostColliison();
-    // std::vector<btGenContactForce *>
-    // DebugGetContactForces(double dt, const tVectorXd &control_force);
-    // std::vector<btGenContactForce *> DebugGetContactForces(
-    //     double dt,
-    //     const std::vector<btGenConstraintGeneralizedForce *> &gen_forces);
-    // void DebugPrintContactForce(const std::vector<btGenMBContactForce *> &fs);
-    // tVectorXd DebugConvertCartesianContactForceToGenForce(
-    //     const tVectorXd &new_q, const std::vector<btGenMBContactForce *> &fs);
-    // tVectorXd DebugGetGenControlForce(int ref_frameid);
     void Update(double dt);
     // void UpdateTransform(double dt);
     void UpdateVelocityInternal(double dt);
@@ -170,6 +164,7 @@ protected:
     tEigenArr<tFrameInfo> mFrameInfo;
     void CollectFrameInfo(double dt);
     void WriteFrameInfo(const std::string &path);
+    void RecordMBContactForce();
     // void InitGuideTraj();
     // void ApplyGuideAction();
     // void CheckGuideTraj();

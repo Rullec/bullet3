@@ -16,7 +16,7 @@ public:
     void UpdateMeshMatrix() override;
     void InitTerms() override;
     bool IsJoint() const override { return false; }
-
+    bool GetIsRootJoint() const override final;
     void UpdateMWQ();
     const tMatrix &GetMWQQ(int i, int j) const override;
     const tMatrix &GetMWQQQ(int i, int j, int k) const override;

@@ -1,7 +1,7 @@
 {
     "lcp_solver_type": "btPath",
-    "lcp_solver_type_bb": "NativeLemke",
-    "lcp_solver_type_bak": "odeDantzig",
+    "lcp_solver_type_lemke": "NativeLemke",
+    "lcp_solver_type_bb": "odeDantzig",
     "enable_multibody_self_collision": true,
     "enable_convert_mat_test": false,
     "enable_lcp_calculation": true,

@@ -34,7 +34,7 @@ Joint *btGenJointPDCtrl::GetJoint() const { return mJoint; }
  * if mUseWorldCoord = true, the control torque will drive the global orientation of this JOINT to the target
  *  Note that, it is the global orientation OF THE JOINT, not the child LINK.
  * 
- *  * for spherical joint, it is 3x1 vector euler angles
+ * for spherical joint, it is 3x1 vector euler angles
  * for revolute joint, it is 1x1 vector angle
  * \param theta     If mUseWorldCoord is False, the theta should be whole dof q target
  *                  if mUseWorldCoord is True, the theta should be this joint's global orientation, expressed in quaternion
@@ -43,7 +43,6 @@ Joint *btGenJointPDCtrl::GetJoint() const { return mJoint; }
 tVector btGenJointPDCtrl::CalcControlForce(const tVectorXd &tar_q,
                                            const tVectorXd &tar_qdot) const
 {
-
     int offset = mJoint->GetOffset();
     int size = this->GetCtrlDims();
     tVectorXd local_target_theta = tar_q.segment(offset, size);
@@ -73,6 +72,11 @@ tVector btGenJointPDCtrl::CalcControlForce(const tVectorXd &tar_q,
     {
         force = force.normalized() * mForceLim;
     }
+    // std::cout << "joint " << mJoint->GetId() << " force = " << force.transpose()
+    //           << " lim = " << mForceLim << std::endl;
+
+    // DebugVerifyCtrlForceKp(local_target_theta, force);
+    // DebugVerifyCtrlForceKd(local_target_vel, force);
     return force;
 }
 
@@ -141,7 +145,8 @@ void btGenJointPDCtrl::ControlForceNone(tVector &force,
     tVector3d local_force = mKp * orient_diff + mKd * omega_diff;
     // 5. convert joint local force to global frame, rotate
     tVector3d global_force =
-        mJoint->GetGlobalTransform().block(0, 0, 3, 3) * local_force;
+        mJoint->GetWorldOrientation() *
+        mJoint->GetLocalTransform().block(0, 0, 3, 3).transpose() * local_force;
     force.segment(0, 3) = global_force;
 }
 
@@ -166,7 +171,8 @@ void btGenJointPDCtrl::ControlForceRevolute(
     tVector3d local_force =
         single_freedom->axis * (mKp * orient_diff + this->mKd * vel_diff);
     force.segment(0, 3) =
-        mJoint->GetGlobalTransform().topLeftCorner<3, 3>() * local_force;
+        mJoint->GetGlobalTransform().topLeftCorner<3, 3>() *
+        mJoint->GetLocalTransform().block(0, 0, 3, 3).transpose() * local_force;
 }
 
 /**
@@ -210,7 +216,10 @@ void btGenJointPDCtrl::ControlForceSpherical(
     tVector3d local_force = mKp * orient_diff + mKd * omega_diff;
 
     // 3. global control force
-    tVector3d global_force = mJoint->GetWorldOrientation() * local_force;
+    tVector3d global_force =
+        mJoint->GetWorldOrientation() *
+        mJoint->GetLocalTransform().block(0, 0, 3, 3).transpose() * local_force;
+
     force.segment(0, 3) = global_force;
 }
 
@@ -375,4 +384,99 @@ void btGenJointPDCtrl::ControlForceBipedalNone(
     force.setZero();
     force[0] = this->mKp * (target_theta - cur_theta) +
                this->mKd * (target_vel - cur_vel);
+}
+
+/**
+ * \brief           Verify the control force should have the same global orientation w.r.t the rotation difference expressed in aa
+ * when Kd = 0
+*/
+void btGenJointPDCtrl::DebugVerifyCtrlForceKp(const tVectorXd &local_target,
+                                              const tVector &calc_torque)
+{
+    BTGEN_ASSERT(std::fabs(mKd) < 1e-10);
+    // 1. get the current joint global orient
+    BTGEN_ASSERT(local_target.size() == mJoint->GetNumOfFreedom());
+    mModel->PushState("debug_verify_pd");
+    tMatrix3d cur_orient = mJoint->GetWorldOrientation();
+    tVectorXd q = mModel->Getq();
+    q.segment(this->mJoint->GetOffset(), mJoint->GetNumOfFreedom()) =
+        local_target;
+    mModel->SetqAndqdot(q, mModel->Getqdot());
+
+    // 2. get the ideal joint global orient
+    tMatrix3d ideal_orient = mJoint->GetWorldOrientation();
+
+    // 3. calc the diff, and the diff direction
+    // ideal = diff * current
+    // diff = ideal * cur.inv
+    tVector ideal_dir = btMathUtil::QuaternionToAxisAngle(
+                            btMathUtil::RotMat3dToQuaternion(
+                                ideal_orient * cur_orient.transpose()))
+                            .normalized();
+    // 4. verify the direction should be the same
+    tVector truth_dir = calc_torque.normalized();
+    tVector error;
+    if ((ideal_dir - truth_dir).norm() < (ideal_dir + truth_dir).norm())
+        error = (ideal_dir - truth_dir);
+    else
+        error = (ideal_dir + truth_dir);
+    if (error.norm() > 1e-5)
+    {
+        std::cout << "[error] joint " << mJoint->GetId()
+                  << " verify ctrl force failed, error diff = "
+                  << error.transpose() << std::endl;
+        std::cout << "\tideal dir = " << ideal_dir.transpose() << std::endl;
+        std::cout << "\ttrue dir = " << truth_dir.transpose() << std::endl;
+        exit(0);
+    }
+    std::cout << "[pd] debug is enabled! kd is set to zero, verified succ\n";
+    mModel->PopState("debug_verify_pd");
+}
+
+/**
+ * \brief           Verify the control force should have the same global orientation w.r.t the rotation difference expressed in aa
+ * when Kp = 0
+*/
+void btGenJointPDCtrl::DebugVerifyCtrlForceKd(
+    const tVectorXd &local_target_theta_dot, const tVector &torque)
+{
+    BTGEN_ASSERT(std::fabs(this->mKp) < 1e-10);
+    mModel->PushState("debug_verify_pd_kd");
+
+    // 1. get current world omega of this joint (when other qdot is set to zero)
+    tVectorXd qdot = mModel->Getqdot();
+    int offset = mJoint->GetOffset();
+    int dof = mJoint->GetNumOfFreedom();
+    tVectorXd tmp = qdot.segment(offset, dof);
+    qdot.setZero();
+    qdot.segment(offset, dof) = tmp;
+    mModel->SetqAndqdot(mModel->Getq(), qdot);
+
+    tVector3d cur_omega = mJoint->GetJKw() * qdot;
+
+    // 2. get target world omega
+    qdot.segment(offset, dof) = local_target_theta_dot;
+    tVector3d ideal_omega = mJoint->GetJKw() * qdot;
+
+    // 3. ideal direction
+    tVector3d ideal_torque_dir = (ideal_omega - cur_omega).normalized(),
+              truth_torque_dir = torque.segment(0, 3).normalized();
+
+    // 4. calculate error when the input torque is nonzero
+    tVector3d error = ideal_torque_dir - truth_torque_dir;
+    if (error.norm() > 1e-5 && torque.norm() > 1e-5)
+    {
+        std::cout << "[error] joint " << mJoint->GetId()
+                  << " Kd PD verification failed, error = " << error.transpose()
+                  << std::endl;
+        std::cout << "cur omega = " << cur_omega.transpose() << std::endl;
+        std::cout << "ideal omega = " << ideal_omega.transpose() << std::endl;
+
+        std::cout << "ideal torque dir = " << ideal_torque_dir.transpose()
+                  << std::endl;
+        std::cout << "truth torque dir = " << truth_torque_dir.transpose()
+                  << std::endl;
+        exit(0);
+    }
+    mModel->PopState("debug_verify_pd_kd");
 }

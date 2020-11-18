@@ -149,7 +149,7 @@ tVectorXd ConvertPoseToq(const tVectorXd &pose, cRobotModelDynamics *model)
             pose_dof = 4;
             q_dof = 3;
             if (pose_st + pose_dof > pose.size() || q_dof + q_st > q.size())
-                std::cout << "error] ConvertPoseToq failed, joint id "
+                std::cout << "[error] ConvertPoseToq failed, joint id "
                           << joint_id << " cause an illegal dof, exit\n",
                     exit(0);
             else
@@ -168,9 +168,8 @@ tVectorXd ConvertPoseToq(const tVectorXd &pose, cRobotModelDynamics *model)
             pose_dof = 1;
             q_dof = 1;
             if (pose_st + pose_dof > pose.size() || q_dof + q_st > q.size())
-                std::cout
-                    << "［error] ConvertPoseToq failed, joint id joint id "
-                    << joint_id << " cause an illegal dof, exit\n",
+                std::cout << "[error] ConvertPoseToq failed, joint id joint id "
+                          << joint_id << " cause an illegal dof, exit\n",
                     exit(0);
             else
             {
@@ -341,7 +340,7 @@ bool btTraj::LoadTraj(const std::string &path, cRobotModelDynamics *model,
                                 world_pos;
 
             cur_contact_value = new btGenMBContactForce(
-                obj, force_value.segment(0, 4), world_pos, local_pos,
+                obj, nullptr, force_value.segment(0, 4), world_pos, local_pos,
                 is_self_collision);
         }
         // truth joint forces

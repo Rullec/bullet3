@@ -1,0 +1,68 @@
+{
+    "ctrl_type": "SimbiconController",
+    "corresponding_char_path": "../DeepMimic/data/1111/characters/skeleton_bipedal_sph_legs.json",
+    "pd_controller_path": "examples/CustomEngine/ctrl_configs/pd_config_legs.json",
+    "ignore_balance_control_in_0_2_state": false,
+    "enable_stance_control_ratio": true,
+    "FSM": {
+        "state_traj_path": "examples/CustomEngine/ctrl_configs/simbicon_configs/bipedal/target_bipedal_sph_legs_jog.json",
+        "state_traj_path_walk": "examples/CustomEngine/ctrl_configs/simbicon_configs/bipedal/simbicon_bipedal_target_walk.json",
+        "num_of_states": 4,
+        "states": [
+            {
+                "state_id": 0,
+                "conditions": [
+                    {
+                        "condition_type": "ElapsedTime",
+                        "elapsed_time": 0.5,
+                        "target_state_id": 1
+                    }
+                ],
+                "default_stance": "left",
+                "stance_update_mode": "default"
+            },
+            {
+                "state_id": 1,
+                "conditions": [
+                    {
+                        "condition_type": "LinkContact",
+                        "contact_link_name": "RFootTongue",
+                        "target_state_id": 2
+                    }
+                ],
+                "default_stance": "left",
+                "stance_update_mode": "default"
+            },
+            {
+                "state_id": 2,
+                "conditions": [
+                    {
+                        "condition_type": "ElapsedTime",
+                        "elapsed_time": 0.5,
+                        "target_state_id": 3
+                    }
+                ],
+                "default_stance": "right",
+                "stance_update_mode": "default"
+            },
+            {
+                "state_id": 3,
+                "conditions": [
+                    {
+                        "condition_type": "LinkContact",
+                        "contact_link_name": "LFootTongue",
+                        "target_state_id": 0
+                    }
+                ],
+                "default_stance": "right",
+                "stance_update_mode": "default"
+            }
+        ]
+    },
+    "balance_control": {
+        "Cd_forward": 0.6,
+        "Cv_forward": 0.3,
+        "Cd_tangent": 0.0,
+        "Cv_tangent": 0.0
+    }
+}

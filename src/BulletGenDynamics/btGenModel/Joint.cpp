@@ -803,6 +803,24 @@ void Joint::GetFreedomValue(std::vector<double> &v) const
     }
 }
 
+/**
+ * \brief           check if this joint is a root joint
+ * \return true if it's
+*/
+bool Joint::GetIsRootJoint() const
+{
+    bool should_be_root = -1 == GetParentId();
+
+    // double check the joint type is root
+    if (should_be_root == true)
+    {
+        BTGEN_ASSERT(joint_type == JointType::NONE_JOINT ||
+                     joint_type == JointType::BIPEDAL_NONE_JOINT ||
+                     joint_type == JointType::LIMIT_NONE_JOINT);
+    }
+    return should_be_root;
+}
+
 void Joint::CleanGradient()
 {
     for (auto &f : freedoms)

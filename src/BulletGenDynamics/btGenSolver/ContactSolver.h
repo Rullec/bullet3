@@ -19,9 +19,12 @@ class btGenContactForce
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-    btGenContactForce(btGenCollisionObject *mObj, const tVector &mForce,
-                      const tVector &mWorldPos, bool is_self_collision);
-    btGenCollisionObject *mObj;
+    btGenContactForce(btGenCollisionObject *mObj,
+                      btGenCollisionObject *passive_object,
+                      const tVector &mForce, const tVector &mWorldPos,
+                      bool is_self_collision);
+    btGenCollisionObject *mObj;        // object that force is applied
+    btGenCollisionObject *mPassiveObj; // collision pair obj
     tVector mForce, mWorldPos; // position in world and force in world frame
     bool mIsSelfCollision;
 };
@@ -30,7 +33,8 @@ class btGenMBContactForce : public btGenContactForce
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-    btGenMBContactForce(btGenRobotCollider *collider, const tVector &f,
+    btGenMBContactForce(btGenRobotCollider *collider,
+                        btGenCollisionObject *passive_obj, const tVector &f,
                         const tVector &world_pos, const tVector &local_pos,
                         bool is_self_collision);
     int mLinkId;
@@ -185,6 +189,8 @@ protected:
         const tMatrixXd &normal_mat, const tVectorXd &normal_vec,
         const tMatrixXd &tan_mat, const tVectorXd &tan_vec);
     void TestSICartesianConvertMatAndVec();
-    void TestAddContactAwareForceIfPossible(const tEigenArr<tVector> & contact_forces, const std::vector<int> & );
+    void
+    TestAddContactAwareForceIfPossible(const tEigenArr<tVector> &contact_forces,
+                                       const std::vector<int> &);
     bool IsMultibodyAndVelMax(btGenCollisionObject *body);
 };

@@ -33,10 +33,12 @@ btGenCollisionObject *UpcastColObj(const btCollisionObject *col)
 }
 
 btGenContactForce::btGenContactForce(btGenCollisionObject *obj_,
+                                     btGenCollisionObject *passive_obj,
                                      const tVector &f_, const tVector &p_,
                                      bool is_self_collision)
 {
     mObj = obj_;
+    mPassiveObj = passive_obj;
     mForce = f_;
     mWorldPos = p_;
     if (std::fabs(mWorldPos[3] - 1) > 1e-10)
@@ -50,11 +52,12 @@ btGenContactForce::btGenContactForce(btGenCollisionObject *obj_,
 }
 
 btGenMBContactForce::btGenMBContactForce(btGenRobotCollider *collider,
+                                         btGenCollisionObject *passive_obj,
                                          const tVector &f,
                                          const tVector &world_pos,
                                          const tVector &local_pos,
                                          bool is_self_collision)
-    : btGenContactForce(collider, f, world_pos, is_self_collision)
+    : btGenContactForce(collider, passive_obj, f, world_pos, is_self_collision)
 {
     mLinkId = collider->mLinkId;
     mLocalPos = btMathUtil::Expand(local_pos, 1);
@@ -180,14 +183,6 @@ void btGenContactSolver::ConstraintProcess(float dt_)
     // std::cout << "--------contact solver frame " << global_frame_id << "
     // ----------" << std::endl;
     cur_dt = dt_;
-    if (eLCPSolverType::BulletDantzig == mLCPSolver->GetType() &&
-        this->mMultibodyArray[0]->GetRoot()->GetJointType() !=
-            JointType::NONE_JOINT)
-    {
-        printf("[error] Dantzig solver cannot be used in None Joint case, "
-               "otherwise an NAN result would be solved\n");
-        BTGEN_ASSERT(false);
-    }
     // btTimeUtil::Begin("constraint_setup");
     ConstraintSetup();
     // btTimeUtil::End("constraint_setup");
@@ -242,14 +237,16 @@ void btGenContactSolver::ConstraintFinished()
         // std::endl; std::cout << "[debug] contact pos = " <<
         // data->mContactPtOnA.transpose() << std::endl;
         ptr = new btGenContactForce(
-            data->mBodyA, btMathUtil::Expand(contact_x.segment(i * 3, 3), 0),
+            data->mBodyA, data->mBodyB,
+            btMathUtil::Expand(contact_x.segment(i * 3, 3), 0),
             data->mContactPtOnA, data->mIsSelfCollision);
         // std::cout << "[debug] contact point " << i << " is self collision = "
         // << data->mIsSelfCollision << std::endl; std::cout << "[bt] user ptr =
         // " << ptr->mObj->getUserPointer() << std::endl;
         contact_force_array.push_back(ptr);
         ptr = new btGenContactForce(
-            data->mBodyB, -btMathUtil::Expand(contact_x.segment(i * 3, 3), 0),
+            data->mBodyB, data->mBodyA,
+            -btMathUtil::Expand(contact_x.segment(i * 3, 3), 0),
             data->mContactPtOnB, data->mIsSelfCollision);
         // std::cout << "[bt] user ptr = " << ptr->mObj->getUserPointer() <<
         // std::endl;
@@ -676,6 +673,16 @@ void btGenContactSolver::RebuildColObjData()
     }
     // std::cout << "[debug] RebuildColObjData multibody size = " <<
     // mMultibodyArray.size() << std::endl;
+
+    // 3. ODE dantzig should not be used with speical root joints
+    if (eLCPSolverType::BulletDantzig == mLCPSolver->GetType() &&
+        this->mMultibodyArray[0]->GetRoot()->GetJointType() !=
+            JointType::NONE_JOINT)
+    {
+        printf("[error] Dantzig solver cannot be used in None Joint case, "
+               "otherwise an NAN result would be solved\n");
+        BTGEN_ASSERT(false);
+    }
 }
 
 void btGenContactSolver::DeleteColObjData()

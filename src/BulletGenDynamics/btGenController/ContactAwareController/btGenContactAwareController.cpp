@@ -49,7 +49,6 @@ btGenContactAwareController::btGenContactAwareController(
     mRefTrajModel = nullptr;
     mFBFTrajModel = nullptr;
     mOutputControlDiff = false;
-    mBulletGUIHelper = nullptr;
 
     // std::ofstream fout(debug_path);
     // fout << "";
@@ -778,8 +777,9 @@ void btGenContactAwareController::RecordTraj()
                 tVector local_pos = link->GetGlobalTransform().inverse() *
                                     cur_contact->mWorldPos;
                 rec_contacts.push_back(new btGenMBContactForce(
-                    link_collider, cur_contact->mForce, cur_contact->mWorldPos,
-                    local_pos, cur_contact->mIsSelfCollision));
+                    link_collider, cur_contact->mPassiveObj,
+                    cur_contact->mForce, cur_contact->mWorldPos, local_pos,
+                    cur_contact->mIsSelfCollision));
             }
         }
     }
@@ -821,7 +821,7 @@ btGenTargetCalculator *btGenContactAwareController::GetTargetCalculator()
 void btGenContactAwareController::SetBulletGUIHelperInterface(
     struct GUIHelperInterface *inter)
 {
-    mBulletGUIHelper = inter;
+    btGenControllerBase::SetBulletGUIHelperInterface(inter);
     mTargetCalculator->SetBulletGUIHelperInterface(inter);
 }
 const btTraj *btGenContactAwareController::GetRefTraj() const
@@ -995,47 +995,6 @@ void btGenContactAwareController::UpdateReferenceTraj()
 //     // mSimObjs[0]->SetAngVel(tVector(2.14574, 0.00479028, -0.277455, 0));
 //     // mSimObjs[0]->set(tVector(0, -0.607168, 0, 0));
 // }
-
-void btGenContactAwareController::ClearDrawPoints()
-{
-    if (mBulletGUIHelper == nullptr)
-        return;
-    auto inter_world = mWorld->GetInternalWorld();
-    // std::cout << "clear points num = " << mDrawPointsList.size()
-    //           << " now = " << inter_world->getCollisionObjectArray().size()
-    //           << std::endl;
-
-    for (auto &pt : this->mDrawPointsList)
-    {
-        // inter_world->getCollisionObjectArray().remove(pt);
-        delete pt->getCollisionShape();
-        mWorld->GetInternalWorld()->removeCollisionObject(pt);
-        mBulletGUIHelper->removeGraphicsInstance(pt->getUserIndex());
-        delete pt;
-    }
-    // std::cout << "[debug] clear points " << mDrawPointsList.size() << std::endl;
-    mDrawPointsList.clear();
-}
-
-void btGenContactAwareController::DrawPoint(const tVector3d &pos,
-                                            double radius /* = 0.05*/)
-{
-    if (mBulletGUIHelper == nullptr)
-        return;
-    btCollisionShape *colShape = nullptr;
-    btCollisionObject *obj = new btCollisionObject();
-    colShape = new btSphereShape(btScalar(radius));
-    btTransform trans;
-    // trans.setOrigin(btVector3(pos[0], pos[1], pos[2]));
-    trans.setOrigin(btVector3(pos[0], pos[1], pos[2]));
-    obj->setWorldTransform(trans);
-    obj->setCollisionShape(colShape);
-    obj->setCollisionFlags(0);
-    mWorld->GetInternalWorld()->addCollisionObject(obj, 0, 0);
-    mDrawPointsList.push_back(obj);
-
-    auto inter_world = mWorld->GetInternalWorld();
-}
 
 /**
  * \brief               Draw all contact points

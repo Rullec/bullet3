@@ -3,6 +3,7 @@
 #include "BulletGenDynamics/btGenModel/Joint.h"
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
 #include "BulletGenDynamics/btGenUtil/JsonUtil.h"
+#include "BulletGenDynamics/btGenWorld.h"
 #include <iostream>
 
 btGenPDController::btGenPDController(btGeneralizeWorld *world)
@@ -162,7 +163,6 @@ void btGenPDController::Update(double dt)
     // 2. calculate pd forces and apply
     tEigenArr<btGenPDForce> forces;
     CalculateControlForces(dt, forces);
-
     // apply the control force
     BTGEN_ASSERT(forces.size() == mModel->GetNumOfJoint());
     for (int i = 0; i < forces.size(); i++)
@@ -223,6 +223,13 @@ void btGenPDController::ParseConfig(const std::string &string)
                use_world_coord ? "true" : "false");
     }
 
+    // init_target_q << 0, 0.75, 0, 0, 0, 0, -1.09805, 0, 0, 1.6, 0, 0, 0, 0, 0, 0,
+    //     0, 0, 0, 0;
+    printf("[error] the init target is set to random now!\n");
+    init_target_q.setRandom();
+    init_target_qdot.setRandom();
+    std::cout << "[pd] init q target = " << init_target_q.transpose()
+              << std::endl;
     SetPDTargetq(init_target_q);
     SetPDTargetqdot(init_target_qdot);
 }
@@ -242,27 +249,30 @@ void btGenPDController::CalculateControlForces(
     BuildTargetVel(mTargetqdotCur);
 
     if (mEnableSPD)
+    {
         CalculateControlForcesSPD(dt, pd_forces);
+    }
+
     else
         CalculateControlForcesExp(pd_forces);
 }
 
 /**
- * \brief           Calcualte control forces by SPD (stable PD)
- * For more details please check the note, velocity is forced to be zero in this implemention
- * 
+ * \brief           SPD implemention the same as raw SPD, but root Kp = 0
+ * For more details please check the note, velocity is forced to be zero in this implemention, no gravity consideration
+ * root Kp is not zero, the Gen force is set to zero at last
 */
 void btGenPDController::CalculateControlForcesSPD(
     double dt, tEigenArr<btGenPDForce> &pd_forces)
 {
-
     // 1. calculate SPD gen force by the formula
     int dof = mModel->GetNumOfFreedom();
     if (dof != mTargetqCur.size() || dof != mTargetqdotCur.size())
     {
-        std::cout
-            << "[error] btGenPDController::CalculateControlForcesSPD target q "
-               "and qdot has no correct size\n";
+        std::cout << "[error] "
+                     "btGenPDController::CalculateControlForcesSPD "
+                     "target q "
+                     "and qdot has no correct size\n";
         exit(0);
     }
     tVectorXd q_cur = mModel->Getq(), qdot_cur = mModel->Getqdot();
@@ -278,6 +288,14 @@ void btGenPDController::CalculateControlForcesSPD(
             .fill(joint_ctrl->GetKp());
         Kd.segment(joint->GetOffset(), joint->GetNumOfFreedom())
             .fill(joint_ctrl->GetKd());
+        if (joint->GetIsRootJoint() == true)
+        {
+            Kp.segment(joint->GetOffset(), joint->GetNumOfFreedom()).setZero();
+            Kd.segment(joint->GetOffset(), joint->GetNumOfFreedom()).setZero();
+            printf("[debug] btGenPDController:CalculateControlForcesSPD "
+                   "root Kp and Kd has been set to "
+                   "zero in SPD calculation\n");
+        }
     }
 
     Eigen::DiagonalMatrix<double, Eigen::Dynamic> Kp_mat = Kp.asDiagonal();
@@ -291,7 +309,8 @@ void btGenPDController::CalculateControlForcesSPD(
 
     tVectorXd qddot_pred =
         M.inverse() * (Kp_mat * q_next_err + Kd_mat * qdot_next_err -
-                       mModel->GetCoriolisMatrix() * qdot_cur);
+                       mModel->GetCoriolisMatrix() * qdot_cur +
+                       mModel->CalcGenGravity(mWorld->GetGravity()));
     // std::cout << "qddot pred = " << qddot_pred.transpose() << std::endl;
     tVectorXd tau =
         Kp_mat * q_next_err + Kd_mat * (qdot_next_err - dt * qddot_pred);
@@ -322,7 +341,6 @@ void btGenPDController::CalculateControlForcesSPD(
         pd_forces.push_back(pd_force);
     }
 }
-
 /**
  * \brief           Calculate control forces by normal PD
  * \param 

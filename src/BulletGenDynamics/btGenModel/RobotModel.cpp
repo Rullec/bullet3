@@ -476,7 +476,7 @@ void cRobotModel::AddRootJoint(const char *root_name, JointType root_joint_type,
         p->SetParent(root);
     }
     dynamic_cast<Joint *>(root)->SetTorqueLim(torque_lim);
-    std::cout << "root torque lim = " << torque_lim << std::endl;
+    // std::cout << "root torque lim = " << torque_lim << std::endl;
     InsertFreedomMap(root);
     num_of_freedom += root->GetNumOfFreedom();
     joints.insert(std::make_pair(param.name, root));
@@ -2947,3 +2947,24 @@ void cRobotModel::TestJointmWq(int id)
 
 tVector3d cRobotModel::GetCoMPosition() const { return com; }
 tVector3d cRobotModel::GetComVelocity() const { return com_vel; }
+
+/**
+ * \brief               Get the heading of this robot
+ * the heading is the rotation angle of root link along with Y axis. we assume the Y axis is the upright
+ * \return angle double in [-pi, pi]
+ * 
+ * IMPORTANCT: the heading angle is different when the unit vec is different. 
+ * for example, the heading angles are different when unit_vec = (1, 0, 0) or unit_vec = (0, 0, 1)
+ * we choose the result of (1, 0, 0) here
+*/
+double cRobotModel::GetHeading() const
+{
+    tMatrix3d root_ori = GetLinkById(0)->GetWorldOrientation();
+    tVector3d unit_vec = tVector3d(1, 0, 0);
+    unit_vec = root_ori * unit_vec;
+    unit_vec[1] = 0;
+    unit_vec.normalize();
+
+    double heading = std::atan2(-unit_vec[2], unit_vec[0]);
+    return heading;
+}
