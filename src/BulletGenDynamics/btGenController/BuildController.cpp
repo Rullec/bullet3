@@ -1,9 +1,9 @@
 #include "BulletGenDynamics/btGenController/BuildController.h"
 #include "BulletGenDynamics/btGenController/ContactAwareController/btGenContactAwareController.h"
 #include "BulletGenDynamics/btGenController/ControllerBase.h"
-#include "BulletGenDynamics/btGenController/SimbiconController/SimbiconController.h"
-#include "BulletGenDynamics/btGenUtil/JsonUtil.h"
 #include "BulletGenDynamics/btGenController/PDController/btGenPDController.h"
+#include "BulletGenDynamics/btGenController/SimbiconController/SimbiconBipedalController.h"
+#include "BulletGenDynamics/btGenUtil/JsonUtil.h"
 btGenControllerBase *BuildController(btGeneralizeWorld *world,
                                      const std::string &path)
 {
@@ -25,8 +25,8 @@ btGenControllerBase *BuildController(btGeneralizeWorld *world,
             case ebtGenControllerType::ContactAwareController:
                 ctrl = new btGenContactAwareController(world);
                 break;
-            case ebtGenControllerType::SimbiconController:
-                ctrl = new btGenSimbiconController(world);
+            case ebtGenControllerType::SimbiconBipedController:
+                ctrl = new btGenSimbiconBipedalController(world);
                 break;
             default:
                 break;

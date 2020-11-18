@@ -28,7 +28,7 @@
         "multibody_path_bipedal": "../DeepMimic/data/1111/characters/skeleton_bipedal_legs_bigroot.json",
         "multibody_path_bigfoot": "../DeepMimic/data/0805/characters/skeleton_080501_bigfoot.json",
         "multibody_path_full_raw": "../DeepMimic/data/0805/characters/skeleton_080501.json",
-        "multibody_path_2links" : "../DeepMimic/data/0805/characters/skeleton_2links.json",
+        "multibody_path_2links": "../DeepMimic/data/0805/characters/skeleton_2links.json",
         "multibody_path_legs": "../DeepMimic/data/0908/characters/skeleton_legs.json",
         "multibody_path_2way": "../DeepMimic/data/0805/characters/skeleton_3links_two_chains.json",
         "multibody_path_leftleg": "../DeepMimic/data/0908/characters/skeleton_oneleg.json",

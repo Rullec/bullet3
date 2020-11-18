@@ -1,4 +1,4 @@
-#include "BulletGenDynamics/btGenController/SimbiconController/SimbiconController.h"
+#include "BulletGenDynamics/btGenController/SimbiconController/SimbiconControllerBase.h"
 #include "BulletGenDynamics/btGenController/PDController/JointPDCtrl.h"
 #include "BulletGenDynamics/btGenController/PDController/btGenPDController.h"
 #include "BulletGenDynamics/btGenController/SimbiconController/FSM.h"
@@ -8,19 +8,18 @@
 #include "BulletGenDynamics/btGenUtil/JsonUtil.h"
 #include "BulletGenDynamics/btGenWorld.h"
 
-btGenSimbiconController::btGenSimbiconController(btGeneralizeWorld *world)
-    : btGenControllerBase(ebtGenControllerType::SimbiconController, world)
+btGenSimbiconControllerBase::btGenSimbiconControllerBase(
+    btGeneralizeWorld *world, ebtGenControllerType type)
+    : btGenControllerBase(type, world)
 {
     mRootId = 0;
     this->mSwingHip = -1;
     mStanceHip = -1;
     mFSM = nullptr;
     mPDController = nullptr;
-    mCd = 0;
-    mCv = 0;
 }
 
-btGenSimbiconController::~btGenSimbiconController()
+btGenSimbiconControllerBase::~btGenSimbiconControllerBase()
 {
     delete mFSM;
     mFSM = nullptr;
@@ -31,8 +30,8 @@ btGenSimbiconController::~btGenSimbiconController()
 /**
  * \brief               Initialize the simbicon controller
 */
-void btGenSimbiconController::Init(cRobotModelDynamics *model,
-                                   const std::string &conf)
+void btGenSimbiconControllerBase::Init(cRobotModelDynamics *model,
+                                       const std::string &conf)
 {
     btGenControllerBase::Init(model, conf);
     // 1. check the skeleton(fixed now)
@@ -58,21 +57,16 @@ void btGenSimbiconController::Init(cRobotModelDynamics *model,
     BuildBalanceCtrl(balance_ctrl);
 
     // 5. init pose
-    {
-        mFSM->InitPose();
-    }
+    mFSM->InitPose();
 
     // 6. create ref char
-    {
-        mRefTrajModel = new cRobotModelDynamics();
+    mRefTrajModel = new cRobotModelDynamics();
 
-        mRefTrajModel->Init(mModel->GetCharFile().c_str(), mModel->GetScale(),
-                            ModelType::JSON);
-        mRefTrajModel->InitSimVars(mWorld->GetInternalWorld(), true, true,
-                                   false);
+    mRefTrajModel->Init(mModel->GetCharFile().c_str(), mModel->GetScale(),
+                        ModelType::JSON);
+    mRefTrajModel->InitSimVars(mWorld->GetInternalWorld(), true, true, false);
 
-        mRefTrajModel->SetqAndqdot(mModel->Getq(), mModel->Getqdot());
-    }
+    mRefTrajModel->SetqAndqdot(mModel->Getq(), mModel->Getqdot());
 }
 
 /**
@@ -84,7 +78,7 @@ void btGenSimbiconController::Init(cRobotModelDynamics *model,
  *       3.2 for torso and swing hip, the torque is calculated in world frame
  *       3.3 for other joints, just track the local angle
 */
-void btGenSimbiconController::Update(double dt)
+void btGenSimbiconControllerBase::Update(double dt)
 {
     printf("-------------simbicon update cur time %.3f cur state "
            "%d--------------\n",
@@ -162,12 +156,12 @@ void btGenSimbiconController::Update(double dt)
     }
 }
 
-void btGenSimbiconController::Reset() {}
+void btGenSimbiconControllerBase::Reset() {}
 
 /**
  * \brief           Build FSM
 */
-void btGenSimbiconController::BuildFSM(const Json::Value &conf)
+void btGenSimbiconControllerBase::BuildFSM(const Json::Value &conf)
 {
     mFSM = new btGenFSM(mWorld, mModel, conf);
 }
@@ -175,7 +169,7 @@ void btGenSimbiconController::BuildFSM(const Json::Value &conf)
  * \brief           Build the PD controller
  * The simbicon's PD controler doesn't work as usual, 
 */
-void btGenSimbiconController::BuildPDCtrl(const std::string &pd_path)
+void btGenSimbiconControllerBase::BuildPDCtrl(const std::string &pd_path)
 {
     mPDController = new btGenPDController(mWorld);
     mPDController->Init(mModel, pd_path);
@@ -193,59 +187,6 @@ void btGenSimbiconController::BuildPDCtrl(const std::string &pd_path)
     }
 }
 /**
- * \brief           Build the balance control policy
-*/
-void btGenSimbiconController::BuildBalanceCtrl(const Json::Value &conf)
-{
-    this->mCd = btJsonUtil::ParseAsDouble("Cd", conf);
-    this->mCv = btJsonUtil::ParseAsDouble("Cv", conf);
-}
-
-/**
- * \brief               Update the target pose by the blance control
- * \param target_pose   target q got from the FSM
- * 1. find the swing hip, 
- * 2. get the COM pos "d" & vel "v" 
- * 3. change the control target of swing hip by theta = theta_d + c_d * d + c_v * v
-*/
-void btGenSimbiconController::BalanceUpdateTargetPose(
-    tVectorXd &target_pose) const
-{
-    if (mSwingHip == -1 || mStanceHip == -1)
-    {
-        printf("[warn] swing/stance hip is -1, balance control disabled\n");
-        return;
-    }
-    auto cur_state = mFSM->GetCurrentState();
-    if (mIgnoreBalanceControlInState02 == true &&
-        cur_state->GetStateId() != 1 && cur_state->GetStateId() != 3)
-    {
-        printf("[warn] balance control is ignored in state id %d temporarily\n",
-               cur_state->GetStateId());
-        return;
-    }
-    auto swing_hip = dynamic_cast<Joint *>(mModel->GetJointById(mSwingHip));
-    BTGEN_ASSERT(swing_hip->GetJointType() == JointType::REVOLUTE_JOINT);
-
-    int offset = swing_hip->GetOffset();
-    int size = swing_hip->GetNumOfFreedom();
-    BTGEN_ASSERT(size == 1);
-    double theta = target_pose[offset];
-    tVector3d com_pos = mModel->GetCoMPosition(),
-              com_vel = mModel->GetComVelocity();
-    double d = com_pos[2] - mModel->GetJointById(GetEndeffector(mStanceHip))
-                                ->GetWorldPos()[2],
-           v = com_vel[2];
-
-    // minus angle means uplift, for current hips
-    target_pose[offset] = -mCd * d - mCv * v + theta;
-
-    printf("[simbicon] d = %.3f, v = %.3f, origin theta %.3f, "
-           "result theta %.3f for swing hip %s\n",
-           d, v, theta, target_pose[offset], swing_hip->GetName().c_str());
-}
-
-/**
  * \brief           Update the swing and stance hip's id (also the root id)
  * 1. find two hips
  * 2. find their end effector (two feet)
@@ -253,7 +194,7 @@ void btGenSimbiconController::BalanceUpdateTargetPose(
  * 4. confirm the swing hip and stance hip (exit in the illegal case)
 */
 #include "BulletGenDynamics/btGenController/SimbiconController/FSMUtil.h"
-void btGenSimbiconController::UpdateSwingStance()
+void btGenSimbiconControllerBase::UpdateSwingStance()
 {
     std::string left_hip_name = "LeftLeg", right_hip_name = "RightLeg";
     int left_hip_id = -1, right_hip_id = -1;
@@ -353,7 +294,7 @@ void btGenSimbiconController::UpdateSwingStance()
  * \param id        given joint id
  * \return          the id of end effector  
 */
-int btGenSimbiconController::GetEndeffector(int id) const
+int btGenSimbiconControllerBase::GetEndeffector(int id) const
 {
     auto cur_link = mModel->GetLinkById(id);
     int num_of_child = cur_link->GetNumOfChildren();
@@ -380,7 +321,7 @@ int btGenSimbiconController::GetEndeffector(int id) const
  * 1. set the PD Controller root, swing hip, torso's to use world coordinate
  * 2. set the new PD target into the controller
 */
-void btGenSimbiconController::UpdatePDController(const tVectorXd &tar_pose)
+void btGenSimbiconControllerBase::UpdatePDController(const tVectorXd &tar_pose)
 {
     auto ctrls = this->mPDController->GetJointPDCtrls();
     for (auto &x : ctrls)
@@ -401,25 +342,9 @@ void btGenSimbiconController::UpdatePDController(const tVectorXd &tar_pose)
 }
 
 /**
- * \brief           Restrict the root's rootation to X axis, root's translation in YOZ plane
- *              
-*/
-void btGenSimbiconController::RestrictRootPose()
-{
-    BTGEN_ASSERT(mModel->GetJointById(0)->GetJointType() ==
-                 JointType::NONE_JOINT);
-    tVectorXd q = mModel->Getq(), qdot = mModel->Getqdot();
-    q[0] = 0;                  // translation: YOZ plane
-    q.segment(4, 2).setZero(); // rotation: only x axis
-    qdot[0] = 0;
-    qdot.segment(4, 2).setZero();
-    mModel->SetqAndqdot(q, qdot);
-}
-
-/**
  * \brief           Judge if the character fall down
 */
-bool btGenSimbiconController::IsFallDown() const
+bool btGenSimbiconControllerBase::IsFallDown() const
 {
     int num = mWorld->GetTwoObjsNumOfContact(mWorld->GetGround(),
                                              mModel->GetLinkCollider(mRootId));
@@ -429,7 +354,7 @@ bool btGenSimbiconController::IsFallDown() const
 /**
  * \brief           Update the pose of ref model (debugging purpose)
 */
-void btGenSimbiconController::UpdateRefModel()
+void btGenSimbiconControllerBase::UpdateRefModel()
 {
     BaseObject *joint = mRefTrajModel->GetJointById(0);
     int move_dof_id = -1;

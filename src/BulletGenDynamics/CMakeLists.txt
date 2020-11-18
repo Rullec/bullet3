@@ -81,7 +81,8 @@ SET(
 	./btGenController/ContactAwareController/NQRCalculator/btGenNQRCalculator.cpp
 	./btGenController/ContactAwareController/QPSolver/QuadProgQPSolver.cpp
 	./btGenController/ContactAwareController/QPSolver/eiquadprog.hpp
-	./btGenController/SimbiconController/SimbiconController.cpp
+	./btGenController/SimbiconController/SimbiconControllerBase.cpp
+	./btGenController/SimbiconController/SimbiconBipedalController.cpp
 	./btGenController/SimbiconController/FSM.cpp
 	./btGenController/SimbiconController/FSMUtil.cpp
 	./btGenController/Trajectory/btTraj.cpp
