@@ -37,9 +37,6 @@ void btGenSimbiconController::Init(cRobotModelDynamics *model,
     btGenControllerBase::Init(model, conf);
     // 1. check the skeleton(fixed now)
     std::string char_file = model->GetCharFile();
-    BTGEN_ASSERT(
-        char_file ==
-        "../DeepMimic/data/1111/characters/skeleton_bipedal_legs_bigroot.json");
 
     Json::Value root;
     btJsonUtil::LoadJson(conf, root);
@@ -48,7 +45,11 @@ void btGenSimbiconController::Init(cRobotModelDynamics *model,
         btJsonUtil::ParseAsString("pd_controller_path", root);
     const Json::Value &balance_ctrl =
         btJsonUtil::ParseAsValue("balance_control", root);
-
+    std::string corresponding_char_path =
+        btJsonUtil::ParseAsString("corresponding_char_path", root);
+    BTGEN_ASSERT(char_file == corresponding_char_path);
+    mIgnoreBalanceControlInState02 =
+        btJsonUtil::ParseAsBool("ignore_balance_control_in_0_2_state", root);
     // 2. build FSM
     BuildFSM(fsm_config);
     // 3. build & correct PD controller
@@ -215,7 +216,8 @@ void btGenSimbiconController::BalanceUpdateTargetPose(
         return;
     }
     auto cur_state = mFSM->GetCurrentState();
-    if (cur_state->GetStateId() != 1 && cur_state->GetStateId() != 3)
+    if (mIgnoreBalanceControlInState02 == true &&
+        cur_state->GetStateId() != 1 && cur_state->GetStateId() != 3)
     {
         printf("[warn] balance control is ignored in state id %d temporarily\n",
                cur_state->GetStateId());

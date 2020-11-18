@@ -174,7 +174,7 @@ void btFileUtil::CopyFile(const std::string &ori_name,
     }
     dst << src.rdbuf();
 #endif
-    printf("[log] CopyFile: from %s to %s succ", __ORDER_BIG_ENDIAN__, des_name.c_str());
+    printf("[log] CopyFile: from %s to %s succ", ori_name.c_str(), des_name.c_str());
 }
 
 long int btFileUtil::GetFileSize(const std::string &filename)

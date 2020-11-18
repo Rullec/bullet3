@@ -27,6 +27,8 @@ protected:
     int mRootId, mSwingHip,
         mStanceHip;  // the link/joint id of root, swing hip and stance hip
     double mCd, mCv; // balance control param
+    bool
+        mIgnoreBalanceControlInState02; // ignore balance control in state 0 and state 2 (stable state)
     void BuildFSM(const Json::Value &conf);
     void BuildPDCtrl(const std::string &pd_path);
     void BuildBalanceCtrl(const Json::Value &conf);
