@@ -1,7 +1,7 @@
 {
-    "ctrl_type": "SimbiconController",
+    "ctrl_type": "Simbicon3dController",
     "corresponding_char_path": "../DeepMimic/data/1111/characters/skeleton_legs_bigroot.json",
-    "pd_controller_path": "examples/CustomEngine/ctrl_configs/pd_config_legs.json",
+    "pd_controller_path": "examples/CustomEngine/ctrl_configs/pd_config_legs_3dsimbicon.json",
     "ignore_balance_control_in_0_2_state": false,
     "FSM": {
         "state_traj_path": "examples/CustomEngine/ctrl_configs/simbicon_configs/3d/simbicon_target_jog.json",
@@ -50,7 +50,9 @@
         ]
     },
     "balance_control": {
-        "Cd": 0.6,
-        "Cv": 0.4
+        "Cd_forward": 0.6,
+        "Cv_forward": 0.4,
+        "Cd_tanget": 2,
+        "Cv_tanget": 0.6
     }
 }

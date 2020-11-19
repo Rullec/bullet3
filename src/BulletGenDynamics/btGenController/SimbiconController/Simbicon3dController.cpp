@@ -1,7 +1,10 @@
 #include "Simbicon3dController.h"
+#include "BulletGenDynamics/btGenController/SimbiconController/FSM.h"
+#include "BulletGenDynamics/btGenController/SimbiconController/FSMUtil.h"
 #include "BulletGenDynamics/btGenModel/Joint.h"
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
 #include "BulletGenDynamics/btGenUtil/JsonUtil.h"
+#include <iostream>
 btGenSimbicon3dController::btGenSimbicon3dController(btGeneralizeWorld *world)
     : btGenSimbiconControllerBase(world,
                                   ebtGenControllerType::Simbicon3dController)
@@ -27,6 +30,14 @@ void btGenSimbicon3dController::Init(cRobotModelDynamics *model,
 }
 void btGenSimbicon3dController::Update(double dt)
 {
+    if (mModel->IsGeneralizedMaxVel() == true)
+    {
+        printf("[warn] simbicon model max vel, qdot = ");
+        std::cout << mModel->Getqdot().transpose() << std::endl;
+        // std::cout << "target pose = " << mFSM->GetTargetPose().transpose()
+        //           << std::endl;
+        // exit(0);
+    }
     btGenSimbiconControllerBase::Update(dt);
 }
 void btGenSimbicon3dController::Reset() {}
@@ -41,8 +52,107 @@ void btGenSimbicon3dController::BuildBalanceCtrl(const Json::Value &conf)
     mCd_tanget = btJsonUtil::ParseAsDouble("Cd_tanget", conf);
     mCv_tanget = btJsonUtil::ParseAsDouble("Cv_tanget", conf);
 }
+
+/**
+ * \brief           balance control policy for 3d simbicon controller
+ * 
+ *      Adjust the target pose of swing hip
+ * 
+ * 1. for forward direction balance control
+ *          let d is the distance from stance feet to COM
+ *          if d>0, make the swing hip higher (x rotation smaller)
+ *          if d<0, make the swing hip lower (x rotation bigger)
+ *
+ * 2. for horizontal (tangential) direction balance control, (keep balance for left and right swing)
+ *      2.1 way1: let d is the distance from stance feet to COM, along with X
+ *                  |Y+
+ *                  |
+ *                  |
+ *    Right hip     |   Left hip
+ *                  |
+ *                  --------------------X+    
+ *          if d>0, swing hip = right hip, right foot move right (z rotation bigger)
+ *                  swing hip = left hip, left foot move right (z rotation bigger)
+ *          if d<0, swing hip = right hip, right foot move left (z rotation smaller)
+ *                  swing hip = left hip, left foot move left (z rotation smaller)
+ *
+ *      2.2 way2: let d is the distance from zero to COM
+ *          other rules are the same
+*/
 void btGenSimbicon3dController::BalanceUpdateTargetPose(
     tVectorXd &target_pose) const
 {
-    BTGEN_ASSERT(false);
+    if (mSwingHip == -1 || mStanceHip == -1)
+    {
+        printf("[warn] swing/stance hip is -1, balance control disabled\n");
+        return;
+    }
+    auto cur_state = mFSM->GetCurrentState();
+    if (mIgnoreBalanceControlInState02 == true &&
+        cur_state->GetStateId() != 1 && cur_state->GetStateId() != 3)
+    {
+        printf("[warn] balance control is ignored in state id %d temporarily\n",
+               cur_state->GetStateId());
+        return;
+    }
+
+    std::cout << "ignore balance target pose\n";
+    return;
+    // 1. get the d and v
+    tVector3d d, v;
+    auto swing_hip = dynamic_cast<Joint *>(mModel->GetJointById(mSwingHip));
+    {
+        BTGEN_ASSERT(swing_hip->GetJointType() == JointType::SPHERICAL_JOINT);
+        tVector3d com_pos = mModel->GetCoMPosition(),
+                  com_vel = mModel->GetComVelocity();
+        std::cout << "[debug] com pos = " << com_pos.transpose()
+                  << " com vel = " << com_vel.transpose() << std::endl;
+        auto stance_foot_id = GetEndeffector(mStanceHip);
+        auto stance_foot =
+            dynamic_cast<Joint *>(mModel->GetJointById(stance_foot_id));
+        tVector3d stance_foot_pos = stance_foot->GetWorldPos();
+        d = com_pos - stance_foot_pos, v = com_vel;
+    }
+
+    // 2. convert current target to axis angle
+    int offset = swing_hip->GetOffset();
+    int size = swing_hip->GetNumOfFreedom();
+    BTGEN_ASSERT(size == 3);
+    tVector3d target_euler_xyz = target_pose.segment(offset, size);
+
+    tVector3d target_axisangle =
+        btMathUtil::EulerangleToAxisAngle(
+            btMathUtil::Expand(target_euler_xyz, 0), btRotationOrder::bt_XYZ)
+            .segment(0, 3);
+
+    double target_x = target_axisangle[0], target_z = target_axisangle[2];
+    // 3. adjust x rotation by forward balance control
+    {
+        std::cout << "[debug] origin target x = " << target_x << std::endl;
+        double d_forward = d[2], v_forward = v[2];
+        target_x += -mCd_forward * d_forward - mCv_forward * v_forward;
+        std::cout << "[debug] after target x = " << target_x << std::endl;
+    }
+    // 4. adjust z rotation by horizontal balance control
+    {
+        std::cout << "[debug] origin target z = " << target_z << std::endl;
+        double d_tanget = d[0], v_tanget = v[0];
+        target_z += mCd_tanget * d_tanget + mCv_tanget * v_tanget;
+        std::cout << "[debug] after target z = " << target_z << std::endl;
+    }
+
+    // 5. print out and write back
+    std::cout << "[debug] origin axis angle = " << target_axisangle.transpose()
+              << std::endl;
+    target_axisangle[0] = target_x;
+    target_axisangle[2] = target_z;
+    std::cout << "[debug] after axis angle = " << target_axisangle.transpose()
+              << std::endl;
+    tVector new_target_euler_xyz = btMathUtil::AxisAngleToEulerAngle(
+        btMathUtil::Expand(target_axisangle, 0), btRotationOrder::bt_XYZ);
+    std::cout << "[debug] origin euler xyz = " << target_euler_xyz.transpose()
+              << std::endl;
+    std::cout << "[debug] after euler xyz = "
+              << new_target_euler_xyz.transpose() << std::endl;
+    target_pose.segment(offset, size) = new_target_euler_xyz.segment(0, 3);
 }

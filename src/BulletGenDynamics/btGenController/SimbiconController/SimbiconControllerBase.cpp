@@ -4,6 +4,7 @@
 #include "BulletGenDynamics/btGenController/SimbiconController/FSM.h"
 #include "BulletGenDynamics/btGenController/SimbiconController/FSMUtil.h"
 #include "BulletGenDynamics/btGenModel/Joint.h"
+#include "BulletGenDynamics/btGenModel/Link.h"
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
 #include "BulletGenDynamics/btGenUtil/JsonUtil.h"
 #include "BulletGenDynamics/btGenWorld.h"
@@ -67,6 +68,18 @@ void btGenSimbiconControllerBase::Init(cRobotModelDynamics *model,
     mRefTrajModel->InitSimVars(mWorld->GetInternalWorld(), true, true, false);
 
     mRefTrajModel->SetqAndqdot(mModel->Getq(), mModel->Getqdot());
+
+    // {
+    //     for (int i = 0; i < mModel->GetNumOfLinks(); i++)
+    //     {
+    //         auto link = dynamic_cast<Link *>(mModel->GetLinkById(i));
+    //         BTGEN_ASSERT(link != nullptr);
+    //         std::cout << "link " << i << " inertia = "
+    //                   << link->GetInertiaTensorBody().diagonal().transpose()
+    //                   << std::endl;
+    //     }
+    //     exit(0);
+    // }
 }
 
 /**
@@ -98,9 +111,6 @@ void btGenSimbiconControllerBase::Update(double dt)
     // 1. update FSM, get the target pose
     tVectorXd target_pose;
     mFSM->Update(dt, target_pose);
-
-    // update target pose
-    UpdateRefModel();
 
     // 2. change the target pose by balance control policy
     BalanceUpdateTargetPose(target_pose);
@@ -154,6 +164,9 @@ void btGenSimbiconControllerBase::Update(double dt)
             }
         }
     }
+
+    // update target pose
+    UpdateRefModel(target_pose);
 }
 
 void btGenSimbiconControllerBase::Reset() {}
@@ -331,13 +344,19 @@ void btGenSimbiconControllerBase::UpdatePDController(const tVectorXd &tar_pose)
         int id = x->GetJoint()->GetId();
         if (id == this->mRootId || id == mSwingHip)
         {
-            // printf("[log] Set joint %d PD control use world coord\n", id);
+            printf("[log] Set joint %s PD control use world coord\n",
+                   x->GetJoint()->GetName().c_str());
             x->SetUseWorldCoord(true);
         }
     }
 
     std::cout << "[log] final PD target = " << tar_pose.transpose()
               << std::endl;
+
+    std::cout << "[log] model q = " << mModel->Getq().transpose() << std::endl;
+    std::cout << "[log] model qdot = " << mModel->Getqdot().transpose()
+              << std::endl;
+
     mPDController->SetPDTargetq(tar_pose);
 }
 
@@ -354,19 +373,38 @@ bool btGenSimbiconControllerBase::IsFallDown() const
 /**
  * \brief           Update the pose of ref model (debugging purpose)
 */
-void btGenSimbiconControllerBase::UpdateRefModel()
+void btGenSimbiconControllerBase::UpdateRefModel(const tVectorXd &target_pose)
 {
-    BaseObject *joint = mRefTrajModel->GetJointById(0);
-    int move_dof_id = -1;
-    if (joint->GetJointType() == JointType::NONE_JOINT)
-        move_dof_id = 1;
-    else if (joint->GetJointType() == JointType::BIPEDAL_NONE_JOINT)
-        move_dof_id = 0;
-    double move_distance = 1;
-    tVectorXd tar_pose = mFSM->GetTargetPose();
+    // use the FSM tar pose
+    // {BaseObject *joint = mRefTrajModel->GetJointById(0);
+    // int move_dof_id = -1;
+    // if (joint->GetJointType() == JointType::NONE_JOINT)
+    //     move_dof_id = 1;
+    // else if (joint->GetJointType() == JointType::BIPEDAL_NONE_JOINT)
+    //     move_dof_id = 0;
+    // double move_distance = 1;
+    // tVectorXd tar_pose = mFSM->GetTargetPose();
 
-    tar_pose[move_dof_id] += move_distance;
-    mRefTrajModel->SetqAndqdot(tar_pose, mRefTrajModel->Getqdot());
+    // tar_pose[move_dof_id] += move_distance;
+    // mRefTrajModel->SetqAndqdot(tar_pose, mRefTrajModel->Getqdot());}
+
+    // 2. use the revised target pose
+    {
+        tVectorXd set_tar_pose = target_pose;
+        BaseObject *joint = mRefTrajModel->GetJointById(0);
+        if (joint->GetJointType() == JointType::NONE_JOINT)
+        {
+            set_tar_pose.segment(0, 3).setZero();
+            set_tar_pose[1] = 2;
+        }
+        else if (joint->GetJointType() == JointType::BIPEDAL_NONE_JOINT)
+        {
+            set_tar_pose.segment(0, 2).setZero();
+            set_tar_pose[0] = 2;
+        }
+
+        mRefTrajModel->SetqAndqdot(set_tar_pose, mRefTrajModel->Getqdot());
+    }
 }
 
 /**

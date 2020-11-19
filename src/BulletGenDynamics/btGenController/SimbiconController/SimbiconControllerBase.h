@@ -1,3 +1,4 @@
+#pragma once
 #include "BulletGenDynamics/btGenController/ControllerBase.h"
 #include "BulletGenDynamics/btGenUtil/MathUtil.h"
 
@@ -37,6 +38,6 @@ protected:
     void UpdatePDController(const tVectorXd &tar_pose);
     int GetEndeffector(int id) const;
     bool IsFallDown() const;
-    void UpdateRefModel();
+    void UpdateRefModel(const tVectorXd & tar_pose);
     int GetJointByPartialName(const std::string &name);
 };

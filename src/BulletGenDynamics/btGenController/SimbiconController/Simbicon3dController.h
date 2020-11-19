@@ -6,6 +6,7 @@
 */
 class btGenSimbicon3dController : public btGenSimbiconControllerBase
 {
+public:
     btGenSimbicon3dController(btGeneralizeWorld *world);
     virtual ~btGenSimbicon3dController();
     virtual void Init(cRobotModelDynamics *model,

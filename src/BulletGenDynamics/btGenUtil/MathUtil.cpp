@@ -146,6 +146,12 @@ tQuaternion btMathUtil::AxisAngleToQuaternion(const tVector &angvel)
                        norm_angvel[2] * sin_theta_2);
 }
 
+tVector btMathUtil::AxisAngleToEulerAngle(const tVector &aa,
+                                          btRotationOrder order)
+{
+    return btMathUtil::QuaternionToEulerAngles(
+        btMathUtil::AxisAngleToQuaternion(aa), order);
+}
 tVector btMathUtil::QuaternionToAxisAngle(const tQuaternion &quater)
 {
     /* 	quater = [w, x, y, z]

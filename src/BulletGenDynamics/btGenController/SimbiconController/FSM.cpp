@@ -88,11 +88,12 @@ tVectorXd btGenFSM::GetTargetPose()
 */
 void btGenFSM::InitPose()
 {
-    tVectorXd q = mStateTraj->mq[mCurState->GetStateId()],
-              qdot = tVectorXd::Zero(q.size());
+    // tVectorXd q = mStateTraj->mq[mCurState->GetStateId()],
+    //           qdot = tVectorXd::Zero(q.size());
+    tVectorXd q = tVectorXd::Zero(mModel->GetNumOfFreedom()),
+              qdot = tVectorXd::Zero(mModel->GetNumOfFreedom());
+    q[1] = 0.94;
     std::cout << "[FSM] init q = " << q.transpose() << std::endl;
-    // tVectorXd q = tVectorXd::Zero(mModel->GetNumOfFreedom()),
-    //           qdot = tVectorXd::Zero(mModel->GetNumOfFreedom());
     mModel->SetqAndqdot(q, qdot);
 }
 
