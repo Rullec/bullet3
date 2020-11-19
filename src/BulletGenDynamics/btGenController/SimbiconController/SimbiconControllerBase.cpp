@@ -368,3 +368,29 @@ void btGenSimbiconControllerBase::UpdateRefModel()
     tar_pose[move_dof_id] += move_distance;
     mRefTrajModel->SetqAndqdot(tar_pose, mRefTrajModel->Getqdot());
 }
+
+/**
+ * \brief           Get the Joint by part of name
+*/
+int btGenSimbiconControllerBase::GetJointByPartialName(const std::string &name)
+{
+    int joint_id = -1;
+    for (int i = 0; i < mModel->GetNumOfLinks(); i++)
+    {
+        auto cur_joint = mModel->GetJointById(i);
+        if (cur_joint->GetName().find(name) != -1)
+        {
+            if (joint_id != -1)
+            {
+                printf("[error] left hip id get failed\n");
+                exit(0);
+            }
+            else
+            {
+                joint_id = i;
+            }
+        }
+    }
+    BTGEN_ASSERT(joint_id != -1);
+    return joint_id;
+}

@@ -7,7 +7,7 @@ class btGenSimbiconBipedalController : public btGenSimbiconControllerBase
 {
 public:
     btGenSimbiconBipedalController(btGeneralizeWorld *world);
-    ~btGenSimbiconBipedalController();
+    virtual ~btGenSimbiconBipedalController();
     virtual void Init(cRobotModelDynamics *model,
                       const std::string &conf) override;
     virtual void Update(double dt) override;

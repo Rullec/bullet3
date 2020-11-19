@@ -15,7 +15,7 @@ class btGenSimbiconControllerBase : public btGenControllerBase
 public:
     btGenSimbiconControllerBase(btGeneralizeWorld *world,
                                 ebtGenControllerType type);
-    ~btGenSimbiconControllerBase();
+    virtual ~btGenSimbiconControllerBase();
     virtual void Init(cRobotModelDynamics *model,
                       const std::string &conf) override;
     virtual void Update(double dt) override;
@@ -38,4 +38,5 @@ protected:
     int GetEndeffector(int id) const;
     bool IsFallDown() const;
     void UpdateRefModel();
+    int GetJointByPartialName(const std::string &name);
 };

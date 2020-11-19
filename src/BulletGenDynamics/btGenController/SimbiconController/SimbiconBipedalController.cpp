@@ -15,6 +15,7 @@ btGenSimbiconBipedalController::btGenSimbiconBipedalController(
     mCv = 0;
 }
 
+btGenSimbiconBipedalController::~btGenSimbiconBipedalController() {}
 /**
  * \brief           Simbicon build blance control policy (2 coeffs)
 */

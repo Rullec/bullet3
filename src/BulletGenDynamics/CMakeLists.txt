@@ -83,6 +83,7 @@ SET(
 	./btGenController/ContactAwareController/QPSolver/eiquadprog.hpp
 	./btGenController/SimbiconController/SimbiconControllerBase.cpp
 	./btGenController/SimbiconController/SimbiconBipedalController.cpp
+	./btGenController/SimbiconController/Simbicon3dController.cpp
 	./btGenController/SimbiconController/FSM.cpp
 	./btGenController/SimbiconController/FSMUtil.cpp
 	./btGenController/Trajectory/btTraj.cpp
