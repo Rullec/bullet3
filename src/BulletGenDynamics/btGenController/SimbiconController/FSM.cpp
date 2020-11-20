@@ -92,7 +92,7 @@ void btGenFSM::InitPose()
     //           qdot = tVectorXd::Zero(q.size());
     tVectorXd q = tVectorXd::Zero(mModel->GetNumOfFreedom()),
               qdot = tVectorXd::Zero(mModel->GetNumOfFreedom());
-    q[1] = 0.94;
+    q[1] = 0.75;
     std::cout << "[FSM] init q = " << q.transpose() << std::endl;
     mModel->SetqAndqdot(q, qdot);
 }

@@ -223,8 +223,8 @@ void btGenPDController::ParseConfig(const std::string &string)
                use_world_coord ? "true" : "false");
     }
 
-    init_target_q << 0, 0.75, 0, 0, 0, 0, -1.09805, 0, 0, 1.6, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0;
+    // init_target_q << 0, 0.75, 0, 0, 0, 0, -1.09805, 0, 0, 1.6, 0, 0, 0, 0, 0, 0,
+    //     0, 0, 0, 0;
     std::cout << "init q = " << init_target_q.transpose() << std::endl;
     SetPDTargetq(init_target_q);
     SetPDTargetqdot(init_target_qdot);

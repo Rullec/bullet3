@@ -1,4 +1,5 @@
 #include "Simbicon3dController.h"
+#include "BulletGenDynamics/btGenController/PDController/btGenPDController.h"
 #include "BulletGenDynamics/btGenController/SimbiconController/FSM.h"
 #include "BulletGenDynamics/btGenController/SimbiconController/FSMUtil.h"
 #include "BulletGenDynamics/btGenModel/Joint.h"
@@ -30,15 +31,80 @@ void btGenSimbicon3dController::Init(cRobotModelDynamics *model,
 }
 void btGenSimbicon3dController::Update(double dt)
 {
-    if (mModel->IsGeneralizedMaxVel() == true)
+    printf("-------------simbicon update cur time %.3f cur state "
+           "%d--------------\n",
+           mTime, mFSM->GetCurrentState()->GetStateId());
+
+    btGenControllerBase::Update(dt);
+    if (IsFallDown() == true)
     {
-        printf("[warn] simbicon model max vel, qdot = ");
-        std::cout << mModel->Getqdot().transpose() << std::endl;
-        // std::cout << "target pose = " << mFSM->GetTargetPose().transpose()
-        //           << std::endl;
-        // exit(0);
+        printf("[log] character fall down, simbicon finished\n");
+        exit(0);
     }
-    btGenSimbiconControllerBase::Update(dt);
+    // 0. make the root stay in YOZ plane and has no X translation
+    // RestrictRootPose();
+    // 0. update hips
+    UpdateSwingStance();
+
+    // 1. update FSM, get the target pose
+    tVectorXd target_pose;
+    mFSM->Update(dt, target_pose);
+
+    // 2. change the target pose by balance control policy
+    BalanceUpdateTargetPose(target_pose);
+
+    // 3. set the target into the PD controller
+    {
+        // 3.1 find the swing hip and root, set the use world coord to true
+        UpdatePDController(target_pose);
+        // 3.2 calculate the control force (including root)
+        tEigenArr<btGenPDForce> pd_forces(0);
+        mPDController->CalculateControlForces(dt, pd_forces);
+        BTGEN_ASSERT(pd_forces.size() == mModel->GetNumOfJoint());
+
+        /*
+            3.3 calculate the control force for the stance hip by inverse method
+
+            \tau_A = stance_hip_torque
+            \tau_B = swing_hip_torque
+            \tau_torso = torso_torque
+            \tau_A = -\tau_torso - \tau_B
+        */
+        // if (mSwingHip == -1 || mStanceHip == -1)
+        // {
+        //     printf("[log] swing hip or stance hip is -1, disable the inverse "
+        //            "solution of hip torque\n");
+        // }
+        // else
+        // {
+        //     tVector torso_torque = pd_forces[this->mRootId].mForce;
+        //     // std::cout << "torso torque = " << torso_torque.transpose()
+        //     //           << std::endl;
+
+        //     tVector swing_torque = pd_forces[this->mSwingHip].mForce;
+        //     // std::cout << "swing torque = " << swing_torque.transpose()
+        //     //           << std::endl;
+        //     tVector stance_torque = -torso_torque - swing_torque;
+        //     pd_forces[mStanceHip].mForce = stance_torque;
+        // }
+
+        // 3.4 apply the control force (except root)
+        for (auto &x : pd_forces)
+        {
+            int joint_id = x.mJoint->GetId();
+            if (joint_id == 0)
+                continue;
+            else
+            {
+                mModel->ApplyJointTorque(joint_id, x.mForce);
+                // std::cout << "[simbicon] joint " << joint_id
+                //           << " torque = " << x.mForce.transpose() << std::endl;
+            }
+        }
+    }
+
+    // update target pose
+    UpdateRefModel(target_pose);
 }
 void btGenSimbicon3dController::Reset() {}
 
@@ -96,8 +162,6 @@ void btGenSimbicon3dController::BalanceUpdateTargetPose(
         return;
     }
 
-    std::cout << "ignore balance target pose\n";
-    return;
     // 1. get the d and v
     tVector3d d, v;
     auto swing_hip = dynamic_cast<Joint *>(mModel->GetJointById(mSwingHip));

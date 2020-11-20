@@ -1,5 +1,5 @@
 {
-    "enable_gravity": false,
+    "enable_gravity": true,
     "collision_detection_mode": "Native",
     "collision_detection_mode_from": "FromTheTraj",
     "collision_detection_mode_supposed": "OnlySupposedPoint",
