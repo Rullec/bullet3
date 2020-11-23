@@ -210,7 +210,7 @@ void cRobotModelDynamics::InitSimVars(btDynamicsWorld *world, bool zero_pose,
     {
         mqdot.setRandom();
     }
-    mq[1] = 0.8;
+    mq[1] = 1;
 
     cRobotModelDynamics::SetqAndqdot(mq, mqdot);
 

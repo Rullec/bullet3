@@ -205,7 +205,7 @@ public:
     void GetLocalTransform(tMatrix &m) const { m = local_transform; };
     tMatrix GetLocalTransform() { return local_transform; }
     ShapeType GetShapeType() { return static_cast<ShapeType>(shape_type); }
-
+    virtual bool GetIsRootJoint() const = 0;
     // ====================================================
     // modeified 04/06/20,
     const tMatrixXd &GetdJKvdq_nxnversion(int i) const;

@@ -25,7 +25,8 @@ public:
     virtual void Reset() override;
     void SetPDTargetq(const tVectorXd &q);
     void SetPDTargetqdot(const tVectorXd &qdot);
-    virtual void CalculateControlForces(double dt, tEigenArr<btGenPDForce> &pd_forces);
+    virtual void CalculateControlForces(double dt,
+                                        tEigenArr<btGenPDForce> &pd_forces);
     std::vector<btGenJointPDCtrl *> &GetJointPDCtrls();
 
 protected:

@@ -325,6 +325,7 @@ const tMatrix &Link::GetMWQQQ(int i, int j, int k) const
     return mWq[i];
 }
 
+bool Link::GetIsRootJoint() const { BTGEN_ASSERT(false); }
 void Link::InitTerms()
 {
     if (parent)
