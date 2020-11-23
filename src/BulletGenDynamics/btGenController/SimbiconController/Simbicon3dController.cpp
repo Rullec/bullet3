@@ -220,3 +220,15 @@ void btGenSimbicon3dController::BalanceUpdateTargetPose(
               << new_target_euler_xyz.transpose() << std::endl;
     target_pose.segment(offset, size) = new_target_euler_xyz.segment(0, 3);
 }
+
+/**
+ * \brief           Update Simbicon SPD controller
+ *      1. 
+ *      2. 
+*/
+#include "BulletGenDynamics/btGenController/PDController/btGenSimbiconSPDController.h"
+void btGenSimbicon3dController::UpdatePDController(const tVectorXd &tar_pose)
+{
+    // do nothing
+    printf("[warn] do nothing in UpdatePDController\n");
+}

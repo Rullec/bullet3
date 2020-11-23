@@ -4,6 +4,7 @@
 enum ebtGenControllerType
 {
     PDController,
+    SimbiconSPDController,
     ContactAwareController,
     SimbiconBipedController,
     Simbicon3dController,
@@ -12,9 +13,8 @@ enum ebtGenControllerType
 
 static const std::string
     gbtGenControllerTypeStr[ebtGenControllerType::BTGEN_NUM_CONTROLLER_TYPE] = {
-        "PDController",
-        "ContactAwareController",
-        "SimbiconBipedalController",
+        "PDController",           "SimbiconSPDController",
+        "ContactAwareController", "SimbiconBipedalController",
         "Simbicon3dController",
 };
 class btGeneralizeWorld;

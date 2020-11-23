@@ -21,5 +21,6 @@ protected:
         mCv_tanget; // balance control param vertical to the walking direction, literally left & right
 
     virtual void BuildBalanceCtrl(const Json::Value &conf);
+    virtual void UpdatePDController(const tVectorXd &tar_pose);
     virtual void BalanceUpdateTargetPose(tVectorXd &target_pose) const;
 };

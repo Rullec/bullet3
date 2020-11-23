@@ -35,9 +35,9 @@ protected:
     virtual void BuildBalanceCtrl(const Json::Value &conf) = 0;
     virtual void BalanceUpdateTargetPose(tVectorXd &target_pose) const = 0;
     void UpdateSwingStance();
-    void UpdatePDController(const tVectorXd &tar_pose);
+    virtual void UpdatePDController(const tVectorXd &tar_pose);
     int GetEndeffector(int id) const;
     bool IsFallDown() const;
-    void UpdateRefModel(const tVectorXd & tar_pose);
+    void UpdateRefModel(const tVectorXd &tar_pose);
     int GetJointByPartialName(const std::string &name);
 };

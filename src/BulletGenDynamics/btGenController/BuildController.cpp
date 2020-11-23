@@ -2,6 +2,7 @@
 #include "BulletGenDynamics/btGenController/ContactAwareController/btGenContactAwareController.h"
 #include "BulletGenDynamics/btGenController/ControllerBase.h"
 #include "BulletGenDynamics/btGenController/PDController/btGenPDController.h"
+#include "BulletGenDynamics/btGenController/PDController/btGenSimbiconSPDController.h"
 #include "BulletGenDynamics/btGenController/SimbiconController/Simbicon3dController.h"
 #include "BulletGenDynamics/btGenController/SimbiconController/SimbiconBipedalController.h"
 #include "BulletGenDynamics/btGenUtil/JsonUtil.h"
@@ -22,6 +23,9 @@ btGenControllerBase *BuildController(btGeneralizeWorld *world,
             {
             case ebtGenControllerType::PDController:
                 ctrl = new btGenPDController(world);
+                break;
+            case ebtGenControllerType::SimbiconSPDController:
+                ctrl = new btGenSimbiconSPDController(world);
                 break;
             case ebtGenControllerType::ContactAwareController:
                 ctrl = new btGenContactAwareController(world);

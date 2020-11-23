@@ -1,5 +1,5 @@
 {
-    "ctrl_type" : "PDController",
+    "ctrl_type" : "SimbiconSPDController",
     "enable_stable_pd": true,
     "PDControllers": [
         {

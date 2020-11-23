@@ -182,9 +182,11 @@ void btGenSimbiconControllerBase::BuildFSM(const Json::Value &conf)
  * \brief           Build the PD controller
  * The simbicon's PD controler doesn't work as usual, 
 */
+#include "BulletGenDynamics/btGenController/BuildController.h"
 void btGenSimbiconControllerBase::BuildPDCtrl(const std::string &pd_path)
 {
-    mPDController = new btGenPDController(mWorld);
+    mPDController = dynamic_cast<btGenPDController *>(
+        BuildController(this->mWorld, pd_path));
     mPDController->Init(mModel, pd_path);
 
     // check the PD coef
