@@ -508,6 +508,10 @@ void cRobotModelDynamics::ApplyForce(int link_id, const tVector &force,
         exit(0);
     }
 
+    if (force.hasNaN())
+    {
+        BTGEN_ASSERT(false);
+    }
     // 1. apply the force directly
     mLinkForces[link_id] += force;
 
@@ -579,8 +583,8 @@ tVectorXd cRobotModelDynamics::GetGeneralizedForce()
         const auto &link = GetLinkById(i);
         Q += link->GetJKv().transpose() * mLinkForces[i].segment(0, 3);
         Q += link->GetJKw().transpose() * mLinkTorques[i].segment(0, 3);
-        // std::cout << "[model] link " << i << " torque " <<
-        // link_torques[i].transpose() << std::endl;
+        BTGEN_ASSERT(mLinkForces[i].hasNaN() == false);
+        BTGEN_ASSERT(mLinkTorques[i].hasNaN() == false);
     }
 
     // add lefted generalized force
@@ -765,7 +769,8 @@ void cRobotModelDynamics::UpdateVelocityAndTransform(double dt)
 
     if (qddot.hasNaN())
     {
-        std::cout << "UpdateVelocityAndTransform: qddot hasNan\n";
+        std::cout << "[error] UpdateVelocityAndTransform: qddot hasNan\n";
+        std::cout << "Q = " << Q.transpose() << std::endl;
         assert(false);
         exit(0);
     }

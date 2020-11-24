@@ -92,7 +92,20 @@ void btGenFSM::InitPose()
     //           qdot = tVectorXd::Zero(q.size());
     tVectorXd q = tVectorXd::Zero(mModel->GetNumOfFreedom()),
               qdot = tVectorXd::Zero(mModel->GetNumOfFreedom());
-    q[1] = 0.75;
+
+    switch (mModel->GetRoot()->GetJointType())
+    {
+    case JointType::BIPEDAL_NONE_JOINT:
+        q[0] = 0.75;
+        break;
+    case JointType::NONE_JOINT:
+        q[1] = 0.75;
+        break;
+    default:
+        BTGEN_ASSERT(false);
+        break;
+    }
+
     std::cout << "[FSM] init q = " << q.transpose() << std::endl;
     mModel->SetqAndqdot(q, qdot);
 }

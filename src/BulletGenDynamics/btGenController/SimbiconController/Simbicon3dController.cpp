@@ -169,8 +169,8 @@ void btGenSimbicon3dController::BalanceUpdateTargetPose(
         BTGEN_ASSERT(swing_hip->GetJointType() == JointType::SPHERICAL_JOINT);
         tVector3d com_pos = mModel->GetCoMPosition(),
                   com_vel = mModel->GetComVelocity();
-        std::cout << "[debug] com pos = " << com_pos.transpose()
-                  << " com vel = " << com_vel.transpose() << std::endl;
+        // std::cout << "[debug] com pos = " << com_pos.transpose()
+        //           << " com vel = " << com_vel.transpose() << std::endl;
         auto stance_foot_id = GetEndeffector(mStanceHip);
         auto stance_foot =
             dynamic_cast<Joint *>(mModel->GetJointById(stance_foot_id));
@@ -192,32 +192,32 @@ void btGenSimbicon3dController::BalanceUpdateTargetPose(
     double target_x = target_axisangle[0], target_z = target_axisangle[2];
     // 3. adjust x rotation by forward balance control
     {
-        std::cout << "[debug] origin target x = " << target_x << std::endl;
+        // std::cout << "[debug] origin target x = " << target_x << std::endl;
         double d_forward = d[2], v_forward = v[2];
         target_x += -mCd_forward * d_forward - mCv_forward * v_forward;
-        std::cout << "[debug] after target x = " << target_x << std::endl;
+        // std::cout << "[debug] after target x = " << target_x << std::endl;
     }
     // 4. adjust z rotation by horizontal balance control
     {
-        std::cout << "[debug] origin target z = " << target_z << std::endl;
+        // std::cout << "[debug] origin target z = " << target_z << std::endl;
         double d_tanget = d[0], v_tanget = v[0];
         target_z += mCd_tanget * d_tanget + mCv_tanget * v_tanget;
-        std::cout << "[debug] after target z = " << target_z << std::endl;
+        // std::cout << "[debug] after target z = " << target_z << std::endl;
     }
 
     // 5. print out and write back
-    std::cout << "[debug] origin axis angle = " << target_axisangle.transpose()
-              << std::endl;
+    // std::cout << "[debug] origin axis angle = " << target_axisangle.transpose()
+    //           << std::endl;
     target_axisangle[0] = target_x;
     target_axisangle[2] = target_z;
-    std::cout << "[debug] after axis angle = " << target_axisangle.transpose()
-              << std::endl;
+    // std::cout << "[debug] after axis angle = " << target_axisangle.transpose()
+    //           << std::endl;
     tVector new_target_euler_xyz = btMathUtil::AxisAngleToEulerAngle(
         btMathUtil::Expand(target_axisangle, 0), btRotationOrder::bt_XYZ);
-    std::cout << "[debug] origin euler xyz = " << target_euler_xyz.transpose()
-              << std::endl;
-    std::cout << "[debug] after euler xyz = "
-              << new_target_euler_xyz.transpose() << std::endl;
+    // std::cout << "[debug] origin euler xyz = " << target_euler_xyz.transpose()
+    //           << std::endl;
+    // std::cout << "[debug] after euler xyz = "
+    //           << new_target_euler_xyz.transpose() << std::endl;
     target_pose.segment(offset, size) = new_target_euler_xyz.segment(0, 3);
 }
 
