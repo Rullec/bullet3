@@ -12,7 +12,7 @@
                 "conditions": [
                     {
                         "condition_type": "ElapsedTime",
-                        "elapsed_time": 0.5,
+                        "elapsed_time": 0.3,
                         "target_state_id": 1
                     }
                 ]
@@ -32,7 +32,7 @@
                 "conditions": [
                     {
                         "condition_type": "ElapsedTime",
-                        "elapsed_time": 0.5,
+                        "elapsed_time": 0.3,
                         "target_state_id": 3
                     }
                 ]
@@ -52,7 +52,7 @@
     "balance_control": {
         "Cd_forward": 0.6,
         "Cv_forward": 0.4,
-        "Cd_tanget": 2,
-        "Cv_tanget": 0.6
+        "Cd_tanget": 0.6,
+        "Cv_tanget": 0.4
     }
 }

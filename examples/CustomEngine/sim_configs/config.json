@@ -4,7 +4,7 @@
     "add_obj": false,
     "enable_ground": true,
     "ground_height": 0,
-    "real_time_sim": true,
+    "real_time_sim": false,
     "multibody_path": "../DeepMimic/data/1111/characters/skeleton_legs_bigroot.json",
     "enable_controller": true,
     "enable_contact_aware_control": false,

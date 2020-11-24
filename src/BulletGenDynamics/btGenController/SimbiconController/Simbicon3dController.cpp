@@ -223,16 +223,34 @@ void btGenSimbicon3dController::BalanceUpdateTargetPose(
 
 /**
  * \brief           Update Simbicon SPD controller
- *      1. 
- *      2. 
+ *      1. set swing & stance hip id
+ *      2. set world coord
 */
+#include "BulletGenDynamics/btGenController/PDController/JointPDCtrl.h"
 #include "BulletGenDynamics/btGenController/PDController/btGenSimbiconSPDController.h"
+
 void btGenSimbicon3dController::UpdatePDController(const tVectorXd &tar_pose)
 {
-    // do nothing
-    printf("[warn] do nothing in UpdatePDController\n");
+    // set swing hip id
+    printf("[warn] set swing hip %d, stance hip %d, root id %d\n", mSwingHip,
+           mStanceHip, mRootId);
     auto spd_ctrl = dynamic_cast<btGenSimbiconSPDController *>(mPDController);
     spd_ctrl->SetJointId(mSwingHip, mStanceHip, mRootId);
     spd_ctrl->SetPDTargetq(tar_pose);
+
+    // update using world coord
+    auto ctrls = this->mPDController->GetJointPDCtrls();
+    for (auto &x : ctrls)
+    {
+        x->SetUseWorldCoord(false);
+
+        int id = x->GetJoint()->GetId();
+        if (id == this->mRootId || id == mSwingHip)
+        {
+            printf("[log] Set joint %s PD control use world coord\n",
+                   x->GetJoint()->GetName().c_str());
+            x->SetUseWorldCoord(true);
+        }
+    }
     spd_ctrl->Update(0);
 }

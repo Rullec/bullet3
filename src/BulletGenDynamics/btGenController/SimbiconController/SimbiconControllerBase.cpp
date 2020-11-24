@@ -285,19 +285,28 @@ void btGenSimbiconControllerBase::UpdateSwingStance()
     // }
 
     // if the configuration is wrong, use the old configuration
+    // {
+    //     if (left_foot_contact == false && right_foot_contact == false)
+    //     {
+    //         printf(
+    //             "[simbicon] illegal case: left and right foot contact case is "
+    //             "the same, keep the current swing %d stance %d\n",
+    //             mSwingHip, mStanceHip);
+    //         return;
+    //     }
+    // }
     {
         if (left_foot_contact == false && right_foot_contact == false)
         {
+            mStanceHip = -1;
+            mSwingHip = -1;
             printf(
                 "[simbicon] illegal case: left and right foot contact case is "
-                "the same, keep the current swing %d stance %d\n",
-                mSwingHip, mStanceHip);
-
+                "false, set them to -1\n");
             return;
         }
     }
 
-    //
     if (right_foot_contact == true)
         mSwingHip = left_hip_id, mStanceHip = right_hip_id;
     else
