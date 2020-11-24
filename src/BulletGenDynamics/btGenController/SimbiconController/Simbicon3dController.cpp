@@ -231,4 +231,8 @@ void btGenSimbicon3dController::UpdatePDController(const tVectorXd &tar_pose)
 {
     // do nothing
     printf("[warn] do nothing in UpdatePDController\n");
+    auto spd_ctrl = dynamic_cast<btGenSimbiconSPDController *>(mPDController);
+    spd_ctrl->SetJointId(mSwingHip, mStanceHip, mRootId);
+    spd_ctrl->SetPDTargetq(tar_pose);
+    spd_ctrl->Update(0);
 }
