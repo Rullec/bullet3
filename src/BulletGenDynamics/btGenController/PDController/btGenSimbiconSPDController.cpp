@@ -114,7 +114,7 @@ void btGenSimbiconSPDController::CalculateControlForcesSimbiconSPD(
             auto parent_link = model->GetLinkById(joint->GetParentId());
             auto child_link = model->GetLinkById(joint->GetId());
 
-            tMatrixXd J_diff = (parent_link->GetJKw() - child_link->GetJKw());
+            tMatrixXd J_diff = (child_link->GetJKw() - parent_link->GetJKw());
             tMatrix3d JTorque = J_diff.block(0, joint->GetOffset(), 3,
                                              joint->GetNumOfFreedom());
             return JTorque;
@@ -127,6 +127,7 @@ void btGenSimbiconSPDController::CalculateControlForcesSimbiconSPD(
     int num_of_freedom = mModel->GetNumOfFreedom();
     tMatrixXd E = tMatrixXd::Identity(num_of_freedom, num_of_freedom);
     tVectorXd f_vec = tVectorXd::Zero(num_of_freedom);
+    E.block(stance_offset, 0, 3, num_of_freedom).setZero();
     E.block(stance_offset, swing_offset, 3, 3) =
         -J_stance.transpose() * (J_swing.transpose()).inverse();
     f_vec.segment(stance_offset, 3) = -J_stance.transpose() * torso_force;
@@ -152,6 +153,8 @@ void btGenSimbiconSPDController::CalculateControlForcesSimbiconSPD(
     Eigen::DiagonalMatrix<double, Eigen::Dynamic> Kp_mat = Kp.asDiagonal();
     Eigen::DiagonalMatrix<double, Eigen::Dynamic> Kd_mat = Kd.asDiagonal();
 
+    // std::cout << "E = \n" << E << std::endl;
+    // std::cout << "f = " << f_vec.transpose() << std::endl;
     // 3.1 calculate g = E * Kp * (q_tar - q_cur - dt * qdot_cur) + E  * Kd * (qdot_tar - qdot_cur) + f
     tVectorXd g = E * Kp_mat * (mTargetqCur - q_cur - dt * qdot_cur) +
                   E * Kd_mat * (mTargetqdotCur - qdot_cur) + f_vec;
@@ -217,5 +220,29 @@ bool btGenSimbiconSPDController::EnableSimbiconSPD() const
 void btGenSimbiconSPDController::VerifySimbiconSPD(
     double dt, tEigenArr<btGenPDForce> &pd_forces)
 {
-    
+    BTGEN_ASSERT(mTargetUpdated && mJointIdUpdated);
+    // 1. get swing and stance hip pd force
+    tVector3d swing_force = tVector3d::Zero(), stance_force = tVector3d::Zero();
+    BTGEN_ASSERT(pd_forces.size() == mModel->GetNumOfJoint());
+
+    swing_force = pd_forces[mSwingHipId].mForce.segment(0, 3);
+    stance_force = pd_forces[mStanceHipId].mForce.segment(0, 3);
+
+    tVector3d torso_force = mExpJointPDControllers[0]
+                                ->CalcControlForce(mTargetqCur, mTargetqdotCur)
+                                .segment(0, 3);
+    std::cout << "[verify] torso force = " << torso_force.transpose()
+              << std::endl;
+    std::cout << "[verify] -swing-stance force = "
+              << (-swing_force - stance_force).transpose() << std::endl;
+    tVector3d diff = -swing_force - stance_force - torso_force;
+
+    double diff_norm = diff.norm();
+    if (diff_norm > 1e-3)
+    {
+        std::cout << "[error] verify failed, torso diff = " << diff.transpose()
+                  << std::endl;
+        exit(0);
+    }
+    // BTGEN_ASSERT(diff_norm < 1e-3);c
 }
