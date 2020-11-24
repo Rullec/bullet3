@@ -14,8 +14,13 @@ public:
     virtual void Reset() override;
 
 protected:
-    double mCd, mCv; // balance control param
+    double mCd_forward, mCv_forward; // balance control param, forward
+    double mCd_tangent, mCv_tangent; // balance control param, tangent
 
     virtual void BuildBalanceCtrl(const Json::Value &conf);
     virtual void BalanceUpdateTargetPose(tVectorXd &target_pose) const;
+    virtual void
+    BalanceUpdateTargetPoseRevoluteHips(tVectorXd &target_pose) const;
+    virtual void
+    BalanceUpdateTargetPoseSphericalHips(tVectorXd &target_pose) const;
 };

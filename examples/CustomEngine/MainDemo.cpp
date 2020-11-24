@@ -21,9 +21,9 @@
 
 extern int global_frame_id;
 bool gEnablePauseWhenSolveError, gEnableResolveWhenSolveError;
-// static std::string gContactAwareTraj =
-//     "/home/xudong/Projects/DeepMimic/data/id_test/sample_legs/"
-//     "traj_legs_986044642.json";
+
+static float init_camDist, init_yaw, init_pitch, init_camPosX, init_camPosY,
+    init_camPosZ;
 
 static std::string gContactAwareTraj = "invalid_path.traj";
 // std::string gOutputLogPath;
@@ -60,12 +60,8 @@ struct CustomEngineMainDemo : public CommonRigidBodyBase
     virtual void renderScene();
     void resetCamera()
     {
-        float dist = 3;
-        float pitch = -35;
-        float yaw = 52;
-        float targetPos[3] = {0, 0.46, 0};
-        m_guiHelper->resetCamera(dist, yaw, pitch, targetPos[0], targetPos[1],
-                                 targetPos[2]);
+        m_guiHelper->resetCamera(init_camDist, init_yaw, init_pitch,
+                                 init_camPosX, init_camPosY, init_camPosZ);
     }
 
 protected:
@@ -83,7 +79,10 @@ extern bool gPauseSimulation;
 void CustomEngineMainDemo::stepSimulation(float dt)
 {
     if (global_frame_id == 0)
-        m_guiHelper->resetCamera(1.64, -267.6, 13.4, 0.0078, 0.4760, 0.4799);
+    {
+        // set init camera position
+        resetCamera();
+    }
 
     if (physics_param->mRealTimeSim == true)
     {
@@ -120,7 +119,7 @@ void CustomEngineMainDemo::initPhysics()
     if (physics_param->mAddMultibody)
     {
         mGenWorld->AddMultibody(physics_param->mMultibodyPath);
-        
+
         // add controller
         if (physics_param->mEnableController)
         {
@@ -174,10 +173,8 @@ void CustomEngineMainDemo::initPhysics()
     camera set yaw -267.6000
     camera set pos 0.0078 0.4760 0.4799
     */
-    // m_guiHelper->resetCamera(1.64, -267.6, 13.4, 0.0078, 0.4760, 0.4799);
     m_guiHelper->createPhysicsDebugDrawer(m_dynamicsWorld);
     m_guiHelper->autogenerateGraphicsObjects(m_dynamicsWorld);
-    // m_guiHelper->resetCamera(1.64, -267.6, 13.4, 0.0078, 0.4760, 0.4799);
 }
 
 void CustomEngineMainDemo::renderScene() { CommonRigidBodyBase::renderScene(); }
@@ -215,7 +212,17 @@ CustomEngineMainDemo::tParams::tParams(const std::string &path)
                "disabled, illegal\n");
         exit(0);
     }
-    // gOutputLogPath = json_root["output_log_path"].asString();
+
+    tVectorXd camera_params;
+    btJsonUtil::ReadVectorJson(
+        btJsonUtil::ParseAsValue("camera_init_param", json_root),
+        camera_params);
+    init_camDist = camera_params[0];
+    init_yaw = camera_params[1];
+    init_pitch = camera_params[2];
+    init_camPosX = camera_params[3];
+    init_camPosY = camera_params[4];
+    init_camPosZ = camera_params[5];
 }
 
 CommonExampleInterface *CustomMainCreateFunc(CommonExampleOptions &options)

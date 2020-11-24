@@ -146,6 +146,10 @@ tQuaternion btMathUtil::AxisAngleToQuaternion(const tVector &angvel)
                        norm_angvel[2] * sin_theta_2);
 }
 
+tMatrix btMathUtil::AxisAngleToRotmat(const tVector &angvel)
+{
+    return btMathUtil::RotMat(AxisAngleToQuaternion(angvel));
+}
 tVector btMathUtil::AxisAngleToEulerAngle(const tVector &aa,
                                           btRotationOrder order)
 {

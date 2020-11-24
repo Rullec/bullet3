@@ -62,6 +62,7 @@ public:
     static tQuaternion RotMat3dToQuaternion(const tMatrix3d &mat);
     static tQuaternion CoefToQuaternion(const tVector &);
     static tQuaternion AxisAngleToQuaternion(const tVector &angvel);
+    static tMatrix AxisAngleToRotmat(const tVector &angvel);
     static tVector AxisAngleToEulerAngle(const tVector &aa,
                                          btRotationOrder order);
     static tQuaternion EulerAnglesToQuaternion(const tVector &vec,

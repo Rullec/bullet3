@@ -2947,3 +2947,19 @@ void cRobotModel::TestJointmWq(int id)
 
 tVector3d cRobotModel::GetCoMPosition() const { return com; }
 tVector3d cRobotModel::GetComVelocity() const { return com_vel; }
+
+/**
+ * \brief               Get the heading of this robot
+ * the heading is the rotation angle of root link along with Y axis. we assume the Y axis is the upright
+ * \return angle double in [-pi, pi]
+*/
+double cRobotModel::GetHeading() const
+{
+    tMatrix3d root_ori = GetLinkById(0)->GetWorldOrientation();
+    tVector3d unit_vec = tVector3d(1, 0, 0);
+    unit_vec = root_ori * unit_vec;
+    unit_vec[1] = 0;
+    unit_vec.normalize();
+
+    return std::atan2(-unit_vec[2], unit_vec[0]);
+}
