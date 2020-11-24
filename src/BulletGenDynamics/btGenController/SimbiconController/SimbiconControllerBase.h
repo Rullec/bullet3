@@ -28,6 +28,7 @@ protected:
     cRobotModelDynamics *mRefTrajModel;
     int mRootId, mSwingHip,
         mStanceHip; // the link/joint id of root, swing hip and stance hip
+    std::string mStanceName, mSwingName;
     bool
         mIgnoreBalanceControlInState02; // ignore balance control in state 0 and state 2 (stable state)
     void BuildFSM(const Json::Value &conf);

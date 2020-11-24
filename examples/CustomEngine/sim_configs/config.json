@@ -36,12 +36,12 @@
         "multibody_path_sphere": "../DeepMimic/data/0424/characters/skeleton_sphere.json"
     },
     "camera_init_param": [
-        1.20000,
-        114,
         3,
-        -2.4,
-        0.75,
-        2.65
+        52,
+        -35,
+        0,
+        0.46,
+        0
     ],
     "camera_init_param_ver": [
         1,

@@ -148,6 +148,8 @@ void btGenSimbiconControllerBase::Update(double dt)
             //           << std::endl;
             tVector stance_torque = -torso_torque - swing_torque;
             pd_forces[mStanceHip].mForce = stance_torque;
+            std::cout << "[log] stance hip " << mStanceName
+                      << " torque is covered by torso and swing torque\n";
         }
 
         // 3.4 apply the control force (except root)
@@ -300,6 +302,8 @@ void btGenSimbiconControllerBase::UpdateSwingStance()
         {
             mStanceHip = -1;
             mSwingHip = -1;
+            mStanceName = "";
+            mSwingName = "";
             printf(
                 "[simbicon] illegal case: left and right foot contact case is "
                 "false, set them to -1\n");
@@ -311,6 +315,8 @@ void btGenSimbiconControllerBase::UpdateSwingStance()
         mSwingHip = left_hip_id, mStanceHip = right_hip_id;
     else
         mStanceHip = left_hip_id, mSwingHip = right_hip_id;
+    mSwingName = mModel->GetLinkById(mSwingHip)->GetName();
+    mStanceName = mModel->GetLinkById(mStanceHip)->GetName();
 }
 
 /**
@@ -364,9 +370,9 @@ void btGenSimbiconControllerBase::UpdatePDController(const tVectorXd &tar_pose)
     std::cout << "[log] final PD target = " << tar_pose.transpose()
               << std::endl;
 
-    std::cout << "[log] model q = " << mModel->Getq().transpose() << std::endl;
-    std::cout << "[log] model qdot = " << mModel->Getqdot().transpose()
-              << std::endl;
+    // std::cout << "[log] model q = " << mModel->Getq().transpose() << std::endl;
+    // std::cout << "[log] model qdot = " << mModel->Getqdot().transpose()
+    //           << std::endl;
 
     mPDController->SetPDTargetq(tar_pose);
 }
