@@ -35,7 +35,15 @@
         "multibody_path_box": "../DeepMimic/data/0424/characters/skeleton_box.json",
         "multibody_path_sphere": "../DeepMimic/data/0424/characters/skeleton_sphere.json"
     },
-    "camera_init_param_sid": [
+    "camera_init_param": [
+        1.20000,
+        114,
+        3,
+        -2.4,
+        0.75,
+        2.65
+    ],
+    "camera_init_param_ver": [
         1,
         90,
         0,
@@ -43,7 +51,7 @@
         0.0,
         0.5
     ],
-    "camera_init_param": [
+    "camera_init_param_sid": [
         1,
         180,
         0,
