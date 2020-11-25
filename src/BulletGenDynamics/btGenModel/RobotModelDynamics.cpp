@@ -210,7 +210,16 @@ void cRobotModelDynamics::InitSimVars(btDynamicsWorld *world, bool zero_pose,
     {
         mqdot.setRandom();
     }
-    mq[1] = 1;
+    switch (GetRoot()->GetJointType())
+    {
+    case JointType::BIPEDAL_NONE_JOINT:
+        mq[0] = 1.0;
+        break;
+    case JointType::NONE_JOINT:
+        mq[1] = 1.0;
+    default:
+        break;
+    }
 
     cRobotModelDynamics::SetqAndqdot(mq, mqdot);
 

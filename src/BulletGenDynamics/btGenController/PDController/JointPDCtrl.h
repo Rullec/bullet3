@@ -47,4 +47,8 @@ protected:
                            const tVectorXd &local_target_vel) const;
     void CalcLocalControlTarget(tVectorXd &mTargetThetaWorldOrLocal,
                                 const tQuaternion &target_global_quad) const;
+    void DebugVerifyCtrlForceKp(const tVectorXd &local_target_theta,
+                              const tVector &torque);
+    void DebugVerifyCtrlForceKd(const tVectorXd &local_target_theta_dot,
+                              const tVector &torque);
 };

@@ -428,8 +428,9 @@ void OutputDynamicsFTestJson(cRobotModelDynamics *, const std::string &path);
 void btGeneralizeWorld::StepSimulation(double dt)
 {
     // btTimeUtil::Begin("stepsim");
-    // std::cout << "------------------begin step simulation for frame " <<
-    // mFrameId << " time " << mTime << "------------------\n"; std::cout <<
+    // std::cout << "------------------begin step simulation for frame "
+    //           << mFrameId << " time " << mTime << "------------------\n";
+    // std::cout <<
     // "[bt] col obj num = " << mInternalWorld->getNumCollisionObjects() <<
     // std::endl; std::cout << "[bt update] q0 = " <<
     // mMultibody->Getq().transpose() << std::endl; btTimeUtil::Begin("step");

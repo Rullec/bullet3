@@ -226,9 +226,10 @@ void btGenPDController::ParseConfig(const std::string &string)
     // init_target_q << 0, 0.75, 0, 0, 0, 0, -1.09805, 0, 0, 1.6, 0, 0, 0, 0, 0, 0,
     //     0, 0, 0, 0;
     printf("[error] the init target is set to random now!\n");
-    init_target_q.setZero();
-    init_target_qdot.setZero();
-    std::cout << "init q = " << init_target_q.transpose() << std::endl;
+    init_target_q.setRandom();
+    init_target_qdot.setRandom();
+    std::cout << "[pd] init q target = " << init_target_q.transpose()
+              << std::endl;
     SetPDTargetq(init_target_q);
     SetPDTargetqdot(init_target_qdot);
 }
@@ -357,6 +358,11 @@ void btGenPDController::CalculateControlForcesExp(
         pd_force.mJoint = pd_ctrl->GetJoint();
         pd_force_array.push_back(pd_force);
     }
+    std::cout << "[pd] exp diff = "
+              << (mModel->Getq() - mTargetqCur)
+                     .segment(6, mModel->GetNumOfFreedom() - 6)
+                     .norm()
+              << std::endl;
 }
 
 /**
