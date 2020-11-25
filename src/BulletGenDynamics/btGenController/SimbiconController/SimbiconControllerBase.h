@@ -1,9 +1,8 @@
 #pragma once
 #include "BulletGenDynamics/btGenController/ControllerBase.h"
 #include "BulletGenDynamics/btGenUtil/MathUtil.h"
-
+#include "BulletGenDynamics/btGenController/PDController/btGenPDController.h"
 class btGenFSM;
-class btGenPDController;
 namespace Json
 {
 class Value;
@@ -31,12 +30,16 @@ protected:
     std::string mStanceName, mSwingName;
     bool
         mIgnoreBalanceControlInState02; // ignore balance control in state 0 and state 2 (stable state)
+    bool
+        mEnableStanceControlRatio; // calculate the stance control force by stance/swing foot vertical contact force ratio
     void BuildFSM(const Json::Value &conf);
     void BuildPDCtrl(const std::string &pd_path);
     virtual void BuildBalanceCtrl(const Json::Value &conf) = 0;
     virtual void BalanceUpdateTargetPose(tVectorXd &target_pose) const = 0;
     void UpdateSwingStance();
     virtual void UpdatePDController(const tVectorXd &tar_pose);
+    void CalculateControlForce(double dt, tEigenArr<btGenPDForce> &forces);
+    double ComputeStanceSwingRatio() const;
     int GetEndeffector(int id) const;
     bool IsFallDown() const;
     void UpdateRefModel(const tVectorXd &tar_pose);

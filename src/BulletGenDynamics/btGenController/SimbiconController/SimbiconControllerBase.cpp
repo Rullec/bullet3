@@ -51,6 +51,9 @@ void btGenSimbiconControllerBase::Init(cRobotModelDynamics *model,
     BTGEN_ASSERT(char_file == corresponding_char_path);
     mIgnoreBalanceControlInState02 =
         btJsonUtil::ParseAsBool("ignore_balance_control_in_0_2_state", root);
+    mEnableStanceControlRatio =
+        btJsonUtil::ParseAsBool("enable_stance_control_ratio", root);
+
     // 2. build FSM
     BuildFSM(fsm_config);
     // 3. build & correct PD controller
@@ -117,54 +120,18 @@ void btGenSimbiconControllerBase::Update(double dt)
     BalanceUpdateTargetPose(target_pose);
 
     // 3. set the target into the PD controller
+    // find the swing hip and root, set the use world coord to true
+    UpdatePDController(target_pose);
+
+    // 4. calculate control force
+    tEigenArr<btGenPDForce> pd_forces(0);
+    CalculateControlForce(dt, pd_forces);
+    for (auto &x : pd_forces)
     {
-        // 3.1 find the swing hip and root, set the use world coord to true
-        UpdatePDController(target_pose);
-        // 3.2 calculate the control force (including root)
-        tEigenArr<btGenPDForce> pd_forces(0);
-        mPDController->CalculateControlForces(dt, pd_forces);
-        BTGEN_ASSERT(pd_forces.size() == mModel->GetNumOfJoint());
-
-        /*
-            3.3 calculate the control force for the stance hip by inverse method
-
-            \tau_A = stance_hip_torque
-            \tau_B = swing_hip_torque
-            \tau_torso = torso_torque
-            \tau_A = -\tau_torso - \tau_B
-        */
-        if (mSwingHip == -1 || mStanceHip == -1)
+        int joint_id = x.mJoint->GetId();
+        if (joint_id != 0)
         {
-            printf("[log] swing hip or stance hip is -1, disable the inverse "
-                   "solution of hip torque\n");
-        }
-        else
-        {
-            tVector torso_torque = pd_forces[this->mRootId].mForce;
-            // std::cout << "torso torque = " << torso_torque.transpose()
-            //           << std::endl;
-
-            tVector swing_torque = pd_forces[this->mSwingHip].mForce;
-            // std::cout << "swing torque = " << swing_torque.transpose()
-            //           << std::endl;
-            tVector stance_torque = -torso_torque - swing_torque;
-            pd_forces[mStanceHip].mForce = stance_torque;
-            std::cout << "[log] stance hip " << mStanceName
-                      << " torque is covered by torso and swing torque\n";
-        }
-
-        // 3.4 apply the control force (except root)
-        for (auto &x : pd_forces)
-        {
-            int joint_id = x.mJoint->GetId();
-            if (joint_id == 0)
-                continue;
-            else
-            {
-                mModel->ApplyJointTorque(joint_id, x.mForce);
-                // std::cout << "[simbicon] joint " << joint_id
-                //           << " torque = " << x.mForce.transpose() << std::endl;
-            }
+            mModel->ApplyJointTorque(joint_id, x.mForce);
         }
     }
 
@@ -450,4 +417,96 @@ int btGenSimbiconControllerBase::GetJointByPartialName(const std::string &name)
     }
     BTGEN_ASSERT(joint_id != -1);
     return joint_id;
+}
+
+/**
+ * \brief           Compute the stance and swing control vertical force ratio
+ * \return double [0, 1], stance foot vertical force / total_vertical_force
+*/
+double btGenSimbiconControllerBase::ComputeStanceSwingRatio() const
+{
+    // 1. get stance foot and swing foot
+    int stance_foot_id = GetEndeffector(mStanceHip),
+        swing_foot_id = GetEndeffector(mSwingHip);
+
+    auto manager = mWorld->GetContactManager();
+    double stance_force = manager->GetVerticalTotalForceWithGround(
+               mModel->GetLinkCollider(stance_foot_id)),
+           swing_force = manager->GetVerticalTotalForceWithGround(
+               mModel->GetLinkCollider(swing_foot_id));
+    double total_force = stance_force + swing_force + 1e-6;
+    double ratio = stance_force / total_force;
+    printf("[log] Simbicon stance ratio: stance force %.3f, swing force %.3f, "
+           "total force %.3f, ratio %.3f\n",
+           stance_force, swing_force, total_force, ratio);
+
+    return ratio;
+}
+
+/**
+ * \brief               calculate PD control force
+ * 1. caluclate the PD force
+ * 2. change the stance hip PD force by revised policy (simple rule + ratio rule)
+ * 3. apply these control forces
+ * 
+ * For more details, please check the note and raw simbicon implemention
+*/
+void btGenSimbiconControllerBase::CalculateControlForce(
+    double dt, tEigenArr<btGenPDForce> &pd_forces)
+{
+    mPDController->CalculateControlForces(dt, pd_forces);
+    BTGEN_ASSERT(pd_forces.size() == mModel->GetNumOfJoint());
+
+    if (mSwingHip == -1 || mStanceHip == -1)
+    {
+        printf("[log] swing hip or stance hip is -1, disable the inverse "
+               "solution of hip torque\n");
+    }
+    else
+    {
+        tVector torso_torque = pd_forces[this->mRootId].mForce,
+                swing_torque = pd_forces[this->mSwingHip].mForce,
+                stance_torque = pd_forces[this->mStanceHip].mForce;
+
+        tVector new_stance_torque = tVector::Zero();
+        if (true == mEnableStanceControlRatio)
+        {
+            double stance_swing_foot_ratio = ComputeStanceSwingRatio();
+            std::cout << "[log] stance ratio = " << stance_swing_foot_ratio
+                      << " it doesn't work at this moment\n";
+
+            std::cout << "[debug] origin swing torque = "
+                      << swing_torque.transpose()
+                      << " stance torque = " << stance_torque.transpose()
+                      << std::endl;
+            // \tau_makeup = \tau_torso - \tau_swing - \tau_stance
+            tVector torso_makeup_torque =
+                -torso_torque - swing_torque - stance_torque;
+
+            // \tau_swing += (1-k) * \tau_makeup
+            swing_torque += (1 - stance_swing_foot_ratio) * torso_makeup_torque;
+            // \tau_stance += k * \tau_makeup
+            stance_torque += stance_swing_foot_ratio * torso_makeup_torque;
+            pd_forces[mSwingHip].mForce = swing_torque;
+            pd_forces[mStanceHip].mForce = stance_torque;
+            std::cout << "[debug] new swing torque = "
+                      << swing_torque.transpose()
+                      << " stance torque = " << stance_torque.transpose()
+                      << std::endl;
+        }
+        else
+        {
+            /*
+                    simple rule:
+                    \tau_A = stance_hip_torque
+                    \tau_B = swing_hip_torque
+                    \tau_torso = torso_torque
+                    \tau_A = -\tau_torso - \tau_B
+            */
+            new_stance_torque = -torso_torque - swing_torque;
+            std::cout << "[log] stance hip torque simple covered = "
+                      << new_stance_torque.transpose() << std::endl;
+            pd_forces[mStanceHip].mForce = new_stance_torque;
+        }
+    }
 }
