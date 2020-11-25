@@ -6,6 +6,7 @@
 #include "BulletGenDynamics/btGenModel/Joint.h"
 #include "BulletGenDynamics/btGenModel/Link.h"
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
+#include "BulletGenDynamics/btGenSolver/ContactManager.h"
 #include "BulletGenDynamics/btGenUtil/JsonUtil.h"
 #include "BulletGenDynamics/btGenWorld.h"
 
@@ -257,11 +258,12 @@ void btGenSimbiconControllerBase::UpdateSwingStance()
         right_foot_id = GetEndeffector(right_hip_id);
 
     // then check whether this link is contacted with the ground
+    auto manager = mWorld->GetContactManager();
     bool left_foot_contact =
-        mWorld->GetTwoObjsNumOfContact(
+        manager->GetTwoObjsNumOfContact(
             mWorld->GetGround(), mModel->GetLinkCollider(left_foot_id)) > 0;
     bool right_foot_contact =
-        mWorld->GetTwoObjsNumOfContact(
+        manager->GetTwoObjsNumOfContact(
             mWorld->GetGround(), mModel->GetLinkCollider(right_foot_id)) > 0;
 
     printf("[log] left foot contact %s, right foot contact %s\n",
@@ -382,8 +384,8 @@ void btGenSimbiconControllerBase::UpdatePDController(const tVectorXd &tar_pose)
 */
 bool btGenSimbiconControllerBase::IsFallDown() const
 {
-    int num = mWorld->GetTwoObjsNumOfContact(mWorld->GetGround(),
-                                             mModel->GetLinkCollider(mRootId));
+    int num = mWorld->GetContactManager()->GetTwoObjsNumOfContact(
+        mWorld->GetGround(), mModel->GetLinkCollider(mRootId));
     return num > 0;
 }
 

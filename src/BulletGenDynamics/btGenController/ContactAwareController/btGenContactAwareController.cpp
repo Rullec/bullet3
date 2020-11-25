@@ -778,8 +778,9 @@ void btGenContactAwareController::RecordTraj()
                 tVector local_pos = link->GetGlobalTransform().inverse() *
                                     cur_contact->mWorldPos;
                 rec_contacts.push_back(new btGenMBContactForce(
-                    link_collider, cur_contact->mForce, cur_contact->mWorldPos,
-                    local_pos, cur_contact->mIsSelfCollision));
+                    link_collider, cur_contact->mPassiveObj,
+                    cur_contact->mForce, cur_contact->mWorldPos, local_pos,
+                    cur_contact->mIsSelfCollision));
             }
         }
     }

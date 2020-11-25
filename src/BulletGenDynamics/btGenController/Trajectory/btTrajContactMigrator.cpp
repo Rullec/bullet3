@@ -246,7 +246,7 @@ void btTrajContactMigrator::MigrateTrajContact(
             std::cout << "[log] link " << link_id << " add contact force "
                       << force_array[i].transpose() << std::endl;
             btGenMBContactForce *new_contact_force = new btGenMBContactForce(
-                collider, btMathUtil::Expand(force_array[i], 0),
+                collider, nullptr, btMathUtil::Expand(force_array[i], 0),
                 btMathUtil::Expand(global_pos_array[i], 1),
                 btMathUtil::Expand(local_pos_array[i], 1), false);
             traj_contact.push_back(new_contact_force);

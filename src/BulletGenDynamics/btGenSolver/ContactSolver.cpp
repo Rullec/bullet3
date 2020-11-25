@@ -33,10 +33,12 @@ btGenCollisionObject *UpcastColObj(const btCollisionObject *col)
 }
 
 btGenContactForce::btGenContactForce(btGenCollisionObject *obj_,
+                                     btGenCollisionObject *passive_obj,
                                      const tVector &f_, const tVector &p_,
                                      bool is_self_collision)
 {
     mObj = obj_;
+    mPassiveObj = passive_obj;
     mForce = f_;
     mWorldPos = p_;
     if (std::fabs(mWorldPos[3] - 1) > 1e-10)
@@ -50,11 +52,12 @@ btGenContactForce::btGenContactForce(btGenCollisionObject *obj_,
 }
 
 btGenMBContactForce::btGenMBContactForce(btGenRobotCollider *collider,
+                                         btGenCollisionObject *passive_obj,
                                          const tVector &f,
                                          const tVector &world_pos,
                                          const tVector &local_pos,
                                          bool is_self_collision)
-    : btGenContactForce(collider, f, world_pos, is_self_collision)
+    : btGenContactForce(collider, passive_obj, f, world_pos, is_self_collision)
 {
     mLinkId = collider->mLinkId;
     mLocalPos = btMathUtil::Expand(local_pos, 1);
@@ -234,14 +237,16 @@ void btGenContactSolver::ConstraintFinished()
         // std::endl; std::cout << "[debug] contact pos = " <<
         // data->mContactPtOnA.transpose() << std::endl;
         ptr = new btGenContactForce(
-            data->mBodyA, btMathUtil::Expand(contact_x.segment(i * 3, 3), 0),
+            data->mBodyA, data->mBodyB,
+            btMathUtil::Expand(contact_x.segment(i * 3, 3), 0),
             data->mContactPtOnA, data->mIsSelfCollision);
         // std::cout << "[debug] contact point " << i << " is self collision = "
         // << data->mIsSelfCollision << std::endl; std::cout << "[bt] user ptr =
         // " << ptr->mObj->getUserPointer() << std::endl;
         contact_force_array.push_back(ptr);
         ptr = new btGenContactForce(
-            data->mBodyB, -btMathUtil::Expand(contact_x.segment(i * 3, 3), 0),
+            data->mBodyB, data->mBodyA,
+            -btMathUtil::Expand(contact_x.segment(i * 3, 3), 0),
             data->mContactPtOnB, data->mIsSelfCollision);
         // std::cout << "[bt] user ptr = " << ptr->mObj->getUserPointer() <<
         // std::endl;

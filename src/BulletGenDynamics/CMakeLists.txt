@@ -29,6 +29,7 @@ SET(
 	BulletGenSolver_SRCS
 	./btGenSolver/ConstraintData.cpp
 	./btGenSolver/ContactSolver.cpp
+	./btGenSolver/ContactManager.cpp
 	./btGenSolver/ContactSolverTest.cpp
 	./btGenSolver/LCPSolverBase.cpp
 	./btGenSolver/SequentialImpulsePlugin.cpp

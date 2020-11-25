@@ -1,5 +1,6 @@
 #include "FSMUtil.h"
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
+#include "BulletGenDynamics/btGenSolver/ContactManager.h"
 #include "BulletGenDynamics/btGenUtil/JsonUtil.h"
 #include "BulletGenDynamics/btGenUtil/MathUtil.h"
 #include "BulletGenDynamics/btGenWorld.h"
@@ -55,33 +56,49 @@ tContactCondition::tContactCondition(int origin_state_id, int target_state_id,
                            eTransitionCondition::LinkContact),
       mWorld(world), mModel(model), mLinkId(link_id)
 {
+    mMinContactForceThreshold = 20;
+    mMinElaspedTimeThreshold = 0.05;
+    mCurTime = 0;
 }
 
-void tContactCondition::Update(double dt)
-{
-    // do nothing... for contact condition
-}
+void tContactCondition::Update(double dt) { mCurTime += dt; }
 
 /**
  * \brief           Judge wheter the specified link is contact with the ground, if so, we need to do transition
+ * 1. if the elasped time is too short, return -1
+ * 2. if the vertical contact force is too small (or hasn't contact), return -1
+ * 3. otherwise, convert to another state, return the target state id
 */
 int tContactCondition::GetTransitionTargetId() const
 {
+    // 1. elasped time threshold
+    if (mCurTime < this->mMinElaspedTimeThreshold)
+        return -1;
+
+    // 2. get the contact force
+
     auto link_collider = mModel->GetLinkCollider(mLinkId);
     auto ground = mWorld->GetGround();
-    int num = mWorld->GetTwoObjsNumOfContact(ground, link_collider);
+    auto manager = mWorld->GetContactManager();
+    int num = manager->GetTwoObjsNumOfContact(ground, link_collider);
     if (num > 0)
     {
-        return this->mTargetStateId;
+        double force = manager->GetVerticalTotalForceWithGround(link_collider);
+        if (force > this->mMinContactForceThreshold)
+            return this->mTargetStateId;
+        else
+        {
+            printf("[error] state: vertical contact force %.4f is too small, "
+                   "doesn't change!\n",
+                   force);
+            return -1;
+        }
     }
     else
         return -1;
 }
 
-void tContactCondition::Reset()
-{
-    // do nothing...
-}
+void tContactCondition::Reset() { mCurTime = 0; }
 
 // ====================================== contact condition end ========================
 
