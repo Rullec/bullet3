@@ -358,11 +358,6 @@ void btGenPDController::CalculateControlForcesExp(
         pd_force.mJoint = pd_ctrl->GetJoint();
         pd_force_array.push_back(pd_force);
     }
-    std::cout << "[pd] exp diff = "
-              << (mModel->Getq() - mTargetqCur)
-                     .segment(6, mModel->GetNumOfFreedom() - 6)
-                     .norm()
-              << std::endl;
 }
 
 /**

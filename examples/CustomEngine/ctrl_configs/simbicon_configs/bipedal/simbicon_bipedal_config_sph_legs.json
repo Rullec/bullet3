@@ -14,7 +14,7 @@
                 "conditions": [
                     {
                         "condition_type": "ElapsedTime",
-                        "elapsed_time": 0.6,
+                        "elapsed_time": 0.5,
                         "target_state_id": 1
                     }
                 ]
@@ -34,7 +34,7 @@
                 "conditions": [
                     {
                         "condition_type": "ElapsedTime",
-                        "elapsed_time": 0.6,
+                        "elapsed_time": 0.5,
                         "target_state_id": 3
                     }
                 ]
@@ -54,7 +54,7 @@
     "balance_control": {
         "Cd_forward": 0.5,
         "Cv_forward": 0.2,
-        "Cd_tangent": 0.1,
-        "Cv_tangent": 0.1
+        "Cd_tangent": 0.0,
+        "Cv_tangent": 0.0
     }
 }
