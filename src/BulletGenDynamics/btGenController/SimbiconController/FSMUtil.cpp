@@ -4,7 +4,7 @@
 #include "BulletGenDynamics/btGenUtil/JsonUtil.h"
 #include "BulletGenDynamics/btGenUtil/MathUtil.h"
 #include "BulletGenDynamics/btGenWorld.h"
-
+#include "FSM.h"
 /**
  * \brief               constructor of transition condition
  * \param origin_id     original state id
@@ -103,10 +103,15 @@ void tContactCondition::Reset() { mCurTime = 0; }
 // ====================================== contact condition end ========================
 
 // ====================================== state begin ========================
-tState::tState(int state_id) : mStateId(state_id)
-{
 
+tState::tState(int state_id, int default_stance, std::string stance_update_mode)
+    : mStateId(state_id), mDefaultStance(default_stance),
+      mStanceUpdateMode(stance_update_mode)
+{
     mTransitionConditions.clear();
+    BTGEN_ASSERT(
+        (stance_update_mode == "default" || stance_update_mode == "reverse") &&
+        "unrecognized update mode");
 }
 
 tState::~tState()
@@ -160,6 +165,35 @@ int tState::GetTargetId() const
     return target_id;
 }
 
+/**
+ * \brief           When the transition of states occured, this function will determine the new stance configuration
+ * \param old_stance    old stance situation
+*/
+int tState::CalcNewStance(int old_stance) const
+{
+    // now simply opposite all stance
+    if (mStanceUpdateMode == "default")
+    {
+        return mDefaultStance;
+    }
+    else if (mStanceUpdateMode == "reverse")
+    {
+        if (old_stance == BTGEN_RIGHT_STANCE)
+            return BTGEN_LEFT_STANCE;
+        else if (old_stance == BTGEN_LEFT_STANCE)
+            return BTGEN_RIGHT_STANCE;
+        else
+        {
+            BTGEN_ASSERT(false);
+        }
+    }
+    else
+    {
+        // unknown mode
+        BTGEN_ASSERT(false);
+    }
+    return -1;
+}
 /**
  * \brief       Show the state info (id and conds)
 */

@@ -6,17 +6,14 @@ enum ebtGenControllerType
     PDController,
     SimbiconSPDController,
     ContactAwareController,
-    SimbiconBipedController,
-    Simbicon3dController,
+    SimbiconController,
     BTGEN_NUM_CONTROLLER_TYPE
 };
 
 static const std::string
     gbtGenControllerTypeStr[ebtGenControllerType::BTGEN_NUM_CONTROLLER_TYPE] = {
-        "PDController",           "SimbiconSPDController",
-        "ContactAwareController", "SimbiconBipedalController",
-        "Simbicon3dController",
-};
+        "PDController", "SimbiconSPDController", "ContactAwareController",
+        "SimbiconController"};
 class btGeneralizeWorld;
 class cRobotModelDynamics;
 class btGenControllerBase

@@ -11,14 +11,18 @@
 #include "BulletGenDynamics/btGenWorld.h"
 
 btGenSimbiconControllerBase::btGenSimbiconControllerBase(
-    btGeneralizeWorld *world, ebtGenControllerType type)
-    : btGenControllerBase(type, world)
+    btGeneralizeWorld *world)
+    : btGenControllerBase(ebtGenControllerType::SimbiconController, world)
 {
-    mRootId = 0;
-    this->mSwingHip = -1;
-    mStanceHip = -1;
     mFSM = nullptr;
     mPDController = nullptr;
+    mRefTrajModel = nullptr;
+    mStance = -1;
+    mRootId = 0;
+    mCd_forward = 0;
+    mCv_forward = 0;
+    mCd_tangent = 0;
+    mCv_tangent = 0;
 }
 
 btGenSimbiconControllerBase::~btGenSimbiconControllerBase()
@@ -54,6 +58,8 @@ void btGenSimbiconControllerBase::Init(cRobotModelDynamics *model,
     mEnableStanceControlRatio =
         btJsonUtil::ParseAsBool("enable_stance_control_ratio", root);
 
+    BuildJointInfo();
+
     // 2. build FSM
     BuildFSM(fsm_config);
     // 3. build & correct PD controller
@@ -61,8 +67,10 @@ void btGenSimbiconControllerBase::Init(cRobotModelDynamics *model,
     // 4. build the balance policy
     BuildBalanceCtrl(balance_ctrl);
 
-    // 5. init pose
-    mFSM->InitPose();
+    // 5. initialzethe FSM
+    // set the model pose + set the default state + set the default stance
+    mFSM->Init(mStance);
+    UpdateStance();
 
     // 6. create ref char
     mRefTrajModel = new cRobotModelDynamics();
@@ -72,18 +80,17 @@ void btGenSimbiconControllerBase::Init(cRobotModelDynamics *model,
     mRefTrajModel->InitSimVars(mWorld->GetInternalWorld(), true, true, false);
 
     mRefTrajModel->SetqAndqdot(mModel->Getq(), mModel->Getqdot());
+}
 
-    // {
-    //     for (int i = 0; i < mModel->GetNumOfLinks(); i++)
-    //     {
-    //         auto link = dynamic_cast<Link *>(mModel->GetLinkById(i));
-    //         BTGEN_ASSERT(link != nullptr);
-    //         std::cout << "link " << i << " inertia = "
-    //                   << link->GetInertiaTensorBody().diagonal().transpose()
-    //                   << std::endl;
-    //     }
-    //     exit(0);
-    // }
+/**
+ * \brief           Simbicon build blance control policy (2 coeffs)
+*/
+void btGenSimbiconControllerBase ::BuildBalanceCtrl(const Json::Value &conf)
+{
+    mCd_forward = btJsonUtil::ParseAsDouble("Cd_forward", conf);
+    mCv_forward = btJsonUtil::ParseAsDouble("Cv_forward", conf);
+    mCd_tangent = btJsonUtil::ParseAsDouble("Cd_tangent", conf);
+    mCv_tangent = btJsonUtil::ParseAsDouble("Cv_tangent", conf);
 }
 
 /**
@@ -107,17 +114,13 @@ void btGenSimbiconControllerBase::Update(double dt)
         printf("[log] character fall down, simbicon finished\n");
         exit(0);
     }
-    // 0. make the root stay in YOZ plane and has no X translation
-    // RestrictRootPose();
-    // 0. update hips
-    UpdateSwingStance();
-
     // 1. update FSM, get the target pose
     tVectorXd target_pose;
-    mFSM->Update(dt, target_pose);
+    mFSM->Update(dt, target_pose, mStance);
+    UpdateStance();
 
     // 2. change the target pose by balance control policy
-    BalanceUpdateTargetPose(target_pose);
+    CalcTargetPose(target_pose);
 
     // 3. set the target into the PD controller
     // find the swing hip and root, set the use world coord to true
@@ -125,7 +128,7 @@ void btGenSimbiconControllerBase::Update(double dt)
 
     // 4. calculate control force
     tEigenArr<btGenPDForce> pd_forces(0);
-    CalculateControlForce(dt, pd_forces);
+    CalcControlForce(dt, pd_forces);
     for (auto &x : pd_forces)
     {
         int joint_id = x.mJoint->GetId();
@@ -173,90 +176,29 @@ void btGenSimbiconControllerBase::BuildPDCtrl(const std::string &pd_path)
 }
 /**
  * \brief           Update the swing and stance hip's id (also the root id)
- * 1. find two hips
- * 2. find their end effector (two feet)
- * 3. check contact for these two feet
- * 4. confirm the swing hip and stance hip (exit in the illegal case)
 */
-#include "BulletGenDynamics/btGenController/SimbiconController/FSMUtil.h"
-void btGenSimbiconControllerBase::UpdateSwingStance()
+void btGenSimbiconControllerBase::UpdateStance()
 {
-    std::string left_hip_name = "LeftLeg", right_hip_name = "RightLeg";
-    int left_hip_id = -1, right_hip_id = -1;
-    for (int i = 0; i < mModel->GetNumOfLinks(); i++)
+    if (mStance == BTGEN_LEFT_STANCE)
     {
-        auto joint = mModel->GetJointById(i);
-        if (joint->GetName().find(left_hip_name) != -1)
-        {
-            if (left_hip_id != -1)
-            {
-                printf("[error] left hip id get failed\n");
-                exit(0);
-            }
-            else
-            {
-                left_hip_id = i;
-            }
-        }
-        if (joint->GetName().find(right_hip_name) != -1)
-        {
-            if (right_hip_id != -1)
-            {
-                printf("[error] right hip id get failed\n");
-                exit(0);
-            }
-            else
-            {
-                right_hip_id = i;
-            }
-        }
+        printf("[simbicon] update left stance\n");
+        mStanceHipInfo = mLeftHipInfo;
+        mStanceFootInfo = mLeftFootInfo;
+        mSwingHipInfo = mRightHipInfo;
+        mSwingFootInfo = mRightFootInfo;
     }
-
-    if (left_hip_id == -1 || right_hip_id == -1)
+    else if (mStance == BTGEN_RIGHT_STANCE)
     {
-        printf("[error] failed to get two hips: %d %d\n", left_hip_id,
-               right_hip_id);
-        exit(0);
+        printf("[simbicon] update right stance\n");
+        mStanceHipInfo = mRightHipInfo;
+        mStanceFootInfo = mRightFootInfo;
+        mSwingHipInfo = mLeftHipInfo;
+        mSwingFootInfo = mLeftFootInfo;
     }
-
-    // judge one chain: left hip and right hip should have only one chain
-    // get the end effector of this chain
-    int left_foot_id = GetEndeffector(left_hip_id),
-        right_foot_id = GetEndeffector(right_hip_id);
-
-    // then check whether this link is contacted with the ground
-    auto manager = mWorld->GetContactManager();
-    bool left_foot_contact =
-        manager->GetTwoObjsNumOfContact(
-            mWorld->GetGround(), mModel->GetLinkCollider(left_foot_id)) > 0;
-    bool right_foot_contact =
-        manager->GetTwoObjsNumOfContact(
-            mWorld->GetGround(), mModel->GetLinkCollider(right_foot_id)) > 0;
-
-    printf("[log] left foot contact %s, right foot contact %s\n",
-           left_foot_contact ? "true" : "false",
-           right_foot_contact ? "true" : "false");
-    {
-        if (left_foot_contact == false && right_foot_contact == false)
-        {
-            mStanceHip = -1;
-            mSwingHip = -1;
-            mStanceName = "";
-            mSwingName = "";
-            printf("[simbicon] no foot contact, swing & stance leg "
-                   "undertermined\n");
-            return;
-        }
-    }
-
-    if (right_foot_contact == true)
-        mSwingHip = left_hip_id, mStanceHip = right_hip_id;
     else
-        mStanceHip = left_hip_id, mSwingHip = right_hip_id;
-    mSwingName = mModel->GetLinkById(mSwingHip)->GetName();
-    mStanceName = mModel->GetLinkById(mStanceHip)->GetName();
-    printf("[simbicon] stance leg %s, swing leg %s\n", mStanceName.c_str(),
-           mSwingName.c_str());
+    {
+        BTGEN_ASSERT(false && "invalid stance value");
+    }
 }
 
 /**
@@ -299,7 +241,7 @@ void btGenSimbiconControllerBase::UpdatePDController(const tVectorXd &tar_pose)
         x->SetUseWorldCoord(false);
 
         int id = x->GetJoint()->GetId();
-        if (id == this->mRootId || id == mSwingHip)
+        if (id == mRootId || id == mSwingHipInfo.first)
         {
             printf("[log] Set joint %s PD control use world coord\n",
                    x->GetJoint()->GetName().c_str());
@@ -394,11 +336,11 @@ int btGenSimbiconControllerBase::GetJointByPartialName(const std::string &name)
  * \brief           Compute the stance and swing control vertical force ratio
  * \return double [0, 1], stance foot vertical force / total_vertical_force
 */
-double btGenSimbiconControllerBase::ComputeStanceSwingRatio() const
+double btGenSimbiconControllerBase::CalcStanceSwingRatio() const
 {
     // 1. get stance foot and swing foot
-    int stance_foot_id = GetEndeffector(mStanceHip),
-        swing_foot_id = GetEndeffector(mSwingHip);
+    int stance_foot_id = mStanceFootInfo.first,
+        swing_foot_id = mSwingFootInfo.first;
 
     auto manager = mWorld->GetContactManager();
     double stance_force = manager->GetVerticalTotalForceWithGround(
@@ -422,73 +364,239 @@ double btGenSimbiconControllerBase::ComputeStanceSwingRatio() const
  * 
  * For more details, please check the note and raw simbicon implemention
 */
-void btGenSimbiconControllerBase::CalculateControlForce(
+void btGenSimbiconControllerBase::CalcControlForce(
     double dt, tEigenArr<btGenPDForce> &pd_forces)
 {
     mPDController->CalculateControlForces(dt, pd_forces);
     BTGEN_ASSERT(pd_forces.size() == mModel->GetNumOfJoint());
 
-    if (mSwingHip == -1 || mStanceHip == -1)
+    tVector torso_torque = pd_forces[this->mRootId].mForce,
+            swing_torque = pd_forces[mSwingHipInfo.first].mForce,
+            stance_torque = pd_forces[mStanceHipInfo.first].mForce;
+
+    tVector new_stance_torque = tVector::Zero();
+    if (true == mEnableStanceControlRatio)
     {
-        printf("[log] swing hip or stance hip is -1, disable the inverse "
-               "solution of hip torque\n");
+        double stance_swing_foot_ratio = CalcStanceSwingRatio();
+
+        std::cout << "[log] stance ratio = " << stance_swing_foot_ratio
+                  << ", torso torque = " << torso_torque.transpose()
+                  << std::endl;
+
+        std::cout << "[debug] origin swing torque = "
+                  << swing_torque.transpose()
+                  << " stance torque = " << stance_torque.transpose()
+                  << std::endl;
+
+        // \tau_makeup = \tau_torso - \tau_swing - \tau_stance
+        tVector torso_makeup_torque =
+            -torso_torque - swing_torque - stance_torque;
+
+        if (mModel->GetRoot()->GetJointType() == JointType::BIPEDAL_NONE_JOINT)
+        {
+            BTGEN_ASSERT(std::fabs(torso_torque[1]) < 1e-10);
+            BTGEN_ASSERT(std::fabs(torso_torque[2]) < 1e-10);
+            // \tau_makeup = \tau_torso - \tau_swing - \tau_stance
+            torso_makeup_torque.segment(1, 3).setZero();
+        }
+        // \tau_swing += (1-k) * \tau_makeup
+        swing_torque += (1 - stance_swing_foot_ratio) * torso_makeup_torque;
+        // \tau_stance += k * \tau_makeup
+        stance_torque += stance_swing_foot_ratio * torso_makeup_torque;
+        pd_forces[mSwingHipInfo.first].mForce = swing_torque;
+        pd_forces[mStanceHipInfo.first].mForce = stance_torque;
+        std::cout << "[debug] new swing torque = " << swing_torque.transpose()
+                  << " stance torque = " << stance_torque.transpose()
+                  << std::endl;
     }
     else
     {
-        tVector torso_torque = pd_forces[this->mRootId].mForce,
-                swing_torque = pd_forces[this->mSwingHip].mForce,
-                stance_torque = pd_forces[this->mStanceHip].mForce;
-
-        tVector new_stance_torque = tVector::Zero();
-        if (true == mEnableStanceControlRatio)
-        {
-            double stance_swing_foot_ratio = ComputeStanceSwingRatio();
-
-            std::cout << "[log] stance ratio = " << stance_swing_foot_ratio
-                      << ", torso torque = " << torso_torque.transpose()
-                      << std::endl;
-
-            std::cout << "[debug] origin swing torque = "
-                      << swing_torque.transpose()
-                      << " stance torque = " << stance_torque.transpose()
-                      << std::endl;
-
-            // \tau_makeup = \tau_torso - \tau_swing - \tau_stance
-            tVector torso_makeup_torque =
-                -torso_torque - swing_torque - stance_torque;
-
-            if (mModel->GetRoot()->GetJointType() ==
-                JointType::BIPEDAL_NONE_JOINT)
-            {
-                BTGEN_ASSERT(std::fabs(torso_torque[1]) < 1e-10);
-                BTGEN_ASSERT(std::fabs(torso_torque[2]) < 1e-10);
-                // \tau_makeup = \tau_torso - \tau_swing - \tau_stance
-                torso_makeup_torque.segment(1, 3).setZero();
-            }
-            // \tau_swing += (1-k) * \tau_makeup
-            swing_torque += (1 - stance_swing_foot_ratio) * torso_makeup_torque;
-            // \tau_stance += k * \tau_makeup
-            stance_torque += stance_swing_foot_ratio * torso_makeup_torque;
-            pd_forces[mSwingHip].mForce = swing_torque;
-            pd_forces[mStanceHip].mForce = stance_torque;
-            std::cout << "[debug] new swing torque = "
-                      << swing_torque.transpose()
-                      << " stance torque = " << stance_torque.transpose()
-                      << std::endl;
-        }
-        else
-        {
-            /*
+        /*
                     simple rule:
                     \tau_A = stance_hip_torque
                     \tau_B = swing_hip_torque
                     \tau_torso = torso_torque
                     \tau_A = -\tau_torso - \tau_B
             */
-            new_stance_torque = -torso_torque - swing_torque;
-            std::cout << "[log] stance hip torque simple covered = "
-                      << new_stance_torque.transpose() << std::endl;
-            pd_forces[mStanceHip].mForce = new_stance_torque;
+        new_stance_torque = -torso_torque - swing_torque;
+        std::cout << "[log] stance hip torque simple covered = "
+                  << new_stance_torque.transpose() << std::endl;
+        pd_forces[mStanceHipInfo.first].mForce = new_stance_torque;
+    }
+}
+
+/**
+ * \brief           Update the target pose by COM vel and COM pos
+*/
+void btGenSimbiconControllerBase::CalcTargetPoseRevoluteHips(
+    tVectorXd &target_pose) const
+{
+    auto swing_hip =
+        dynamic_cast<Joint *>(mModel->GetJointById(mSwingHipInfo.first));
+    int offset = swing_hip->GetOffset();
+    int size = swing_hip->GetNumOfFreedom();
+    BTGEN_ASSERT(size == 1);
+    double theta = target_pose[offset];
+    tVector3d com_pos = mModel->GetCoMPosition(),
+              com_vel = mModel->GetComVelocity();
+    double d = com_pos[2] -
+               mModel->GetJointById(GetEndeffector(mStanceHipInfo.first))
+                   ->GetWorldPos()[2],
+           v = com_vel[2];
+
+    // minus angle means uplift, for current hips
+    target_pose[offset] = -mCd_forward * d - mCv_forward * v + theta;
+
+    printf("[simbicon] d = %.3f, v = %.3f, origin theta %.3f, "
+           "result theta %.3f for swing hip %s\n",
+           d, v, theta, target_pose[offset], swing_hip->GetName().c_str());
+}
+
+void btGenSimbiconControllerBase::CalcTargetPoseSphericalHips(
+    tVectorXd &target_pose) const
+{
+    // com position, com velocity, stance foot position in world frame
+    tVector3d com_pos = mModel->GetCoMPosition(),
+              com_vel = mModel->GetComVelocity();
+    tVector3d stance_foot_pos =
+        mModel->GetJointById(GetEndeffector(mStanceHipInfo.first))
+            ->GetWorldPos();
+
+    // d and v in world frame
+    tVector3d d = com_pos - stance_foot_pos, v = com_vel;
+
+    // do balance control policy in character frame (heading orientation)
+    // we assume the upaxis is Y
+    double heading = mModel->GetHeading();
+
+    // express the d and v in heading frame
+    tVector3d heading_inv_axisangle = tVector3d(0, -heading, 0);
+    tMatrix3d head_inv_rotmat =
+        btMathUtil::AxisAngleToRotmat(
+            btMathUtil::Expand(heading_inv_axisangle, 0))
+            .block(0, 0, 3, 3);
+
+    d = head_inv_rotmat * d; // now d is expressed in heading frame
+    v = head_inv_rotmat * v; // now v is expressed in heading frame
+
+    auto swing_joint =
+        dynamic_cast<Joint *>(mModel->GetJointById(mSwingHipInfo.first));
+
+    tVector3d raw_target_euler =
+        target_pose.segment(swing_joint->GetOffset(), 3);
+    tVector3d target_aa =
+        btMathUtil::EulerangleToAxisAngle(
+            btMathUtil::Expand(raw_target_euler, 0), btRotationOrder::bt_XYZ)
+            .segment(0, 3);
+    // 1. update forward target (z axis)
+    target_aa[0] += -mCd_forward * d[0] - mCv_forward * v[0];
+
+    // 2. update tangent target (x target)
+    target_aa[2] += mCd_tangent * d[2] + mCv_tangent * v[2];
+
+    tVector3d new_target_euler =
+        btMathUtil::AxisAngleToEulerAngle(btMathUtil::Expand(target_aa, 0),
+                                          btRotationOrder::bt_XYZ)
+            .segment(0, 3);
+    target_pose.segment(swing_joint->GetOffset(), 3) = new_target_euler;
+}
+
+/**
+ * \brief               Update the target pose by the blance control
+ * \param target_pose   target q got from the FSM
+ * 1. find the swing hip, 
+ * 2. get the COM pos "d" & vel "v" 
+ * 3. change the control target of swing hip by theta = theta_d + c_d * d + c_v * v
+*/
+void btGenSimbiconControllerBase::CalcTargetPose(tVectorXd &target_pose) const
+{
+    auto cur_state = mFSM->GetCurrentState();
+    if (mIgnoreBalanceControlInState02 == true &&
+        cur_state->GetStateId() != 1 && cur_state->GetStateId() != 3)
+    {
+        printf("[warn] balance control is ignored in state id %d temporarily\n",
+               cur_state->GetStateId());
+        return;
+    }
+
+    auto swing_hip =
+        dynamic_cast<Joint *>(mModel->GetJointById(mSwingHipInfo.first));
+
+    switch (swing_hip->GetJointType())
+    {
+    case JointType::REVOLUTE_JOINT:
+        CalcTargetPoseRevoluteHips(target_pose);
+        break;
+    case JointType::SPHERICAL_JOINT:
+        CalcTargetPoseSphericalHips(target_pose);
+        break;
+    default:
+        BTGEN_ASSERT(false);
+        break;
+    };
+}
+
+/**
+ * \brief               Get the swing hip info and right 
+ * 1. find two hips
+ * 2. find their end effector (two feet)
+*/
+void btGenSimbiconControllerBase::BuildJointInfo()
+{
+    std::string left_hip_name = "LeftLeg", right_hip_name = "RightLeg";
+    int left_hip_id = -1, right_hip_id = -1;
+    for (int i = 0; i < mModel->GetNumOfLinks(); i++)
+    {
+        auto joint = mModel->GetJointById(i);
+        if (joint->GetName().find(left_hip_name) != -1)
+        {
+            if (left_hip_id != -1)
+            {
+                printf("[error] left hip id get failed\n");
+                exit(0);
+            }
+            else
+            {
+                left_hip_id = i;
+            }
+        }
+        if (joint->GetName().find(right_hip_name) != -1)
+        {
+            if (right_hip_id != -1)
+            {
+                printf("[error] right hip id get failed\n");
+                exit(0);
+            }
+            else
+            {
+                right_hip_id = i;
+            }
         }
     }
+
+    if (left_hip_id == -1 || right_hip_id == -1)
+    {
+        printf("[error] failed to get two hips: %d %d\n", left_hip_id,
+               right_hip_id);
+        exit(0);
+    }
+    mLeftHipInfo.first = left_hip_id;
+    mLeftHipInfo.second = mModel->GetLinkById(left_hip_id)->GetName();
+    mRightHipInfo.first = right_hip_id;
+    mRightHipInfo.second = mModel->GetLinkById(right_hip_id)->GetName();
+    printf("[simbicon] left hip %d %s, right hip %d %s\n", left_hip_id,
+           mLeftHipInfo.second.c_str(), right_hip_id,
+           mRightHipInfo.second.c_str());
+    // judge one chain: left hip and right hip should have only one chain
+    // get the end effector of this chain
+    int left_foot_id = GetEndeffector(left_hip_id),
+        right_foot_id = GetEndeffector(right_hip_id);
+
+    mLeftFootInfo.first = left_foot_id;
+    mLeftFootInfo.second = mModel->GetLinkById(left_foot_id)->GetName();
+    mRightFootInfo.first = right_foot_id;
+    mRightFootInfo.second = mModel->GetLinkById(right_foot_id)->GetName();
+    printf("[simbicon] left foot %d %s, right foot %d %s\n", left_foot_id,
+           mLeftFootInfo.second.c_str(), right_foot_id,
+           mRightFootInfo.second.c_str());
 }

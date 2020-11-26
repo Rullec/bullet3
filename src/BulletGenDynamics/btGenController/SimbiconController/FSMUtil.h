@@ -85,18 +85,23 @@ protected:
 */
 struct tState
 {
-    tState(int state_id);
+    tState(int state_id, int default_stance, std::string stance_update_mode);
     ~tState();
 
     void Update(double dt);
     void AddTransitionCondition(tTransitionCondition *cond);
     int GetStateId() const;
     int GetTargetId() const;
+    int GetDefaultStance() const;
+    int CalcNewStance(int old_stance) const;
     void Print() const;
     void Reset();
 
 protected:
     int mStateId;
+    std::string mStanceUpdateMode;
+    int mDefaultStance;
+
     std::vector<tTransitionCondition *> mTransitionConditions;
 };
 

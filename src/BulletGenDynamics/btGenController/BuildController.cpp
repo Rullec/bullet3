@@ -3,8 +3,7 @@
 #include "BulletGenDynamics/btGenController/ControllerBase.h"
 #include "BulletGenDynamics/btGenController/PDController/btGenPDController.h"
 #include "BulletGenDynamics/btGenController/PDController/btGenSimbiconSPDController.h"
-#include "BulletGenDynamics/btGenController/SimbiconController/Simbicon3dController.h"
-#include "BulletGenDynamics/btGenController/SimbiconController/SimbiconBipedalController.h"
+#include "BulletGenDynamics/btGenController/SimbiconController/SimbiconControllerBase.h"
 #include "BulletGenDynamics/btGenUtil/JsonUtil.h"
 btGenControllerBase *BuildController(btGeneralizeWorld *world,
                                      const std::string &path)
@@ -30,13 +29,8 @@ btGenControllerBase *BuildController(btGeneralizeWorld *world,
             case ebtGenControllerType::ContactAwareController:
                 ctrl = new btGenContactAwareController(world);
                 break;
-            case ebtGenControllerType::SimbiconBipedController:
-                ctrl = new btGenSimbiconBipedalController(world);
-                break;
-            case ebtGenControllerType::Simbicon3dController:
-                ctrl = new btGenSimbicon3dController(world);
-                BTGEN_ASSERT(false &&
-                             "simbicon 3d controller has been deprecated\n");
+            case ebtGenControllerType::SimbiconController:
+                ctrl = new btGenSimbiconControllerBase(world);
                 break;
             default:
                 break;

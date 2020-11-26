@@ -1,5 +1,5 @@
 {
-    "ctrl_type": "SimbiconBipedalController",
+    "ctrl_type": "SimbiconController",
     "corresponding_char_path": "../DeepMimic/data/1111/characters/skeleton_bipedal_sph_legs.json",
     "pd_controller_path": "examples/CustomEngine/ctrl_configs/pd_config_legs.json",
     "ignore_balance_control_in_0_2_state": false,
@@ -17,7 +17,9 @@
                         "elapsed_time": 0.5,
                         "target_state_id": 1
                     }
-                ]
+                ],
+                "default_stance": "left",
+                "stance_update_mode": "default"
             },
             {
                 "state_id": 1,
@@ -27,7 +29,9 @@
                         "contact_link_name": "RFootTongue",
                         "target_state_id": 2
                     }
-                ]
+                ],
+                "default_stance": "left",
+                "stance_update_mode": "default"
             },
             {
                 "state_id": 2,
@@ -37,7 +41,9 @@
                         "elapsed_time": 0.5,
                         "target_state_id": 3
                     }
-                ]
+                ],
+                "default_stance": "right",
+                "stance_update_mode": "default"
             },
             {
                 "state_id": 3,
@@ -47,7 +53,9 @@
                         "contact_link_name": "LFootTongue",
                         "target_state_id": 0
                     }
-                ]
+                ],
+                "default_stance": "right",
+                "stance_update_mode": "default"
             }
         ]
     },
