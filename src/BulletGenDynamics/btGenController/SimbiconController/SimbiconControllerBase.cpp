@@ -454,57 +454,122 @@ void btGenSimbiconControllerBase::CalcTargetPoseRevoluteHips(
            d, v, theta, target_pose[offset], swing_hip->GetName().c_str());
 }
 
+/**
+ * \brief           Calculate Feedback target pose for spherical swing hip
+ * 1. calculate the heading frame's X and Y axis's expressions in world frame, x_head_world and y_head_world
+ * 2. calculate the vector d and v in world frame, then convert them to heading frame, get d_head and v_head
+ * 3. caluclate the forward and tangent joint angle feedback value e_{forward} and e_{tangent} in R
+ * 4.   e_{forward} + x_head_world = forward_target_feedback, in joint rest frame
+ *      e_{tangent} + y_head_world = tangent_target_feedback, in joint rest frame
+ * 5. apply the feedback to the local target
+*/
 void btGenSimbiconControllerBase::CalcTargetPoseSphericalHips(
     tVectorXd &target_pose)
 {
-    // com position, com velocity, stance foot position in world frame
-    tVector3d com_pos = mModel->GetCoMPosition(),
-              com_vel = mModel->GetComVelocity();
-    tVector3d stance_foot_pos =
-        mModel->GetJointById(GetEndeffector(mStanceHipInfo.first))
-            ->GetWorldPos();
-
-    // d and v in world frame
-    tVector3d d = com_pos - stance_foot_pos, v = com_vel;
-
-    // do balance control policy in character frame (heading orientation)
-    // we assume the upaxis is Y
-    double heading = mModel->GetHeading();
-
-    if (mEnableDrawHeadingFrame)
-        DrawHeadingFrame();
-    // DebugVerifyHeadingFrame();
-    // express the d and v in heading frame
-    tVector3d heading_inv_axisangle = tVector3d(0, -heading, 0);
-    tMatrix3d head_inv_rotmat =
-        btMathUtil::AxisAngleToRotmat(
-            btMathUtil::Expand(heading_inv_axisangle, 0))
-            .block(0, 0, 3, 3);
-
-    d = head_inv_rotmat * d; // now d is expressed in heading frame
-    v = head_inv_rotmat * v; // now v is expressed in heading frame
-
-    // verify the d and v
+    // 1. heading frame's x and z axis in world frame
     auto swing_joint =
         dynamic_cast<Joint *>(mModel->GetJointById(mSwingHipInfo.first));
+    tVector x_head_world = tVector(1, 0, 0, 0),
+            y_head_world = tVector(0, 1, 0, 0);
+    tMatrix heading_rotmat = tMatrix::Identity();
+    {
+        double heading_angle = mModel->GetHeading();
+        tVector heading_aa = tVector(0, heading_angle, 0, 0);
+        heading_rotmat = btMathUtil::AxisAngleToRotmat(heading_aa);
+        x_head_world = heading_rotmat * x_head_world;
+        y_head_world = heading_rotmat * y_head_world;
+        std::cout << "[debug] x_head_world = " << x_head_world.transpose()
+                  << " y_head_world = " << y_head_world.transpose()
+                  << std::endl;
+        std::cout << "[debug] heading rotmat = \n"
+                  << heading_rotmat << std::endl;
+    }
 
-    tVector3d raw_target_euler =
-        target_pose.segment(swing_joint->GetOffset(), 3);
-    tVector3d target_aa =
-        btMathUtil::EulerangleToAxisAngle(
-            btMathUtil::Expand(raw_target_euler, 0), btRotationOrder::bt_XYZ)
-            .segment(0, 3);
-    // 1. update forward target (z axis) NOOOOOOOOO it's wrong
-    target_aa[0] += -mCd_forward * d[0] - mCv_forward * v[0];
+    // 2. calculate d and v in world frame, then convert to heading frame
+    tVector d_head = tVector::Zero(), v_head = tVector::Zero();
+    {
+        // 2.1 d = com_pos - stance_foot_pos
+        d_head.segment(0, 3) =
+            mModel->GetCoMPosition() -
+            mModel->GetLinkById(mStanceFootInfo.first)->GetWorldPos();
+        d_head[1] = 0; // remove Y axis effect
 
-    // 2. update tangent target (x target)
-    target_aa[2] += mCd_tangent * d[2] + mCv_tangent * v[2];
+        // 2.2 v = com_vel
+        v_head.segment(0, 3) = mModel->GetComVelocity();
+        v_head[1] = 0; // remove Y axis effect
+        std::cout << "[debug] d_world = " << d_head.transpose()
+                  << " v_world = " << v_head.transpose() << std::endl;
 
-    tVector3d new_target_euler =
-        btMathUtil::AxisAngleToEulerAngle(btMathUtil::Expand(target_aa, 0),
-                                          btRotationOrder::bt_XYZ)
-            .segment(0, 3);
-    target_pose.segment(swing_joint->GetOffset(), 3) = new_target_euler;
+        // convert to heading frame
+        d_head = heading_rotmat.transpose() * d_head;
+        v_head = heading_rotmat.transpose() * v_head;
+        std::cout << "[debug] d_head = " << d_head.transpose()
+                  << " v_head = " << v_head.transpose() << std::endl;
+    }
+
+    // 3. calculate e_forward and e_tanget
+    double e_forward = 0, e_tangent = 0;
+    {
+        e_forward =
+            -mCd_forward * d_head[2] -
+            mCv_forward *
+                v_head
+                    [2]; // forward feedback effected by z axis translation and velocity
+        e_tangent =
+            mCd_tangent * d_head[0] +
+            mCv_tangent *
+                v_head
+                    [0]; // tangent feedback effectred by x axis translation and velocity
+        std::cout << "[debug] e_forward = " << e_forward
+                  << " e_tangent = " << e_tangent << std::endl;
+    }
+
+    // 4. get the forward and tagent feedback rotation (in axis angle form)
+    tVector forward_feedback_local = tVector::Zero(),
+            tangent_feedback_local = tVector::Zero();
+    {
+        tVector forward_feedback_world = x_head_world * e_forward,
+                tangent_feedback_world = y_head_world * e_tangent;
+
+        // world = rest * local
+        // rest = world * local.T
+        // joint_world_to_local = rest.T = local * world.T
+        tMatrix3d joint_local_rotation =
+                      swing_joint->GetLocalTransform().block(0, 0, 3, 3),
+                  joint_world_rotation = swing_joint->GetWorldOrientation();
+        tMatrix3d joint_world_to_local =
+            joint_local_rotation * joint_world_rotation.transpose();
+        std::cout << "[debug] joint world to local = \n"
+                  << joint_world_to_local << std::endl;
+        forward_feedback_local.segment(0, 3) =
+            joint_world_to_local * forward_feedback_world.segment(0, 3);
+        tangent_feedback_local.segment(0, 3) =
+            joint_world_to_local * tangent_feedback_world.segment(0, 3);
+        std::cout << "[debug] forward feedback local = "
+                  << forward_feedback_local.transpose()
+                  << " tangent feedback local = "
+                  << tangent_feedback_local.transpose() << std::endl;
+    }
+
+    // 5. apply these two feedback axis angle
+    {
+        tVector raw_local_target_euler = tVector::Zero();
+        raw_local_target_euler.segment(0, 3) = target_pose.segment(
+            swing_joint->GetOffset(), swing_joint->GetNumOfFreedom());
+        tMatrix raw_local_target_rotmat = btMathUtil::EulerAnglesToRotMat(
+            raw_local_target_euler, btRotationOrder::bt_XYZ);
+        tMatrix feedback =
+            btMathUtil::AxisAngleToRotmat(forward_feedback_local) *
+            btMathUtil::AxisAngleToRotmat(tangent_feedback_local);
+        tMatrix new_local_target_rotmat = feedback * raw_local_target_rotmat;
+        tVector new_local_target_euler = btMathUtil::RotmatToEulerAngle(
+            new_local_target_rotmat, btRotationOrder::bt_XYZ);
+        target_pose.segment(swing_joint->GetOffset(),
+                            swing_joint->GetNumOfFreedom()) =
+            new_local_target_euler.segment(0, 3);
+        std::cout << "[debug] new swing local target = "
+                  << new_local_target_euler.transpose() << std::endl;
+    }
 }
 
 /**

@@ -150,6 +150,14 @@ tMatrix btMathUtil::AxisAngleToRotmat(const tVector &angvel)
 {
     return btMathUtil::RotMat(AxisAngleToQuaternion(angvel));
 }
+
+tVector btMathUtil::RotmatToEulerAngle(const tMatrix &rotmat,
+                                       btRotationOrder order)
+{
+    return btMathUtil::QuaternionToEulerAngles(
+        btMathUtil::RotMatToQuaternion(rotmat), order);
+}
+
 tVector btMathUtil::AxisAngleToEulerAngle(const tVector &aa,
                                           btRotationOrder order)
 {

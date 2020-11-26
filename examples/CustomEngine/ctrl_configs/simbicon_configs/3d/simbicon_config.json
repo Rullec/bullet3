@@ -62,7 +62,7 @@
     "balance_control": {
         "Cd_forward": 0.5,
         "Cv_forward": 0.2,
-        "Cd_tangent": 0.5,
-        "Cv_tangent": 0.2
+        "Cd_tangent": 0.3,
+        "Cv_tangent": 0.1
     }
 }

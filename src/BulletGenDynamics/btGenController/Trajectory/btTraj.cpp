@@ -149,7 +149,7 @@ tVectorXd ConvertPoseToq(const tVectorXd &pose, cRobotModelDynamics *model)
             pose_dof = 4;
             q_dof = 3;
             if (pose_st + pose_dof > pose.size() || q_dof + q_st > q.size())
-                std::cout << "error] ConvertPoseToq failed, joint id "
+                std::cout << "[error] ConvertPoseToq failed, joint id "
                           << joint_id << " cause an illegal dof, exit\n",
                     exit(0);
             else
