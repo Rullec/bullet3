@@ -1,10 +1,8 @@
 {
-	"epoch" : 0,
-	"list" : 
-	[
+	"epoch": 0,
+	"list": [
 		{
-			"char_pose" : 
-			[
+			"char_pose": [
 				0.0,
 				0.75,
 				0.0,
@@ -31,14 +29,13 @@
 				0.0,
 				0.0
 			],
-			"contact_info" : [],
-			"contact_num" : 0,
-			"frame_id" : 0,
-			"motion_ref_time" : 0.0,
-			"reward" : 0.0,
-			"timestep" : 1.0,
-			"truth_action" : 
-			[
+			"contact_info": [],
+			"contact_num": 0,
+			"frame_id": 0,
+			"motion_ref_time": 0.0,
+			"reward": 0.0,
+			"timestep": 1.0,
+			"truth_action": [
 				0.0,
 				0.0,
 				0.0,
@@ -58,8 +55,7 @@
 				0.0,
 				0.0
 			],
-			"truth_joint_force" : 
-			[
+			"truth_joint_force": [
 				0.0,
 				0.0,
 				0.0,
@@ -87,8 +83,7 @@
 			]
 		},
 		{
-			"char_pose" : 
-			[
+			"char_pose": [
 				0.0,
 				0.75,
 				0.0,
@@ -115,14 +110,13 @@
 				0.0,
 				0.0
 			],
-			"contact_info" : [],
-			"contact_num" : 0,
-			"frame_id" : 1,
-			"motion_ref_time" : 1.0,
-			"reward" : 0.0,
-			"timestep" : 1.0,
-			"truth_action" : 
-			[
+			"contact_info": [],
+			"contact_num": 0,
+			"frame_id": 1,
+			"motion_ref_time": 1.0,
+			"reward": 0.0,
+			"timestep": 1.0,
+			"truth_action": [
 				0.0,
 				0.0,
 				0.0,
@@ -142,8 +136,7 @@
 				0.0,
 				0.0
 			],
-			"truth_joint_force" : 
-			[
+			"truth_joint_force": [
 				0.0,
 				0.0,
 				0.0,
@@ -171,92 +164,7 @@
 			]
 		},
 		{
-			"char_pose" : 
-			[
-				0.0,
-				0.75,
-				0.0,
-				1.0,
-				0.0,
-				0.0,
-				0.0,
-				1.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				1.0,
-				0.0,
-				0.0,
-				0.0,
-				1.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				1.0,
-				0.0,
-				0.0,
-				0.0
-			],
-			"contact_info" : [],
-			"contact_num" : 0,
-			"frame_id" : 2,
-			"motion_ref_time" : 2.0,
-			"reward" : 0.0,
-			"timestep" : 1.0,
-			"truth_action" : 
-			[
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0
-			],
-			"truth_joint_force" : 
-			[
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0
-			]
-		},
-		{
-			"char_pose" : 
-			[
+			"char_pose": [
 				0.0,
 				0.75,
 				0.0,
@@ -283,14 +191,13 @@
 				0.0,
 				0.0
 			],
-			"contact_info" : [],
-			"contact_num" : 0,
-			"frame_id" : 3,
-			"motion_ref_time" : 3.0,
-			"reward" : 0.0,
-			"timestep" : 0.0,
-			"truth_action" : 
-			[
+			"contact_info": [],
+			"contact_num": 0,
+			"frame_id": 2,
+			"motion_ref_time": 2.0,
+			"reward": 0.0,
+			"timestep": 1.0,
+			"truth_action": [
 				0.0,
 				0.0,
 				0.0,
@@ -310,8 +217,88 @@
 				0.0,
 				0.0
 			],
-			"truth_joint_force" : 
-			[
+			"truth_joint_force": [
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0
+			]
+		},
+		{
+			"char_pose": [
+				0.0,
+				0.75,
+				0.0,
+				1.0,
+				0.0,
+				0.0,
+				0.0,
+				1.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				1.0,
+				0.0,
+				0.0,
+				0.0,
+				1.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				1.0,
+				0.0,
+				0.0,
+				0.0
+			],
+			"contact_info": [],
+			"contact_num": 0,
+			"frame_id": 3,
+			"motion_ref_time": 3.0,
+			"reward": 0.0,
+			"timestep": 0.0,
+			"truth_action": [
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0
+			],
+			"truth_joint_force": [
 				0.0,
 				0.0,
 				0.0,
@@ -339,5 +326,5 @@
 			]
 		}
 	],
-	"version" : 2
+	"version": 2
 }

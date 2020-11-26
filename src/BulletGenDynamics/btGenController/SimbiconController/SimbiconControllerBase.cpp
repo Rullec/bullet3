@@ -478,11 +478,11 @@ void btGenSimbiconControllerBase::CalcTargetPoseSphericalHips(
         heading_rotmat = btMathUtil::AxisAngleToRotmat(heading_aa);
         x_head_world = heading_rotmat * x_head_world;
         y_head_world = heading_rotmat * y_head_world;
-        std::cout << "[debug] x_head_world = " << x_head_world.transpose()
-                  << " y_head_world = " << y_head_world.transpose()
-                  << std::endl;
-        std::cout << "[debug] heading rotmat = \n"
-                  << heading_rotmat << std::endl;
+        // std::cout << "[debug] x_head_world = " << x_head_world.transpose()
+        //           << " y_head_world = " << y_head_world.transpose()
+        //           << std::endl;
+        // std::cout << "[debug] heading rotmat = \n"
+        //           << heading_rotmat << std::endl;
     }
 
     // 2. calculate d and v in world frame, then convert to heading frame
@@ -497,14 +497,14 @@ void btGenSimbiconControllerBase::CalcTargetPoseSphericalHips(
         // 2.2 v = com_vel
         v_head.segment(0, 3) = mModel->GetComVelocity();
         v_head[1] = 0; // remove Y axis effect
-        std::cout << "[debug] d_world = " << d_head.transpose()
-                  << " v_world = " << v_head.transpose() << std::endl;
+        // std::cout << "[debug] d_world = " << d_head.transpose()
+        //           << " v_world = " << v_head.transpose() << std::endl;
 
         // convert to heading frame
         d_head = heading_rotmat.transpose() * d_head;
         v_head = heading_rotmat.transpose() * v_head;
-        std::cout << "[debug] d_head = " << d_head.transpose()
-                  << " v_head = " << v_head.transpose() << std::endl;
+        // std::cout << "[debug] d_head = " << d_head.transpose()
+        //           << " v_head = " << v_head.transpose() << std::endl;
     }
 
     // 3. calculate e_forward and e_tanget
@@ -520,8 +520,8 @@ void btGenSimbiconControllerBase::CalcTargetPoseSphericalHips(
             mCv_tangent *
                 v_head
                     [0]; // tangent feedback effectred by x axis translation and velocity
-        std::cout << "[debug] e_forward = " << e_forward
-                  << " e_tangent = " << e_tangent << std::endl;
+        // std::cout << "[debug] e_forward = " << e_forward
+        //           << " e_tangent = " << e_tangent << std::endl;
     }
 
     // 4. get the forward and tagent feedback rotation (in axis angle form)
@@ -539,16 +539,16 @@ void btGenSimbiconControllerBase::CalcTargetPoseSphericalHips(
                   joint_world_rotation = swing_joint->GetWorldOrientation();
         tMatrix3d joint_world_to_local =
             joint_local_rotation * joint_world_rotation.transpose();
-        std::cout << "[debug] joint world to local = \n"
-                  << joint_world_to_local << std::endl;
+        // std::cout << "[debug] joint world to local = \n"
+        //           << joint_world_to_local << std::endl;
         forward_feedback_local.segment(0, 3) =
             joint_world_to_local * forward_feedback_world.segment(0, 3);
         tangent_feedback_local.segment(0, 3) =
             joint_world_to_local * tangent_feedback_world.segment(0, 3);
-        std::cout << "[debug] forward feedback local = "
-                  << forward_feedback_local.transpose()
-                  << " tangent feedback local = "
-                  << tangent_feedback_local.transpose() << std::endl;
+        // std::cout << "[debug] forward feedback local = "
+        //           << forward_feedback_local.transpose()
+        //           << " tangent feedback local = "
+        //           << tangent_feedback_local.transpose() << std::endl;
     }
 
     // 5. apply these two feedback axis angle
@@ -567,8 +567,8 @@ void btGenSimbiconControllerBase::CalcTargetPoseSphericalHips(
         target_pose.segment(swing_joint->GetOffset(),
                             swing_joint->GetNumOfFreedom()) =
             new_local_target_euler.segment(0, 3);
-        std::cout << "[debug] new swing local target = "
-                  << new_local_target_euler.transpose() << std::endl;
+        // std::cout << "[debug] new swing local target = "
+        //           << new_local_target_euler.transpose() << std::endl;
     }
 }
 

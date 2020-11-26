@@ -4,6 +4,7 @@
     "pd_controller_path": "examples/CustomEngine/ctrl_configs/pd_config_legs.json",
     "ignore_balance_control_in_0_2_state": false,
     "enable_stance_control_ratio": true,
+    "enable_draw_heading_frame": true,
     "FSM": {
         "state_traj_path": "examples/CustomEngine/ctrl_configs/simbicon_configs/bipedal/target_bipedal_sph_legs_jog.json",
         "state_traj_path_walk": "examples/CustomEngine/ctrl_configs/simbicon_configs/bipedal/simbicon_bipedal_target_walk.json",

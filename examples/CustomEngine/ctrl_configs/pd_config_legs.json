@@ -5,16 +5,16 @@
         {
             "ID": 0,
             "Name": "root",
-            "Kp": 100,
-            "Kd": 10,
+            "Kp": 300,
+            "Kd": 30,
             "TargetTheta0": 0,
             "UseWorldCoord": 0
         },
         {
             "ID": 1,
             "Name": "RightLeg",
-            "Kp": 100,
-            "Kd": 10,
+            "Kp": 200,
+            "Kd": 20,
             "TargetTheta0": 0,
             "UseWorldCoord": 0
         },
@@ -37,8 +37,8 @@
         {
             "ID": 4,
             "Name": "LeftLeg",
-            "Kp": 100,
-            "Kd": 10,
+            "Kp": 200,
+            "Kd": 20,
             "TargetTheta0": 0,
             "UseWorldCoord": 0
         },

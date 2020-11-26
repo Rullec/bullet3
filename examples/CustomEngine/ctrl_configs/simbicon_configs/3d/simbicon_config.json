@@ -6,7 +6,7 @@
     "enable_stance_control_ratio": true,
     "enable_draw_heading_frame": true,
     "FSM": {
-        "state_traj_path": "examples/CustomEngine/ctrl_configs/simbicon_configs/3d/simbicon_target_jog.json",
+        "state_traj_path": "examples/CustomEngine/ctrl_configs/simbicon_configs/3d/simbicon_target_stepping.json",
         "num_of_states": 4,
         "states": [
             {
@@ -14,7 +14,7 @@
                 "conditions": [
                     {
                         "condition_type": "ElapsedTime",
-                        "elapsed_time": 0.5,
+                        "elapsed_time": 0.1,
                         "target_state_id": 1
                     }
                 ],
@@ -38,7 +38,7 @@
                 "conditions": [
                     {
                         "condition_type": "ElapsedTime",
-                        "elapsed_time": 0.5,
+                        "elapsed_time": 0.1,
                         "target_state_id": 3
                     }
                 ],
@@ -60,9 +60,9 @@
         ]
     },
     "balance_control": {
-        "Cd_forward": 0.5,
-        "Cv_forward": 0.2,
+        "Cd_forward": 2,
+        "Cv_forward": 2,
         "Cd_tangent": 0.3,
-        "Cv_tangent": 0.1
+        "Cv_tangent": 0.3
     }
 }
