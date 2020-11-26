@@ -236,36 +236,6 @@ void btGenSimbiconControllerBase::UpdateSwingStance()
     printf("[log] left foot contact %s, right foot contact %s\n",
            left_foot_contact ? "true" : "false",
            right_foot_contact ? "true" : "false");
-
-    // if the configuration is wrong, set to -1
-    // {
-    //     if (left_foot_contact == right_foot_contact)
-    //     {
-    //         mStanceHip = -1;
-    //         mSwingHip = -1;
-    //         printf(
-    //             "[simbicon] illegal case: left and right foot contact case is "
-    //             "the same, set them to -1\n");
-    //         return;
-    //     }
-
-    //     if (left_foot_contact == true)
-    //         mStanceHip = left_hip_id, mSwingHip = right_hip_id;
-    //     else
-    //         mSwingHip = left_hip_id, mStanceHip = right_hip_id;
-    // }
-
-    // if the configuration is wrong, use the old configuration
-    // {
-    //     if (left_foot_contact == false && right_foot_contact == false)
-    //     {
-    //         printf(
-    //             "[simbicon] illegal case: left and right foot contact case is "
-    //             "the same, keep the current swing %d stance %d\n",
-    //             mSwingHip, mStanceHip);
-    //         return;
-    //     }
-    // }
     {
         if (left_foot_contact == false && right_foot_contact == false)
         {
@@ -273,9 +243,8 @@ void btGenSimbiconControllerBase::UpdateSwingStance()
             mSwingHip = -1;
             mStanceName = "";
             mSwingName = "";
-            printf(
-                "[simbicon] illegal case: left and right foot contact case is "
-                "false, set them to -1\n");
+            printf("[simbicon] no foot contact, swing & stance leg "
+                   "undertermined\n");
             return;
         }
     }
@@ -286,6 +255,8 @@ void btGenSimbiconControllerBase::UpdateSwingStance()
         mStanceHip = left_hip_id, mSwingHip = right_hip_id;
     mSwingName = mModel->GetLinkById(mSwingHip)->GetName();
     mStanceName = mModel->GetLinkById(mStanceHip)->GetName();
+    printf("[simbicon] stance leg %s, swing leg %s\n", mStanceName.c_str(),
+           mSwingName.c_str());
 }
 
 /**

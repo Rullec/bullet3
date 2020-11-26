@@ -191,9 +191,9 @@ void btGenSimbiconSPDController::CalculateControlForcesSimbiconSPD(
             pd_force.mForce = btMathUtil::Expand(joint_torques[i - 1], 0);
             if (pd_force.mForce.norm() > force_lim)
                 pd_force.mForce /= (pd_force.mForce.norm() / force_lim);
-            std::cout << "[simbicon_pd] joint " << i
-                      << " force = " << pd_force.mForce.transpose()
-                      << " , force lim = " << force_lim << std::endl;
+            // std::cout << "[simbicon_pd] joint " << i
+            //           << " force = " << pd_force.mForce.transpose()
+            //           << " , force lim = " << force_lim << std::endl;
             BTGEN_ASSERT(pd_force.mJoint->GetId() == i);
         }
         pd_forces.push_back(pd_force);

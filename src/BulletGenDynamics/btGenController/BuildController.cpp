@@ -35,6 +35,8 @@ btGenControllerBase *BuildController(btGeneralizeWorld *world,
                 break;
             case ebtGenControllerType::Simbicon3dController:
                 ctrl = new btGenSimbicon3dController(world);
+                BTGEN_ASSERT(false &&
+                             "simbicon 3d controller has been deprecated\n");
                 break;
             default:
                 break;
