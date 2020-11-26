@@ -38,7 +38,7 @@ protected:
         mIgnoreBalanceControlInState02; // ignore balance control in state 0 and state 2 (stable state)
     bool
         mEnableStanceControlRatio; // calculate the stance control force by stance/swing foot vertical contact force ratio
-
+    bool mEnableDrawHeadingFrame;  // draw heading frame or not
     double mCd_forward, mCv_forward; // balance control param, forward
     double mCd_tangent, mCv_tangent; // balance control param, tangent
 

@@ -57,6 +57,8 @@ void btGenSimbiconControllerBase::Init(cRobotModelDynamics *model,
         btJsonUtil::ParseAsBool("ignore_balance_control_in_0_2_state", root);
     mEnableStanceControlRatio =
         btJsonUtil::ParseAsBool("enable_stance_control_ratio", root);
+    mEnableDrawHeadingFrame =
+        btJsonUtil::ParseAsBool("enable_draw_heading_frame", root);
 
     BuildJointInfo();
 
@@ -167,7 +169,7 @@ void btGenSimbiconControllerBase::BuildPDCtrl(const std::string &pd_path)
     {
         if (x->GetForceLim() < 1)
         {
-            printf("[error] simbicon PD controller joint %f force lim %.3f is "
+            printf("[error] simbicon PD controller joint %d force lim %.3f is "
                    "too small!",
                    x->GetJoint()->GetId(), x->GetForceLim());
             exit(0);
@@ -469,7 +471,9 @@ void btGenSimbiconControllerBase::CalcTargetPoseSphericalHips(
     // we assume the upaxis is Y
     double heading = mModel->GetHeading();
 
-    DrawHeadingFrame();
+    if (mEnableDrawHeadingFrame)
+        DrawHeadingFrame();
+    // DebugVerifyHeadingFrame();
     // express the d and v in heading frame
     tVector3d heading_inv_axisangle = tVector3d(0, -heading, 0);
     tMatrix3d head_inv_rotmat =
@@ -606,20 +610,46 @@ void btGenSimbiconControllerBase::BuildJointInfo()
 /**
  * \brief               verify the current heading frame (Y axis) is correct
 */
-void btGenSimbiconControllerBase::DebugVerifyHeadingFrame() {}
+void btGenSimbiconControllerBase::DebugVerifyHeadingFrame()
+{
+    std::cout << "[warn] verify heading frame enabled\n";
+    double heading = mModel->GetHeading();
+    tVector aa = tVector(0, heading, 0, 0);
+    tMatrix trans = btMathUtil::AxisAngleToRotmat(aa);
+    tVector forward_vec = tVector(1, 0, 0, 0);
+    tVector head_vec = trans * forward_vec;
+    tVector model_vec =
+        btMathUtil::ExpandMat(mModel->GetLinkById(0)->GetWorldOrientation()) *
+        forward_vec;
+    model_vec[1] = 0;
+    model_vec.normalize();
+    head_vec.normalize();
+    tVector diff = head_vec - model_vec;
+    if (diff.norm() > 1e-5)
+    {
+        std::cout << "[debug] verify heading frame, diff = " << diff.transpose()
+                  << std::endl;
+        std::cout << "[error] heading = " << heading << std::endl;
+        std::cout << "[error] head_vec = " << head_vec.transpose() << std::endl;
+        std::cout << "[error] model_vec = " << model_vec.transpose()
+                  << std::endl;
+        exit(0);
+    }
+}
 
 /**
  * \brief               Draw the heading frame in the current result 
 */
 void btGenSimbiconControllerBase::DrawHeadingFrame()
 {
-
     double heading = mModel->GetHeading(); // heading axis and Y transform
+    tVector aa = tVector(0, heading, 0, 0);
+    tMatrix trans = btMathUtil::AxisAngleToRotmat(aa);
+    trans.block(0, 3, 3, 1) =
+        mModel->GetLinkById(0)->GetWorldPos().segment(0, 3);
     printf("[log] draw heading frame begin, angle = %.4f\n", heading);
-    tVector3d axis_angle = tVector3d(0, heading, 0);
-    tMatrix trans =
-        btMathUtil::AxisAngleToRotmat(btMathUtil::Expand(axis_angle, 0));
-    trans.block(0, 3, 3, 1) = mModel->GetRoot()->GetWorldPos();
     DrawFrame(trans);
+    // tMatrix trans = mModel->GetLinkById(0)->GetGlobalTransform();
+    // DrawFrame(trans);
     // exit(0);
 }

@@ -88,7 +88,7 @@ void btGenControllerBase::SetBulletGUIHelperInterface(
 void btGenControllerBase::DrawFrame(const tMatrix &transform)
 {
     // if it doesn't exist, create three lines, and put them into mDrawFrame
-    double length = 1, // 1m
+    double length = 0.5, // 0.5m
         radius = 0.01; // 1cm
     if (mDrawFrame.size() == 0)
     {
@@ -97,19 +97,6 @@ void btGenControllerBase::DrawFrame(const tMatrix &transform)
     }
 
     BTGEN_ASSERT(mDrawFrame.size() == 3);
-
-    // test API
-    // {
-    //     std::cout << "test API\n";
-    //     tMatrix trans = btMathUtil::RotMat(tQuaternion::UnitRandom());
-    //     trans.block(0, 3, 3, 1).setRandom();
-    //     btTransform bt_trans = btBulletUtil::tMatrixTobtTransform(trans);
-    //     tMatrix restored_trans = btBulletUtil::btTransformTotMatrix(bt_trans);
-    //     std::cout << "raw trans = \n" << trans << std::endl;
-    //     std::cout << "restored trans = \n" << restored_trans << std::endl;
-    //     BTGEN_ASSERT()
-    //     exit(0);
-    // }
     // 2. set the x, y, z object's position and rotation
     tVector3d axes[] = {tVector3d(1, 0, 0), tVector3d(0, 1, 0),
                         tVector3d(0, 0, 1)};
@@ -126,14 +113,13 @@ void btGenControllerBase::DrawFrame(const tMatrix &transform)
                                         btMathUtil::Expand(obj_rest_orient, 0))
                     .block(0, 0, 3, 3);
             first_trans.block(0, 3, 3, 1) = length * axis / 2;
-            std::cout << "[debug] index " << i << " first trans = \n"
-                      << first_trans << std::endl;
         }
-        std::cout << "[warn] attention: the ref frame needs another result\n";
+
+        // multiple to another specified transform
+        first_trans = transform * first_trans;
         mDrawFrame[i]->setWorldTransform(
             btBulletUtil::tMatrixTobtTransform(first_trans));
     }
-    // exit(0);
 }
 
 /**

@@ -2952,6 +2952,10 @@ tVector3d cRobotModel::GetComVelocity() const { return com_vel; }
  * \brief               Get the heading of this robot
  * the heading is the rotation angle of root link along with Y axis. we assume the Y axis is the upright
  * \return angle double in [-pi, pi]
+ * 
+ * IMPORTANCT: the heading angle is different when the unit vec is different. 
+ * for example, the heading angles are different when unit_vec = (1, 0, 0) or unit_vec = (0, 0, 1)
+ * we choose the result of (1, 0, 0) here
 */
 double cRobotModel::GetHeading() const
 {
@@ -2961,5 +2965,6 @@ double cRobotModel::GetHeading() const
     unit_vec[1] = 0;
     unit_vec.normalize();
 
-    return std::atan2(-unit_vec[2], unit_vec[0]);
+    double heading = std::atan2(-unit_vec[2], unit_vec[0]);
+    return heading;
 }
