@@ -5,11 +5,11 @@
     "enable_ground": true,
     "ground_height": 0,
     "real_time_sim": true,
-    "multibody_path": "../DeepMimic/data/1111/characters/skeleton_bipedal_sph_legs.json",
+    "multibody_path": "../DeepMimic/data/1111/characters/skeleton_legs_bigroot.json",
     "enable_controller": true,
     "enable_contact_aware_control": false,
     "contact_aware_ref_traj": "../DeepMimic/data/id_test/sample_legs/traj_legs_51668091.json",
-    "ctrl_config": "examples/CustomEngine/ctrl_configs/simbicon_configs/bipedal/simbicon_bipedal_config_sph_legs.json",
+    "ctrl_config": "examples/CustomEngine/ctrl_configs/simbicon_configs/3d/simbicon_config.json",
     "obj_num": 10,
     "obj_type": "ball",
     "obj_type_bak": "cube",
@@ -35,7 +35,7 @@
         "multibody_path_box": "../DeepMimic/data/0424/characters/skeleton_box.json",
         "multibody_path_sphere": "../DeepMimic/data/0424/characters/skeleton_sphere.json"
     },
-    "camera_init_param": [
+    "camera_init_param_sid": [
         3,
         52,
         -35,
@@ -51,12 +51,12 @@
         0.0,
         0.5
     ],
-    "camera_init_param_sid": [
+    "camera_init_param": [
         1,
         180,
         0,
         0,
         0.1,
-        3
+        2
     ]
 }

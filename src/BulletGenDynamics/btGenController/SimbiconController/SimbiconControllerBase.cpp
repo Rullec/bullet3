@@ -479,6 +479,7 @@ void btGenSimbiconControllerBase::CalcTargetPoseSphericalHips(
     d = head_inv_rotmat * d; // now d is expressed in heading frame
     v = head_inv_rotmat * v; // now v is expressed in heading frame
 
+    // verify the d and v
     auto swing_joint =
         dynamic_cast<Joint *>(mModel->GetJointById(mSwingHipInfo.first));
 
@@ -488,7 +489,7 @@ void btGenSimbiconControllerBase::CalcTargetPoseSphericalHips(
         btMathUtil::EulerangleToAxisAngle(
             btMathUtil::Expand(raw_target_euler, 0), btRotationOrder::bt_XYZ)
             .segment(0, 3);
-    // 1. update forward target (z axis)
+    // 1. update forward target (z axis) NOOOOOOOOO it's wrong
     target_aa[0] += -mCd_forward * d[0] - mCv_forward * v[0];
 
     // 2. update tangent target (x target)
