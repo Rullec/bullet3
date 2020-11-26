@@ -24,7 +24,8 @@ btGenControllerBase *BuildController(btGeneralizeWorld *world,
                 ctrl = new btGenPDController(world);
                 break;
             case ebtGenControllerType::SimbiconSPDController:
-                ctrl = new btGenSimbiconSPDController(world);
+                BTGEN_ASSERT(false);
+                // ctrl = new btGenSimbiconSPDController(world);
                 break;
             case ebtGenControllerType::ContactAwareController:
                 ctrl = new btGenContactAwareController(world);

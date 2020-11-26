@@ -14,6 +14,10 @@ btGenJointPDCtrl::btGenJointPDCtrl(cRobotModelDynamics *model, Joint *joint,
     mKp = kp;
     mKd = kd;
     mForceLim = force_lim;
+
+    if (mUseWorldCoord)
+        printf("[log] joint %d %s use world PD coord\n", joint->GetId(),
+               joint->GetName().c_str());
 }
 
 void btGenJointPDCtrl::SetKp(double Kp) { mKp = Kp; }
@@ -40,13 +44,14 @@ Joint *btGenJointPDCtrl::GetJoint() const { return mJoint; }
  *                  if mUseWorldCoord is True, the theta should be this joint's global orientation, expressed in quaternion
  * 
 */
-tVector btGenJointPDCtrl::CalcControlForce(const tVectorXd &tar_q,
-                                           const tVectorXd &tar_qdot) const
+tVector
+btGenJointPDCtrl::CalcControlForce(const tVectorXd &control_tar_q,
+                                   const tVectorXd &control_tar_qdot) const
 {
     int offset = mJoint->GetOffset();
     int size = this->GetCtrlDims();
-    tVectorXd local_target_theta = tar_q.segment(offset, size);
-    tVectorXd local_target_vel = tar_qdot.segment(offset, size);
+    tVectorXd local_target_theta = control_tar_q.segment(offset, size);
+    tVectorXd local_target_vel = control_tar_qdot.segment(offset, size);
     tVector force = tVector::Zero();
     switch (mJoint->GetJointType())
     {
@@ -63,7 +68,12 @@ tVector btGenJointPDCtrl::CalcControlForce(const tVectorXd &tar_q,
         ControlForceRevolute(force, local_target_theta, local_target_vel);
         break;
     case JointType::FIXED_JOINT:
+    case JointType::FIXED_NONE_JOINT:
         ControlForceFixed(force, local_target_theta, local_target_vel);
+        break;
+    case JointType::LIMIT_NONE_JOINT:
+        ControlForceLimitNone(force, local_target_theta, local_target_vel);
+        break;
     default:
         BTGEN_ASSERT(false);
         break;
@@ -72,7 +82,7 @@ tVector btGenJointPDCtrl::CalcControlForce(const tVectorXd &tar_q,
     {
         force = force.normalized() * mForceLim;
     }
-    // std::cout << "joint " << mJoint->GetId() << " force = " << force.transpose()
+    // std::cout << "[pd] joint " << mJoint->GetId() << " force = " << force.transpose()
     //           << " lim = " << mForceLim << std::endl;
 
     // DebugVerifyCtrlForceKp(local_target_theta, force);
@@ -235,15 +245,14 @@ void btGenJointPDCtrl::ControlForceFixed(
 
 /**
  * \brief           Get the local control target  (PD Target theta in joint's local frame)
+ *  This function can only be calculated when mUseWorldCoord = true
 */
-void btGenJointPDCtrl::CalcLocalControlTarget(
-    tVectorXd &local_control_target,
+tVectorXd btGenJointPDCtrl::CalcLocalControlTargetByWorldTarget(
     const tQuaternion &target_global_quad) const
 {
     // if this joint's target is in world coord, the local_control_target is the target global orientation of this joint, quaternio
-    if (mUseWorldCoord == true)
-    {
-        /*
+    BTGEN_ASSERT(mUseWorldCoord == true);
+    /*
             calcualte the current local target 
 
             joint_global_rot = rest_rot * local_rot
@@ -252,106 +261,133 @@ void btGenJointPDCtrl::CalcLocalControlTarget(
             target_global_rot = joint->rest_rot * local_target 
             SO: local_target = target_global_rot * rest_rot.conj()            
         */
-        tQuaternion cur_global_rot =
-            btMathUtil::RotMat3dToQuaternion(mJoint->GetWorldOrientation());
+    tMatrix3d cur_global_rot = mJoint->GetWorldOrientation();
 
-        tQuaternion cur_local_rot =
-            btMathUtil::RotMat3dToQuaternion(mJoint->GetRotations());
-        tQuaternion cur_joint_rest_rot =
-            cur_global_rot * cur_local_rot.conjugate();
+    tMatrix3d cur_local_rot = mJoint->GetRotations();
+    tMatrix3d cur_joint_rest_rot = cur_global_rot * cur_local_rot.transpose();
 
-        tQuaternion local_target =
-            target_global_quad * cur_joint_rest_rot.conjugate();
+    tMatrix local_target = btMathUtil::ExpandMat(
+        cur_joint_rest_rot.transpose() *
+            btMathUtil::RotMat(target_global_quad).block(0, 0, 3, 3),
+        0);
 
-        // convert this quaternion to the local control target
+    // convert this quaternion to the local control target
 
-        tVectorXd control_target = tVectorXd(0);
-        switch (mJoint->GetJointType())
-        {
-        case JointType::SPHERICAL_JOINT:
-            control_target = btMathUtil::QuaternionToEulerAngles(
-                                 local_target, btRotationOrder::bt_XYZ)
-                                 .segment(0, 3);
-            break;
-        case JointType::REVOLUTE_JOINT:
-        {
-            // convert the local_target quaternion to the axis angle, then project it to the axis of the revolute freedom
-            tVector3d local_target_aa =
-                btMathUtil::QuaternionToAxisAngle(local_target).segment(0, 3);
-            tVector3d axis = mJoint->GetFreedoms(0)->axis;
-            BTGEN_ASSERT(std::fabs(axis.norm() - 1) < 1e-10);
-            double target_angle = local_target_aa.dot(axis);
-            // printf("revolute target angle PD is %.3f\n", target_angle);
-            // std::cout << "axis = " << axis.transpose() << std::endl;
-            // std::cout << "local target aa = " << local_target_aa.transpose()
-            //           << std::endl;
-            // std::cout << "joint current value = " << mJoint->GetFreedoms(0)->v
-            //           << std::endl;
-            control_target = tVectorXd::Ones(1) * target_angle;
-        }
+    tVectorXd control_target = tVectorXd(0);
+    switch (mJoint->GetJointType())
+    {
+    case JointType::SPHERICAL_JOINT:
+        control_target = btMathUtil::RotmatToEulerAngle(local_target,
+                                                        btRotationOrder::bt_XYZ)
+                             .segment(0, 3);
+
+        // {
+        //     tMatrix new_local_rot = btMathUtil::EulerAnglesToRotMat(
+        //         btMathUtil::Expand(control_target, 0), btRotationOrder::bt_XYZ);
+        //     {
+        //         tMatrix local_diff = local_target - new_local_rot;
+        //         double norm = local_diff.norm();
+        //         std::cout << "local diff = " << norm << std::endl;
+        //         BTGEN_ASSERT(norm < 1e-6);
+        //     }
+
+        //     tMatrix diff =
+        //         btMathUtil::ExpandMat(cur_joint_rest_rot, 0) * new_local_rot -
+        //         btMathUtil::RotMat(target_global_quad);
+        //     double norm = diff.norm();
+        //     std::cout << "[pd] CalcLocalTarget: spherical diff norm = " << norm
+        //               << std::endl;
+        //     std::cout << "diff = \n" << diff << std::endl;
+        //     BTGEN_ASSERT(norm < 1e-6);
+        // }
         break;
-        case JointType::NONE_JOINT:
-            // for none joint, the same as spherical joint
-            control_target = tVectorXd::Zero(6);
-            control_target.segment(3, 3) =
-                btMathUtil::QuaternionToEulerAngles(local_target,
-                                                    btRotationOrder::bt_XYZ)
-                    .segment(0, 3);
-            break;
-        case JointType::FIXED_JOINT:
-            control_target = tVectorXd::Zero(0);
-            break;
-        case JointType::BIPEDAL_NONE_JOINT:
-        {
-            control_target = tVectorXd::Zero(3);
-            tVector aa = btMathUtil::QuaternionToEulerAngles(
-                local_target, btRotationOrder::bt_XYZ);
-            BTGEN_ASSERT(std::fabs(aa[1]) < 1e-10);
-            BTGEN_ASSERT(std::fabs(aa[2]) < 1e-10);
-            control_target[2] = aa[0];
-        }
-        break;
-        default:
-            std::cout << "joint type " << mJoint->GetJointType()
-                      << " unsupported in joint pd ctrl\n";
-            BTGEN_ASSERT(false);
-            break;
-        }
-        local_control_target = control_target;
+    case JointType::REVOLUTE_JOINT:
+    {
+        // convert the local_target quaternion to the axis angle, then project it to the axis of the revolute freedom
+        tVector3d local_target_aa =
+            btMathUtil::RotmatToAxisAngle(local_target).segment(0, 3);
+        tVector3d axis = mJoint->GetFreedoms(0)->axis;
+        BTGEN_ASSERT(std::fabs(axis.norm() - 1) < 1e-10);
+        double target_angle = local_target_aa.dot(axis);
+        // printf("revolute target angle PD is %.3f\n", target_angle);
+        // std::cout << "axis = " << axis.transpose() << std::endl;
+        // std::cout << "local target aa = " << local_target_aa.transpose()
+        //           << std::endl;
+        // std::cout << "joint current value = " << mJoint->GetFreedoms(0)->v
+        //           << std::endl;
+        control_target = tVectorXd::Ones(1) * target_angle;
     }
+    break;
+    case JointType::NONE_JOINT:
+        // for none joint, the same as spherical joint
+        control_target = tVectorXd::Zero(6);
+        control_target.segment(3, 3) =
+            btMathUtil::RotmatToAxisAngle(local_target).segment(0, 3);
+        break;
+    case JointType::FIXED_JOINT:
+        control_target = tVectorXd::Zero(0);
+        break;
+    case JointType::BIPEDAL_NONE_JOINT:
+    {
+        control_target = tVectorXd::Zero(3);
+        tVector aa = btMathUtil::RotmatToEulerAngle(local_target,
+                                                    btRotationOrder::bt_XYZ);
+        BTGEN_ASSERT(std::fabs(aa[1]) < 1e-10);
+        BTGEN_ASSERT(std::fabs(aa[2]) < 1e-10);
+        control_target[2] = aa[0];
+    }
+    break;
+    default:
+        std::cout << "joint type " << mJoint->GetJointType()
+                  << " unsupported in joint pd ctrl\n";
+        BTGEN_ASSERT(false);
+        break;
+    }
+    return control_target;
 }
 
 /**
- * \brief           given a local target pose (q, full size), 
+ * \brief           given a full size target q, calculate the local control target of this joint
  * if the mUseWorldCoord = True, this function will convert
  * the given target to another local given target, but can 
  * make the target joint's world orientation
  * is the same as desired
- * \param q         ref to local target pose, return world-fitted local target pose
+ * 
+ * \param full_q_target     calculate the 
+ * 
+ * 
 */
-void btGenJointPDCtrl::BuildTargetPose(tVectorXd &q)
+tVectorXd
+btGenJointPDCtrl::CalcJointTargetPose(const tVectorXd &full_q_target) const
 {
+    int offset = mJoint->GetOffset(), size = mJoint->GetNumOfFreedom();
+    tVectorXd joint_local_target = tVectorXd::Zero(size);
     if (mUseWorldCoord == true)
     {
+        // in world coord
         // 1. set q (use the fastest way)
         tVectorXd q_old = mModel->Getq();
-        mModel->Apply(q, false);
+        mModel->Apply(full_q_target, false);
         tQuaternion tar_world_orient =
             btMathUtil::RotMat3dToQuaternion(mJoint->GetWorldOrientation());
 
         mModel->Apply(q_old, false);
         // 2. calculate the local target
-        tVectorXd joint_target = q.segment(mJoint->GetOffset(), GetCtrlDims());
 
-        CalcLocalControlTarget(joint_target, tar_world_orient);
-
-        // 3. write the local target back
-        q.segment(mJoint->GetOffset(), GetCtrlDims()) = joint_target;
+        joint_local_target =
+            CalcLocalControlTargetByWorldTarget(tar_world_orient);
     }
+    else
+    {
+        // doesn't in world coord
+        joint_local_target = full_q_target.segment(offset, size);
+    }
+    return joint_local_target;
 }
-void btGenJointPDCtrl::BuildTargetVel(tVectorXd &qdot)
+tVectorXd btGenJointPDCtrl::CalcJointTargetVel(const tVectorXd &qdot) const
 {
-    // doesn't have any change
+    int offset = mJoint->GetOffset(), size = mJoint->GetNumOfFreedom();
+    return qdot.segment(offset, size);
 }
 
 double btGenJointPDCtrl::GetForceLim() const { return this->mForceLim; }
@@ -427,6 +463,7 @@ void btGenJointPDCtrl::DebugVerifyCtrlForceKp(const tVectorXd &local_target,
                   << error.transpose() << std::endl;
         std::cout << "\tideal dir = " << ideal_dir.transpose() << std::endl;
         std::cout << "\ttrue dir = " << truth_dir.transpose() << std::endl;
+        std::cout << "\tcalc_torque = " << calc_torque.transpose() << std::endl;
         exit(0);
     }
     std::cout << "[pd] debug is enabled! kd is set to zero, verified succ\n";
@@ -479,4 +516,22 @@ void btGenJointPDCtrl::DebugVerifyCtrlForceKd(
         exit(0);
     }
     mModel->PopState("debug_verify_pd_kd");
+}
+
+/**
+ * \brief           calculate PD force for limit none
+*/
+void btGenJointPDCtrl::ControlForceLimitNone(
+    tVector &force, const tVectorXd &local_target_theta,
+    const tVectorXd &local_target_vel) const
+{
+    auto joint = GetJoint();
+    BTGEN_ASSERT(JointType::LIMIT_NONE_JOINT == joint->GetJointType());
+
+    // limit none joint, only has x translation force
+    force.setZero();
+    double cur_theta = mModel->Getq()[joint->GetOffset()],
+           cur_vel = mModel->Getqdot()[joint->GetOffset()];
+    force[0] = mKp * (local_target_theta[0] - cur_theta) +
+               mKd * (local_target_vel[0] - cur_vel);
 }

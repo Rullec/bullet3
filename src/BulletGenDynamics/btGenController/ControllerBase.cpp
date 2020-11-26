@@ -12,6 +12,15 @@ btGenControllerBase::btGenControllerBase(ebtGenControllerType type,
     mDrawPointsList.clear();
 }
 
+btGenControllerBase::~btGenControllerBase()
+{
+    for (auto &x : mDrawPointsList)
+        mWorld->GetInternalWorld()->removeCollisionObject(x);
+    mDrawPointsList.clear();
+    for (auto &x : mDrawFrame)
+        mWorld->GetInternalWorld()->removeCollisionObject(x);
+    mDrawFrame.clear();
+}
 void btGenControllerBase::Init(cRobotModelDynamics *model,
                                const std::string &conf)
 {
@@ -89,7 +98,7 @@ void btGenControllerBase::DrawFrame(const tMatrix &transform)
 {
     // if it doesn't exist, create three lines, and put them into mDrawFrame
     double length = 0.5, // 0.5m
-        radius = 0.01; // 1cm
+        radius = 0.01;   // 1cm
     if (mDrawFrame.size() == 0)
     {
         for (int i = 0; i < 3; i++)

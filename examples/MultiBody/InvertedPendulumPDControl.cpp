@@ -331,7 +331,7 @@ void InvertedPendulumPDControl::initPhysics()
 	btTransform baseWorldTrans;
 	baseWorldTrans.setIdentity();
 	baseWorldTrans.setOrigin(btVector3(1, 2, 3));
-	m_multiBody = createInvertedPendulumMultiBody(m_dynamicsWorld, m_guiHelper, baseWorldTrans, true);
+	m_multiBody = createInvertedPendulumMultiBody(m_dynamicsWorld, m_guiHelper, baseWorldTrans, false);
 
 	//for (int i=pMultiBody->getNumLinks()-1;i>=0;i--)//
 	for (int i = 0; i < m_multiBody->getNumLinks(); i++)

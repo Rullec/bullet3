@@ -24,10 +24,8 @@ void btGenSimbiconSPDController::Init(cRobotModelDynamics *model,
 }
 void btGenSimbiconSPDController::Update(double dt)
 {
-    mTargetqCur = mTargetqSet;
-    mTargetqdotCur = mTargetqdotSet;
-    BuildTargetPose(mTargetqCur);
-    BuildTargetVel(mTargetqdotCur);
+    CalcTargetPose(mTargetq);
+    CalcTargetVel(mTargetq);
     mTargetUpdated = true;
 }
 void btGenSimbiconSPDController::Reset() {}
@@ -46,10 +44,6 @@ void btGenSimbiconSPDController::CalculateControlForces(
 
     if (EnableSimbiconSPD() == true)
     {
-        std::cout << "[simbicon_pd] mTarget_q set = "
-                  << this->mTargetqSet.transpose() << std::endl;
-        std::cout << "[simbicon_pd] mTarget_q cur = "
-                  << this->mTargetqCur.transpose() << std::endl;
         BTGEN_ASSERT(JointType::SPHERICAL_JOINT ==
                      mModel->GetJointById(mSwingHipId)->GetJointType());
         BTGEN_ASSERT(JointType::SPHERICAL_JOINT ==

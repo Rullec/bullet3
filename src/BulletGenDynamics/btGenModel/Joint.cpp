@@ -816,7 +816,8 @@ bool Joint::GetIsRootJoint() const
     {
         BTGEN_ASSERT(joint_type == JointType::NONE_JOINT ||
                      joint_type == JointType::BIPEDAL_NONE_JOINT ||
-                     joint_type == JointType::LIMIT_NONE_JOINT);
+                     joint_type == JointType::LIMIT_NONE_JOINT ||
+                     joint_type == JointType::FIXED_NONE_JOINT);
     }
     return should_be_root;
 }
@@ -1165,11 +1166,22 @@ int Joint::GetOffset() const
 {
     if (freedoms.size() != 0)
     {
+
+        // not fixed joint
         return freedoms[0].id;
     }
     else
     {
-        return dependent_dof_id[dependent_dof_id.size() - 1];
+        if (dependent_dof_id.size() != 0)
+        {
+            // fixed joint, but not root
+            return dependent_dof_id[dependent_dof_id.size() - 1];
+        }
+        else
+        {
+            // fixed root joint
+            return 0;
+        }
     }
 }
 

@@ -30,17 +30,23 @@ public:
     std::vector<btGenJointPDCtrl *> &GetJointPDCtrls();
 
 protected:
-    tVectorXd mTargetqCur,
-        mTargetqdotCur; // current target q and target qdot (gen coordinate and gen vel), time variant
-    tVectorXd mTargetqSet,
-        mTargetqdotSet; // setted target q and target qdot (gen coordinate and gen vel), fixed if not being set again
+    tVectorXd mTargetq,
+        mTargetqdot; // target q and target qdot, set from outside
 
-    bool mEnableSPD; // enable stable pd control or not
+    bool mEnableSPD;         // enable stable pd control or not
+    bool mEnablePDForceTest; // enable debug verification
     std::vector<btGenJointPDCtrl *> mExpJointPDControllers;
     void ParseConfig(const std::string &string);
-    void BuildTargetPose(tVectorXd &pose);
-    void BuildTargetVel(tVectorXd &vel);
-    void CalculateControlForcesSPD(double dt,
+    tVectorXd CalcTargetPose(const tVectorXd &pose) const;
+    tVectorXd CalcTargetVel(const tVectorXd &vel) const;
+    void CalculateControlForcesSPD(double dt, const tVectorXd &target_q,
+                                   const tVectorXd &target_qdot,
                                    tEigenArr<btGenPDForce> &pd_forces);
-    void CalculateControlForcesExp(tEigenArr<btGenPDForce> &pd_forces);
+    void CalculateControlForcesExp(const tVectorXd &target_q,
+                                   const tVectorXd target_qdot,
+                                   tEigenArr<btGenPDForce> &pd_forces);
+    void TestPDController(double dt);
+    void TestPDControllerBuildPose(double dt);
+    void TestPDControllerKpForce(double dt);
+    void TestPDControllerKdForce(double dt);
 };

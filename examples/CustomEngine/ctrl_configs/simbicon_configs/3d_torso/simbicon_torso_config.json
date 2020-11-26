@@ -1,13 +1,12 @@
 {
     "ctrl_type": "SimbiconController",
-    "corresponding_char_path": "../DeepMimic/data/1111/characters/skeleton_bipedal_sph_legs.json",
-    "pd_controller_path": "examples/CustomEngine/ctrl_configs/pd_config_legs.json",
+    "corresponding_char_path": "../DeepMimic/data/1127/characters/lower_halfbody_torso.json",
+    "pd_controller_path": "examples/CustomEngine/ctrl_configs/pd_config_torso.json",
     "ignore_balance_control_in_0_2_state": false,
     "enable_stance_control_ratio": true,
     "enable_draw_heading_frame": true,
     "FSM": {
-        "state_traj_path": "examples/CustomEngine/ctrl_configs/simbicon_configs/bipedal/target_bipedal_sph_legs_jog.json",
-        "state_traj_path_walk": "examples/CustomEngine/ctrl_configs/simbicon_configs/bipedal/simbicon_bipedal_target_walk.json",
+        "state_traj_path": "examples/CustomEngine/ctrl_configs/simbicon_configs/3d_torso/3d_torso_stepping.json",
         "num_of_states": 4,
         "states": [
             {
@@ -27,7 +26,7 @@
                 "conditions": [
                     {
                         "condition_type": "LinkContact",
-                        "contact_link_name": "RFootTongue",
+                        "contact_link_name": "RightFootTongue",
                         "target_state_id": 2
                     }
                 ],
@@ -51,7 +50,7 @@
                 "conditions": [
                     {
                         "condition_type": "LinkContact",
-                        "contact_link_name": "LFootTongue",
+                        "contact_link_name": "LeftFootTongue",
                         "target_state_id": 0
                     }
                 ],
@@ -61,9 +60,9 @@
         ]
     },
     "balance_control": {
-        "Cd_forward": 0.6,
-        "Cv_forward": 0.3,
-        "Cd_tangent": 0.0,
-        "Cv_tangent": 0.0
+        "Cd_forward": 0.5,
+        "Cv_forward": 0.2,
+        "Cd_tangent": 0.3,
+        "Cv_tangent": 0.3
     }
 }

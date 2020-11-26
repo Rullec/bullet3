@@ -17,6 +17,7 @@ SET(
 	./btGenModel/RootJoint.cpp
 	./btGenModel/LimitRootJoint.cpp
 	./btGenModel/BipedalRootJoint.cpp
+	./btGenModel/FixedRootJoint.cpp
 	./btGenModel/SimObj.cpp
 	./btGenModel/tools.cpp
 	btGenModel/Tinyxml/tinystr.cpp
@@ -70,7 +71,7 @@ SET(
 	./btGenController/ControllerBase.cpp
 	./btGenController/BuildController.cpp
 	./btGenController/PDController/btGenPDController.cpp
-	./btGenController/PDController/btGenSimbiconSPDController.cpp
+	# ./btGenController/PDController/btGenSimbiconSPDController.cpp
 	./btGenController/PDController/JointPDCtrl.cpp
 	./btGenController/ContactAwareController/btGenContactAwareController.cpp
 	./btGenController/ContactAwareController/btGenTargetCalculator.cpp

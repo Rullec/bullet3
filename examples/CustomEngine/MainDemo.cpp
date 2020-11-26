@@ -307,6 +307,7 @@ void CustomEngineMainDemo::SinglestepSim(float dt)
     global_frame_id++;
     return;
 }
+#include "BulletGenDynamics/btGenModel/Joint.h"
 #include "BulletGenDynamics/btGenModel/Link.h"
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
 void CustomEngineMainDemo::Test()
@@ -320,10 +321,11 @@ void CustomEngineMainDemo::Test()
 
     // for (int i = 0; i < mb->GetNumOfLinks(); i++)
     // {
-    //     auto link = dynamic_cast<Link *>(mb->GetLinkById(i));
-    //     std::cout << "link " << i << " M = \n"
-    //               << link->GetMassMatrix() << std::endl;
+    //     auto joint = dynamic_cast<Joint *>(mb->GetJointById(i));
+    //     std::cout << "joint " << i << " type = \n"
+    //               << joint->GetJointType() << std::endl;
     // }
+    // exit(0);
     mb->TestdMassMatrixdq();
     mb->TestSecondJacobian();
     mb->TestThirdJacobian();

@@ -19,8 +19,10 @@ public:
     btGenFSM(btGeneralizeWorld *world, cRobotModelDynamics *model,
              const Json::Value &config);
     ~btGenFSM();
-    void Init(int &default_stance);
-    void Update(double dt, tVectorXd &target_pose, int &stance);
+    void Init();
+    void Update(double dt, tVectorXd &target_pose, int &stance,
+                const int old_swing_foot_id, const int old_stance_foot_id);
+    void SetState(int state_id);
     tVectorXd GetTargetPose();
     tState *GetCurrentState();
 

@@ -21,8 +21,8 @@ public:
     Joint *GetJoint() const;
     tVector CalcControlForce(const tVectorXd &q, const tVectorXd &qdot) const;
     int GetCtrlDims() const;
-    void BuildTargetPose(tVectorXd &q);
-    void BuildTargetVel(tVectorXd &qdot);
+    tVectorXd CalcJointTargetPose(const tVectorXd &q) const;
+    tVectorXd CalcJointTargetVel(const tVectorXd &qdot) const;
     double GetForceLim() const;
 
 protected:
@@ -37,6 +37,9 @@ protected:
     void ControlForceBipedalNone(tVector &force,
                                  const tVectorXd &local_target_theta,
                                  const tVectorXd &local_target_vel) const;
+    void ControlForceLimitNone(tVector &force,
+                               const tVectorXd &local_target_theta,
+                               const tVectorXd &local_target_vel) const;
     void ControlForceRevolute(tVector &force,
                               const tVectorXd &local_target_theta,
                               const tVectorXd &local_target_vel) const;
@@ -45,10 +48,10 @@ protected:
                                const tVectorXd &local_target_vel) const;
     void ControlForceFixed(tVector &force, const tVectorXd &local_target_theta,
                            const tVectorXd &local_target_vel) const;
-    void CalcLocalControlTarget(tVectorXd &mTargetThetaWorldOrLocal,
-                                const tQuaternion &target_global_quad) const;
+    tVectorXd CalcLocalControlTargetByWorldTarget(
+        const tQuaternion &target_global_quad) const;
     void DebugVerifyCtrlForceKp(const tVectorXd &local_target_theta,
-                              const tVector &torque);
+                                const tVector &torque);
     void DebugVerifyCtrlForceKd(const tVectorXd &local_target_theta_dot,
-                              const tVector &torque);
+                                const tVector &torque);
 };

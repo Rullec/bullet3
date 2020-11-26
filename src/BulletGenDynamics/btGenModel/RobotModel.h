@@ -136,7 +136,8 @@ public:
     bool GetComputeThirdDerive();
     const tVectorXd &Getqdot() const { return mqdot; }
     const tVectorXd &Getq() const { return mq; }
-
+    void SetFixedRootTransform(const tMatrix &trans);
+    tMatrix GetFixedRootTransform() const;
     std::string GetCharFile() const;
     double GetScale() const;
     void TestmWqqq();

@@ -177,7 +177,7 @@ tVector btMathUtil::QuaternionToAxisAngle(const tQuaternion &quater)
 
     double theta = 2 * std::acos(quater.w());
 
-    if (theta < 1e-4)
+    if (theta < 1e-5)
         return tVector::Zero();
 
     // std::cout << theta << " " << std::sin(theta / 2) << std::endl;
@@ -187,6 +187,11 @@ tVector btMathUtil::QuaternionToAxisAngle(const tQuaternion &quater)
     return theta * tVector(ax, ay, az, 0);
 }
 
+tVector btMathUtil::RotmatToAxisAngle(const tMatrix &mat)
+{
+    return btMathUtil::QuaternionToAxisAngle(
+        btMathUtil::RotMatToQuaternion(mat));
+}
 tVector btMathUtil::CalcAngularVelocity(const tQuaternion &old_rot,
                                         const tQuaternion &new_rot,
                                         double timestep)

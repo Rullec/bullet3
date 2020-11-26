@@ -55,7 +55,11 @@ btGeneralizeWorld::~btGeneralizeWorld()
         // 2. remove collider
         if (mMultibody)
         {
-            mMultibody->GetLinkCollider(0);
+            for (int i = 0; i < mMultibody->GetNumOfLinks(); i++)
+            {
+                mInternalWorld->removeCollisionObject(
+                    mMultibody->GetLinkCollider(i));
+            }
             delete mMultibody;
         }
 

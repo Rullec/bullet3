@@ -6,7 +6,7 @@
     "enable_stance_control_ratio": true,
     "enable_draw_heading_frame": true,
     "FSM": {
-        "state_traj_path": "examples/CustomEngine/ctrl_configs/simbicon_configs/3d/simbicon_target_jog.json",
+        "state_traj_path": "examples/CustomEngine/ctrl_configs/simbicon_configs/3d/simbicon_target_stepping.json",
         "num_of_states": 4,
         "states": [
             {
@@ -63,6 +63,6 @@
         "Cd_forward": 0.5,
         "Cv_forward": 0.2,
         "Cd_tangent": 0.3,
-        "Cv_tangent": 0.1
+        "Cv_tangent": 0.3
     }
 }

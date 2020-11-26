@@ -55,15 +55,15 @@ cRobotModelDynamics::~cRobotModelDynamics()
     // 	delete x;
     // }
     // mColShapes.clear();
-    for (auto &x : mColliders)
-    {
-        if (x->getCollisionShape() != nullptr)
-        {
-            delete x->getCollisionShape();
-            x->setCollisionShape(nullptr);
-        }
-        delete x;
-    }
+    // for (auto &x : mColliders)
+    // {
+    //     if (x->getCollisionShape() != nullptr)
+    //     {
+    //         delete x->getCollisionShape();
+    //         x->setCollisionShape(nullptr);
+    //     }
+    //     delete x;
+    // }
     mColliders.clear();
 
     for (auto &x : mStateStack)
@@ -1101,27 +1101,27 @@ tVectorXd cRobotModelDynamics::Getqddot()
     return qddot;
 }
 
-void cRobotModelDynamics::UpdateVelocityWithoutCoriolis(double dt)
-{
-    int n = GetNumOfFreedom();
-    tVectorXd residual = GetGeneralizedForce();
-    tVectorXd qddot = inv_mass_matrix * residual;
+// void cRobotModelDynamics::UpdateVelocityWithoutCoriolis(double dt)
+// {
+//     int n = GetNumOfFreedom();
+//     tVectorXd residual = GetGeneralizedForce();
+//     tVectorXd qddot = inv_mass_matrix * residual;
 
-    if (qddot.hasNaN())
-    {
-        std::cout << "UpdateVelocityWithoutCoriolis: qddot hasNan\n";
-        exit(0);
-    }
-    mqdot += qddot * dt;
-    mqdot = mqdot.cwiseMax(-mMaxVel);
-    mqdot = mqdot.cwiseMin(mMaxVel);
+//     if (qddot.hasNaN())
+//     {
+//         std::cout << "UpdateVelocityWithoutCoriolis: qddot hasNan\n";
+//         exit(0);
+//     }
+//     mqdot += qddot * dt;
+//     mqdot = mqdot.cwiseMax(-mMaxVel);
+//     mqdot = mqdot.cwiseMin(mMaxVel);
 
-    // 3. recalculate the coriolis force
-    ComputeCoriolisMatrix(mqdot);
+//     // 3. recalculate the coriolis force
+//     ComputeCoriolisMatrix(mqdot);
 
-    // 4. update the cartesian velocity for each link
-    UpdateCartesianVelocity();
-}
+//     // 4. update the cartesian velocity for each link
+//     UpdateCartesianVelocity();
+// }
 
 /**
  * \brief				Update cartesian velocity (lin vel and
@@ -1175,7 +1175,7 @@ void cRobotModelDynamics::TestRotationChar()
 
     tMatrix new_rotation =
         diff_rot * old_rotation *
-        btMathUtil::ExpandMat(link->GetMeshRotation()).transpose();
+        btMathUtil::ExpandMat(link->GetMeshRotation(), 0).transpose();
     std::cout << "new rot = \n" << new_rotation << std::endl;
 
     tVector new_euler_angles = btMathUtil::QuaternionToEulerAngles(
@@ -2058,6 +2058,8 @@ void cRobotModelDynamics::TestSetFreedomValueAndDot()
     {
         auto joint = dynamic_cast<Joint *>(GetJointById(i));
         int local_dof = joint->GetNumOfFreedom();
+        if (local_dof == 0)
+            continue;
         int offset = joint->GetFreedoms(0)->id;
         for (int j = 0; j < local_dof; j++)
         {
@@ -2181,6 +2183,13 @@ void cRobotModelDynamics::ConvertGenForceToCartesianForceTorque(
                 gen_force[2] - (root_jvT.block(0, 0, 3, 3) * root_force)[2];
         }
         break;
+        case JointType::FIXED_NONE_JOINT:
+        {
+            root_force.setZero();
+            root_torque.setZero();
+            break;
+        }
+
         default:
             BTGEN_ASSERT(false);
             break;

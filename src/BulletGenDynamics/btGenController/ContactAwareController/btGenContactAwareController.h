@@ -34,7 +34,7 @@ public:
     // btGenContactAwareController(btGeneralizeWorld* world, const std::string&
     // guide_traj, double W, double Wm);
     btGenContactAwareController(btGeneralizeWorld *world);
-    ~btGenContactAwareController();
+    virtual ~btGenContactAwareController();
     virtual void Init(cRobotModelDynamics *mModel,
                       const std::string &config_file) override;
     // int GetInternalFrameId() const;

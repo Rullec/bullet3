@@ -63,7 +63,8 @@ public:
     static tQuaternion CoefToQuaternion(const tVector &);
     static tQuaternion AxisAngleToQuaternion(const tVector &angvel);
     static tMatrix AxisAngleToRotmat(const tVector &angvel);
-    static tVector RotmatToEulerAngle(const tMatrix &rotmat, btRotationOrder order);
+    static tVector RotmatToEulerAngle(const tMatrix &rotmat,
+                                      btRotationOrder order);
     static tVector AxisAngleToEulerAngle(const tVector &aa,
                                          btRotationOrder order);
     static tQuaternion EulerAnglesToQuaternion(const tVector &vec,
@@ -71,6 +72,7 @@ public:
     static tQuaternion MinusQuaternion(const tQuaternion &quad);
     static tVector QuaternionToCoef(const tQuaternion &quater);
     static tVector QuaternionToAxisAngle(const tQuaternion &);
+    static tVector RotmatToAxisAngle(const tMatrix &mat);
     static tVector CalcAngularVelocity(const tQuaternion &old_rot,
                                        const tQuaternion &new_rot,
                                        double timestep);
@@ -127,10 +129,11 @@ public:
         return tVector(vec[0], vec[1], vec[2], n);
     }
 
-    template <typename T> static tMatrix ExpandMat(const T &mat)
+    template <typename T> static tMatrix ExpandMat(const T &mat, double v)
     {
         tMatrix tmp = tMatrix::Zero();
         tmp.block(0, 0, 3, 3) = mat.block(0, 0, 3, 3);
+        tmp(3, 3) = v;
         return tmp;
     }
 

@@ -7,7 +7,7 @@ class cRobotModelDynamics;
 /**
  * \brief           change the contact configuration in current ref traj to Given the local contact point (2 points on foot)
  * 
- * used to reproduce the application of "Contact-aware nonlinear character control"
+ * used to reproduce the paper "Contact-aware nonlinear character control"
  * 
  * The resulted traj will be saved to another location, which can be reused later
 */

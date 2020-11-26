@@ -9,10 +9,9 @@
 btGenPDController::btGenPDController(btGeneralizeWorld *world)
     : btGenControllerBase(ebtGenControllerType::PDController, world)
 {
-    mTargetqSet.resize(0);
-    mTargetqdotSet.resize(0);
-    mTargetqCur.resize(0);
-    mTargetqdotCur.resize(0);
+    mEnablePDForceTest = false;
+    mTargetq.resize(0);
+    mTargetqdot.resize(0);
     mExpJointPDControllers.clear();
 }
 
@@ -36,121 +35,15 @@ void btGenPDController::Init(cRobotModelDynamics *model,
  * \brief               Set the PD target theta (gen coord)
  * \param q             all local coordinate target q (it will be converted to world frame automatically in CalcContorlForces)
  */
-void btGenPDController::SetPDTargetq(const tVectorXd &q)
-{
-    mTargetqSet = q;
-
-    // if (mEnableSPD == false)
-    // {
-    //     // if SPD is disabled, dispatch the target q to each joint
-    //     int num_of_freedom = mModel->GetNumOfFreedom();
-    //     BTGEN_ASSERT(mTargetq.size() == num_of_freedom);
-    //     tVectorXd old_q = mModel->Getq();
-    //     mModel->Apply(mTargetq, false);
-    //     for (auto pd_ctrl : mExpJointPDControllers)
-    //     {
-    //         auto joint = pd_ctrl->GetJoint();
-    //         if (pd_ctrl->GetUseWorldCoord() == false)
-    //         {
-    //             pd_ctrl->SetTargetTheta(q);
-    //         }
-    //         else
-    //         {
-    //             printf("[debug] for joint %d, use world coord PD control, "
-    //                    "begin to set PD target q\n",
-    //                    joint->GetId());
-    //             // get the target world rotation of this joint
-    //             // convert it to quaternion, then set it to the controller
-    //             pd_ctrl->SetTargetTheta(btMathUtil::QuaternionToCoef(
-    //                 btMathUtil::RotMat3dToQuaternion(
-    //                     joint->GetWorldOrientation())));
-    //             std::cout << "world target = "
-    //                       << pd_ctrl->GetTargetTheta().transpose() << std::endl;
-    //         }
-    //     }
-    //     mModel->Apply(old_q, false);
-    // }
-}
+void btGenPDController::SetPDTargetq(const tVectorXd &q) { mTargetq = q; }
 
 /**
  * \brief               Set the PD target vel (gen vel)
 */
 void btGenPDController::SetPDTargetqdot(const tVectorXd &qdot)
 {
-    mTargetqdotSet = qdot;
-
-    // if (mEnableSPD == false)
-    // {
-    //     // if SPD is disabled, dispatch the target qdot to each joint's PD Controller
-    //     int num_of_freedom = mModel->GetNumOfFreedom();
-    //     BTGEN_ASSERT(mTargetqdot.size() == num_of_freedom);
-    //     for (auto &pd_ctrl : mExpJointPDControllers)
-    //     {
-    //         auto joint = pd_ctrl->GetJoint();
-    //         pd_ctrl->SetTargetVel(qdot);
-    //     }
-    // }
+    mTargetqdot = qdot;
 }
-
-// /**
-//  * \brief               Calculate the generalized control torque and apply it to the robot model
-//  */
-// void btGenPDController::ApplyGeneralizedTau(double timestep)
-// {
-//     int dof = mModel->GetNumOfFreedom();
-//     if (dof != mTargetq.size() || dof != mTargetqdot.size())
-//     {
-//         std::cout << "[error] btGenPDController::ApplyGeneralizedTau target q "
-//                      "and qdot hasn't been set\n";
-//         exit(0);
-//     }
-//     tVectorXd tau = tVectorXd::Zero(dof);
-
-//     tVectorXd q = mModel->Getq(), qdot = mModel->Getqdot(),
-//               qddot = mModel->Getqddot();
-//     std::cout << "qdot = " << qdot.transpose() << std::endl;
-//     std::cout << "qddot = " << qddot.transpose() << std::endl;
-//     for (int i = 0; i < dof; i++)
-//     {
-//         // std::cout << "qdot " << i << " = " << qdot[i] << ", max vel = " <<
-//         // mModel->GetMaxVel() << std::endl; std::cout << "res = " <<
-//         // (std::fabs(qdot[i]) - 10) << std::endl;
-//         if ((std::fabs(qdot[i])) >= mModel->GetMaxVel() - 5)
-//         {
-//             std::cout << "qdot " << i << " = " << qdot[i]
-//                       << " exceed the maxvel, belongs to joint "
-//                       << mModel->GetJointByDofId(i)->GetName() << std::endl;
-//         }
-//     }
-//     if (mEnableSPD == false)
-//     {
-//         tau = mKp.cwiseProduct(mTargetq - q) +
-//               mKd.cwiseProduct(mTargetqdot - qdot);
-//     }
-//     else
-//     {
-//         tau = -mKp.cwiseProduct(q + timestep * qdot - mTargetq) -
-//               mKd.cwiseProduct(qdot + timestep * qddot - mTargetqdot);
-//     }
-
-//     double max_tau = tau.cwiseAbs().maxCoeff();
-//     if (max_tau > mTorqueLim)
-//     {
-//         std::cout << "the computed control torque " << max_tau << " > "
-//                   << mTorqueLim << ", clamped!";
-//         std::cout << "raw tau = " << tau.transpose() << std::endl;
-//         tau = tau.cwiseMax(-mTorqueLim);
-//         tau = tau.cwiseMin(mTorqueLim);
-//     }
-
-//     // underactuated: the control torque on root joint is prohibeted
-//     tau.segment(0, 6).setZero();
-
-//     for (int i = 0; i < dof; i++)
-//         mModel->ApplyGeneralizedForce(i, tau[i]);
-
-//     std::cout << "PD controller apply tau = " << tau.transpose() << std::endl;
-// }
 
 /**
  * \brief           Update the PD Controller
@@ -158,12 +51,11 @@ void btGenPDController::SetPDTargetqdot(const tVectorXd &qdot)
 */
 void btGenPDController::Update(double dt)
 {
-    // printf("pd controller update dt %.5f\n", dt);
-
-    // 2. calculate pd forces and apply
+    // 1. calculate control forces
     tEigenArr<btGenPDForce> forces;
     CalculateControlForces(dt, forces);
-    // apply the control force
+
+    // 2. apply the control force
     BTGEN_ASSERT(forces.size() == mModel->GetNumOfJoint());
     for (int i = 0; i < forces.size(); i++)
     {
@@ -172,6 +64,8 @@ void btGenPDController::Update(double dt)
                   << " force = " << forces[i].mForce.transpose() << std::endl;
         mModel->ApplyJointTorque(joint->GetId(), forces[i].mForce);
     }
+    std::cout << "[pd] pose err = " << (mTargetq - mModel->Getq()).transpose()
+              << std::endl;
 }
 void btGenPDController::Reset() {}
 
@@ -183,6 +77,12 @@ void btGenPDController::ParseConfig(const std::string &string)
     Json::Value root;
     BTGEN_ASSERT(btJsonUtil::LoadJson(string, root));
     mEnableSPD = btJsonUtil::ParseAsBool("enable_stable_pd", root);
+    mEnablePDForceTest = btJsonUtil::ParseAsBool("enable_pd_test", root);
+    if (mEnablePDForceTest && mEnableSPD)
+    {
+        std::cout << "[error] PD force test is not available for SPD\n";
+        exit(0);
+    }
 
     // load the PD controlelrs, and check the completeness
     Json::Value joint_pd_controllers =
@@ -227,7 +127,7 @@ void btGenPDController::ParseConfig(const std::string &string)
     //     0, 0, 0, 0;
     printf("[error] the init target is set to random now!\n");
     init_target_q.setRandom();
-    init_target_qdot.setRandom();
+    init_target_qdot.setZero();
     std::cout << "[pd] init q target = " << init_target_q.transpose()
               << std::endl;
     SetPDTargetq(init_target_q);
@@ -235,26 +135,33 @@ void btGenPDController::ParseConfig(const std::string &string)
 }
 
 /**
- * \brief           Calculate the control force by PD control
+ * \brief           Calculate the PD control force
  * \param dt        time step
  * \param pd_forces forces
+ * 
+ * 1. Given the original target "mTargetq" and "mTargetqdot", calcualte the control target
+ * 2. 
 */
 void btGenPDController::CalculateControlForces(
     double dt, tEigenArr<btGenPDForce> &pd_forces)
 {
-    // 1. build target pose (from joints), change the target pose if some controllers are using world coordinate
-    mTargetqCur = mTargetqSet;
-    mTargetqdotCur = mTargetqdotSet;
-    BuildTargetPose(mTargetqCur);
-    BuildTargetVel(mTargetqdotCur);
+    // 1. calculate the final target q
+    tVectorXd target_q_use = CalcTargetPose(mTargetq);
+    tVectorXd target_qdot_use = CalcTargetVel(mTargetqdot);
 
     if (mEnableSPD)
     {
-        CalculateControlForcesSPD(dt, pd_forces);
+        CalculateControlForcesSPD(dt, target_q_use, target_qdot_use, pd_forces);
     }
-
     else
-        CalculateControlForcesExp(pd_forces);
+    {
+        CalculateControlForcesExp(target_q_use, target_qdot_use, pd_forces);
+        if (mEnablePDForceTest == true)
+        {
+            std::cout << "[debug] PD controller test is enabled\n";
+            TestPDController(dt);
+        }
+    }
 }
 
 /**
@@ -263,11 +170,12 @@ void btGenPDController::CalculateControlForces(
  * root Kp is not zero, the Gen force is set to zero at last
 */
 void btGenPDController::CalculateControlForcesSPD(
-    double dt, tEigenArr<btGenPDForce> &pd_forces)
+    double dt, const tVectorXd &control_target_q,
+    const tVectorXd &control_target_qdot, tEigenArr<btGenPDForce> &pd_forces)
 {
     // 1. calculate SPD gen force by the formula
     int dof = mModel->GetNumOfFreedom();
-    if (dof != mTargetqCur.size() || dof != mTargetqdotCur.size())
+    if (dof != control_target_q.size() || dof != control_target_qdot.size())
     {
         std::cout << "[error] "
                      "btGenPDController::CalculateControlForcesSPD "
@@ -276,8 +184,8 @@ void btGenPDController::CalculateControlForcesSPD(
         exit(0);
     }
     tVectorXd q_cur = mModel->Getq(), qdot_cur = mModel->Getqdot();
-    tVectorXd q_next_err = mTargetqCur - (q_cur + dt * qdot_cur);
-    tVectorXd qdot_next_err = mTargetqdotCur - qdot_cur;
+    tVectorXd q_next_err = control_target_q - (q_cur + dt * qdot_cur);
+    tVectorXd qdot_next_err = control_target_qdot - qdot_cur;
 
     tVectorXd Kp = tVectorXd::Zero(dof), Kd = tVectorXd::Zero(dof);
     for (int i = 0; i < this->mExpJointPDControllers.size(); i++)
@@ -346,6 +254,7 @@ void btGenPDController::CalculateControlForcesSPD(
  * \param 
 */
 void btGenPDController::CalculateControlForcesExp(
+    const tVectorXd &control_target_q, const tVectorXd control_target_qdot,
     tEigenArr<btGenPDForce> &pd_force_array)
 {
     pd_force_array.clear();
@@ -354,31 +263,379 @@ void btGenPDController::CalculateControlForcesExp(
     {
         const auto &pd_ctrl = mExpJointPDControllers[i];
         pd_force.mForce =
-            pd_ctrl->CalcControlForce(mTargetqCur, mTargetqdotCur);
+            pd_ctrl->CalcControlForce(control_target_q, control_target_qdot);
         pd_force.mJoint = pd_ctrl->GetJoint();
         pd_force_array.push_back(pd_force);
     }
 }
 
 /**
- * \brief           convert the given fully local target pose, to a revised, local target pose which part of them are in world coordinate
+ * \brief           Given generalized coordinate target q, calculate the gen coordinate target q w.r.t each joint
 */
-void btGenPDController::BuildTargetPose(tVectorXd &pose)
+tVectorXd btGenPDController::CalcTargetPose(const tVectorXd &tar_q) const
 {
+    tVectorXd control_target_q = tVectorXd::Zero(tar_q.size());
     for (auto &ctrl : mExpJointPDControllers)
     {
-        ctrl->BuildTargetPose(pose);
+        auto joint = ctrl->GetJoint();
+        int offset = joint->GetOffset(), size = joint->GetNumOfFreedom();
+        control_target_q.segment(offset, size) =
+            ctrl->CalcJointTargetPose(tar_q);
     }
+    return control_target_q;
 }
-void btGenPDController::BuildTargetVel(tVectorXd &vel)
+
+/**
+ * \brief           Given gen vel tar_qdot, calculate the local control target qdot
+*/
+tVectorXd btGenPDController::CalcTargetVel(const tVectorXd &tar_qdot) const
 {
+    tVectorXd control_target_qdot = tVectorXd::Zero(tar_qdot.size());
     for (auto &ctrl : mExpJointPDControllers)
     {
-        ctrl->BuildTargetVel(vel);
+        auto joint = ctrl->GetJoint();
+        int offset = joint->GetOffset(), size = joint->GetNumOfFreedom();
+        control_target_qdot.segment(offset, size) =
+            ctrl->CalcJointTargetVel(tar_qdot);
     }
+    return control_target_qdot;
 }
 
 std::vector<btGenJointPDCtrl *> &btGenPDController::GetJointPDCtrls()
 {
     return mExpJointPDControllers;
+}
+
+/**
+ * \brief           Test the PD controller
+*/
+void btGenPDController::TestPDController(double dt)
+{
+    std::cout << "-------------\n";
+    // 1. test target pose
+    TestPDControllerBuildPose(dt);
+    // 2. test other norm cases
+    TestPDControllerKpForce(dt);
+    TestPDControllerKdForce(dt);
+}
+void btGenPDController::TestPDControllerBuildPose(double dt)
+{
+    // printf("[debug] test pd controller build pose begin\n");
+    // 1. Test use world coordinate
+    tVectorXd control_target = CalcTargetPose(mTargetq);
+    for (auto &ctrl : mExpJointPDControllers)
+    {
+        if (true == ctrl->GetUseWorldCoord())
+        {
+            auto joint = ctrl->GetJoint();
+            // 2. get the current gen coordinate q
+            // tVectorXd cur_pose_all_local = mModel->Getq();
+            // std::cout << "cur pose local = " << cur_pose_all_local.transpose()
+            //           << std::endl;
+
+            // 3. build the target local pose which can form the world orientation
+            // tVectorXd target_pose_form_world_target = CalcTargetPose(mTargetq);
+            // std::cout << "control target = "
+            //           << target_pose_form_world_target.transpose() << std::endl;
+            // std::cout << "build target q = "
+            //           << target_pose_form_world_target.transpose() << std::endl;
+
+            // 4. get the ideal world orientation
+            mModel->PushState("test");
+            mModel->SetqAndqdot(mTargetq,
+                                tVectorXd::Zero(mModel->GetNumOfFreedom()));
+            tMatrix3d ideal_orientation = joint->GetWorldOrientation();
+            // std::cout << "raw target = " << mTargetq.transpose() << std::endl;
+            // std::cout << "ideal orientation = \n"
+            //           << ideal_orientation << std::endl;
+            mModel->PopState("test");
+
+            // 5. get the target world orientation by current local pose, and then verify
+            {
+                // 5.1 fetch the local pose of the target angle
+                int offset = joint->GetOffset();
+                int dof = joint->GetNumOfFreedom();
+                // std::cout << "joint offset = " << offset << " dof = " << dof
+                //           << std::endl;
+                tVectorXd cur_pose = mModel->Getq();
+                // std::cout << "local euler target = "
+                //           << local_euler_target.transpose() << std::endl;
+                // 5.2 put the local pose into the current pose
+                cur_pose.segment(offset, dof) =
+                    control_target.segment(offset, dof);
+                // std::cout << "cur pose all local = "
+                //           << cur_pose_all_local.transpose() << std::endl;
+                // 5.3 set the cur pose all local, and get the joint world orientation again
+                mModel->PushState("test");
+                mModel->SetqAndqdot(cur_pose,
+                                    tVectorXd::Zero(mModel->GetNumOfFreedom()));
+                tMatrix3d pred_world_orientation = joint->GetWorldOrientation();
+                mModel->PopState("test");
+
+                // 5.4 judge that the pred & ideal is the same
+                tMatrix3d diff = pred_world_orientation - ideal_orientation;
+                // std::cout << "[debug] joint " << joint->GetId() << " diff = \n"
+                //           << diff << std::endl;
+                double norm = diff.norm();
+                if (norm > 1e-6)
+                {
+                    std::cout << "joint " << joint->GetId() << std::endl;
+                    std::cout << "pred world orientation = \n"
+                              << pred_world_orientation << std::endl;
+                    std::cout << "ideal orientation = \n"
+                              << ideal_orientation << std::endl;
+                    std::cout << "diff = \n" << diff << std::endl;
+                    std::cout << "diff norm = " << norm << std::endl;
+                    BTGEN_ASSERT(false);
+                }
+            }
+            printf("[debug] TestPDController BuildPose for joint %d when "
+                   "use_world_coord "
+                   "= true, succ\n",
+                   joint->GetId());
+        }
+    }
+    printf("[debug] TestPDController BuildPose succ\n");
+}
+
+/**
+ * \brief           verify the orientation of pd control force of Kp and q error
+ *      is equal to the global orientation diff
+*/
+void btGenPDController::TestPDControllerKpForce(double dt)
+{
+    // push the Kd coeff, push the model state
+    // 1. make all Kd = 0
+    std::vector<double> kd_lst(0);
+    for (auto &ctrl : mExpJointPDControllers)
+    {
+        kd_lst.push_back(ctrl->GetKd());
+        ctrl->SetKd(0);
+    }
+    mModel->PushState("test");
+
+    // 1.5 get the PD control forces
+    tVectorXd control_target_q = CalcTargetPose(mTargetq);
+    tVectorXd control_target_qdot = CalcTargetVel(mTargetqdot);
+    tEigenArr<btGenPDForce> pd_forces;
+    CalculateControlForcesExp(control_target_q, control_target_qdot, pd_forces);
+    BTGEN_ASSERT(pd_forces.size() == mModel->GetNumOfJoint());
+
+    int num_of_joints = mModel->GetNumOfJoint();
+    BTGEN_ASSERT(pd_forces.size() == num_of_joints);
+    // 2. test for each joint's controller
+    for (auto &ctrl : mExpJointPDControllers)
+    {
+        // 3. calculate the desired world orientation
+        tMatrix3d desired_rot = tMatrix3d::Zero();
+        Joint *joint = ctrl->GetJoint();
+        int joint_id = joint->GetId();
+        int offset = joint->GetOffset(), size = joint->GetNumOfFreedom();
+        if (ctrl->GetUseWorldCoord() == true)
+        {
+            // if use the world orientation
+            mModel->PushState("get_ideal_orient");
+            mModel->SetqAndqdot(mTargetq, mTargetqdot);
+            desired_rot = joint->GetWorldOrientation();
+            mModel->PopState("get_ideal_orient");
+        }
+        else
+        {
+            // if don't use the world orientation
+            tVectorXd cur_q = mModel->Getq();
+            cur_q.segment(offset, size) = mTargetq.segment(offset, size);
+            mModel->PushState("get_ideal_orient");
+            mModel->SetqAndqdot(cur_q, mModel->Getqdot());
+            desired_rot = joint->GetWorldOrientation();
+            mModel->PopState("get_ideal_orient");
+        }
+
+        // 4. calculate the current orientation
+        tMatrix3d cur_rot = joint->GetWorldOrientation();
+
+        // 5. verify
+        if (std::fabs(ctrl->GetKp()) < 1e-10)
+        {
+            printf("[error] joint %d kp = %.3f will cause the failure of "
+                   "verification\n",
+                   joint->GetId(), ctrl->GetKp());
+            BTGEN_ASSERT(false);
+        }
+        auto verify_rotation_pd_force = [](const tMatrix3d &desired_rot,
+                                           const tMatrix3d &cur_rot,
+                                           const tVector &force, int joint_id) {
+            tVector aa = btMathUtil::RotmatToAxisAngle(
+                btMathUtil::ExpandMat(desired_rot * cur_rot.transpose(), 0));
+            tVector diff_1 = force.normalized() - aa.normalized();
+            tVector diff_2 = force.normalized() + aa.normalized();
+            tVector diff = diff_1.norm() > diff_2.norm() ? diff_2 : diff_1;
+            if (diff.norm() > 1e-5)
+            {
+                std::cout << "joint id = " << joint_id << std::endl;
+                std::cout << "desired_rot = \n" << desired_rot << std::endl;
+                std::cout << "cur = \n" << cur_rot << std::endl;
+                std::cout << "aa = " << aa.transpose() << std::endl;
+                std::cout << "pd force = " << force.transpose() << std::endl;
+                BTGEN_ASSERT(false);
+            }
+        };
+        // doesn't verify for root joint
+        if (joint->GetIsRootJoint() == true)
+        {
+            switch (joint->GetJointType())
+            {
+            case JointType::NONE_JOINT:
+            {
+                verify_rotation_pd_force(desired_rot, cur_rot,
+                                         pd_forces[joint_id].mForce, joint_id);
+                break;
+            }
+            case JointType::BIPEDAL_NONE_JOINT:
+            {
+                verify_rotation_pd_force(desired_rot, cur_rot,
+                                         pd_forces[joint_id].mForce, joint_id);
+                break;
+            }
+            case JointType::LIMIT_NONE_JOINT:
+            {
+                tVector f(ctrl->GetKp() * (mTargetq[0] - mModel->Getq()[0]), 0,
+                          0, 0);
+                BTGEN_ASSERT((f - pd_forces[joint_id].mForce).norm() < 1e-5);
+                break;
+            }
+            case JointType::FIXED_NONE_JOINT:
+            {
+                BTGEN_ASSERT(pd_forces[joint_id].mForce.norm() < 1e-10);
+                break;
+            }
+
+            default:
+                BTGEN_ASSERT(false);
+                break;
+            }
+        }
+        else
+        {
+            // if not root joint
+            // desired = diff * cur
+            // diff = desired * cur.inv
+            verify_rotation_pd_force(desired_rot, cur_rot,
+                                     pd_forces[joint_id].mForce, joint_id);
+        }
+    }
+
+    // pop the Kd coeff, pop the model state
+    for (int i = 0; i < mExpJointPDControllers.size(); i++)
+    {
+        btGenJointPDCtrl *ctrl = mExpJointPDControllers[i];
+        ctrl->SetKd(kd_lst[i]);
+    }
+
+    std::cout << "[debug] TestPDController KpForce succ\n";
+    mModel->PopState("test");
+}
+/**
+ * \brief               verify the orientation of pd control force of Kd and qdot error
+ *          is equal to the orientation of joint angular velocity,
+*/
+void btGenPDController::TestPDControllerKdForce(double dt)
+{
+    // push the Kd coeff, push the model state
+    // 1. make all Kp = 0
+    std::vector<double> kp_lst(0);
+    for (auto &ctrl : mExpJointPDControllers)
+    {
+        kp_lst.push_back(ctrl->GetKp());
+        ctrl->SetKp(0);
+    }
+    mModel->PushState("test");
+
+    tVectorXd control_target_qdot = CalcTargetVel(mTargetqdot);
+    tVectorXd control_target_q = CalcTargetPose(mTargetq);
+
+    tEigenArr<btGenPDForce> pd_forces;
+    CalculateControlForcesExp(control_target_q, control_target_qdot, pd_forces);
+    int num_of_joints = mModel->GetNumOfJoint();
+    BTGEN_ASSERT(pd_forces.size() == num_of_joints);
+
+    // 2. calculate the control force
+    for (auto &ctrl : mExpJointPDControllers)
+    {
+        // 3. calculate the desired world velocity
+        Joint *joint = ctrl->GetJoint();
+        int joint_id = joint->GetId();
+        mModel->PushState("get_ideal_vel");
+        tVectorXd target_qdot_joint = mTargetqdot;
+        target_qdot_joint.segment(0, joint->GetOffset()).setZero();
+        tVector3d desired_vel = joint->GetJKw() * target_qdot_joint;
+        mModel->PopState("get_ideal_vel");
+
+        // 4. calculate the current orientation
+        tVectorXd qdot = mModel->Getqdot();
+        qdot.segment(0, joint->GetOffset()).setZero();
+        tVector3d cur_vel = joint->GetJKw() * qdot;
+
+        if (std::fabs(ctrl->GetKd()) < 1e-10)
+        {
+            printf("[error] joint %d kd = %.3f will cause the failure of "
+                   "verification\n",
+                   joint->GetId(), ctrl->GetKd());
+            BTGEN_ASSERT(false);
+        }
+        // 5. verify
+        // doesn't verify the root
+        auto verify = [](const tVector3d &desired_vel, const tVector3d &cur_vel,
+                         const tVector &force, int joint_id) {
+            // desired_vel - cur_vel
+            tVector3d ideal_force_dir = (desired_vel - cur_vel).normalized();
+            tVector3d diff = force.normalized().segment(0, 3) -
+
+                             ideal_force_dir;
+            BTGEN_ASSERT(diff.norm() < 1e-5);
+        };
+        if (joint->GetIsRootJoint() == true)
+        {
+            switch (joint->GetJointType())
+            {
+            case JointType::NONE_JOINT:
+            case JointType::BIPEDAL_NONE_JOINT:
+            {
+                verify(desired_vel, cur_vel, pd_forces[joint_id].mForce,
+                       joint_id);
+                break;
+            }
+            case JointType::LIMIT_NONE_JOINT:
+            {
+                // verify the velocity result, only has a x axis velocity movement
+                tVector3d tar_root_linvel = joint->GetJKv() * mTargetqdot;
+                tVector3d cur_root_linvel = joint->GetJKv() * mModel->Getqdot();
+                tVector force = btMathUtil::Expand(
+                    (tar_root_linvel - cur_root_linvel) * ctrl->GetKd(), 0);
+                BTGEN_ASSERT((force - pd_forces[joint_id].mForce).norm() <
+                             1e-10);
+                break;
+            }
+            case JointType::FIXED_NONE_JOINT:
+            {
+                BTGEN_ASSERT(pd_forces[joint_id].mForce.norm() < 1e-5);
+            }
+            default:
+                BTGEN_ASSERT(false);
+                break;
+            }
+        }
+        else
+        {
+            // not root joint, verify as usuall
+            verify(desired_vel, cur_vel, pd_forces[joint_id].mForce, joint_id);
+        }
+    }
+    // pop the Kp coeff, pop the model state
+    for (int i = 0; i < mExpJointPDControllers.size(); i++)
+    {
+        btGenJointPDCtrl *ctrl = mExpJointPDControllers[i];
+        ctrl->SetKp(kp_lst[i]);
+    }
+    std::cout << "[debug] TestPDController KdForce succ\n";
+    mModel->PopState("test");
 }

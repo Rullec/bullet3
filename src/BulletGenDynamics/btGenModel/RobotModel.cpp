@@ -1,5 +1,6 @@
 #include "RobotModel.h"
 #include "BipedalRootJoint.h"
+#include "FixedRootJoint.h"
 #include "Joint.h"
 #include "LimitRootJoint.h"
 #include "Link.h"
@@ -202,6 +203,23 @@ void cRobotModel::SetComputeThirdDerive(bool flag)
 
 bool cRobotModel::GetComputeSecondDerive() { return compute_second_deriv; }
 bool cRobotModel::GetComputeThirdDerive() { return compute_third_deriv; }
+
+/**
+ * \brief           Set the global transform for fixed root joint
+*/
+void cRobotModel::SetFixedRootTransform(const tMatrix &trans)
+{
+    BTGEN_ASSERT(GetRoot()->GetJointType() == JointType::FIXED_NONE_JOINT);
+    dynamic_cast<FixedRootJoint *>(GetRoot())->SetFixedRootJointWorldTrans(
+        trans);
+}
+
+tMatrix cRobotModel::GetFixedRootTransform() const
+{
+    BTGEN_ASSERT(GetRoot()->GetJointType() == JointType::FIXED_NONE_JOINT);
+    return dynamic_cast<FixedRootJoint *>(GetRoot())
+        ->GetFixedRootJointWorldTrans();
+}
 /**
  * \brif						����robot model
  * \param model_file			rom�ļ�·��
@@ -458,6 +476,10 @@ void cRobotModel::AddRootJoint(const char *root_name, JointType root_joint_type,
         else if (root_joint_type == JointType::BIPEDAL_NONE_JOINT)
         {
             root = new BipedalRootJoint(param, num_of_freedom);
+        }
+        else if (root_joint_type == JointType::FIXED_NONE_JOINT)
+        {
+            root = new FixedRootJoint(param, num_of_freedom);
         }
         else
         {

@@ -40,7 +40,7 @@ public:
     tVectorXd Getqddot();
     void UpdateVelocityAndTransform(double dt);
     void UpdateVelocity(double dt, bool verbose = false);
-    void UpdateVelocityWithoutCoriolis(double dt);
+    // void UpdateVelocityWithoutCoriolis(double dt);
     void UpdateTransform(double dt);
     // void UpdateRK4(double dt);
     void SyncToBullet();

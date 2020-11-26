@@ -60,6 +60,18 @@ void btGenSimbiconControllerBase::Init(cRobotModelDynamics *model,
     mEnableDrawHeadingFrame =
         btJsonUtil::ParseAsBool("enable_draw_heading_frame", root);
 
+    mInitPose =
+        btJsonUtil::ReadVectorJson(btJsonUtil::ParseAsValue("init_pose", root));
+
+    std::string init_stance = btJsonUtil::ParseAsString("init_stance", root);
+    int init_state = btJsonUtil::ParseAsInt("init_state", root);
+    if (init_stance == "left")
+        mStance = BTGEN_LEFT_STANCE;
+    else if (init_stance == "right")
+        mStance = BTGEN_RIGHT_STANCE;
+    else
+        BTGEN_ASSERT(false);
+
     BuildJointInfo();
 
     // 2. build FSM
@@ -71,8 +83,16 @@ void btGenSimbiconControllerBase::Init(cRobotModelDynamics *model,
 
     // 5. initialzethe FSM
     // set the model pose + set the default state + set the default stance
-    mFSM->Init(mStance);
+    mFSM->Init();
     UpdateStance();
+
+    // 7. set init pose
+    BTGEN_ASSERT(mInitPose.size() == mModel->GetNumOfFreedom());
+    mModel->SetqAndqdot(mInitPose, tVectorXd::Zero(mModel->GetNumOfFreedom()));
+    mFSM->SetState(init_state);
+    std::cout << "[simbicon] set init pose = " << mInitPose.transpose()
+              << " init stance = " << init_stance
+              << " init state = " << init_state << std::endl;
 
     // 6. create ref char
     mRefTrajModel = new cRobotModelDynamics();
@@ -81,7 +101,7 @@ void btGenSimbiconControllerBase::Init(cRobotModelDynamics *model,
                         ModelType::JSON);
     mRefTrajModel->InitSimVars(mWorld->GetInternalWorld(), true, true, false);
 
-    mRefTrajModel->SetqAndqdot(mModel->Getq(), mModel->Getqdot());
+    UpdateRefModel(mModel->Getq());
 }
 
 /**
@@ -118,7 +138,8 @@ void btGenSimbiconControllerBase::Update(double dt)
     }
     // 1. update FSM, get the target pose
     tVectorXd target_pose;
-    mFSM->Update(dt, target_pose, mStance);
+    mFSM->Update(dt, target_pose, mStance, mSwingFootInfo.first,
+                 mStanceFootInfo.first);
     UpdateStance();
 
     // 2. change the target pose by balance control policy
@@ -183,7 +204,7 @@ void btGenSimbiconControllerBase::UpdateStance()
 {
     if (mStance == BTGEN_LEFT_STANCE)
     {
-        printf("[simbicon] update left stance\n");
+        printf("[simbicon] swing: right, stance: left\n");
         mStanceHipInfo = mLeftHipInfo;
         mStanceFootInfo = mLeftFootInfo;
         mSwingHipInfo = mRightHipInfo;
@@ -191,7 +212,7 @@ void btGenSimbiconControllerBase::UpdateStance()
     }
     else if (mStance == BTGEN_RIGHT_STANCE)
     {
-        printf("[simbicon] update right stance\n");
+        printf("[simbicon] swing: left, stance: right\n");
         mStanceHipInfo = mRightHipInfo;
         mStanceFootInfo = mRightFootInfo;
         mSwingHipInfo = mLeftHipInfo;
@@ -251,8 +272,8 @@ void btGenSimbiconControllerBase::UpdatePDController(const tVectorXd &tar_pose)
         }
     }
 
-    std::cout << "[log] final PD target = " << tar_pose.transpose()
-              << std::endl;
+    // std::cout << "[log] final PD target = " << tar_pose.transpose()
+    //           << std::endl;
 
     // std::cout << "[log] model q = " << mModel->Getq().transpose() << std::endl;
     // std::cout << "[log] model qdot = " << mModel->Getqdot().transpose()
@@ -391,16 +412,37 @@ void btGenSimbiconControllerBase::CalcControlForce(
                   << std::endl;
 
         // \tau_makeup = \tau_torso - \tau_swing - \tau_stance
-        tVector torso_makeup_torque =
-            -torso_torque - swing_torque - stance_torque;
 
-        if (mModel->GetRoot()->GetJointType() == JointType::BIPEDAL_NONE_JOINT)
+        tVector torso_makeup_torque = -torso_torque;
+
+        // old method
+        // {
+        //     torso_makeup_torque -= -swing_torque - stance_torque;
+        // }
+
+        // new method
         {
-            BTGEN_ASSERT(std::fabs(torso_torque[1]) < 1e-10);
-            BTGEN_ASSERT(std::fabs(torso_torque[2]) < 1e-10);
-            // \tau_makeup = \tau_torso - \tau_swing - \tau_stance
-            torso_makeup_torque.segment(1, 3).setZero();
+            for (int i = 0; i < mModel->GetNumOfJoint(); i++)
+            {
+                auto joint = mModel->GetJointById(i);
+                if (mRootId == joint->GetParentId())
+                {
+                    // std::cout << "[debug] joint " << i << " "
+                    //           << joint->GetName()
+                    //           << " is root's child, included in torso makeup "
+                    //              "torque\n";
+                    torso_makeup_torque -= pd_forces[i].mForce;
+                }
+            }
         }
+
+        // if (mModel->GetRoot()->GetJointType() == JointType::BIPEDAL_NONE_JOINT)
+        // {
+        //     BTGEN_ASSERT(std::fabs(torso_torque[1]) < 1e-10);
+        //     BTGEN_ASSERT(std::fabs(torso_torque[2]) < 1e-10);
+        //     // \tau_makeup = \tau_torso - \tau_swing - \tau_stance
+        //     torso_makeup_torque.segment(1, 3).setZero();
+        // }
         // \tau_swing += (1-k) * \tau_makeup
         swing_torque += (1 - stance_swing_foot_ratio) * torso_makeup_torque;
         // \tau_stance += k * \tau_makeup
@@ -478,11 +520,11 @@ void btGenSimbiconControllerBase::CalcTargetPoseSphericalHips(
         heading_rotmat = btMathUtil::AxisAngleToRotmat(heading_aa);
         x_head_world = heading_rotmat * x_head_world;
         y_head_world = heading_rotmat * y_head_world;
-        std::cout << "[debug] x_head_world = " << x_head_world.transpose()
-                  << " y_head_world = " << y_head_world.transpose()
-                  << std::endl;
-        std::cout << "[debug] heading rotmat = \n"
-                  << heading_rotmat << std::endl;
+        // std::cout << "[debug] x_head_world = " << x_head_world.transpose()
+        //           << " y_head_world = " << y_head_world.transpose()
+        //           << std::endl;
+        // std::cout << "[debug] heading rotmat = \n"
+        //           << heading_rotmat << std::endl;
     }
 
     // 2. calculate d and v in world frame, then convert to heading frame
@@ -497,14 +539,14 @@ void btGenSimbiconControllerBase::CalcTargetPoseSphericalHips(
         // 2.2 v = com_vel
         v_head.segment(0, 3) = mModel->GetComVelocity();
         v_head[1] = 0; // remove Y axis effect
-        std::cout << "[debug] d_world = " << d_head.transpose()
-                  << " v_world = " << v_head.transpose() << std::endl;
+        // std::cout << "[debug] d_world = " << d_head.transpose()
+        //           << " v_world = " << v_head.transpose() << std::endl;
 
         // convert to heading frame
         d_head = heading_rotmat.transpose() * d_head;
         v_head = heading_rotmat.transpose() * v_head;
-        std::cout << "[debug] d_head = " << d_head.transpose()
-                  << " v_head = " << v_head.transpose() << std::endl;
+        // std::cout << "[debug] d_head = " << d_head.transpose()
+        //           << " v_head = " << v_head.transpose() << std::endl;
     }
 
     // 3. calculate e_forward and e_tanget
@@ -520,8 +562,8 @@ void btGenSimbiconControllerBase::CalcTargetPoseSphericalHips(
             mCv_tangent *
                 v_head
                     [0]; // tangent feedback effectred by x axis translation and velocity
-        std::cout << "[debug] e_forward = " << e_forward
-                  << " e_tangent = " << e_tangent << std::endl;
+        // std::cout << "[debug] e_forward = " << e_forward
+        //           << " e_tangent = " << e_tangent << std::endl;
     }
 
     // 4. get the forward and tagent feedback rotation (in axis angle form)
@@ -539,16 +581,16 @@ void btGenSimbiconControllerBase::CalcTargetPoseSphericalHips(
                   joint_world_rotation = swing_joint->GetWorldOrientation();
         tMatrix3d joint_world_to_local =
             joint_local_rotation * joint_world_rotation.transpose();
-        std::cout << "[debug] joint world to local = \n"
-                  << joint_world_to_local << std::endl;
+        // std::cout << "[debug] joint world to local = \n"
+        //           << joint_world_to_local << std::endl;
         forward_feedback_local.segment(0, 3) =
             joint_world_to_local * forward_feedback_world.segment(0, 3);
         tangent_feedback_local.segment(0, 3) =
             joint_world_to_local * tangent_feedback_world.segment(0, 3);
-        std::cout << "[debug] forward feedback local = "
-                  << forward_feedback_local.transpose()
-                  << " tangent feedback local = "
-                  << tangent_feedback_local.transpose() << std::endl;
+        // std::cout << "[debug] forward feedback local = "
+        //           << forward_feedback_local.transpose()
+        //           << " tangent feedback local = "
+        //           << tangent_feedback_local.transpose() << std::endl;
     }
 
     // 5. apply these two feedback axis angle
@@ -567,8 +609,8 @@ void btGenSimbiconControllerBase::CalcTargetPoseSphericalHips(
         target_pose.segment(swing_joint->GetOffset(),
                             swing_joint->GetNumOfFreedom()) =
             new_local_target_euler.segment(0, 3);
-        std::cout << "[debug] new swing local target = "
-                  << new_local_target_euler.transpose() << std::endl;
+        // std::cout << "[debug] new swing local target = "
+        //           << new_local_target_euler.transpose() << std::endl;
     }
 }
 
@@ -684,7 +726,7 @@ void btGenSimbiconControllerBase::DebugVerifyHeadingFrame()
     tVector forward_vec = tVector(1, 0, 0, 0);
     tVector head_vec = trans * forward_vec;
     tVector model_vec =
-        btMathUtil::ExpandMat(mModel->GetLinkById(0)->GetWorldOrientation()) *
+        btMathUtil::ExpandMat(mModel->GetLinkById(0)->GetWorldOrientation(), 0) *
         forward_vec;
     model_vec[1] = 0;
     model_vec.normalize();
