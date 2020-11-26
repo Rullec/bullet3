@@ -429,7 +429,7 @@ void btGenSimbiconControllerBase::CalcControlForce(
  * \brief           Update the target pose by COM vel and COM pos
 */
 void btGenSimbiconControllerBase::CalcTargetPoseRevoluteHips(
-    tVectorXd &target_pose) const
+    tVectorXd &target_pose)
 {
     auto swing_hip =
         dynamic_cast<Joint *>(mModel->GetJointById(mSwingHipInfo.first));
@@ -453,7 +453,7 @@ void btGenSimbiconControllerBase::CalcTargetPoseRevoluteHips(
 }
 
 void btGenSimbiconControllerBase::CalcTargetPoseSphericalHips(
-    tVectorXd &target_pose) const
+    tVectorXd &target_pose)
 {
     // com position, com velocity, stance foot position in world frame
     tVector3d com_pos = mModel->GetCoMPosition(),
@@ -469,6 +469,7 @@ void btGenSimbiconControllerBase::CalcTargetPoseSphericalHips(
     // we assume the upaxis is Y
     double heading = mModel->GetHeading();
 
+    DrawHeadingFrame();
     // express the d and v in heading frame
     tVector3d heading_inv_axisangle = tVector3d(0, -heading, 0);
     tMatrix3d head_inv_rotmat =
@@ -509,7 +510,7 @@ void btGenSimbiconControllerBase::CalcTargetPoseSphericalHips(
  * 2. get the COM pos "d" & vel "v" 
  * 3. change the control target of swing hip by theta = theta_d + c_d * d + c_v * v
 */
-void btGenSimbiconControllerBase::CalcTargetPose(tVectorXd &target_pose) const
+void btGenSimbiconControllerBase::CalcTargetPose(tVectorXd &target_pose)
 {
     auto cur_state = mFSM->GetCurrentState();
     if (mIgnoreBalanceControlInState02 == true &&
@@ -600,4 +601,25 @@ void btGenSimbiconControllerBase::BuildJointInfo()
     printf("[simbicon] left foot %d %s, right foot %d %s\n", left_foot_id,
            mLeftFootInfo.second.c_str(), right_foot_id,
            mRightFootInfo.second.c_str());
+}
+
+/**
+ * \brief               verify the current heading frame (Y axis) is correct
+*/
+void btGenSimbiconControllerBase::DebugVerifyHeadingFrame() {}
+
+/**
+ * \brief               Draw the heading frame in the current result 
+*/
+void btGenSimbiconControllerBase::DrawHeadingFrame()
+{
+
+    double heading = mModel->GetHeading(); // heading axis and Y transform
+    printf("[log] draw heading frame begin, angle = %.4f\n", heading);
+    tVector3d axis_angle = tVector3d(0, heading, 0);
+    tMatrix trans =
+        btMathUtil::AxisAngleToRotmat(btMathUtil::Expand(axis_angle, 0));
+    trans.block(0, 3, 3, 1) = mModel->GetRoot()->GetWorldPos();
+    DrawFrame(trans);
+    // exit(0);
 }

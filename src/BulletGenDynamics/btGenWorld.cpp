@@ -464,6 +464,7 @@ std::vector<btGenContactForce *> btGeneralizeWorld::GetContactForces() const
     return mContactForces;
 }
 
+btGenControllerBase *btGeneralizeWorld::GetController() { return mCtrl; }
 btGenContactAwareController *btGeneralizeWorld::GetContactAwareController()
 {
     if (HasContactAwareController() == false)

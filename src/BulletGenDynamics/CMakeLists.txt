@@ -54,6 +54,7 @@ SET(
 	btGenUtil/MathUtil.cpp
 	btGenUtil/TimeUtil.cpp
 	btGenUtil/FileUtil.cpp
+	btGenUtil/BulletUtil.cpp
 )
 
 

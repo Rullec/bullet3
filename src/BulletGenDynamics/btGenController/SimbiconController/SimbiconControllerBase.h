@@ -46,9 +46,9 @@ protected:
     void BuildPDCtrl(const std::string &pd_path);
     void BuildBalanceCtrl(const Json::Value &conf);
     void BuildJointInfo();
-    void CalcTargetPose(tVectorXd &target_pose) const;
-    void CalcTargetPoseRevoluteHips(tVectorXd &target_pose) const;
-    void CalcTargetPoseSphericalHips(tVectorXd &target_pose) const;
+    void CalcTargetPose(tVectorXd &target_pose);
+    void CalcTargetPoseRevoluteHips(tVectorXd &target_pose);
+    void CalcTargetPoseSphericalHips(tVectorXd &target_pose);
     void CalcControlForce(double dt, tEigenArr<btGenPDForce> &forces);
     double CalcStanceSwingRatio() const;
 
@@ -58,4 +58,7 @@ protected:
     int GetEndeffector(int id) const;
     bool IsFallDown() const;
     int GetJointByPartialName(const std::string &name);
+
+    void DebugVerifyHeadingFrame();
+    void DrawHeadingFrame();
 };

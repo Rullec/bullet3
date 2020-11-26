@@ -560,6 +560,11 @@ tMatrix xconventionRotation_mimic_dx(double x)
     return output;
 }
 
+/**
+ * \brief			Calculate the rotmat which can rotate the "up" vector to "dir" vector
+ * \param dir       target direction
+ * \param up        original vector
+*/
 tMatrix btMathUtil::DirToRotMat(const tVector &dir, const tVector &up)
 {
     tVector Y_normal = up;

@@ -124,6 +124,8 @@ void CustomEngineMainDemo::initPhysics()
         if (physics_param->mEnableController)
         {
             mGenWorld->AddController(physics_param->mControllerConfigPath);
+            mGenWorld->GetController()->SetBulletGUIHelperInterface(
+                m_guiHelper);
 
             // if it is the contact aware controller, has some speical settings
             if (physics_param->mEnableContactAwareControl)
@@ -137,7 +139,6 @@ void CustomEngineMainDemo::initPhysics()
                 mAwareController = mGenWorld->GetContactAwareController();
                 mAwareController->SetTraj(gContactAwareTraj, "tmp_traj.json",
                                           true);
-                mAwareController->SetBulletGUIHelperInterface(m_guiHelper);
             }
         }
         // Test();

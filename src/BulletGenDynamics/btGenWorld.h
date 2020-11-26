@@ -64,6 +64,7 @@ public:
     std::vector<btGenContactForce *> GetContactForces() const;
     std::vector<btPersistentManifold *> GetContactManifolds() const;
     btGenContactAwareController *GetContactAwareController();
+    btGenControllerBase *GetController();
     btDiscreteDynamicsWorld *GetInternalWorld();
     btBroadphaseInterface *GetBroadphase();
     btGenCollisionDispatcher *GetDispatcher();
