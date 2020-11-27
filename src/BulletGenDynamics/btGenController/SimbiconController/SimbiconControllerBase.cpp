@@ -391,8 +391,29 @@ void btGenSimbiconControllerBase::CalcControlForce(
                   << std::endl;
 
         // \tau_makeup = \tau_torso - \tau_swing - \tau_stance
-        tVector torso_makeup_torque =
-            -torso_torque - swing_torque - stance_torque;
+
+        tVector torso_makeup_torque = -torso_torque;
+
+        // old method
+        // {
+        //     torso_makeup_torque -= -swing_torque - stance_torque;
+        // }
+
+        // new method
+        {
+            for (int i = 0; i < mModel->GetNumOfJoint(); i++)
+            {
+                auto joint = mModel->GetJointById(i);
+                if (mRootId == joint->GetParentId())
+                {
+                    std::cout << "[debug] jowint " << i << " "
+                              << joint->GetName()
+                              << " is root's child, included in torso makeup "
+                                 "torque\n";
+                    torso_makeup_torque -= pd_forces[i].mForce;
+                }
+            }
+        }
 
         // if (mModel->GetRoot()->GetJointType() == JointType::BIPEDAL_NONE_JOINT)
         // {
