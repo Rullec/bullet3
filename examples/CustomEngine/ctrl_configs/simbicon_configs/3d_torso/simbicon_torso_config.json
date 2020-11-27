@@ -1,12 +1,12 @@
 {
     "ctrl_type": "SimbiconController",
     "corresponding_char_path": "../DeepMimic/data/1127/characters/lower_halfbody_torso.json",
-    "pd_controller_path": "examples/CustomEngine/ctrl_configs/pd_config_legs.json",
+    "pd_controller_path": "examples/CustomEngine/ctrl_configs/pd_config_torso.json",
     "ignore_balance_control_in_0_2_state": false,
     "enable_stance_control_ratio": true,
     "enable_draw_heading_frame": true,
     "FSM": {
-        "state_traj_path": "examples/CustomEngine/ctrl_configs/simbicon_configs/3d/simbicon_target_stepping.json",
+        "state_traj_path": "examples/CustomEngine/ctrl_configs/simbicon_configs/3d_torso/3d_torso_stepping.json",
         "num_of_states": 4,
         "states": [
             {
