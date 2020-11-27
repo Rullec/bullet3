@@ -227,7 +227,7 @@ void btGenPDController::ParseConfig(const std::string &string)
     //     0, 0, 0, 0;
     printf("[error] the init target is set to random now!\n");
     init_target_q.setRandom();
-    init_target_qdot.setRandom();
+    init_target_qdot.setZero();
     std::cout << "[pd] init q target = " << init_target_q.transpose()
               << std::endl;
     SetPDTargetq(init_target_q);

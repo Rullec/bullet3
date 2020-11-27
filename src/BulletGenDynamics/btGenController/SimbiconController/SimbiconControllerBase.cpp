@@ -394,13 +394,13 @@ void btGenSimbiconControllerBase::CalcControlForce(
         tVector torso_makeup_torque =
             -torso_torque - swing_torque - stance_torque;
 
-        if (mModel->GetRoot()->GetJointType() == JointType::BIPEDAL_NONE_JOINT)
-        {
-            BTGEN_ASSERT(std::fabs(torso_torque[1]) < 1e-10);
-            BTGEN_ASSERT(std::fabs(torso_torque[2]) < 1e-10);
-            // \tau_makeup = \tau_torso - \tau_swing - \tau_stance
-            torso_makeup_torque.segment(1, 3).setZero();
-        }
+        // if (mModel->GetRoot()->GetJointType() == JointType::BIPEDAL_NONE_JOINT)
+        // {
+        //     BTGEN_ASSERT(std::fabs(torso_torque[1]) < 1e-10);
+        //     BTGEN_ASSERT(std::fabs(torso_torque[2]) < 1e-10);
+        //     // \tau_makeup = \tau_torso - \tau_swing - \tau_stance
+        //     torso_makeup_torque.segment(1, 3).setZero();
+        // }
         // \tau_swing += (1-k) * \tau_makeup
         swing_torque += (1 - stance_swing_foot_ratio) * torso_makeup_torque;
         // \tau_stance += k * \tau_makeup
