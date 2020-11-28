@@ -41,7 +41,7 @@ Joint *btGenJointPDCtrl::GetJoint() const { return mJoint; }
  * 
 */
 tVector btGenJointPDCtrl::CalcControlForce(const tVectorXd &tar_q,
-                                           const tVectorXd &tar_qdot) const
+                                           const tVectorXd &tar_qdot)
 {
     int offset = mJoint->GetOffset();
     int size = this->GetCtrlDims();
@@ -427,6 +427,7 @@ void btGenJointPDCtrl::DebugVerifyCtrlForceKp(const tVectorXd &local_target,
                   << error.transpose() << std::endl;
         std::cout << "\tideal dir = " << ideal_dir.transpose() << std::endl;
         std::cout << "\ttrue dir = " << truth_dir.transpose() << std::endl;
+        std::cout << "\tcalc_torque = " << calc_torque.transpose() << std::endl;
         exit(0);
     }
     std::cout << "[pd] debug is enabled! kd is set to zero, verified succ\n";

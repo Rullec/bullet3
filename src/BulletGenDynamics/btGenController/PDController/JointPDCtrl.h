@@ -19,7 +19,7 @@ public:
     bool GetUseWorldCoord() const;
     void SetUseWorldCoord(bool val);
     Joint *GetJoint() const;
-    tVector CalcControlForce(const tVectorXd &q, const tVectorXd &qdot) const;
+    tVector CalcControlForce(const tVectorXd &q, const tVectorXd &qdot);
     int GetCtrlDims() const;
     void BuildTargetPose(tVectorXd &q);
     void BuildTargetVel(tVectorXd &qdot);
