@@ -36,7 +36,7 @@ void tElapsedCondition::Update(double dt) { mCurTime += dt; }
  * \brief               At this moment, judge whether the state should be transited to another one
  * \return              target state id if this condition is activated, -1 deactivied
 */
-int tElapsedCondition::GetTransitionTargetId() const
+int tElapsedCondition::GetTransitionTargetId(int swing_id, int stance_id) const
 {
     return mCurTime > mThresholdElaspedTime ? mTargetStateId : -1;
 }
@@ -51,10 +51,10 @@ void tElapsedCondition::Reset() { mCurTime = 0; }
 */
 tContactCondition::tContactCondition(int origin_state_id, int target_state_id,
                                      btGeneralizeWorld *world,
-                                     cRobotModelDynamics *model, int link_id)
+                                     cRobotModelDynamics *model)
     : tTransitionCondition(origin_state_id, target_state_id,
                            eTransitionCondition::LinkContact),
-      mWorld(world), mModel(model), mLinkId(link_id)
+      mWorld(world), mModel(model)
 {
     mMinContactForceThreshold = 20;
     mMinElaspedTimeThreshold = 0.05;
@@ -69,33 +69,53 @@ void tContactCondition::Update(double dt) { mCurTime += dt; }
  * 2. if the vertical contact force is too small (or hasn't contact), return -1
  * 3. otherwise, convert to another state, return the target state id
 */
-int tContactCondition::GetTransitionTargetId() const
+
+int tContactCondition::GetTransitionTargetId(int swing_id, int stance_id) const
 {
     // 1. elasped time threshold
     if (mCurTime < this->mMinElaspedTimeThreshold)
         return -1;
 
     // 2. get the contact force
-
-    auto link_collider = mModel->GetLinkCollider(mLinkId);
-    auto ground = mWorld->GetGround();
-    auto manager = mWorld->GetContactManager();
-    int num = manager->GetTwoObjsNumOfContact(ground, link_collider);
-    if (num > 0)
+    double swing_force =
+               mWorld->GetContactManager()->GetVerticalTotalForceWithGround(
+                   mModel->GetLinkCollider(swing_id)),
+           stance_force =
+               mWorld->GetContactManager()->GetVerticalTotalForceWithGround(
+                   mModel->GetLinkCollider(stance_id));
+    printf("[debug] transition condition swing force %.3f, stance force %.3f\n",
+           swing_force, stance_force);
+    if (swing_force > mMinContactForceThreshold)
     {
-        double force = manager->GetVerticalTotalForceWithGround(link_collider);
-        if (force > this->mMinContactForceThreshold)
-            return this->mTargetStateId;
-        else
-        {
-            printf("[error] state: vertical contact force %.4f is too small, "
-                   "doesn't change!\n",
-                   force);
-            return -1;
-        }
+        return mTargetStateId;
     }
     else
+    {
         return -1;
+    }
+    // std::cout << "int tContactCondition::GetTransitionTargetId hasn't been "
+    //              "implemented\n";
+    // exit(0);
+    // return -1;
+    // auto link_collider = mModel->GetLinkCollider(mLinkId);
+    // auto ground = mWorld->GetGround();
+    // auto manager = mWorld->GetContactManager();
+    // int num = manager->GetTwoObjsNumOfContact(ground, link_collider);
+    // if (num > 0)
+    // {
+    //     double force = manager->GetVerticalTotalForceWithGround(link_collider);
+    //     if (force > this->mMinContactForceThreshold)
+    //         return this->mTargetStateId;
+    //     else
+    //     {
+    //         printf("[error] state: vertical contact force %.4f is too small, "
+    //                "doesn't change!\n",
+    //                force);
+    //         return -1;
+    //     }
+    // }
+    // else
+    //     return -1;
 }
 
 void tContactCondition::Reset() { mCurTime = 0; }
@@ -104,9 +124,8 @@ void tContactCondition::Reset() { mCurTime = 0; }
 
 // ====================================== state begin ========================
 
-tState::tState(int state_id, int default_stance, std::string stance_update_mode)
-    : mStateId(state_id), mDefaultStance(default_stance),
-      mStanceUpdateMode(stance_update_mode)
+tState::tState(int state_id, std::string stance_update_mode)
+    : mStateId(state_id), mStanceUpdateMode(stance_update_mode)
 {
     mTransitionConditions.clear();
     BTGEN_ASSERT(
@@ -139,12 +158,12 @@ int tState::GetStateId() const { return mStateId; }
  * \brief           judge and find the target transition state at this moment
  * \return          return the target state id we want to trainsite to. -1 means no transition
 */
-int tState::GetTargetId() const
+int tState::GetTargetId(int swing_id, int stance_id) const
 {
     int target_id = -1;
     for (auto &x : mTransitionConditions)
     {
-        int cur_target = x->GetTransitionTargetId();
+        int cur_target = x->GetTransitionTargetId(swing_id, stance_id);
         if (target_id == -1)
         {
             if (cur_target == -1)
@@ -172,11 +191,7 @@ int tState::GetTargetId() const
 int tState::CalcNewStance(int old_stance) const
 {
     // now simply opposite all stance
-    if (mStanceUpdateMode == "default")
-    {
-        return mDefaultStance;
-    }
-    else if (mStanceUpdateMode == "reverse")
+    if (mStanceUpdateMode == "reverse")
     {
         if (old_stance == BTGEN_RIGHT_STANCE)
             return BTGEN_LEFT_STANCE;
@@ -247,13 +262,8 @@ tTransitionCondition *BuildTransitionCondition(const int origin_state_id,
     break;
     case eTransitionCondition::LinkContact:
     {
-        std::string link_name =
-            btJsonUtil::ParseAsString("contact_link_name", value);
-        auto link_ptr = model->GetLink(link_name);
-        BTGEN_ASSERT(link_ptr != nullptr);
-        int link_id = link_ptr->GetId();
         cond = new tContactCondition(origin_state_id, target_state_id, world,
-                                     model, link_id);
+                                     model);
     }
     break;
     default:

@@ -21,7 +21,7 @@ struct tTransitionCondition
     tTransitionCondition(int origin_state_id, int target_state_id,
                          eTransitionCondition type);
     virtual void Update(double dt) = 0;
-    virtual int GetTransitionTargetId() const = 0;
+    virtual int GetTransitionTargetId(int swing_id, int stance_id) const = 0;
     virtual void Reset() = 0;
 
 protected:
@@ -38,7 +38,8 @@ struct tElapsedCondition : public tTransitionCondition
     tElapsedCondition(int origin_state_id, int target_state_id,
                       double elasped_time);
     virtual void Update(double dt) override final;
-    virtual int GetTransitionTargetId() const override final;
+    virtual int GetTransitionTargetId(int swing_id,
+                                      int stance_id) const override final;
     virtual void Reset() override final;
 
 protected:
@@ -52,10 +53,10 @@ protected:
 struct tContactCondition : public tTransitionCondition
 {
     tContactCondition(int origin_state_id, int target_state_id,
-                      btGeneralizeWorld *world, cRobotModelDynamics *model,
-                      int link_id);
+                      btGeneralizeWorld *world, cRobotModelDynamics *model);
     virtual void Update(double dt) override final;
-    virtual int GetTransitionTargetId() const override final;
+    virtual int GetTransitionTargetId(int swing_id,
+                                      int stance_id) const override final;
     virtual void Reset() override final;
 
 protected:
@@ -77,7 +78,6 @@ protected:
     */
     double mMinElaspedTimeThreshold;
     double mCurTime; // current elasped time
-    int mLinkId;
 };
 
 /**
@@ -85,13 +85,13 @@ protected:
 */
 struct tState
 {
-    tState(int state_id, int default_stance, std::string stance_update_mode);
+    tState(int state_id, std::string stance_update_mode);
     ~tState();
 
     void Update(double dt);
     void AddTransitionCondition(tTransitionCondition *cond);
     int GetStateId() const;
-    int GetTargetId() const;
+    int GetTargetId(int swing_id, int stance_id) const;
     int GetDefaultStance() const;
     int CalcNewStance(int old_stance) const;
     void Print() const;
@@ -100,7 +100,6 @@ struct tState
 protected:
     int mStateId;
     std::string mStanceUpdateMode;
-    int mDefaultStance;
 
     std::vector<tTransitionCondition *> mTransitionConditions;
 };

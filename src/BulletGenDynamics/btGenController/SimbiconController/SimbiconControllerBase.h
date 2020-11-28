@@ -13,6 +13,7 @@ class Value;
 class btGenSimbiconControllerBase : public btGenControllerBase
 {
 public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
     btGenSimbiconControllerBase(btGeneralizeWorld *world);
     virtual ~btGenSimbiconControllerBase();
     virtual void Init(cRobotModelDynamics *model,
@@ -39,6 +40,7 @@ protected:
     bool
         mEnableStanceControlRatio; // calculate the stance control force by stance/swing foot vertical contact force ratio
     bool mEnableDrawHeadingFrame;  // draw heading frame or not
+    tVectorXd mInitPose;
     double mCd_forward, mCv_forward; // balance control param, forward
     double mCd_tangent, mCv_tangent; // balance control param, tangent
 

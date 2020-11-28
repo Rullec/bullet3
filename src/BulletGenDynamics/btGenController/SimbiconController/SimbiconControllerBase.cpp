@@ -60,6 +60,18 @@ void btGenSimbiconControllerBase::Init(cRobotModelDynamics *model,
     mEnableDrawHeadingFrame =
         btJsonUtil::ParseAsBool("enable_draw_heading_frame", root);
 
+    mInitPose =
+        btJsonUtil::ReadVectorJson(btJsonUtil::ParseAsValue("init_pose", root));
+
+    std::string init_stance = btJsonUtil::ParseAsString("init_stance", root);
+    int init_state = btJsonUtil::ParseAsInt("init_state", root);
+    if (init_stance == "left")
+        mStance = BTGEN_LEFT_STANCE;
+    else if (init_stance == "right")
+        mStance = BTGEN_RIGHT_STANCE;
+    else
+        BTGEN_ASSERT(false);
+
     BuildJointInfo();
 
     // 2. build FSM
@@ -71,7 +83,7 @@ void btGenSimbiconControllerBase::Init(cRobotModelDynamics *model,
 
     // 5. initialzethe FSM
     // set the model pose + set the default state + set the default stance
-    mFSM->Init(mStance);
+    mFSM->Init();
     UpdateStance();
 
     // 6. create ref char
@@ -82,6 +94,14 @@ void btGenSimbiconControllerBase::Init(cRobotModelDynamics *model,
     mRefTrajModel->InitSimVars(mWorld->GetInternalWorld(), true, true, false);
 
     mRefTrajModel->SetqAndqdot(mModel->Getq(), mModel->Getqdot());
+
+    // 7. set init pose
+    BTGEN_ASSERT(mInitPose.size() == mModel->GetNumOfFreedom());
+    mModel->SetqAndqdot(mInitPose, tVectorXd::Zero(mModel->GetNumOfFreedom()));
+    mFSM->SetState(init_state);
+    std::cout << "[simbicon] set init pose = " << mInitPose.transpose()
+              << " init stance = " << init_stance
+              << " init state = " << init_state << std::endl;
 }
 
 /**
@@ -118,7 +138,8 @@ void btGenSimbiconControllerBase::Update(double dt)
     }
     // 1. update FSM, get the target pose
     tVectorXd target_pose;
-    mFSM->Update(dt, target_pose, mStance);
+    mFSM->Update(dt, target_pose, mStance, mSwingFootInfo.first,
+                 mStanceFootInfo.first);
     UpdateStance();
 
     // 2. change the target pose by balance control policy
@@ -183,7 +204,7 @@ void btGenSimbiconControllerBase::UpdateStance()
 {
     if (mStance == BTGEN_LEFT_STANCE)
     {
-        printf("[simbicon] update left stance\n");
+        printf("[simbicon] swing: right, stance: left\n");
         mStanceHipInfo = mLeftHipInfo;
         mStanceFootInfo = mLeftFootInfo;
         mSwingHipInfo = mRightHipInfo;
@@ -191,7 +212,7 @@ void btGenSimbiconControllerBase::UpdateStance()
     }
     else if (mStance == BTGEN_RIGHT_STANCE)
     {
-        printf("[simbicon] update right stance\n");
+        printf("[simbicon] swing: left, stance: right\n");
         mStanceHipInfo = mRightHipInfo;
         mStanceFootInfo = mRightFootInfo;
         mSwingHipInfo = mLeftHipInfo;
@@ -251,8 +272,8 @@ void btGenSimbiconControllerBase::UpdatePDController(const tVectorXd &tar_pose)
         }
     }
 
-    std::cout << "[log] final PD target = " << tar_pose.transpose()
-              << std::endl;
+    // std::cout << "[log] final PD target = " << tar_pose.transpose()
+    //           << std::endl;
 
     // std::cout << "[log] model q = " << mModel->Getq().transpose() << std::endl;
     // std::cout << "[log] model qdot = " << mModel->Getqdot().transpose()
@@ -406,10 +427,10 @@ void btGenSimbiconControllerBase::CalcControlForce(
                 auto joint = mModel->GetJointById(i);
                 if (mRootId == joint->GetParentId())
                 {
-                    std::cout << "[debug] joint " << i << " "
-                              << joint->GetName()
-                              << " is root's child, included in torso makeup "
-                                 "torque\n";
+                    // std::cout << "[debug] joint " << i << " "
+                    //           << joint->GetName()
+                    //           << " is root's child, included in torso makeup "
+                    //              "torque\n";
                     torso_makeup_torque -= pd_forces[i].mForce;
                 }
             }

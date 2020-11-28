@@ -28,28 +28,15 @@ btGenFSM::btGenFSM(btGeneralizeWorld *world, cRobotModelDynamics *model,
     {
         const Json::Value &cur_state = states[i];
         int state_id = btJsonUtil::ParseAsInt("state_id", cur_state);
-        std::string default_stance_str =
-            btJsonUtil::ParseAsString("default_stance", cur_state);
         std::string stance_update_mode =
             btJsonUtil::ParseAsString("stance_update_mode", cur_state);
-
-        int default_stance = -1;
-        if (default_stance_str == "left")
-            default_stance = BTGEN_LEFT_STANCE;
-        else if (default_stance_str == "right")
-            default_stance = BTGEN_RIGHT_STANCE;
-        else
-        {
-            BTGEN_ASSERT(false);
-        }
         BTGEN_ASSERT(state_id == i);
 
         const Json::Value &conditions =
             btJsonUtil::ParseAsValue("conditions", cur_state);
 
         BTGEN_ASSERT(conditions.isArray() == true);
-        tState *state =
-            new tState(state_id, default_stance, stance_update_mode);
+        tState *state = new tState(state_id, stance_update_mode);
         for (auto &cond : conditions)
         {
             state->AddTransitionCondition(
@@ -59,7 +46,7 @@ btGenFSM::btGenFSM(btGeneralizeWorld *world, cRobotModelDynamics *model,
         state->Print();
     }
 
-    mCurState = mStateGraph[0];
+    mCurState = nullptr;
 }
 
 btGenFSM::~btGenFSM()
@@ -70,19 +57,26 @@ btGenFSM::~btGenFSM()
     mStateGraph.clear();
 }
 
+void btGenFSM::SetState(int state_id)
+{
+    BTGEN_ASSERT(state_id < mStateGraph.size());
+    mCurState = mStateGraph[state_id];
+}
 /**
  * \brief               Update the target pose by FSM
  * \param dt            timestep
  * \param target_pose   ref to character's target pose
  * \param stance        ref to the stance situation
 */
-void btGenFSM::Update(double dt, tVectorXd &target_pose, int &old_stance)
+void btGenFSM::Update(double dt, tVectorXd &target_pose, int &old_stance,
+                      const int old_swing_foot_id, const int old_stance_foot_id)
 {
     mCurState->Update(dt);
-    int target_state_id = mCurState->GetTargetId();
+    int target_state_id =
+        mCurState->GetTargetId(old_swing_foot_id, old_stance_foot_id);
     if (target_state_id == -1)
     {
-        printf("[FSM] target state id = -1, keep in the same state\n");
+        printf("[FSM] keep in the same state = %d\n", mCurState->GetStateId());
     }
     else
     {
@@ -106,34 +100,8 @@ tVectorXd btGenFSM::GetTargetPose()
 }
 /**
  * \brief               init the FSM
- * 1. set the default pose of character
- * 2. set the default state of FSM
- * 3. fetch the current stance 
 */
-void btGenFSM::Init(int &stance)
-{
-    // tVectorXd q = mStateTraj->mq[mCurState->GetStateId()],
-    //           qdot = tVectorXd::Zero(q.size());
-    tVectorXd q = tVectorXd::Zero(mModel->GetNumOfFreedom()),
-              qdot = tVectorXd::Zero(mModel->GetNumOfFreedom());
-
-    switch (mModel->GetRoot()->GetJointType())
-    {
-    case JointType::BIPEDAL_NONE_JOINT:
-        q[0] = 0.75;
-        break;
-    case JointType::NONE_JOINT:
-        q[1] = 0.75;
-        break;
-    default:
-        BTGEN_ASSERT(false);
-        break;
-    }
-    stance = BTGEN_LEFT_STANCE;
-    std::cout << "[FSM] init q = " << q.transpose() << " , stance = " << stance
-              << std::endl;
-    mModel->SetqAndqdot(q, qdot);
-}
+void btGenFSM::Init() {}
 
 /**
  * \brief               Get the current state in FSM

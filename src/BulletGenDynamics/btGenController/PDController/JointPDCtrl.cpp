@@ -72,7 +72,7 @@ tVector btGenJointPDCtrl::CalcControlForce(const tVectorXd &tar_q,
     {
         force = force.normalized() * mForceLim;
     }
-    // std::cout << "joint " << mJoint->GetId() << " force = " << force.transpose()
+    // std::cout << "[pd] joint " << mJoint->GetId() << " force = " << force.transpose()
     //           << " lim = " << mForceLim << std::endl;
 
     // DebugVerifyCtrlForceKp(local_target_theta, force);
