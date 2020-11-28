@@ -5,8 +5,8 @@
         {
             "ID": 0,
             "Name": "root",
-            "Kp": 500,
-            "Kd": 10,
+            "Kp": 3000,
+            "Kd": 100,
             "TargetTheta0": 0,
             "UseWorldCoord": 0
         },

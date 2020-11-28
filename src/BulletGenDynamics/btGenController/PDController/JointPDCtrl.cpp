@@ -4,15 +4,6 @@
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
 #include <iostream>
 
-const double Kd_max_waning_value = 20;
-#define ASSERT_KD_VALUE(v)                                                     \
-    if (std::fabs(v) > Kd_max_waning_value)                                    \
-    {                                                                          \
-        std::cout << "[error] set kd > " << Kd_max_waning_value                \
-                  << " could be unstable, please consider it again\n!",        \
-            exit(0);                                                           \
-    }
-
 btGenJointPDCtrl::btGenJointPDCtrl(cRobotModelDynamics *model, Joint *joint,
                                    double kp, double kd, double force_lim,
                                    bool use_world)
@@ -23,16 +14,10 @@ btGenJointPDCtrl::btGenJointPDCtrl(cRobotModelDynamics *model, Joint *joint,
     mKp = kp;
     mKd = kd;
     mForceLim = force_lim;
-
-    ASSERT_KD_VALUE(mKd);
 }
 
 void btGenJointPDCtrl::SetKp(double Kp) { mKp = Kp; }
-void btGenJointPDCtrl::SetKd(double Kd)
-{
-    mKd = Kd;
-    ASSERT_KD_VALUE(mKd);
-}
+void btGenJointPDCtrl::SetKd(double Kd) { mKd = Kd; }
 double btGenJointPDCtrl::GetKp() const { return mKp; }
 double btGenJointPDCtrl::GetKd() const { return mKd; }
 bool btGenJointPDCtrl::GetUseWorldCoord() const { return this->mUseWorldCoord; }

@@ -406,7 +406,7 @@ void btGenSimbiconControllerBase::CalcControlForce(
                 auto joint = mModel->GetJointById(i);
                 if (mRootId == joint->GetParentId())
                 {
-                    std::cout << "[debug] jowint " << i << " "
+                    std::cout << "[debug] joint " << i << " "
                               << joint->GetName()
                               << " is root's child, included in torso makeup "
                                  "torque\n";
