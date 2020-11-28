@@ -86,15 +86,6 @@ void btGenSimbiconControllerBase::Init(cRobotModelDynamics *model,
     mFSM->Init();
     UpdateStance();
 
-    // 6. create ref char
-    mRefTrajModel = new cRobotModelDynamics();
-
-    mRefTrajModel->Init(mModel->GetCharFile().c_str(), mModel->GetScale(),
-                        ModelType::JSON);
-    mRefTrajModel->InitSimVars(mWorld->GetInternalWorld(), true, true, false);
-
-    mRefTrajModel->SetqAndqdot(mModel->Getq(), mModel->Getqdot());
-
     // 7. set init pose
     BTGEN_ASSERT(mInitPose.size() == mModel->GetNumOfFreedom());
     mModel->SetqAndqdot(mInitPose, tVectorXd::Zero(mModel->GetNumOfFreedom()));
@@ -102,6 +93,15 @@ void btGenSimbiconControllerBase::Init(cRobotModelDynamics *model,
     std::cout << "[simbicon] set init pose = " << mInitPose.transpose()
               << " init stance = " << init_stance
               << " init state = " << init_state << std::endl;
+
+    // 6. create ref char
+    mRefTrajModel = new cRobotModelDynamics();
+
+    mRefTrajModel->Init(mModel->GetCharFile().c_str(), mModel->GetScale(),
+                        ModelType::JSON);
+    mRefTrajModel->InitSimVars(mWorld->GetInternalWorld(), true, true, false);
+
+    UpdateRefModel(mModel->Getq());
 }
 
 /**

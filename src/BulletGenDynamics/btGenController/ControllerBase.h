@@ -22,6 +22,7 @@ class btGenControllerBase
 {
 public:
     btGenControllerBase(ebtGenControllerType type, btGeneralizeWorld *world);
+    virtual ~btGenControllerBase();
     virtual void Init(cRobotModelDynamics *model, const std::string &conf);
     virtual void Update(double dt);
     virtual void Reset() = 0;

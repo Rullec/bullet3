@@ -14,7 +14,7 @@
             "ID": 1,
             "Name": "RightLeg",
             "Kp": 200,
-            "Kd": 5,
+            "Kd": 10,
             "TargetTheta0": 0,
             "UseWorldCoord": 0
         },
@@ -30,7 +30,7 @@
             "ID": 3,
             "Name": "RFootTongue",
             "Kp": 50,
-            "Kd": 1,
+            "Kd": 0.2,
             "TargetTheta0": 0,
             "UseWorldCoord": 0
         },
@@ -38,7 +38,7 @@
             "ID": 4,
             "Name": "LeftLeg",
             "Kp": 200,
-            "Kd": 5,
+            "Kd": 10,
             "TargetTheta0": 0,
             "UseWorldCoord": 0
         },
@@ -54,15 +54,15 @@
             "ID": 6,
             "Name": "LFootTongue",
             "Kp": 50,
-            "Kd": 1,
+            "Kd": 0.2,
             "TargetTheta0": 0,
             "UseWorldCoord": 0
         },
         {
             "ID": 7,
             "Name": "torso",
-            "Kp": 200,
-            "Kd": 5,
+            "Kp": 100,
+            "Kd": 10,
             "TargetTheta0": 0,
             "UseWorldCoord": 0
         }

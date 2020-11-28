@@ -55,15 +55,15 @@ cRobotModelDynamics::~cRobotModelDynamics()
     // 	delete x;
     // }
     // mColShapes.clear();
-    for (auto &x : mColliders)
-    {
-        if (x->getCollisionShape() != nullptr)
-        {
-            delete x->getCollisionShape();
-            x->setCollisionShape(nullptr);
-        }
-        delete x;
-    }
+    // for (auto &x : mColliders)
+    // {
+    //     if (x->getCollisionShape() != nullptr)
+    //     {
+    //         delete x->getCollisionShape();
+    //         x->setCollisionShape(nullptr);
+    //     }
+    //     delete x;
+    // }
     mColliders.clear();
 
     for (auto &x : mStateStack)

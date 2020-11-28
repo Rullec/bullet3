@@ -172,7 +172,6 @@ void btGenPDController::Update(double dt)
                   << " force = " << forces[i].mForce.transpose() << std::endl;
         mModel->ApplyJointTorque(joint->GetId(), forces[i].mForce);
     }
-    std::cout << " q = " << mModel->Getq().transpose() << std::endl;
 }
 void btGenPDController::Reset() {}
 
