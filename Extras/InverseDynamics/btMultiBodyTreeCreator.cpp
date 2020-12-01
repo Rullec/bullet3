@@ -1,3 +1,9 @@
+#include <iostream>
+#define BULLET_GENERATE_LIB
+#ifndef BULLET_GENERATE_LIB
+	#include <../../../../examples/ExampleBrowser/ID_test/BulletUtil.h>
+#endif
+
 #include "btMultiBodyTreeCreator.hpp"
 
 namespace btInverseDynamics
@@ -32,36 +38,49 @@ int btMultiBodyTreeCreator::createFromBtMultiBody(const btMultiBody *btmb, const
 		{
 			link.joint_type = FLOATING;
 		}
-		btTransform transform = (btmb->getBaseWorldTransform());
+		
+		btTransform transform = (btmb->getBaseWorldTransform());// base to world trans
 		//compute inverse dynamics in body-fixed frame
-		transform.setIdentity();
+		//transform.setIdentity();
+		// ��������identity�Ļ����ǻ��ȥ����ı任�������Ӱ�찡��
 
-		link.parent_r_parent_body_ref(0) = transform.getOrigin()[0];
+		// root: parent_r_parent_body_ref = I
+		// global pos for root joint
+		link.parent_r_parent_body_ref(0) = transform.getOrigin()[0]; 
 		link.parent_r_parent_body_ref(1) = transform.getOrigin()[1];
 		link.parent_r_parent_body_ref(2) = transform.getOrigin()[2];
 
-		link.body_T_parent_ref(0, 0) = transform.getBasis()[0][0];
-		link.body_T_parent_ref(0, 1) = transform.getBasis()[0][1];
-		link.body_T_parent_ref(0, 2) = transform.getBasis()[0][2];
+		// root: body_T_parent_ref: link�ĳ��򣬴�local to world�ı任����.
+		// getbasis: base to world rot, but link.body_T_parent_ref is world to body, it's wrong.
+		{
+			// body_T_parent_ref should be "world to base", but the following code 
+			link.body_T_parent_ref(0, 0) = transform.getBasis()[0][0];
+			link.body_T_parent_ref(0, 1) = transform.getBasis()[0][1];
+			link.body_T_parent_ref(0, 2) = transform.getBasis()[0][2];
 
-		link.body_T_parent_ref(1, 0) = transform.getBasis()[1][0];
-		link.body_T_parent_ref(1, 1) = transform.getBasis()[1][1];
-		link.body_T_parent_ref(1, 2) = transform.getBasis()[1][2];
+			link.body_T_parent_ref(1, 0) = transform.getBasis()[1][0];
+			link.body_T_parent_ref(1, 1) = transform.getBasis()[1][1];
+			link.body_T_parent_ref(1, 2) = transform.getBasis()[1][2];
 
-		link.body_T_parent_ref(2, 0) = transform.getBasis()[2][0];
-		link.body_T_parent_ref(2, 1) = transform.getBasis()[2][1];
-		link.body_T_parent_ref(2, 2) = transform.getBasis()[2][2];
-
+			link.body_T_parent_ref(2, 0) = transform.getBasis()[2][0];
+			link.body_T_parent_ref(2, 1) = transform.getBasis()[2][1];
+			link.body_T_parent_ref(2, 2) = transform.getBasis()[2][2];
+			link.body_T_parent_ref = link.body_T_parent_ref.transpose();
+		}
+		//std::cout << "[create ID] root body to parent ref = " << btBulletUtil::btMatrixTotMatrix1(link.body_T_parent_ref) << std::endl;
 		// random unit vector. value not used for fixed or floating joints.
 		link.body_axis_of_motion(0) = 0;
 		link.body_axis_of_motion(1) = 0;
 		link.body_axis_of_motion(2) = 1;
 
 		link.mass = btmb->getBaseMass();
+
 		// link frame in the center of mass
+		// root: body_r_body_com = 0
 		link.body_r_body_com(0) = 0;
 		link.body_r_body_com(1) = 0;
 		link.body_r_body_com(2) = 0;
+
 		// BulletDynamics uses body-fixed frame in the cog, aligned with principal axes
 		link.body_I_body(0, 0) = btmb->getBaseInertia()[0];
 		link.body_I_body(0, 1) = 0.0;
@@ -74,7 +93,10 @@ int btMultiBodyTreeCreator::createFromBtMultiBody(const btMultiBody *btmb, const
 		link.body_I_body(2, 2) = btmb->getBaseInertia()[2];
 		// shift reference point to link origin (in joint axis)
 		mat33 tilde_r_com = tildeOperator(link.body_r_body_com);
+
+		// root: joint��link COM�غϣ�����ת����������
 		link.body_I_body = link.body_I_body - link.mass * tilde_r_com * tilde_r_com;
+
 		if (verbose)
 		{
 			id_printf(
@@ -106,7 +128,9 @@ int btMultiBodyTreeCreator::createFromBtMultiBody(const btMultiBody *btmb, const
 		{
 			id_printf("mass= %f\n", link.mass);
 		}
+
 		// from this body's pivot to this body's com in this body's frame
+		// joint to COM in body frame
 		link.body_r_body_com[0] = bt_link.m_dVector[0];
 		link.body_r_body_com[1] = bt_link.m_dVector[1];
 		link.body_r_body_com[2] = bt_link.m_dVector[2];
