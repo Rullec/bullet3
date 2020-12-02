@@ -16,7 +16,7 @@
             "Kp": 200,
             "Kd": 10,
             "TargetTheta0": 0,
-            "UseWorldCoord": 0
+            "UseWorldCoord": 1
         },
         {
             "ID": 2,

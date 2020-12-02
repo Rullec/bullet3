@@ -14,6 +14,10 @@ btGenJointPDCtrl::btGenJointPDCtrl(cRobotModelDynamics *model, Joint *joint,
     mKp = kp;
     mKd = kd;
     mForceLim = force_lim;
+
+    if (mUseWorldCoord)
+        printf("[log] joint %d %s use world PD coord\n", joint->GetId(),
+               joint->GetName().c_str());
 }
 
 void btGenJointPDCtrl::SetKp(double Kp) { mKp = Kp; }
@@ -63,7 +67,9 @@ tVector btGenJointPDCtrl::CalcControlForce(const tVectorXd &tar_q,
         ControlForceRevolute(force, local_target_theta, local_target_vel);
         break;
     case JointType::FIXED_JOINT:
+    case JointType::FIXED_NONE_JOINT:
         ControlForceFixed(force, local_target_theta, local_target_vel);
+        break;
     default:
         BTGEN_ASSERT(false);
         break;
@@ -235,15 +241,15 @@ void btGenJointPDCtrl::ControlForceFixed(
 
 /**
  * \brief           Get the local control target  (PD Target theta in joint's local frame)
+ *  This function can only be calculated when mUseWorldCoord = true
 */
 void btGenJointPDCtrl::CalcLocalControlTarget(
     tVectorXd &local_control_target,
     const tQuaternion &target_global_quad) const
 {
     // if this joint's target is in world coord, the local_control_target is the target global orientation of this joint, quaternio
-    if (mUseWorldCoord == true)
-    {
-        /*
+    BTGEN_ASSERT(mUseWorldCoord == true);
+    /*
             calcualte the current local target 
 
             joint_global_rot = rest_rot * local_rot
@@ -252,73 +258,71 @@ void btGenJointPDCtrl::CalcLocalControlTarget(
             target_global_rot = joint->rest_rot * local_target 
             SO: local_target = target_global_rot * rest_rot.conj()            
         */
-        tQuaternion cur_global_rot =
-            btMathUtil::RotMat3dToQuaternion(mJoint->GetWorldOrientation());
+    tQuaternion cur_global_rot =
+        btMathUtil::RotMat3dToQuaternion(mJoint->GetWorldOrientation());
 
-        tQuaternion cur_local_rot =
-            btMathUtil::RotMat3dToQuaternion(mJoint->GetRotations());
-        tQuaternion cur_joint_rest_rot =
-            cur_global_rot * cur_local_rot.conjugate();
+    tQuaternion cur_local_rot =
+        btMathUtil::RotMat3dToQuaternion(mJoint->GetRotations());
+    tQuaternion cur_joint_rest_rot = cur_global_rot * cur_local_rot.conjugate();
 
-        tQuaternion local_target =
-            target_global_quad * cur_joint_rest_rot.conjugate();
+    tQuaternion local_target =
+        target_global_quad * cur_joint_rest_rot.conjugate();
 
-        // convert this quaternion to the local control target
+    // convert this quaternion to the local control target
 
-        tVectorXd control_target = tVectorXd(0);
-        switch (mJoint->GetJointType())
-        {
-        case JointType::SPHERICAL_JOINT:
-            control_target = btMathUtil::QuaternionToEulerAngles(
-                                 local_target, btRotationOrder::bt_XYZ)
-                                 .segment(0, 3);
-            break;
-        case JointType::REVOLUTE_JOINT:
-        {
-            // convert the local_target quaternion to the axis angle, then project it to the axis of the revolute freedom
-            tVector3d local_target_aa =
-                btMathUtil::QuaternionToAxisAngle(local_target).segment(0, 3);
-            tVector3d axis = mJoint->GetFreedoms(0)->axis;
-            BTGEN_ASSERT(std::fabs(axis.norm() - 1) < 1e-10);
-            double target_angle = local_target_aa.dot(axis);
-            // printf("revolute target angle PD is %.3f\n", target_angle);
-            // std::cout << "axis = " << axis.transpose() << std::endl;
-            // std::cout << "local target aa = " << local_target_aa.transpose()
-            //           << std::endl;
-            // std::cout << "joint current value = " << mJoint->GetFreedoms(0)->v
-            //           << std::endl;
-            control_target = tVectorXd::Ones(1) * target_angle;
-        }
+    tVectorXd control_target = tVectorXd(0);
+    switch (mJoint->GetJointType())
+    {
+    case JointType::SPHERICAL_JOINT:
+        control_target = btMathUtil::QuaternionToEulerAngles(
+                             local_target, btRotationOrder::bt_XYZ)
+                             .segment(0, 3);
         break;
-        case JointType::NONE_JOINT:
-            // for none joint, the same as spherical joint
-            control_target = tVectorXd::Zero(6);
-            control_target.segment(3, 3) =
-                btMathUtil::QuaternionToEulerAngles(local_target,
-                                                    btRotationOrder::bt_XYZ)
-                    .segment(0, 3);
-            break;
-        case JointType::FIXED_JOINT:
-            control_target = tVectorXd::Zero(0);
-            break;
-        case JointType::BIPEDAL_NONE_JOINT:
-        {
-            control_target = tVectorXd::Zero(3);
-            tVector aa = btMathUtil::QuaternionToEulerAngles(
-                local_target, btRotationOrder::bt_XYZ);
-            BTGEN_ASSERT(std::fabs(aa[1]) < 1e-10);
-            BTGEN_ASSERT(std::fabs(aa[2]) < 1e-10);
-            control_target[2] = aa[0];
-        }
-        break;
-        default:
-            std::cout << "joint type " << mJoint->GetJointType()
-                      << " unsupported in joint pd ctrl\n";
-            BTGEN_ASSERT(false);
-            break;
-        }
-        local_control_target = control_target;
+    case JointType::REVOLUTE_JOINT:
+    {
+        // convert the local_target quaternion to the axis angle, then project it to the axis of the revolute freedom
+        tVector3d local_target_aa =
+            btMathUtil::QuaternionToAxisAngle(local_target).segment(0, 3);
+        tVector3d axis = mJoint->GetFreedoms(0)->axis;
+        BTGEN_ASSERT(std::fabs(axis.norm() - 1) < 1e-10);
+        double target_angle = local_target_aa.dot(axis);
+        // printf("revolute target angle PD is %.3f\n", target_angle);
+        // std::cout << "axis = " << axis.transpose() << std::endl;
+        // std::cout << "local target aa = " << local_target_aa.transpose()
+        //           << std::endl;
+        // std::cout << "joint current value = " << mJoint->GetFreedoms(0)->v
+        //           << std::endl;
+        control_target = tVectorXd::Ones(1) * target_angle;
     }
+    break;
+    case JointType::NONE_JOINT:
+        // for none joint, the same as spherical joint
+        control_target = tVectorXd::Zero(6);
+        control_target.segment(3, 3) =
+            btMathUtil::QuaternionToEulerAngles(local_target,
+                                                btRotationOrder::bt_XYZ)
+                .segment(0, 3);
+        break;
+    case JointType::FIXED_JOINT:
+        control_target = tVectorXd::Zero(0);
+        break;
+    case JointType::BIPEDAL_NONE_JOINT:
+    {
+        control_target = tVectorXd::Zero(3);
+        tVector aa = btMathUtil::QuaternionToEulerAngles(
+            local_target, btRotationOrder::bt_XYZ);
+        BTGEN_ASSERT(std::fabs(aa[1]) < 1e-10);
+        BTGEN_ASSERT(std::fabs(aa[2]) < 1e-10);
+        control_target[2] = aa[0];
+    }
+    break;
+    default:
+        std::cout << "joint type " << mJoint->GetJointType()
+                  << " unsupported in joint pd ctrl\n";
+        BTGEN_ASSERT(false);
+        break;
+    }
+    local_control_target = control_target;
 }
 
 /**

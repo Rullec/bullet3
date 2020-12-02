@@ -2058,6 +2058,8 @@ void cRobotModelDynamics::TestSetFreedomValueAndDot()
     {
         auto joint = dynamic_cast<Joint *>(GetJointById(i));
         int local_dof = joint->GetNumOfFreedom();
+        if (local_dof == 0)
+            continue;
         int offset = joint->GetFreedoms(0)->id;
         for (int j = 0; j < local_dof; j++)
         {
@@ -2181,6 +2183,13 @@ void cRobotModelDynamics::ConvertGenForceToCartesianForceTorque(
                 gen_force[2] - (root_jvT.block(0, 0, 3, 3) * root_force)[2];
         }
         break;
+        case JointType::FIXED_NONE_JOINT:
+        {
+            root_force.setZero();
+            root_torque.setZero();
+            break;
+        }
+
         default:
             BTGEN_ASSERT(false);
             break;

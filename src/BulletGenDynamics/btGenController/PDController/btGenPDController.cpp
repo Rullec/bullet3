@@ -159,7 +159,6 @@ void btGenPDController::SetPDTargetqdot(const tVectorXd &qdot)
 void btGenPDController::Update(double dt)
 {
     // printf("pd controller update dt %.5f\n", dt);
-
     // 2. calculate pd forces and apply
     tEigenArr<btGenPDForce> forces;
     CalculateControlForces(dt, forces);
@@ -172,6 +171,8 @@ void btGenPDController::Update(double dt)
                   << " force = " << forces[i].mForce.transpose() << std::endl;
         mModel->ApplyJointTorque(joint->GetId(), forces[i].mForce);
     }
+    std::cout << "[pd] pose err = "
+              << (mTargetqCur - mModel->Getq()).transpose() << std::endl;
 }
 void btGenPDController::Reset() {}
 
@@ -252,7 +253,6 @@ void btGenPDController::CalculateControlForces(
     {
         CalculateControlForcesSPD(dt, pd_forces);
     }
-
     else
         CalculateControlForcesExp(pd_forces);
 }

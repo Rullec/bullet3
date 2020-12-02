@@ -1165,11 +1165,22 @@ int Joint::GetOffset() const
 {
     if (freedoms.size() != 0)
     {
+
+        // not fixed joint
         return freedoms[0].id;
     }
     else
     {
-        return dependent_dof_id[dependent_dof_id.size() - 1];
+        if (dependent_dof_id.size() != 0)
+        {
+            // fixed joint, but not root
+            return dependent_dof_id[dependent_dof_id.size() - 1];
+        }
+        else
+        {
+            // fixed root joint
+            return 0;
+        }
     }
 }
 
