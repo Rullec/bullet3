@@ -1,12 +1,13 @@
 {
     "ctrl_type": "PDController",
     "enable_stable_pd": false,
+    "enable_pd_test": true,
     "PDControllers": [
         {
             "ID": 0,
             "Name": "root",
-            "Kp": 0,
-            "Kd": 0,
+            "Kp": 100,
+            "Kd": 10,
             "TargetTheta0": 0,
             "UseWorldCoord": 0
         },
@@ -16,7 +17,7 @@
             "Kp": 200,
             "Kd": 10,
             "TargetTheta0": 0,
-            "UseWorldCoord": 1
+            "UseWorldCoord": 0
         },
         {
             "ID": 2,

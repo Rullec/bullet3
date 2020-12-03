@@ -71,7 +71,7 @@ SET(
 	./btGenController/ControllerBase.cpp
 	./btGenController/BuildController.cpp
 	./btGenController/PDController/btGenPDController.cpp
-	./btGenController/PDController/btGenSimbiconSPDController.cpp
+	# ./btGenController/PDController/btGenSimbiconSPDController.cpp
 	./btGenController/PDController/JointPDCtrl.cpp
 	./btGenController/ContactAwareController/btGenContactAwareController.cpp
 	./btGenController/ContactAwareController/btGenTargetCalculator.cpp

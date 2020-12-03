@@ -816,7 +816,8 @@ bool Joint::GetIsRootJoint() const
     {
         BTGEN_ASSERT(joint_type == JointType::NONE_JOINT ||
                      joint_type == JointType::BIPEDAL_NONE_JOINT ||
-                     joint_type == JointType::LIMIT_NONE_JOINT);
+                     joint_type == JointType::LIMIT_NONE_JOINT ||
+                     joint_type == JointType::FIXED_NONE_JOINT);
     }
     return should_be_root;
 }

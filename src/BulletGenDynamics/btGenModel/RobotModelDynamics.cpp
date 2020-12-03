@@ -1175,7 +1175,7 @@ void cRobotModelDynamics::TestRotationChar()
 
     tMatrix new_rotation =
         diff_rot * old_rotation *
-        btMathUtil::ExpandMat(link->GetMeshRotation()).transpose();
+        btMathUtil::ExpandMat(link->GetMeshRotation(), 0).transpose();
     std::cout << "new rot = \n" << new_rotation << std::endl;
 
     tVector new_euler_angles = btMathUtil::QuaternionToEulerAngles(

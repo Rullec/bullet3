@@ -726,7 +726,7 @@ void btGenSimbiconControllerBase::DebugVerifyHeadingFrame()
     tVector forward_vec = tVector(1, 0, 0, 0);
     tVector head_vec = trans * forward_vec;
     tVector model_vec =
-        btMathUtil::ExpandMat(mModel->GetLinkById(0)->GetWorldOrientation()) *
+        btMathUtil::ExpandMat(mModel->GetLinkById(0)->GetWorldOrientation(), 0) *
         forward_vec;
     model_vec[1] = 0;
     model_vec.normalize();
