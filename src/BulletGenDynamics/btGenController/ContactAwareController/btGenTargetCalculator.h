@@ -9,9 +9,10 @@ class btCollisionObject;
 class btGeneralizeWorld;
 
 /**
- * LCPAdpationController works together with the contact controller. 
+ * TargetCalculator works together with the ContactAware controller. 
  * It first receive the mocap data (traj) from outside by the "SetTraj" method
- * Then in each control frame, the "CalcTarget" will be called to 
+ * Then in each control frame, the "CalcTarget" will be called to calculate a control target for the outside 
+ * ContactAwareController
 */
 class btGenTargetCalculator
 {

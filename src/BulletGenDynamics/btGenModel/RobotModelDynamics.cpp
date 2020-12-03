@@ -1101,27 +1101,27 @@ tVectorXd cRobotModelDynamics::Getqddot()
     return qddot;
 }
 
-void cRobotModelDynamics::UpdateVelocityWithoutCoriolis(double dt)
-{
-    int n = GetNumOfFreedom();
-    tVectorXd residual = GetGeneralizedForce();
-    tVectorXd qddot = inv_mass_matrix * residual;
+// void cRobotModelDynamics::UpdateVelocityWithoutCoriolis(double dt)
+// {
+//     int n = GetNumOfFreedom();
+//     tVectorXd residual = GetGeneralizedForce();
+//     tVectorXd qddot = inv_mass_matrix * residual;
 
-    if (qddot.hasNaN())
-    {
-        std::cout << "UpdateVelocityWithoutCoriolis: qddot hasNan\n";
-        exit(0);
-    }
-    mqdot += qddot * dt;
-    mqdot = mqdot.cwiseMax(-mMaxVel);
-    mqdot = mqdot.cwiseMin(mMaxVel);
+//     if (qddot.hasNaN())
+//     {
+//         std::cout << "UpdateVelocityWithoutCoriolis: qddot hasNan\n";
+//         exit(0);
+//     }
+//     mqdot += qddot * dt;
+//     mqdot = mqdot.cwiseMax(-mMaxVel);
+//     mqdot = mqdot.cwiseMin(mMaxVel);
 
-    // 3. recalculate the coriolis force
-    ComputeCoriolisMatrix(mqdot);
+//     // 3. recalculate the coriolis force
+//     ComputeCoriolisMatrix(mqdot);
 
-    // 4. update the cartesian velocity for each link
-    UpdateCartesianVelocity();
-}
+//     // 4. update the cartesian velocity for each link
+//     UpdateCartesianVelocity();
+// }
 
 /**
  * \brief				Update cartesian velocity (lin vel and

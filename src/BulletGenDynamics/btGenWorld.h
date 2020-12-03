@@ -145,7 +145,7 @@ protected:
     void Update(double dt);
     // void UpdateTransform(double dt);
     void UpdateVelocityInternal(double dt);
-    void UpdateVelocityInternalWithoutCoriolis(double dt);
+    // void UpdateVelocityInternalWithoutCoriolis(double dt);
     void PostUpdate(double dt);
 
     // sim record

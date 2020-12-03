@@ -7,8 +7,7 @@ class btTraj;
 struct btGenFeature;
 struct tFeatureArraySingleOrder;
 /**
- * \brief				This class construct the feature vector
- * in contact-aware LCP controlk
+ * \brief				This class construct the feature vector in contact-aware controller
  */
 class btGenFeatureArray
 {
