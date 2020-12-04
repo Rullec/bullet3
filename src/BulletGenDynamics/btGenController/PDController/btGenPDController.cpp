@@ -60,6 +60,8 @@ void btGenPDController::Update(double dt)
     for (int i = 0; i < forces.size(); i++)
     {
         auto joint = forces[i].mJoint;
+        if (joint->GetIsRootJoint())
+            continue;
         std::cout << "[pd] apply joint " << joint->GetId()
                   << " force = " << forces[i].mForce.transpose() << std::endl;
         mModel->ApplyJointTorque(joint->GetId(), forces[i].mForce);
