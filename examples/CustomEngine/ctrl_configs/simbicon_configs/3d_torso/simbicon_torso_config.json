@@ -1,68 +1,83 @@
 {
     "ctrl_type": "SimbiconController",
-    "corresponding_char_path": "../DeepMimic/data/1127/characters/lower_halfbody_torso.json",
-    "pd_controller_path": "examples/CustomEngine/ctrl_configs/pd_config_torso.json",
-    "ignore_balance_control_in_0_2_state": false,
-    "enable_stance_control_ratio": true,
-    "enable_draw_heading_frame": true,
-    "FSM": {
-        "state_traj_path": "examples/CustomEngine/ctrl_configs/simbicon_configs/3d_torso/3d_torso_stepping.json",
-        "num_of_states": 4,
-        "states": [
-            {
-                "state_id": 0,
-                "conditions": [
-                    {
-                        "condition_type": "ElapsedTime",
-                        "elapsed_time": 0.5,
-                        "target_state_id": 1
-                    }
+    "pd_controller_path": "examples/CustomEngine/ctrl_configs/pd_configs/pd_config_torso_new.json",
+    "draw_target_pose": true,
+    "num_of_states": 1,
+    "state_0": {
+        "Swing_Hip": {
+            "rotation_axis": [
+                1,
+                0,
+                0
+            ],
+            "feedback": {
+                "feedback_projection_axis": [
+                    0,
+                    0,
+                    1
                 ],
-                "default_stance": "left",
-                "stance_update_mode": "default"
+                "cd": -0.5,
+                "cv": -0.2
             },
-            {
-                "state_id": 1,
-                "conditions": [
-                    {
-                        "condition_type": "LinkContact",
-                        "contact_link_name": "RightFootTongue",
-                        "target_state_id": 2
-                    }
+            "base_trajectory": {
+                "time_knots": [
+                    0,
+                    0.25,
+                    0.75,
+                    1.0
                 ],
-                "default_stance": "left",
-                "stance_update_mode": "default"
-            },
-            {
-                "state_id": 2,
-                "conditions": [
-                    {
-                        "condition_type": "ElapsedTime",
-                        "elapsed_time": 0.5,
-                        "target_state_id": 3
-                    }
-                ],
-                "default_stance": "right",
-                "stance_update_mode": "default"
-            },
-            {
-                "state_id": 3,
-                "conditions": [
-                    {
-                        "condition_type": "LinkContact",
-                        "contact_link_name": "LeftFootTongue",
-                        "target_state_id": 0
-                    }
-                ],
-                "default_stance": "right",
-                "stance_update_mode": "default"
+                "value_knots": [
+                    -0.04,
+                    -0.45,
+                    -0.5,
+                    0.1
+                ]
             }
-        ]
+        },
+        "SWING_Knee": {
+            "rotation_axis": [
+                1,
+                0,
+                0
+            ],
+            "base_trajectory": {
+                "time_knots": [
+                    0.01,
+                    0.21,
+                    0.61,
+                    0.75,
+                    1.0
+                ],
+                "value_knots": [
+                    0.075,
+                    0.83,
+                    1.22,
+                    0.05,
+                    0.05
+                ]
+            }
+        },
+        "STANCE_Knee": {
+            "rotation_axis": [
+                1,
+                0,
+                0
+            ],
+            "base_trajectory": {
+                "time_knots": [
+                    0.00,
+                    0.75,
+                    1.0
+                ],
+                "value_knots": [
+                    -0.05,
+                    -0.05,
+                    -0.10
+                ]
+            }
+        }
     },
-    "balance_control": {
-        "Cd_forward": 0.5,
-        "Cv_forward": 0.2,
-        "Cd_tangent": 0.3,
-        "Cv_tangent": 0.3
-    }
+    "init_stance": "left_stance",
+    "init_state": 0,
+    "init_pose": "examples/CustomEngine/ctrl_configs/simbicon_configs/3d_torso/init_pose.json"
 }
