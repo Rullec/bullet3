@@ -99,7 +99,7 @@ void btGenSimbiconControllerBase::Init(cRobotModelDynamics *model,
 
     mRefTrajModel->Init(mModel->GetCharFile().c_str(), mModel->GetScale(),
                         ModelType::JSON);
-    mRefTrajModel->InitSimVars(mWorld->GetInternalWorld(), true, true, false);
+    mRefTrajModel->InitSimVars(mWorld, true, true, false);
 
     UpdateRefModel(mModel->Getq());
 }

@@ -1,5 +1,6 @@
 #include "RobotModelDynamics.h"
 #include "BulletGenDynamics/btGenUtil/BulletUtil.h"
+#include "BulletGenDynamics/btGenWorld.h"
 #include "Link.h"
 #include "RobotCollider.h"
 #include "btBulletDynamicsCommon.h"
@@ -96,10 +97,11 @@ void cRobotModelDynamics::ComputeMassMatrix()
  * */
 extern std::map<int, std::string> col_name;
 #include "BulletGenDynamics/btGenModel/Joint.h"
-void cRobotModelDynamics::InitSimVars(btDynamicsWorld *world, bool zero_pose,
+void cRobotModelDynamics::InitSimVars(btGeneralizeWorld *world, bool zero_pose,
                                       bool zero_pose_vel, bool enable_collision)
 {
-    // mBtWorld = world;
+    mWorld = world;
+    auto internal_world = world->GetInternalWorld();
     // std::cout << "Init collider\n";
     mEnableCollision = enable_collision;
     mColliders.clear();
@@ -158,11 +160,11 @@ void cRobotModelDynamics::InitSimVars(btDynamicsWorld *world, bool zero_pose,
         // world->addCollisionObject(collider, 2, 1 + 2);
         if (enable_collision == true)
         {
-            world->addCollisionObject(collider, 1, -1);
+            internal_world->addCollisionObject(collider, 1, -1);
         }
         else
         {
-            world->addCollisionObject(collider, 0, 0);
+            internal_world->addCollisionObject(collider, 0, 0);
         }
 
         col_name[collider->getWorldArrayIndex()] =
@@ -743,7 +745,7 @@ void cRobotModelDynamics::UpdateVelocity(double dt, bool verbose /* = false*/)
     // tMatrixXd mass_matrix_inv = (mass_matrix + 1e-5 *
     // tMatrixXd::Identity(mass_matrix.rows(), mass_matrix.cols())).inverse();
     // tVectorXd residual = (Q - (coriolis_matrix + damping_matrix) * qdot);
-    tVectorXd qddot = Getqddot();
+    tVectorXd qddot = Getqddot(dt);
 
     if (qddot.hasNaN())
     {
@@ -774,7 +776,7 @@ void cRobotModelDynamics::UpdateVelocityAndTransform(double dt)
     // tMatrixXd mass_matrix_inv = (mass_matrix + 1e-5 *
     // tMatrixXd::Identity(mass_matrix.rows(), mass_matrix.cols())).inverse();
     // tVectorXd residual = (Q - (coriolis_matrix + damping_matrix) * qdot);
-    tVectorXd qddot = Getqddot();
+    tVectorXd qddot = Getqddot(dt);
 
     if (qddot.hasNaN())
     {
@@ -1093,11 +1095,63 @@ void cRobotModelDynamics::GetEffectInfo(tEigenArr<tVector> &force_array,
 
 tMatrixXd cRobotModelDynamics::GetInvMassMatrix() { return inv_mass_matrix; }
 
-tVectorXd cRobotModelDynamics::Getqddot()
+/**
+ * \brief           Calculate the current gen acceleration of multibody
+ * 
+ * 1. in old semi implicit scheme, the qddot is
+ *          M * qddot_cur + (C + D) qdot_cur = Q
+ *      qddot_cur = Minv * (Q - (C + D) * qdot_cur)
+ * 2. in new semi implicit scheme, the qddot is 
+ *          M * qddot_cur + (C + D) qdot_next = Q
+ *      qddot_cur = (M + dt * C).inv * Q + ((M + dt * C).inv * M - I ) * qdot_cur / dt
+ * 
+ *      dt is useful in this integration scheme
+*/
+tVectorXd cRobotModelDynamics::Getqddot(double dt)
 {
-    tVectorXd residual =
-        (GetGeneralizedForce() - (coriolis_matrix + mDampingMatrix) * mqdot);
-    tVectorXd qddot = inv_mass_matrix * residual;
+    tVectorXd qddot;
+    switch (mWorld->GetIntegrationScheme())
+    {
+    case btGeneralizeWorld::eIntegrationScheme::OLD_SEMI_IMPLICIT_SCHEME:
+    {
+        qddot.noalias() =
+            inv_mass_matrix * (GetGeneralizedForce() -
+                               (coriolis_matrix + mDampingMatrix) * mqdot);
+        break;
+    }
+
+    case btGeneralizeWorld::eIntegrationScheme::NEW_SEMI_IMPLICIT_SCHEME:
+    {
+        // ======SIMPLE VERSION, BUT CANNOT PASS THE VERIFICATION OF LCP==========
+        {
+            // const tMatrixXd &M_dt_C_D_inv =
+            //     (mass_matrix + dt * (coriolis_matrix + mDampingMatrix)).inverse();
+            // qddot.noalias() =
+            //     (M_dt_C_D_inv * (dt * GetGeneralizedForce() + mass_matrix * mqdot) -
+            //      mqdot) /
+            //     dt;
+        }
+
+        // ======COMPLEX VERSION
+        {
+            const tMatrixXd &I =
+                tMatrixXd::Identity(num_of_freedom, num_of_freedom);
+            const tMatrixXd &M_dt_C_D_inv =
+                (mass_matrix + dt * (coriolis_matrix + mDampingMatrix))
+                    .inverse();
+            const tVectorXd &qdot_dt = mqdot / dt;
+            // qddot.noalias() = M_dt_C_D_inv * GetGeneralizedForce() +
+            //                   (M_dt_C_D_inv * mass_matrix - I) / dt * mqdot;
+            qddot.noalias() =
+                M_dt_C_D_inv * (GetGeneralizedForce() + mass_matrix * qdot_dt) -
+                qdot_dt;
+            break;
+        }
+    }
+    default:
+        BTGEN_ASSERT(false);
+        break;
+    }
     return qddot;
 }
 
@@ -1270,6 +1324,11 @@ bool cRobotModelDynamics::GetCollisionEnabled() const
     return mEnableCollision;
 }
 
+btGeneralizeWorld::eIntegrationScheme
+cRobotModelDynamics::GetIntegrationScheme() const
+{
+    return this->mWorld->GetIntegrationScheme();
+}
 /**
  * \brief           d QG dq, shape = n * n
 */

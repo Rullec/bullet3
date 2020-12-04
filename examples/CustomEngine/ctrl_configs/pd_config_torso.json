@@ -1,7 +1,7 @@
 {
     "ctrl_type": "PDController",
     "enable_stable_pd": false,
-    "enable_pd_test": true,
+    "enable_pd_test": false,
     "PDControllers": [
         {
             "ID": 0,

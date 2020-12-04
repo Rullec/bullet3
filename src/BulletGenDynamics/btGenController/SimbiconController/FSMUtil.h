@@ -20,6 +20,7 @@ struct tTransitionCondition
 {
     tTransitionCondition(int origin_state_id, int target_state_id,
                          eTransitionCondition type);
+    virtual ~tTransitionCondition();
     virtual void Update(double dt) = 0;
     virtual int GetTransitionTargetId(int swing_id, int stance_id) const = 0;
     virtual void Reset() = 0;

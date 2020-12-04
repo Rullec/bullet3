@@ -25,6 +25,12 @@ public:
         SequentialImpulseMode
     };
 
+    enum eIntegrationScheme
+    {
+        OLD_SEMI_IMPLICIT_SCHEME,
+        NEW_SEMI_IMPLICIT_SCHEME,
+        NUM_OF_INTEGRATION_SCHEME
+    };
     // struct tParams
     // {
     // 	tParams();
@@ -75,6 +81,9 @@ public:
     bool HasController() const;
     bool HasContactAwareController() const;
     btGenContactManager *GetContactManager() const;
+    eIntegrationScheme GetIntegrationScheme() const;
+    static eIntegrationScheme BuildIntegrationScheme(const std::string str);
+    static std::string BuildIntegrationSchemeStr(eIntegrationScheme scheme);
 
 protected:
     btDiscreteDynamicsWorld *mInternalWorld;
@@ -84,6 +93,7 @@ protected:
     std::vector<btGenRigidBody *> mSimObjs;
     cRobotModelDynamics *mMultibody;
     btTraj *mGuideTraj;
+    eIntegrationScheme mIntegrationScheme;
     // btGenPDController* mPDController;
     double mTime;
     int mFrameId;

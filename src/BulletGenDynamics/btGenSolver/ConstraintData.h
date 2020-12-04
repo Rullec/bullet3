@@ -108,10 +108,13 @@ protected:
         tEigenArr<tMatrixXd> &selfcontact_jac_list);
     void
     GetJointLimitJaocibanArrayRobotCollider(tEigenArr<tMatrixXd> &jac_list);
+    tMatrixXd CalcRobotColliderMiddlePart(double dt) const;
     tVectorXd CalcRobotColliderResidual(double dt) const;
+    tVectorXd CalcRobotColliderResidualOldSemiImplicit(double dt) const;
+    tVectorXd CalcRobotColliderResidualNewSemiImplicit(double dt) const;
     tMatrixXd CalcRobotColliderJacPartBPrefix(double dt) const;
     // buffer for multibody
-    tMatrixXd M, inv_M, coriolis_mat, damping_mat;
+    tMatrixXd M, inv_M, coriolis_mat, damping_mat, M_dt_C_D_inv;
 
     // vars for multibody
     int num_local_contacts;

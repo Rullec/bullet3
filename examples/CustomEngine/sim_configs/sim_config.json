@@ -11,7 +11,7 @@
     "mb_scale": 1,
     "enable_RK4_for_multibody": false,
     "mb_zero_init_pose": false,
-    "mb_zero_init_pose_vel": false,
+    "mb_zero_init_pose_vel": true,
     "mb_test_jacobian": false,
     "mb_enable_collect_frame_info": false,
     "mb_collect_frame_num": 50,
@@ -26,5 +26,6 @@
     "lcp_config_path": "./examples/CustomEngine/sim_configs/lcp_config.json",
     "mb_enable_guide_action": false,
     "guided_action_traj_file": "./tmp/new_trajs/new_traj_full.json",
-    "debug_three_contact_forces": false
+    "debug_three_contact_forces": false,
+    "integration_scheme": "new_semi_implicit"
 }

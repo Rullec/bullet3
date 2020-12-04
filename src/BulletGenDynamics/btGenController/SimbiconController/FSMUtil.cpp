@@ -17,6 +17,7 @@ tTransitionCondition::tTransitionCondition(int origin_id, int tar_id,
 {
 }
 
+tTransitionCondition::~tTransitionCondition() {}
 // ====================================== elasped time condition begin ========================
 tElapsedCondition::tElapsedCondition(int origin_state_id, int target_state_id,
                                      double elasped_time)
