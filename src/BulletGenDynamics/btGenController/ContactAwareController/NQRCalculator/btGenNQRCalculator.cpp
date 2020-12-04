@@ -119,7 +119,7 @@ void btGenNQRCalculator::CalcTarget(double dt, int target_frame_id,
         ApplyControlVector(cur_contact_info, mNQRFrameInfos[mRefFrameId], uk);
 
         // 3. apply the control policy (with no G!), get the qddot, qdotnext, qnext
-        tilde_qddot = mModel->Getqddot();
+        tilde_qddot = mModel->Getqddot(dt);
         tilde_qdot = mdt * tilde_qddot + mModel->Getqdot();
         tilde_q = mdt * tilde_qdot + mModel->Getq();
         tilde_tau = uk.segment(3 * cur_contact_info.size(),

@@ -1,7 +1,8 @@
 #pragma once
+#include "BulletGenDynamics/btGenWorld.h"
 #include "RobotModel.h"
-
-class btDynamicsWorld;
+// class btDynamicsWorld;
+class btGeneralizeWorld;
 class btGenContactAwareController;
 class cRobotModelDynamics : public cRobotModel
 {
@@ -13,8 +14,8 @@ public:
     void Init(const char *model_file, double scale, int type);
 
     // ----------------------simulation APIs----------------------
-    void InitSimVars(btDynamicsWorld *world, bool zero_pose, bool zero_pose_vel,
-                     bool enable_collision = true);
+    void InitSimVars(btGeneralizeWorld *world, bool zero_pose,
+                     bool zero_pose_vel, bool enable_collision = true);
     // void InitSimVars(btDiscreteDynamicsWorld* world, bool zero_pose, bool
     // zero_pose_vel);
     virtual void SetqAndqdot(const tVectorXd &q, const tVectorXd &qdot);
@@ -37,7 +38,7 @@ public:
     tVectorXd DebugGetGeneralizedForce();
     btGenRobotCollider *GetLinkCollider(int link_id);
     void ClearForce();
-    tVectorXd Getqddot();
+    tVectorXd Getqddot(double dt);
     void UpdateVelocityAndTransform(double dt);
     void UpdateVelocity(double dt, bool verbose = false);
     // void UpdateVelocityWithoutCoriolis(double dt);
@@ -54,7 +55,9 @@ public:
     // void SetAngleClamp(bool);
     void SetMaxVel(double);
     const tMatrixXd &GetDampingMatrix() const { return mDampingMatrix; }
-    void ConvertGenForceToCartesianForceTorque(const tVectorXd &gen_force, tEigenArr<tVector3d> & joint_torques, tVector3d & root_force, tVector3d & root_torque) const;
+    void ConvertGenForceToCartesianForceTorque(
+        const tVectorXd &gen_force, tEigenArr<tVector3d> &joint_torques,
+        tVector3d &root_force, tVector3d &root_torque) const;
     void TestConvertGenForceToJointTorque();
     void TestJacobian();
     void TestSecondJacobian();
@@ -76,6 +79,8 @@ public:
     bool GetEnableContactAwareController() const;
     void SetEnableContactAwareController(bool);
     bool GetCollisionEnabled() const;
+
+    btGeneralizeWorld::eIntegrationScheme GetIntegrationScheme() const;
 
 protected:
     // -------------------------simulation status-----------------------
@@ -119,7 +124,7 @@ protected:
     double mEpsDiagnoal; // add epsilon on the diagonal of mass matrix, in order
                          // to refine it.
     double mMaxVel;      // the max velocity of generalized coordinates
-    // btDynamicsWorld * mBtWorld;
+    btGeneralizeWorld *mWorld;
     // member methods
     // void UpdateRK4InternalUpdate(tVectorXd& q, tVectorXd& qdot, tVectorXd&
     // Q);

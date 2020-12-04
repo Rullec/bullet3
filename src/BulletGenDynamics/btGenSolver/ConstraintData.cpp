@@ -416,7 +416,12 @@ T2 AccurateSolve(const T1 &mat, const T2 &residual, double &min_error)
 
 extern bool gEnablePauseWhenSolveError;
 extern bool gEnableResolveWhenSolveError;
-// extern bool gPauseSimulation;
+
+/**
+ * \brief           Begin to calculate the convert matrix from contact force to the contact point's abs vel in next frame
+ * 
+ * Note that, in different integration scheme, the formula & performance of this function would be different
+*/
 void btGenCollisionObjData::SetupRobotCollider()
 {
     // std::cout << "----------set up robot collider begin----------\n";
@@ -454,14 +459,12 @@ void btGenCollisionObjData::SetupRobotCollider()
     inv_M = model->GetInvMassMatrix();
     coriolis_mat = model->GetCoriolisMatrix();
     damping_mat = model->GetDampingMatrix();
-    const tMatrixXd I = tMatrixXd::Identity(n_dof, n_dof);
+    M_dt_C_D_inv = (M + dt * (coriolis_mat + damping_mat)).inverse();
+    const tMatrixXd &I = tMatrixXd::Identity(n_dof, n_dof);
 
-    // tMatrixXd residual_part = (I - dt * inv_M * (coriolis_mat + damping_mat)) * model->Getqdot();
-    // used as the last part of residual as shown below
-    // tVectorXd residual_part = (I - dt * inv_M * (coriolis_mat + damping_mat)) * model->Getqdot() + dt * inv_M * model->GetGeneralizedForce();
-    // the computation of residual part is different when the contact-aware LCP is enabled, so we extract it as an API
+    // residual part: the Q and qdot_next has a linear relationship, qdot_next = A * Q + b. b is the residual here
     tVectorXd residual_part = CalcRobotColliderResidual(dt);
-
+    tMatrixXd A_middle_part = CalcRobotColliderMiddlePart(dt);
     // 2. begin to form the ultimate velocity convert mat, handle the contact
     // point part
     tMatrixXd Jac_partA;
@@ -528,8 +531,12 @@ void btGenCollisionObjData::SetupRobotCollider()
             // std::cout << "residaul a before = " << residual_a << std::endl;
         }
 
-        // 2.2 Jac_partA = i_contact_jacobian * dt * M^{-1}
-        Jac_partA *= dt * inv_M;
+        // 2.2 Jac_partA = i_contact_jacobian * middle_part.
+        /*
+            middle_part = dt * Minv in old-semi-implicit 
+                        = others in new-semi-implicit
+        */
+        Jac_partA *= A_middle_part;
 
         // for each contact point that takes effect on this i-th contact point
         for (int j_cons_id = 0; j_cons_id < num_constraints; j_cons_id++)
@@ -602,16 +609,32 @@ void btGenCollisionObjData::SetupRobotCollider()
                 .noalias() = Jac_partA * Jac_partB;
         }
         // std::cout << "residaul a after = " << (*residual_a) << std::endl;
-        // std::cout << "residual part = " << residual_part.transpose() <<
-        // std::endl;
+        // std::cout << "residual part = " << residual_part.transpose()
+        //           << std::endl;
         mConvertCartesianForceToVelocityVec.segment(i_st, i_size).noalias() =
             (*residual_a) * residual_part;
     }
     // std::cout << "convert mat = \n"
-    // 		  << mConvertCartesianForceToVelocityMat << std::endl;
-    // std::cout << "convert vec = " <<
-    // mConvertCartesianForceToVelocityVec.transpose() << std::endl; std::cout
-    // << "----------set up robot collider end----------\n";
+    //           << mConvertCartesianForceToVelocityMat << std::endl;
+    // std::cout << "convert vec = "
+    //           << mConvertCartesianForceToVelocityVec.transpose() << std::endl;
+
+    // the real convert mat
+    // Jv * (M + dt * (C + D )).inverse() * dt * Jv.T
+    // {
+    //     const tMatrixXd jac = nonself_contact_point_jac[0];
+    //     tMatrix3d new_convert_mat =
+    //         jac * (M + dt * (coriolis_mat + damping_mat)).inverse() * dt *
+    //         jac.transpose();
+    //     std::cout << "new convert mat = \n" << new_convert_mat << std::endl;
+
+    //     tVectorXd res =
+    //         jac * (M + dt * (coriolis_mat + damping_mat)).inverse() *
+    //         (M * model->Getqdot() + dt * model->GetGeneralizedForce());
+    //     std::cout << "new convert res = \n" << res.transpose() << std::endl;
+    // }
+    // std::cout << "----------set up robot collider end----------\n";
+    // exit(0);
 }
 
 /**
@@ -682,6 +705,12 @@ void btGenCollisionObjData::GetContactJacobianArrayRobotCollider(
     }
 }
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
+
+/**
+ * \brief           Construct a selection matrix list 
+ * which can convert the whole length of qdot to the specified dof of freedom's vel
+ * 
+*/
 void btGenCollisionObjData::GetJointLimitJaocibanArrayRobotCollider(
     tEigenArr<tMatrixXd> &generalized_convert_list)
 {
@@ -785,18 +814,46 @@ void btGenCollisionObjData::SetupRobotColliderVars()
 }
 
 /**
+ * \brief           Calculate the middle part matrix in the linear relationship between Q and abs_v_next of contact points
+ * 
+ * In old-semi-implicit integration, the middle part is 
+ *          dt * Minv
+ * In new-semi-implicit integration, the middle part is 
+ *          dt * (M + dt * (C + D)).inverse()
+*/
+tMatrixXd btGenCollisionObjData::CalcRobotColliderMiddlePart(double dt) const
+{
+    cRobotModelDynamics *model =
+        static_cast<btGenRobotCollider *>(mBody)->mModel;
+    BTGEN_ASSERT(model != nullptr);
+    switch (model->GetIntegrationScheme())
+    {
+    case btGeneralizeWorld::eIntegrationScheme::OLD_SEMI_IMPLICIT_SCHEME:
+    {
+        return dt * inv_M;
+        break;
+    }
+    case btGeneralizeWorld::eIntegrationScheme::NEW_SEMI_IMPLICIT_SCHEME:
+    {
+        return dt * M_dt_C_D_inv;
+        break;
+    }
+
+    default:
+        BTGEN_ASSERT(false);
+        return tMatrixXd::Zero(0, 0);
+        break;
+    }
+}
+/**
  * \brief					Calculate the robot collider residual used in
  * the calculation of absolute velocity convert matrix
- *
- * If the contact-aware LCP is disabled, then the residual is simple
- * 		= dt * M^{-1} * (Q_applied - C\dot{q}_t)　+ \dot{q}_t
- *
- * But if the contact-aware LCP is enable, the residual is converted
- * 		= dt * M^{-1} *
- * 			(	\tilde{\tau} - C \tilde{B}\tilde{\chi}
- * 				+ Q_applied　- C\dot{q}_t)
- * 			+ \dot{q}_t
+ * 
+ * The residual in the formula means: qdot_{t+1} = Mat * Q + residual
+ * It is the residual in the linear relationship between gen force Q and residual
+ * 
  */
+#include "BulletGenDynamics/btGenWorld.h"
 tVectorXd btGenCollisionObjData::CalcRobotColliderResidual(double dt) const
 {
     tVectorXd residual;
@@ -810,34 +867,97 @@ tVectorXd btGenCollisionObjData::CalcRobotColliderResidual(double dt) const
     {
         cRobotModelDynamics *model =
             static_cast<btGenRobotCollider *>(mBody)->mModel;
-        if (model == nullptr)
-            std::cout
-                << "[error] CalcRobotColliderResidual: model is empty, exit",
-                exit(0);
-        int n_dof = model->GetNumOfFreedom();
-        const tMatrixXd I = tMatrixXd::Identity(n_dof, n_dof);
+        BTGEN_ASSERT(model != nullptr);
+        switch (model->GetIntegrationScheme())
+        {
+        case btGeneralizeWorld::eIntegrationScheme::OLD_SEMI_IMPLICIT_SCHEME:
+        {
+            residual = CalcRobotColliderResidualOldSemiImplicit(dt);
+            break;
+        }
+        case btGeneralizeWorld::eIntegrationScheme::NEW_SEMI_IMPLICIT_SCHEME:
+        {
+            residual = CalcRobotColliderResidualNewSemiImplicit(dt);
+            break;
+        }
+        default:
+            BTGEN_ASSERT(false);
+            break;
+        }
+    }
+    return residual;
+}
 
-        if (false == model->GetEnableContactAwareController())
-        {
-            // std::cout << "contact aware controller is disabled\n";
-            residual = (I - dt * inv_M * (coriolis_mat + damping_mat)) *
-                           model->Getqdot() +
-                       dt * inv_M * model->GetGeneralizedForce();
-        }
-        else
-        {
-            btGenContactAwareController *controller = model->GetContactAwareController();
-            // tMatrixXd N = controller->GetN(),
-            // 		  D = controller->GetD();
-            // tVectorXd b = controller->Getb();
-            // std::cout << "[warn] contact aware controller is enabled, but the
-            // code hasn't been revised\n";
-            if (damping_mat.norm() > 0)
-                std::cout << "[error] contact aware control didn't support "
-                             "damping cuz the absence of formulas\n",
-                    exit(0);
-            residual = controller->CalcLCPResidual(dt);
-        }
+/**
+ * 
+ *  \brief          Calculate the convert formula residual from Q to qdot_next
+ * 
+ *  In old-semi-implicit integraion scheme
+ *       If the contact-aware LCP is disabled, then the residual is simple
+ *       		= dt * M^{-1} * (Q_applied - C\dot{q}_t)　+ \dot{q}_t
+*
+ *       But if the contact-aware LCP is enable, the residual is converted
+ *       		= dt * M^{-1} *
+ *       			(	\tilde{\tau} - C \tilde{B}\tilde{\chi}
+ *       				+ Q_applied　- C\dot{q}_t)
+ *       			+ \dot{q}_t
+*/
+tVectorXd
+btGenCollisionObjData::CalcRobotColliderResidualOldSemiImplicit(double dt) const
+{
+    tVectorXd residual;
+    cRobotModelDynamics *model =
+        static_cast<btGenRobotCollider *>(mBody)->mModel;
+    int n_dof = model->GetNumOfFreedom();
+    const tMatrixXd I = tMatrixXd::Identity(n_dof, n_dof);
+
+    if (false == model->GetEnableContactAwareController())
+    {
+        // std::cout << "contact aware controller is disabled\n";
+        residual =
+            (I - dt * inv_M * (coriolis_mat + damping_mat)) * model->Getqdot() +
+            dt * inv_M * model->GetGeneralizedForce();
+    }
+    else
+    {
+        btGenContactAwareController *controller =
+            model->GetContactAwareController();
+        if (damping_mat.norm() > 0)
+            std::cout << "[error] contact aware control didn't support "
+                         "damping cuz the absence of formulas\n",
+                exit(0);
+        residual = controller->CalcLCPResidual(dt);
+    }
+    return residual;
+}
+
+/**
+ *  \brief          Calculate the convert formula residual from Q to qdot_next
+ * 
+ *  In new-semi-implicit integraion scheme
+ *      If the contact aware LCP is disabled, the residual is:
+ *              = (M + dt * (C + D)).inv() * (M * qdot + dt * Q)
+ *      If the contact awrae LCP is enabled, the reisudal is:P
+ *              HASN'T BEEN IMPLEMENTED
+*/
+tVectorXd
+btGenCollisionObjData::CalcRobotColliderResidualNewSemiImplicit(double dt) const
+{
+    tVectorXd residual;
+    cRobotModelDynamics *model =
+        static_cast<btGenRobotCollider *>(mBody)->mModel;
+    int n_dof = model->GetNumOfFreedom();
+    const tMatrixXd I = tMatrixXd::Identity(n_dof, n_dof);
+
+    if (false == model->GetEnableContactAwareController())
+    {
+        residual.noalias() = M_dt_C_D_inv * (M * model->Getqdot() +
+                                             dt * model->GetGeneralizedForce());
+    }
+    else
+    {
+        // new semi implicit in contact awrae controlelr hasn't been implemented
+        BTGEN_ASSERT(false);
     }
     return residual;
 }
@@ -870,7 +990,8 @@ btGenCollisionObjData::CalcRobotColliderJacPartBPrefix(double dt) const
         }
         else
         {
-            btGenContactAwareController *controller = model->GetContactAwareController();
+            btGenContactAwareController *controller =
+                model->GetContactAwareController();
             // tMatrixXd E = controller->GetE(), N = controller->GetN();
             // std::cout << "[warn] contact aware controller is enabled, but the
             // code hasn't been revised\n";

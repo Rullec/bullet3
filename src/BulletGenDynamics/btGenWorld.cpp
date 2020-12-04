@@ -37,6 +37,7 @@ btGeneralizeWorld::btGeneralizeWorld()
     mGuideTraj = nullptr;
     mContactManager = nullptr;
     mFrameId = 0;
+    mIntegrationScheme = eIntegrationScheme::OLD_SEMI_IMPLICIT_SCHEME;
 }
 
 btGeneralizeWorld::~btGeneralizeWorld()
@@ -153,39 +154,12 @@ void btGeneralizeWorld::Init(const std::string &config_path)
             mMBEpsDiagnoalMassMat = btJsonUtil::ParseAsDouble(
                 "mb_add_eps_at_diagnoal_mass_mat", config_js);
             mMBMaxVel = btJsonUtil::ParseAsDouble("mb_max_vel", config_js);
-            // mMBEnableContactAwareLCP = false;
-            // mMBEnableContactAwareLCP = btJsonUtil::ParseAsBool(
-            //     "mb_enable_contact_aware_lcp", config_js);
-            // mMBEnableGuideAction =
-            // btJsonUtil::ParseAsBool("mb_enable_guide_action", config_js);
-            // mGuidedActionTrajFile =
-            // btJsonUtil::ParseAsString("guided_action_traj_file", config_js);
-            // if (mMBEnableGuideAction && mMBEnableContactAwareLCP)
-            // {
-            // 	std::cout << "[error] the guided action & contact aware LCP
-            // cannot be opened simutaneously.\n"; 	exit(0);
-            // }
-            // mControllerConfig =
-            //     btJsonUtil::ParseAsString("controller_config", config_js);
-            // mMBContactAwareW =
-            // btJsonUtil::ParseAsDouble("mb_contact_aware_lcp_W", config_js);
-            // mMBContactAwareWm =
-            // btJsonUtil::ParseAsDouble("mb_contact_aware_lcp_Wm", config_js);
-            // mContactAwareGuideTraj =
-            // btJsonUtil::ParseAsString("contact_aware_guide_traj", config_js);
-
-            // mMBUpdateVelWithoutCoriolis =
-            // btJsonUtil::ParseAsDouble("mb_update_velocity_without_coriolis",
-            // config_js);
             mEnablePeturb =
                 btJsonUtil::ParseAsDouble("enable_perturb", config_js);
-            // mEnablePDControl = btJsonUtil::ParseAsBool("enable_pd_control",
-            // config_js); mPDControllerPath =
-            // btJsonUtil::ParseAsString("controller_path", config_js);
             mLCPConfigPath =
                 btJsonUtil::ParseAsString("lcp_config_path", config_js);
-            // mDebugThreeContactForces = btJsonUtil::ParseAsBool(
-            //     "debug_three_contact_forces", config_js);
+            mIntegrationScheme = BuildIntegrationScheme(
+                btJsonUtil::ParseAsString("integration_scheme", config_js));
         }
 
         mLCPContactSolver = nullptr;
@@ -380,8 +354,7 @@ void btGeneralizeWorld::AddMultibody(const std::string &skeleton_name)
     // mMultibody->SetAngleClamp(mMBEAngleClamp);
     mMultibody->SetMaxVel(mMBMaxVel);
 
-    mMultibody->InitSimVars(mInternalWorld, mMBZeroInitPose, mMBZeroInitPoseVel,
-                            true);
+    mMultibody->InitSimVars(this, mMBZeroInitPose, mMBZeroInitPoseVel, true);
     this->m_dispatcher->SetModel(mMultibody);
 
     // if (mMBEnableGuideAction == true)
@@ -985,15 +958,15 @@ void btGeneralizeWorld::UpdateVelocityInternal(double dt)
     }
 }
 
-void btGeneralizeWorld::UpdateVelocityInternalWithoutCoriolis(double dt)
-{
-    for (auto &obj : mSimObjs)
-        obj->UpdateVelocity(dt);
-    if (mMultibody)
-    {
-        mMultibody->UpdateVelocityWithoutCoriolis(dt);
-    }
-}
+// void btGeneralizeWorld::UpdateVelocityInternalWithoutCoriolis(double dt)
+// {
+//     for (auto &obj : mSimObjs)
+//         obj->UpdateVelocity(dt);
+//     if (mMultibody)
+//     {
+//         mMultibody->UpdateVelocityWithoutCoriolis(dt);
+//     }
+// }
 
 void btGeneralizeWorld::Update(double dt)
 {
@@ -1174,7 +1147,7 @@ void btGeneralizeWorld::CollectFrameInfo(double dt)
     info.damping_mat = mMultibody->GetDampingMatrix();
 
     info.residual = info.Q - (info.coriolis_mat + info.damping_mat) * info.qdot;
-    info.qddot = mMultibody->Getqddot();
+    info.qddot = mMultibody->Getqddot(dt);
     mFrameInfo.push_back(info);
 }
 
@@ -1345,6 +1318,45 @@ btGenContactManager *btGeneralizeWorld::GetContactManager() const
     return mContactManager;
 }
 
+btGeneralizeWorld::eIntegrationScheme
+btGeneralizeWorld::BuildIntegrationScheme(const std::string str)
+{
+    if (str == "old_semi_implicit")
+    {
+        return eIntegrationScheme::OLD_SEMI_IMPLICIT_SCHEME;
+    }
+    else if (str == "new_semi_implicit")
+    {
+        return eIntegrationScheme::NEW_SEMI_IMPLICIT_SCHEME;
+    }
+    else
+    {
+        BTGEN_ASSERT(false);
+        return eIntegrationScheme::OLD_SEMI_IMPLICIT_SCHEME;
+    }
+}
+
+std::string btGeneralizeWorld::BuildIntegrationSchemeStr(
+    btGeneralizeWorld::eIntegrationScheme scheme)
+{
+    switch (scheme)
+    {
+    case btGeneralizeWorld::eIntegrationScheme::NEW_SEMI_IMPLICIT_SCHEME:
+    {
+        return "new_semi_implicit";
+        break;
+    }
+    case btGeneralizeWorld::eIntegrationScheme::OLD_SEMI_IMPLICIT_SCHEME:
+    {
+        return "old_semi_implicit";
+        break;
+    }
+    default:
+        BTGEN_ASSERT(false);
+        break;
+    }
+    return "";
+}
 void btGeneralizeWorld::AddController(const std::string &path)
 {
     // 1. build & init the controller
@@ -1436,3 +1448,8 @@ void btGeneralizeWorld::AddController(const std::string &path)
 // 		}
 // 	}
 // }
+btGeneralizeWorld::eIntegrationScheme
+btGeneralizeWorld::GetIntegrationScheme() const
+{
+    return mIntegrationScheme;
+}

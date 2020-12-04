@@ -18,8 +18,8 @@ void btGenContactSolver::TestCartesianForceToCartesianVel()
     int n_group = mColGroupData.size();
     x_lcp.resize(constraint_length);
     x_lcp.setZero();
-    x_lcp[0] = 1.0;
-    // x_lcp.setRandom();
+    // x_lcp[1] = 1.0;
+    x_lcp.setRandom();
     // if (constraint_length > 3) x_lcp.segment(0, 3).setZero();
 
     // x *= 100;
@@ -42,13 +42,19 @@ void btGenContactSolver::TestCartesianForceToCartesianVel()
             mColGroupData[i]->mConvertCartesianForceToVelocityMat * x_lcp +
             mColGroupData[i]->mConvertCartesianForceToVelocityVec;
         // std::cout << "for group " << i << " "
-        // 		  << "c2v mat = \n"
-        // 		  << mColGroupData[i]->mConvertCartesianForceToVelocityMat
-        // << std::endl; std::cout << "for group " << i << " "
-        // 		  << "c2v vec = \n"
-        // 		  <<
-        // mColGroupData[i]->mConvertCartesianForceToVelocityVec.transpose() <<
-        // std::endl;
+        //           << "c2v mat = \n"
+        //           << mColGroupData[i]->mConvertCartesianForceToVelocityMat
+        //           << std::endl;
+        // std::cout
+        //     << "for group " << i << " "
+        //     << "c2v vec = \n"
+        //     << mColGroupData[i]->mConvertCartesianForceToVelocityVec.transpose()
+        //     << std::endl;
+        // std::cout << "for group " << i << " force = " << x_lcp.transpose()
+        //           << std::endl;
+        // std::cout << "for group " << i
+        //           << " vel = " << contact_point_cartesian_vel[i].transpose()
+        //           << std::endl;
     }
 
     // apply active force
@@ -115,7 +121,7 @@ void btGenContactSolver::TestCartesianForceToCartesianVel()
                       << std::endl;
             std::cout << "body 0 true vel = " << body0_true_vel.transpose()
                       << std::endl;
-            std::cout << "body0 diff = "
+            std::cout << "body 0 diff = "
                       << (body0_pred_vel - body0_true_vel).transpose()
                       << std::endl;
             std::cout << "body 1 pred vel = " << body1_pred_vel.transpose()
@@ -525,7 +531,8 @@ void btGenContactSolver::TestCartesianForceToNormalAndTangetResultBasedRelVel(
         }
         data->ApplyForceCartersian(
             btMathUtil::Expand(applied_force.segment(3 * i, 3), 0));
-        AppliedActiveForce.push_back(btMathUtil::Expand(applied_force.segment(3 * i, 3), 0));
+        AppliedActiveForce.push_back(
+            btMathUtil::Expand(applied_force.segment(3 * i, 3), 0));
     }
 
     // apply joint torque

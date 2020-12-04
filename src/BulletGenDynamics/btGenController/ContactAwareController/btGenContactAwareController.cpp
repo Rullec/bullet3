@@ -53,6 +53,11 @@ btGenContactAwareController::btGenContactAwareController(
     // std::ofstream fout(debug_path);
     // fout << "";
     // fout.close();
+
+    // current the contact aware only support old semi implicit scheme
+    BTGEN_ASSERT(
+        world->GetIntegrationScheme() ==
+        btGeneralizeWorld::eIntegrationScheme::OLD_SEMI_IMPLICIT_SCHEME);
 }
 
 btGenContactAwareController::~btGenContactAwareController()
@@ -542,7 +547,7 @@ void btGenContactAwareController::ReadConfig(const std::string &config)
 void btGenContactAwareController::UpdateMultibodyVelocityAndTransformDebug(
     double dt)
 {
-    tVectorXd qddot = mModel->Getqddot();
+    tVectorXd qddot = mModel->Getqddot(dt);
     mModel->UpdateVelocityAndTransform(dt);
     tVectorXd q = mModel->Getq(), qdot = mModel->Getqdot();
     if (mOutputControlDiff == true)
@@ -709,16 +714,14 @@ void btGenContactAwareController::CreateRefChar()
 
         mRefTrajModel->Init(mModel->GetCharFile().c_str(), mModel->GetScale(),
                             ModelType::JSON);
-        mRefTrajModel->InitSimVars(mWorld->GetInternalWorld(), true, true,
-                                   false);
+        mRefTrajModel->InitSimVars(mWorld, true, true, false);
     }
     if (mDrawTargetFBFCharacter)
     {
         mFBFTrajModel = new cRobotModelDynamics();
         mFBFTrajModel->Init(mModel->GetCharFile().c_str(), mModel->GetScale(),
                             ModelType::JSON);
-        mFBFTrajModel->InitSimVars(mWorld->GetInternalWorld(), true, true,
-                                   false);
+        mFBFTrajModel->InitSimVars(mWorld, true, true, false);
     }
     // mRefModel->SetqAndqdot(mRefTraj->mq[mInternalFrameId],
     // mRefTraj->mqdot[mInternalFrameId]);
