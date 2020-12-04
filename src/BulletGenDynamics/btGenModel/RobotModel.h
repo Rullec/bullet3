@@ -140,6 +140,7 @@ public:
     tMatrix GetFixedRootTransform() const;
     std::string GetCharFile() const;
     double GetScale() const;
+    bool IsEndEffector(int id) const;
     void TestmWqqq();
     void TestmTqqq();
     void TestmTqq();

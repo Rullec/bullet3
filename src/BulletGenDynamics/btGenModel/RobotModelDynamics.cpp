@@ -218,7 +218,7 @@ void cRobotModelDynamics::InitSimVars(btGeneralizeWorld *world, bool zero_pose,
         mq[0] = 1.0;
         break;
     case JointType::NONE_JOINT:
-        mq[1] = 1.0;
+        mq[1] = 0.75;
     default:
         break;
     }
@@ -460,6 +460,8 @@ void cRobotModelDynamics::SetqAndqdot(const tVectorXd &q_,
     UpdateCartesianVelocity();
     SyncToBullet();
 }
+
+void cRobotModelDynamics::Setq(const tVectorXd &q) { SetqAndqdot(q, mqdot); }
 void cRobotModelDynamics::Setqdot(const tVectorXd &qdot_)
 {
     mqdot = qdot_;

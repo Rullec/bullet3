@@ -1,0 +1,65 @@
+#define LEFT_STANCE 0
+#define RIGHT_STANCE 1
+
+#define LEFT_STANCE_STR ("left_stance")
+#define RIGHT_STANCE_STR ("right_stance")
+#include "BulletGenDynamics/btGenUtil/MathUtil.h"
+
+namespace Json
+{
+class Value;
+};
+
+class cRobotModelDynamics;
+
+class Joint;
+class btGenSimbiconControllerBase;
+
+struct BaseTrajectory
+{
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    BaseTrajectory(const Json::Value &conf);
+    tQuaternion evaluateTrajectory(btGenSimbiconControllerBase *ctrl,
+                                   Joint *joint, int stance, double phi,
+                                   const tVector3d &d, const tVector3d &v);
+    ~BaseTrajectory();
+
+    struct tFeedBack
+    {
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+        tFeedBack(const tVector3d &proj_axis, double cd, double cv);
+        tVector3d mFeedbackProjAxis;
+        double Cd, Cv;
+    };
+    tVector3d mRotationAxis;
+    tVectorXd mTimeKnots, mValueKnots;
+    tFeedBack *mBalanceFeedback;
+
+protected:
+    double EvaluateCatmullrom(double phi);
+    double ComputeFeedback(btGenSimbiconControllerBase *ctrl, Joint *j,
+                           const tVector3d &d, const tVector3d &v);
+    double getFirstLargerIndex(double phi);
+    int lastIndex;
+};
+
+/**
+ * \brief           Simbicon joint trajectory in a state
+*/
+class btGenSimbiconTraj
+{
+public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    btGenSimbiconTraj(const Json::Value &conf, cRobotModelDynamics *model);
+    virtual ~btGenSimbiconTraj();
+    int getJointIndex(int stance);
+    tQuaternion evaluateTrajectory(btGenSimbiconControllerBase *ctrl,
+                                   Joint *joint, int stance, double phi,
+                                   const tVector3d &d,
+                                   const tVector3d &v) const;
+
+protected:
+    std::string mJointName;
+    int mLeftStanceIndex, mRightStanceIndex;
+    std::vector<BaseTrajectory *> mBaseTrajs;
+};

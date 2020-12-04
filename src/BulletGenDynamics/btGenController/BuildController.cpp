@@ -3,8 +3,10 @@
 #include "BulletGenDynamics/btGenController/ControllerBase.h"
 #include "BulletGenDynamics/btGenController/PDController/btGenPDController.h"
 #include "BulletGenDynamics/btGenController/PDController/btGenSimbiconSPDController.h"
+#include "BulletGenDynamics/btGenController/ShowLimitController/ShowLimitController.h"
 #include "BulletGenDynamics/btGenController/SimbiconController/SimbiconControllerBase.h"
 #include "BulletGenDynamics/btGenUtil/JsonUtil.h"
+
 btGenControllerBase *BuildController(btGeneralizeWorld *world,
                                      const std::string &path)
 {
@@ -32,6 +34,9 @@ btGenControllerBase *BuildController(btGeneralizeWorld *world,
                 break;
             case ebtGenControllerType::SimbiconController:
                 ctrl = new btGenSimbiconControllerBase(world);
+                break;
+            case ebtGenControllerType::ShowLimitController:
+                ctrl = new btGenShowLimitController(world);
                 break;
             default:
                 break;

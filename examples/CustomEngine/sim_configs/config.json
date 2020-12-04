@@ -10,9 +10,10 @@
     "enable_controller": true,
     "enable_contact_aware_control": false,
     "contact_aware_ref_traj": "../DeepMimic/data/id_test/sample_legs/traj_legs_51668091.json",
-    "ctrl_config_pd": "examples/CustomEngine/ctrl_configs/simbicon_configs/3d_torso/simbicon_torso_long_config.json",
-    "ctrl_config": "examples/CustomEngine/ctrl_configs/pd_config_torso_new.json",
-    "ctrl_config_2links": "examples/CustomEngine/ctrl_configs/pd_config_2links.json",
+    "ctrl_config_pd": "examples/CustomEngine/ctrl_configs/simbicon_configs/3d_torso/simbicon_torso_config.json",
+    "ctrl_config_simbicon": "examples/CustomEngine/ctrl_configs/show_limit_configs/limit_conf.json",
+    "ctrl_config": "examples/CustomEngine/ctrl_configs/pd_configs/pd_config_torso_new.json",
+    "ctrl_config_2links": "examples/CustomEngine/ctrl_configs/pd_configs/pd_config_2links.json",
     "obj_num": 10,
     "obj_type": "ball",
     "obj_type_bak": "cube",
@@ -39,7 +40,7 @@
         "multibody_path_box": "../DeepMimic/data/0424/characters/skeleton_box.json",
         "multibody_path_sphere": "../DeepMimic/data/0424/characters/skeleton_sphere.json"
     },
-    "camera_init_param": [
+    "camera_init_param_ver": [
         3,
         52,
         -35,
@@ -47,20 +48,20 @@
         0.46,
         0
     ],
-    "camera_init_param_ver": [
-        1,
+    "camera_init_param_sid": [
+        0.5,
         90,
         0,
-        -1,
-        0.0,
-        0.5
+        -0.01,
+        0.2,
+        0.01
     ],
-    "camera_init_param_sid": [
-        1,
+    "camera_init_param": [
+        0.1,
         180,
         0,
         0,
         0.1,
-        2
+        1
     ]
 }

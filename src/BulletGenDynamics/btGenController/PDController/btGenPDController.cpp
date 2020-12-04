@@ -107,10 +107,15 @@ void btGenPDController::ParseConfig(const std::string &string)
         Joint *cur_joint =
             dynamic_cast<Joint *>(mModel->GetJointById(joint_id));
 
+        tVector3d scale = tVector3d::Zero();
+        scale[0] = btJsonUtil::ParseAsDouble("ScaleX", single);
+        scale[1] = btJsonUtil::ParseAsDouble("ScaleY", single);
+        scale[2] = btJsonUtil::ParseAsDouble("ScaleZ", single);
         // keep the input order is ascending
         BTGEN_ASSERT(joint_id == mExpJointPDControllers.size());
+        std::cout << "[pd] scale = " << scale.transpose() << std::endl;
         auto new_ctrl =
-            new btGenJointPDCtrl(mModel, cur_joint, kp, kd,
+            new btGenJointPDCtrl(mModel, cur_joint, kp, kd, scale,
                                  cur_joint->GetTorqueLim(), use_world_coord);
         init_target_q
             .segment(cur_joint->GetOffset(), cur_joint->GetNumOfFreedom())
@@ -128,8 +133,9 @@ void btGenPDController::ParseConfig(const std::string &string)
     // init_target_q << 0, 0.75, 0, 0, 0, 0, -1.09805, 0, 0, 1.6, 0, 0, 0, 0, 0, 0,
     //     0, 0, 0, 0;
     printf("[error] the init target is set to random now!\n");
-    init_target_q.setRandom();
+    init_target_q.setZero();
     init_target_qdot.setZero();
+    init_target_q[14] = 2.0;
     std::cout << "[pd] init q target = " << init_target_q.transpose()
               << std::endl;
     SetPDTargetq(init_target_q);
@@ -150,7 +156,11 @@ void btGenPDController::CalculateControlForces(
     // 1. calculate the final target q
     tVectorXd target_q_use = CalcTargetPose(mTargetq);
     tVectorXd target_qdot_use = CalcTargetVel(mTargetqdot);
-
+    if (target_q_use.hasNaN())
+    {
+        std::cout << "target q use = " << target_q_use.transpose();
+        exit(0);
+    }
     if (mEnableSPD)
     {
         CalculateControlForcesSPD(dt, target_q_use, target_qdot_use, pd_forces);

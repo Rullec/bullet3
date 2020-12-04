@@ -10,6 +10,8 @@ btGenControllerBase::btGenControllerBase(ebtGenControllerType type,
     mBulletGUIHelper = nullptr;
     mDrawFrame.clear();
     mDrawPointsList.clear();
+    mDrawLines.clear();
+    mCollisionShapes.clear();
 }
 
 btGenControllerBase::~btGenControllerBase()
@@ -21,6 +23,7 @@ btGenControllerBase::~btGenControllerBase()
         mWorld->GetInternalWorld()->removeCollisionObject(x);
     mDrawFrame.clear();
 }
+
 void btGenControllerBase::Init(cRobotModelDynamics *model,
                                const std::string &conf)
 {
@@ -51,7 +54,7 @@ void btGenControllerBase::ClearDrawPoints()
     for (auto &pt : this->mDrawPointsList)
     {
         // inter_world->getCollisionObjectArray().remove(pt);
-        delete pt->getCollisionShape();
+        // delete pt->getCollisionShape();
         mWorld->GetInternalWorld()->removeCollisionObject(pt);
         mBulletGUIHelper->removeGraphicsInstance(pt->getUserIndex());
         delete pt;
@@ -67,9 +70,8 @@ void btGenControllerBase::DrawPoint(const tVector3d &pos,
                                     double radius /* = 0.05*/)
 {
     BTGEN_ASSERT(mBulletGUIHelper != nullptr);
-    btCollisionShape *colShape = nullptr;
+    btCollisionShape *colShape = GetSphereCollsiionShape(radius);
     btCollisionObject *obj = new btCollisionObject();
-    colShape = new btSphereShape(btScalar(radius));
     btTransform trans;
     // trans.setOrigin(btVector3(pos[0], pos[1], pos[2]));
     trans.setOrigin(btVector3(pos[0], pos[1], pos[2]));
@@ -146,4 +148,71 @@ btCollisionObject *btGenControllerBase::CreateLine(double length, double radius)
     obj->setCollisionFlags(0);
     mWorld->GetInternalWorld()->addCollisionObject(obj, 0, 0);
     return obj;
+}
+
+/**
+ * \brief               Draw a line
+*/
+void btGenControllerBase::DrawLine(const tVector3d &st, const tVector3d &ed)
+{
+    tVector3d dir = (ed - st).normalized();
+    double length = (ed - st).norm();
+    tVector3d pos = (ed + st) / 2;
+    btCollisionObject *obj = CreateLine(length, 0.01);
+    mDrawLines.push_back(obj);
+    // cur pos : (0, 0, 0), cur dir : (0, 1, 0)
+    // target pose: (ed + st) / 2, target dir: (ed - st).noramlzied
+    tMatrix rot_mat = btMathUtil::DirToRotMat(btMathUtil::Expand(dir, 0),
+                                              tVector(0, 1, 0, 0));
+    rot_mat.block(0, 3, 3, 1) = pos;
+    obj->setWorldTransform(btBulletUtil::tMatrixTobtTransform(rot_mat));
+}
+
+void btGenControllerBase::ClearLines()
+{
+    if (mBulletGUIHelper == nullptr)
+        return;
+    auto inter_world = mWorld->GetInternalWorld();
+
+    for (auto &pt : this->mDrawLines)
+    {
+        // inter_world->getCollisionObjectArray().remove(pt);
+        // delete pt->getCollisionShape();
+        mWorld->GetInternalWorld()->removeCollisionObject(pt);
+        mBulletGUIHelper->removeGraphicsInstance(pt->getUserIndex());
+
+        delete pt;
+    }
+
+    std::cout << "[debug] clear lines " << mDrawLines.size() << std::endl;
+    mDrawLines.clear();
+}
+btCollisionShape *btGenControllerBase::GetSphereCollsiionShape(double radius)
+{
+    for (auto &x : mCollisionShapes)
+    {
+        if (x.second->getShapeType() == SPHERE_SHAPE_PROXYTYPE)
+        {
+            auto sphere = dynamic_cast<btSphereShape *>(x.second);
+            BTGEN_ASSERT(sphere != nullptr);
+            if (sphere->getRadius() == radius)
+            {
+                x.first++;
+                return x.second;
+            }
+        }
+    }
+
+    // no, create
+    btSphereShape *sphere_shape = new btSphereShape(radius);
+    mCollisionShapes.push_back(
+        std::make_pair<int, btCollisionShape *>(1, sphere_shape));
+    return sphere_shape;
+}
+
+btCollisionShape *btGenControllerBase::GetCapsuleCollsiionShape(double param1,
+                                                                double param2,
+                                                                double param3)
+{
+    BTGEN_ASSERT(false);
 }

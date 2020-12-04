@@ -6,16 +6,22 @@
         {
             "ID": 0,
             "Name": "root",
-            "Kp": 0,
-            "Kd": 0,
+            "Kp": 3000,
+            "Kd": 30,
+            "ScaleX": 1.0,
+            "ScaleY": 1.0,
+            "ScaleZ": 1.0,
             "TargetTheta0": 0,
             "UseWorldCoord": 0
         },
         {
             "ID": 1,
             "Name": "RightLeg",
-            "Kp": 100,
+            "Kp": 200,
             "Kd": 5,
+            "ScaleX": 1.0,
+            "ScaleY": 1.0,
+            "ScaleZ": 1.0,
             "TargetTheta0": 0,
             "UseWorldCoord": 0
         },
@@ -24,6 +30,9 @@
             "Name": "RightFoot",
             "Kp": 100,
             "Kd": 5,
+            "ScaleX": 1.0,
+            "ScaleY": 1.0,
+            "ScaleZ": 1.0,
             "TargetTheta0": 0,
             "UseWorldCoord": 0
         },
@@ -32,14 +41,20 @@
             "Name": "RFootTongue",
             "Kp": 50,
             "Kd": 0.1,
+            "ScaleX": 1.0,
+            "ScaleY": 1.0,
+            "ScaleZ": 1.0,
             "TargetTheta0": 0,
             "UseWorldCoord": 0
         },
         {
             "ID": 4,
             "Name": "LeftLeg",
-            "Kp": 100,
+            "Kp": 200,
             "Kd": 5,
+            "ScaleX": 1.0,
+            "ScaleY": 1.0,
+            "ScaleZ": 1.0,
             "TargetTheta0": 0,
             "UseWorldCoord": 0
         },
@@ -48,6 +63,9 @@
             "Name": "LeftFoot",
             "Kp": 100,
             "Kd": 5,
+            "ScaleX": 1.0,
+            "ScaleY": 1.0,
+            "ScaleZ": 1.0,
             "TargetTheta0": 0,
             "UseWorldCoord": 0
         },
@@ -56,14 +74,20 @@
             "Name": "LFootTongue",
             "Kp": 50,
             "Kd": 0.1,
+            "ScaleX": 1.0,
+            "ScaleY": 1.0,
+            "ScaleZ": 1.0,
             "TargetTheta0": 0,
             "UseWorldCoord": 0
         },
         {
             "ID": 7,
             "Name": "torso",
-            "Kp": 100,
+            "Kp": 200,
             "Kd": 5,
+            "ScaleX": 1.0,
+            "ScaleY": 1.0,
+            "ScaleZ": 1.0,
             "TargetTheta0": 0,
             "UseWorldCoord": 0
         }

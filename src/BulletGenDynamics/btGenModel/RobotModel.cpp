@@ -2990,3 +2990,11 @@ double cRobotModel::GetHeading() const
     double heading = std::atan2(-unit_vec[2], unit_vec[0]);
     return heading;
 }
+
+/**
+ * \briedf          Judge whether a given link/joint id is end effector
+*/
+bool cRobotModel::IsEndEffector(int id) const
+{
+    return GetLinkById(id)->GetNumOfChildren() == 0;
+}
