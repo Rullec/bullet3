@@ -1,4 +1,5 @@
 #include "SimbiconTraj.h"
+#include "BulletGenDynamics/btGenModel/Joint.h"
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
 #include "BulletGenDynamics/btGenUtil/JsonUtil.h"
 #include <iostream>
@@ -36,6 +37,7 @@ BaseTrajectory::BaseTrajectory(const Json::Value &conf)
     {
         mBalanceFeedback = nullptr;
     }
+    lastIndex = 0;
 }
 
 BaseTrajectory::~BaseTrajectory() { delete mBalanceFeedback; }
@@ -133,8 +135,143 @@ tQuaternion btGenSimbiconTraj::evaluateTrajectory(
     btGenSimbiconControllerBase *ctrl, Joint *joint, int stance, double phi,
     const tVector3d &d, const tVector3d &v) const
 {
-    std::cout << "begin to evaluate\n";
-    exit(0);
+    // world orientation target
+    tQuaternion world_tar = tQuaternion(1, 0, 0, 0);
+    for (int i = 0; i < mBaseTrajs.size(); i++)
+    {
+        world_tar =
+            mBaseTrajs[i]->evaluateTrajectory(ctrl, joint, stance, phi, d, v) *
+            world_tar;
+    }
+    std::cout << "[debug] for joint " << joint->GetName()
+              << " world target = " << world_tar.coeffs().transpose()
+              << std::endl;
+    // convert this to local target
+    {
+        tMatrix3d joint_world_rot = joint->GetWorldOrientation();
+        tMatrix3d joint_local_rot = joint->GetRotations();
+        // world = rest * local
+        // rest = world * local.T
+        tMatrix3d rest = joint_world_rot * joint_local_rot.transpose();
+        tMatrix3d joint_world_rot_tar =
+            btMathUtil::RotMat(world_tar).block(0, 0, 3, 3);
+        // world_tar = rest * local_tar;
+        // local_tar = rest.T * world_tar
+        tMatrix3d joint_local_rot_tar = rest.transpose() * joint_world_rot_tar;
+
+        tQuaternion local_tar = btMathUtil::RotMatToQuaternion(
+            btMathUtil::ExpandMat(joint_local_rot_tar, 0));
+        std::cout << "local target = " << local_tar.coeffs().transpose()
+                  << std::endl;
+        return local_tar;
+    }
 }
 
 //======================Simbicon trajectory end=======================
+tQuaternion
+BaseTrajectory::evaluateTrajectory(btGenSimbiconControllerBase *ctrl,
+                                   Joint *joint, int stance, double phi,
+                                   const tVector3d &d, const tVector3d &v)
+{
+    double baseAngle = 0;
+    if (mTimeKnots.size() > 0)
+    {
+        baseAngle += EvaluateCatmullrom(phi);
+    }
+    double feedback = ComputeFeedback(ctrl, joint, d, v);
+
+    return btMathUtil::AxisAngleToQuaternion(
+        btMathUtil::Expand(mRotationAxis * (baseAngle + feedback), 0));
+}
+
+double BaseTrajectory::EvaluateCatmullrom(double t)
+{
+    const double TINY = 1e-9;
+    int size = this->mTimeKnots.size();
+    if (t <= this->mTimeKnots[0])
+        return mValueKnots[0];
+    if (t >= this->mTimeKnots[size - 1])
+        return mValueKnots[size - 1];
+    int index = getFirstLargerIndex(t);
+
+    //now that we found the interval, get a value that indicates how far we are along it
+    t = (t - this->mTimeKnots[index - 1]) /
+        (this->mTimeKnots[index] - this->mTimeKnots[index - 1]);
+
+    //approximate the derivatives at the two ends
+    double t0, t1, t2, t3;
+    double p0, p1, p2, p3;
+    p0 = (index - 2 < 0) ? (mValueKnots[index - 1]) : (mValueKnots[index - 2]);
+    p1 = mValueKnots[index - 1];
+    p2 = mValueKnots[index];
+    p3 = (index + 1 >= size) ? (mValueKnots[index]) : (mValueKnots[index + 1]);
+
+    t0 = (index - 2 < 0) ? (this->mTimeKnots[index - 1])
+                         : (this->mTimeKnots[index - 2]);
+    t1 = this->mTimeKnots[index - 1];
+    t2 = this->mTimeKnots[index];
+    t3 = (index + 1 >= size) ? (this->mTimeKnots[index])
+                             : (this->mTimeKnots[index + 1]);
+
+    double d1 = (t2 - t0);
+    double d2 = (t3 - t1);
+
+    if (d1 > -TINY && d1 < 0)
+        d1 = -TINY;
+    if (d1 < TINY && d1 >= 0)
+        d1 = TINY;
+    if (d2 > -TINY && d2 < 0)
+        d2 = -TINY;
+    if (d2 < TINY && d2 >= 0)
+        d2 = TINY;
+
+    double m1 = 0.5 * (p2 - p0);
+    double m2 = 0.5 * (p3 - p1);
+
+    t2 = t * t;
+    t3 = t2 * t;
+
+    //and now perform the interpolation using the four hermite basis functions from wikipedia
+    return p1 * (2 * t3 - 3 * t2 + 1) + m1 * (t3 - 2 * t2 + t) +
+           p2 * (-2 * t3 + 3 * t2) + m2 * (t3 - t2);
+}
+double BaseTrajectory::ComputeFeedback(btGenSimbiconControllerBase *ctrl,
+                                       Joint *j, const tVector3d &d,
+                                       const tVector3d &v)
+{
+    if (mBalanceFeedback == nullptr)
+        return 0;
+
+    double dToUse = d.dot(mBalanceFeedback->mFeedbackProjAxis);
+    double vToUse = v.dot(mBalanceFeedback->mFeedbackProjAxis);
+    double vMin = -1000, dMin = -1000, vMax = 1000, dMax = 1000;
+    if (dToUse < dMin)
+        dToUse = dMin;
+    if (vToUse < vMin)
+        vToUse = vMin;
+    if (dToUse > dMax)
+        dToUse = dMax;
+    if (vToUse > vMax)
+        vToUse = vMax;
+
+    return dToUse * mBalanceFeedback->Cd + vToUse * mBalanceFeedback->Cv;
+}
+
+double BaseTrajectory::getFirstLargerIndex(double t)
+{
+    int size = mTimeKnots.size();
+    if (size == 0)
+        return 0;
+    if (t < mTimeKnots[(lastIndex + size - 1) % size])
+        lastIndex = 0;
+    for (int i = 0; i < size; i++)
+    {
+        int index = (i + lastIndex) % size;
+        if (t < mTimeKnots[index])
+        {
+            lastIndex = index;
+            return index;
+        }
+    }
+    return size;
+}

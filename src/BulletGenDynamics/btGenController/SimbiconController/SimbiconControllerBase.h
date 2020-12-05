@@ -49,8 +49,10 @@ protected:
     void ComputeTorques(double dt, tEigenArr<btGenPDForce> &forces);
     void ApplyTorques(const tEigenArr<btGenPDForce> &forces);
     double GetStanceFootWeightRatio();
-    void ComputeHipTorques(tEigenArr<btGenPDForce> &forces);
-    void AdvanceInTime();
+    void ComputeHipTorques(tEigenArr<btGenPDForce> &forces,
+                           double stancehip_to_swinghip_ratio);
+    void AdvanceInTime(double dt);
     void SetFSMStateTo(int state_idx);
     void SetStance(int new_stance);
+    void UpdateRefModel(const tVectorXd &tar_pose);
 };

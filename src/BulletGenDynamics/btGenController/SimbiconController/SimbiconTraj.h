@@ -19,6 +19,9 @@ struct BaseTrajectory
 {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
     BaseTrajectory(const Json::Value &conf);
+    tQuaternion evaluateTrajectory(btGenSimbiconControllerBase *ctrl,
+                                   Joint *joint, int stance, double phi,
+                                   const tVector3d &d, const tVector3d &v);
     ~BaseTrajectory();
 
     struct tFeedBack
@@ -31,7 +34,13 @@ struct BaseTrajectory
     tVector3d mRotationAxis;
     tVectorXd mTimeKnots, mValueKnots;
     tFeedBack *mBalanceFeedback;
-    
+
+protected:
+    double EvaluateCatmullrom(double phi);
+    double ComputeFeedback(btGenSimbiconControllerBase *ctrl, Joint *j,
+                           const tVector3d &d, const tVector3d &v);
+    double getFirstLargerIndex(double phi);
+    int lastIndex;
 };
 
 /**
@@ -48,6 +57,7 @@ public:
                                    Joint *joint, int stance, double phi,
                                    const tVector3d &d,
                                    const tVector3d &v) const;
+
 protected:
     std::string mJointName;
     int mLeftStanceIndex, mRightStanceIndex;
