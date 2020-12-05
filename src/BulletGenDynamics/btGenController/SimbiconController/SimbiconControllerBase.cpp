@@ -6,6 +6,7 @@
 #include "BulletGenDynamics/btGenModel/Joint.h"
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
 #include "BulletGenDynamics/btGenUtil/JsonUtil.h"
+// #define APPLY_ROOT_TORQUE
 
 btGenSimbiconControllerBase::btGenSimbiconControllerBase(
     btGeneralizeWorld *world)
@@ -191,8 +192,8 @@ void btGenSimbiconControllerBase::ComputeTorques(
         case JointType::REVOLUTE_JOINT:
         {
             BTGEN_ASSERT(size == 1);
-            tar_pose[offset] =
-                btMathUtil::QuaternionToAxisAngle(local_target)[0];
+            tar_pose[offset] = btMathUtil::QuaternionToEulerAngles(
+                local_target, btRotationOrder::bt_XYZ)[0];
             break;
         }
         default:
@@ -223,10 +224,13 @@ void btGenSimbiconControllerBase::ComputeTorques(
     mPDController->CalculateControlForces(dt, forces);
     BTGEN_ASSERT(forces.size() == mModel->GetNumOfJoint());
 
-    // 4. compute hip torques
+// 4. compute hip torques
+#ifndef APPLY_ROOT_TORQUE
     ComputeHipTorques(forces, GetStanceFootWeightRatio());
+#endif
 
     // 5. update ref model
+    // std::cout << "[debug] tar pose = " << tar_pose.transpose() << std::endl;
     UpdateRefModel(tar_pose);
 }
 
@@ -302,8 +306,8 @@ void btGenSimbiconControllerBase::ComputeHipTorques(
               << std::endl;
     std::cout << "[log] final stance hip force = "
               << stancehip_force.transpose() << std::endl;
-    std::cout << "[debug] joint root force = " << forces[mRootId].mForce.transpose()
-              << std::endl;
+    std::cout << "[debug] joint root force = "
+              << forces[mRootId].mForce.transpose() << std::endl;
 
     {
         tVector root_force_affected = tVector::Zero();
@@ -322,7 +326,9 @@ void btGenSimbiconControllerBase::ComputeHipTorques(
 
 void btGenSimbiconControllerBase::AdvanceInTime(double dt)
 {
-    this->mPhi += dt / mStates[this->mStateIndex]->GetStateTime();
+    mPhi += dt / mStates[this->mStateIndex]->GetStateTime();
+    std::cout << "[debug] cur phi = " << mPhi << " stance = "
+              << ((mStance == LEFT_STANCE) ? ("left") : ("right")) << std::endl;
     auto manger = mWorld->GetContactManager();
     double swing_force = manger->GetVerticalTotalForceWithGround(
                this->mModel->GetLinkCollider(mSwingFoot->GetId())),
@@ -407,7 +413,9 @@ void btGenSimbiconControllerBase::ApplyTorques(
     BTGEN_ASSERT(forces.size() == mModel->GetNumOfJoint());
     for (auto &x : forces)
     {
+#ifndef APPLY_ROOT_TORQUE
         if (x.mJoint->GetIsRootJoint() == false)
+#endif
         {
             std::cout << "[debug] joint " << x.mJoint->GetName()
                       << " force = " << x.mForce.transpose() << std::endl;
@@ -434,7 +442,7 @@ void btGenSimbiconControllerBase::SetFSMStateTo(int state_idx)
 {
     BTGEN_ASSERT(state_idx >= 0 && state_idx < mStates.size());
     mStateIndex = state_idx;
-    SetStance(mStates[mStateIndex]->GetStateStance(mStance));
+    // SetStance(mStates[mStateIndex]->GetStateStance(mStance));
 }
 
 /**
@@ -442,7 +450,7 @@ void btGenSimbiconControllerBase::SetFSMStateTo(int state_idx)
 */
 void btGenSimbiconControllerBase::SetStance(int new_stance)
 {
-    this->mStance = new_stance;
+    mStance = new_stance;
 
     if (mStance == LEFT_STANCE)
     {

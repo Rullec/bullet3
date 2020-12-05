@@ -180,10 +180,12 @@ tVector btMathUtil::QuaternionToAxisAngle(const tQuaternion &quater)
     if (theta < 1e-5)
         return tVector::Zero();
 
+    double sin_theta_2 = std::sin(theta / 2);
+    if (std::fabs(sin_theta_2) < 1e-10)
+        sin_theta_2 = sin_theta_2 / std::fabs(sin_theta_2) * 1e-10;
     // std::cout << theta << " " << std::sin(theta / 2) << std::endl;
-    double ax = quater.x() / std::sin(theta / 2),
-           ay = quater.y() / std::sin(theta / 2),
-           az = quater.z() / std::sin(theta / 2);
+    double ax = quater.x() / sin_theta_2, ay = quater.y() / sin_theta_2,
+           az = quater.z() / sin_theta_2;
     return theta * tVector(ax, ay, az, 0);
 }
 

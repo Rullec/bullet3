@@ -153,18 +153,37 @@ void btGenJointPDCtrl::ControlForceNone(tVector &force,
     // exit(0);
     tVector3d omega_diff = target_omega - cur_omega;
     tVector3d local_force = mKp * orient_diff + mKd * omega_diff;
-    std::cout << "[before_scale] root local force = " << local_force.transpose()
-              << std::endl;
+    // std::cout << "[before_scale] root local force = " << local_force.transpose()
+    //           << std::endl;
     local_force[0] *= mScale[0];
     local_force[1] *= mScale[1];
     local_force[2] *= mScale[2];
-    std::cout << "[after_scale] root local force = " << local_force.transpose()
-              << std::endl;
+    // std::cout << "[after_scale] root local force = " << local_force.transpose()
+    //           << std::endl;
     // 5. convert joint local force to global frame, rotate
     tVector3d global_force =
         mJoint->GetWorldOrientation() *
         mJoint->GetLocalTransform().block(0, 0, 3, 3).transpose() * local_force;
     force.segment(0, 3) = global_force;
+    if (force.hasNaN())
+    {
+        std::cout << "[pd] none force has Nan, local force = "
+                  << local_force.transpose()
+                  << " global force = " << global_force.transpose()
+                  << std::endl;
+        std::cout << "orient diff = " << orient_diff.transpose() << std::endl;
+        std::cout << "orient diff qua = "
+                  << orient_diff_qua.coeffs().transpose() << std::endl;
+        //    * .conjugate()
+        std::cout << "tar_orient qua = " << tar_orient.coeffs().transpose()
+                  << std::endl;
+        std::cout << "tar_orient euler = " << target_orient_xyz.transpose()
+                  << std::endl;
+        // std::cout << "cur_orient conj qua = "
+        //           << cur_orient.conjugate().coeffs().transpose() << std::endl;
+        // std::cout << "vel diff = " << omega_diff.transpose() << std::endl;
+        exit(0);
+    }
 }
 
 /**
@@ -232,13 +251,13 @@ void btGenJointPDCtrl::ControlForceSpherical(
     // std::cout << "omega diff = " << omega_diff.transpose() << std::endl;
     tVector3d local_force = mKp * orient_diff + mKd * omega_diff;
 
-    std::cout << "[before_scale] sph local force = " << local_force.transpose()
-              << std::endl;
+    // std::cout << "[before_scale] sph local force = " << local_force.transpose()
+    //           << std::endl;
     local_force[0] *= mScale[0];
     local_force[1] *= mScale[1];
     local_force[2] *= mScale[2];
-    std::cout << "[after_scale] sph local force = " << local_force.transpose()
-              << std::endl;
+    // std::cout << "[after_scale] sph local force = " << local_force.transpose()
+    //           << std::endl;
     // 3. global control force
     tVector3d global_force =
         mJoint->GetWorldOrientation() *
@@ -337,6 +356,21 @@ tVectorXd btGenJointPDCtrl::CalcLocalControlTargetByWorldTarget(
         control_target = tVectorXd::Zero(6);
         control_target.segment(3, 3) =
             btMathUtil::RotmatToAxisAngle(local_target).segment(0, 3);
+        {
+            if (control_target.hasNaN())
+            {
+                std::cout << "control target none has Nan = "
+                          << control_target.transpose() << std::endl;
+                std::cout << "local target = \n" << local_target << std::endl;
+                std::cout << "local target qua = \n"
+                          << btMathUtil::RotMatToQuaternion(local_target)
+                                 .coeffs()
+                                 .transpose()
+                          << std::endl;
+
+                exit(1);
+            }
+        }
         break;
     case JointType::FIXED_JOINT:
         control_target = tVectorXd::Zero(0);
@@ -356,6 +390,12 @@ tVectorXd btGenJointPDCtrl::CalcLocalControlTargetByWorldTarget(
                   << " unsupported in joint pd ctrl\n";
         BTGEN_ASSERT(false);
         break;
+    }
+    if (control_target.hasNaN() == true)
+    {
+        std::cout << "control target = " << control_target.transpose()
+                  << std::endl;
+        exit(1);
     }
     return control_target;
 }

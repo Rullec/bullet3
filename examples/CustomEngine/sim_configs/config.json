@@ -4,7 +4,7 @@
     "add_obj": false,
     "enable_ground": true,
     "ground_height": 0,
-    "real_time_sim": false,
+    "real_time_sim": true,
     "multibody_path_2links": "../DeepMimic/data/0805/characters/skeleton_2links.json",
     "multibody_path": "../DeepMimic/data/1127/characters/lower_halfbody_torso.json",
     "enable_controller": true,
@@ -39,7 +39,7 @@
         "multibody_path_box": "../DeepMimic/data/0424/characters/skeleton_box.json",
         "multibody_path_sphere": "../DeepMimic/data/0424/characters/skeleton_sphere.json"
     },
-    "camera_init_param_ver": [
+    "camera_init_param": [
         3,
         52,
         -35,
@@ -55,7 +55,7 @@
         0.0,
         0.5
     ],
-    "camera_init_param": [
+    "camera_init_param_ver": [
         0.1,
         180,
         0,

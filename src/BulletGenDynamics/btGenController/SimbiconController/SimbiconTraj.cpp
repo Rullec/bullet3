@@ -125,7 +125,10 @@ int btGenSimbiconTraj::getJointIndex(int stance)
     else if (stance == RIGHT_STANCE)
         return mRightStanceIndex;
     else
+    {
         BTGEN_ASSERT(false);
+        return -1;
+    }
 }
 
 /**
@@ -136,6 +139,8 @@ tQuaternion btGenSimbiconTraj::evaluateTrajectory(
     const tVector3d &d, const tVector3d &v) const
 {
     // world orientation target
+    std::cout << "-------begin to evaluate joint " << joint->GetName()
+              << "---------\n";
     tQuaternion world_tar = tQuaternion(1, 0, 0, 0);
     for (int i = 0; i < mBaseTrajs.size(); i++)
     {
@@ -146,25 +151,26 @@ tQuaternion btGenSimbiconTraj::evaluateTrajectory(
     std::cout << "[debug] for joint " << joint->GetName()
               << " world target = " << world_tar.coeffs().transpose()
               << std::endl;
+    return world_tar;
     // convert this to local target
-    {
-        tMatrix3d joint_world_rot = joint->GetWorldOrientation();
-        tMatrix3d joint_local_rot = joint->GetRotations();
-        // world = rest * local
-        // rest = world * local.T
-        tMatrix3d rest = joint_world_rot * joint_local_rot.transpose();
-        tMatrix3d joint_world_rot_tar =
-            btMathUtil::RotMat(world_tar).block(0, 0, 3, 3);
-        // world_tar = rest * local_tar;
-        // local_tar = rest.T * world_tar
-        tMatrix3d joint_local_rot_tar = rest.transpose() * joint_world_rot_tar;
+    // {
+    //     tMatrix3d joint_world_rot = joint->GetWorldOrientation();
+    //     tMatrix3d joint_local_rot = joint->GetRotations();
+    //     // world = rest * local
+    //     // rest = world * local.T
+    //     tMatrix3d rest = joint_world_rot * joint_local_rot.transpose();
+    //     tMatrix3d joint_world_rot_tar =
+    //         btMathUtil::RotMat(world_tar).block(0, 0, 3, 3);
+    //     // world_tar = rest * local_tar;
+    //     // local_tar = rest.T * world_tar
+    //     tMatrix3d joint_local_rot_tar = rest.transpose() * joint_world_rot_tar;
 
-        tQuaternion local_tar = btMathUtil::RotMatToQuaternion(
-            btMathUtil::ExpandMat(joint_local_rot_tar, 0));
-        std::cout << "local target = " << local_tar.coeffs().transpose()
-                  << std::endl;
-        return local_tar;
-    }
+    //     tQuaternion local_tar = btMathUtil::RotMatToQuaternion(
+    //         btMathUtil::ExpandMat(joint_local_rot_tar, 0));
+    //     // std::cout << "local target = " << local_tar.coeffs().transpose()
+    //     //           << std::endl;
+    //     return local_tar;
+    // }
 }
 
 //======================Simbicon trajectory end=======================
@@ -178,8 +184,9 @@ BaseTrajectory::evaluateTrajectory(btGenSimbiconControllerBase *ctrl,
     {
         baseAngle += EvaluateCatmullrom(phi);
     }
+    std::cout << "catmull angle = " << baseAngle << std::endl;
     double feedback = ComputeFeedback(ctrl, joint, d, v);
-
+    std::cout << "feedback = " << feedback << std::endl;
     return btMathUtil::AxisAngleToQuaternion(
         btMathUtil::Expand(mRotationAxis * (baseAngle + feedback), 0));
 }

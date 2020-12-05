@@ -156,7 +156,11 @@ void btGenPDController::CalculateControlForces(
     // 1. calculate the final target q
     tVectorXd target_q_use = CalcTargetPose(mTargetq);
     tVectorXd target_qdot_use = CalcTargetVel(mTargetqdot);
-
+    if (target_q_use.hasNaN())
+    {
+        std::cout << "target q use = " << target_q_use.transpose();
+        exit(0);
+    }
     if (mEnableSPD)
     {
         CalculateControlForcesSPD(dt, target_q_use, target_qdot_use, pd_forces);

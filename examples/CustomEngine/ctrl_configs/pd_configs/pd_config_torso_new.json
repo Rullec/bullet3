@@ -6,10 +6,10 @@
         {
             "ID": 0,
             "Name": "root",
-            "Kp": 3000,
-            "Kd": 30,
+            "Kp": 1000,
+            "Kd": 10,
             "ScaleX": 1.0,
-            "ScaleY": 0.1,
+            "ScaleY": 1.0,
             "ScaleZ": 1.0,
             "TargetTheta0": 0,
             "UseWorldCoord": 0
@@ -17,10 +17,10 @@
         {
             "ID": 1,
             "Name": "RightLeg",
-            "Kp": 300,
+            "Kp": 200,
             "Kd": 5,
             "ScaleX": 1.0,
-            "ScaleY": 0.1,
+            "ScaleY": 1.0,
             "ScaleZ": 1.0,
             "TargetTheta0": 0,
             "UseWorldCoord": 0
@@ -28,10 +28,10 @@
         {
             "ID": 2,
             "Name": "RightFoot",
-            "Kp": 300,
+            "Kp": 100,
             "Kd": 5,
             "ScaleX": 1.0,
-            "ScaleY": 0.1,
+            "ScaleY": 1.0,
             "ScaleZ": 1.0,
             "TargetTheta0": 0,
             "UseWorldCoord": 0
@@ -39,10 +39,10 @@
         {
             "ID": 3,
             "Name": "RFootTongue",
-            "Kp": 30,
+            "Kp": 100,
             "Kd": 0.5,
             "ScaleX": 1.0,
-            "ScaleY": 0.1,
+            "ScaleY": 1.0,
             "ScaleZ": 1.0,
             "TargetTheta0": 0,
             "UseWorldCoord": 0
@@ -50,10 +50,10 @@
         {
             "ID": 4,
             "Name": "LeftLeg",
-            "Kp": 100,
+            "Kp": 200,
             "Kd": 5,
             "ScaleX": 1.0,
-            "ScaleY": 0.1,
+            "ScaleY": 1.0,
             "ScaleZ": 1.0,
             "TargetTheta0": 0,
             "UseWorldCoord": 0
@@ -61,10 +61,10 @@
         {
             "ID": 5,
             "Name": "LeftFoot",
-            "Kp": 300,
+            "Kp": 100,
             "Kd": 5,
             "ScaleX": 1.0,
-            "ScaleY": 0.1,
+            "ScaleY": 1.0,
             "ScaleZ": 1.0,
             "TargetTheta0": 0,
             "UseWorldCoord": 0
@@ -72,7 +72,7 @@
         {
             "ID": 6,
             "Name": "LFootTongue",
-            "Kp": 30,
+            "Kp": 100,
             "Kd": 0.5,
             "ScaleX": 1.0,
             "ScaleY": 1.0,
@@ -83,10 +83,10 @@
         {
             "ID": 7,
             "Name": "torso",
-            "Kp": 500,
+            "Kp": 200,
             "Kd": 5,
             "ScaleX": 1.0,
-            "ScaleY": 0.1,
+            "ScaleY": 1.0,
             "ScaleZ": 1.0,
             "TargetTheta0": 0,
             "UseWorldCoord": 0
