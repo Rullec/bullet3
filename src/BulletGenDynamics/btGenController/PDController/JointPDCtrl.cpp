@@ -5,9 +5,9 @@
 #include <iostream>
 
 btGenJointPDCtrl::btGenJointPDCtrl(cRobotModelDynamics *model, Joint *joint,
-                                   double kp, double kd, double force_lim,
-                                   bool use_world)
-    : mUseWorldCoord(use_world)
+                                   double kp, double kd, const tVector3d &scale,
+                                   double force_lim, bool use_world)
+    : mUseWorldCoord(use_world), mScale(scale)
 {
     mModel = model;
     mJoint = joint;
@@ -153,6 +153,13 @@ void btGenJointPDCtrl::ControlForceNone(tVector &force,
     // exit(0);
     tVector3d omega_diff = target_omega - cur_omega;
     tVector3d local_force = mKp * orient_diff + mKd * omega_diff;
+    std::cout << "[before_scale] root local force = " << local_force.transpose()
+              << std::endl;
+    local_force[0] *= mScale[0];
+    local_force[1] *= mScale[1];
+    local_force[2] *= mScale[2];
+    std::cout << "[after_scale] root local force = " << local_force.transpose()
+              << std::endl;
     // 5. convert joint local force to global frame, rotate
     tVector3d global_force =
         mJoint->GetWorldOrientation() *
@@ -225,6 +232,13 @@ void btGenJointPDCtrl::ControlForceSpherical(
     // std::cout << "omega diff = " << omega_diff.transpose() << std::endl;
     tVector3d local_force = mKp * orient_diff + mKd * omega_diff;
 
+    std::cout << "[before_scale] sph local force = " << local_force.transpose()
+              << std::endl;
+    local_force[0] *= mScale[0];
+    local_force[1] *= mScale[1];
+    local_force[2] *= mScale[2];
+    std::cout << "[after_scale] sph local force = " << local_force.transpose()
+              << std::endl;
     // 3. global control force
     tVector3d global_force =
         mJoint->GetWorldOrientation() *

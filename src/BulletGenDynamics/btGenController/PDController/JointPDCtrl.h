@@ -11,7 +11,8 @@ class btGenJointPDCtrl
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
     btGenJointPDCtrl(cRobotModelDynamics *, Joint *, double kp, double kd,
-                     double force_lim, bool use_world_coord);
+                     const tVector3d &scale, double force_lim,
+                     bool use_world_coord);
     void SetKp(double Kp);
     void SetKd(double Kd);
     double GetKp() const;
@@ -31,6 +32,7 @@ protected:
     double mKp, mKd;
     double mForceLim;
     bool mUseWorldCoord;
+    tVector3d mScale;
     void CheckCtrlDims(const tVectorXd &var, std::string prefix) const;
     void ControlForceNone(tVector &force, const tVectorXd &local_target_theta,
                           const tVectorXd &local_target_vel) const;

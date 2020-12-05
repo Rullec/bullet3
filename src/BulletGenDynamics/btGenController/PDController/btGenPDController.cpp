@@ -107,10 +107,15 @@ void btGenPDController::ParseConfig(const std::string &string)
         Joint *cur_joint =
             dynamic_cast<Joint *>(mModel->GetJointById(joint_id));
 
+        tVector3d scale = tVector3d::Zero();
+        scale[0] = btJsonUtil::ParseAsDouble("ScaleX", single);
+        scale[1] = btJsonUtil::ParseAsDouble("ScaleY", single);
+        scale[2] = btJsonUtil::ParseAsDouble("ScaleZ", single);
         // keep the input order is ascending
         BTGEN_ASSERT(joint_id == mExpJointPDControllers.size());
+        std::cout << "[pd] scale = " << scale.transpose() << std::endl;
         auto new_ctrl =
-            new btGenJointPDCtrl(mModel, cur_joint, kp, kd,
+            new btGenJointPDCtrl(mModel, cur_joint, kp, kd, scale,
                                  cur_joint->GetTorqueLim(), use_world_coord);
         init_target_q
             .segment(cur_joint->GetOffset(), cur_joint->GetNumOfFreedom())

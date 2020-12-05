@@ -6,8 +6,11 @@
         {
             "ID": 0,
             "Name": "root",
-            "Kp": 3000,
-            "Kd": 30,
+            "Kp": 200,
+            "Kd": 5,
+            "ScaleX": 1.0,
+            "ScaleY": 0.2,
+            "ScaleZ": 1.0,
             "TargetTheta0": 0,
             "UseWorldCoord": 0
         },
@@ -16,22 +19,31 @@
             "Name": "RightLeg",
             "Kp": 100,
             "Kd": 5,
+            "ScaleX": 1.0,
+            "ScaleY": 0.2,
+            "ScaleZ": 1.0,
             "TargetTheta0": 0,
             "UseWorldCoord": 0
         },
         {
             "ID": 2,
             "Name": "RightFoot",
-            "Kp": 100,
+            "Kp": 300,
             "Kd": 5,
+            "ScaleX": 1.0,
+            "ScaleY": 0.2,
+            "ScaleZ": 1.0,
             "TargetTheta0": 0,
             "UseWorldCoord": 0
         },
         {
             "ID": 3,
             "Name": "RFootTongue",
-            "Kp": 50,
+            "Kp": 30,
             "Kd": 0.1,
+            "ScaleX": 1.0,
+            "ScaleY": 0.2,
+            "ScaleZ": 1.0,
             "TargetTheta0": 0,
             "UseWorldCoord": 0
         },
@@ -40,30 +52,42 @@
             "Name": "LeftLeg",
             "Kp": 100,
             "Kd": 5,
+            "ScaleX": 1.0,
+            "ScaleY": 0.2,
+            "ScaleZ": 1.0,
             "TargetTheta0": 0,
             "UseWorldCoord": 0
         },
         {
             "ID": 5,
             "Name": "LeftFoot",
-            "Kp": 100,
+            "Kp": 300,
             "Kd": 5,
+            "ScaleX": 1.0,
+            "ScaleY": 0.2,
+            "ScaleZ": 1.0,
             "TargetTheta0": 0,
             "UseWorldCoord": 0
         },
         {
             "ID": 6,
             "Name": "LFootTongue",
-            "Kp": 50,
+            "Kp": 30,
             "Kd": 0.1,
+            "ScaleX": 1.0,
+            "ScaleY": 0.2,
+            "ScaleZ": 1.0,
             "TargetTheta0": 0,
             "UseWorldCoord": 0
         },
         {
             "ID": 7,
             "Name": "torso",
-            "Kp": 100,
+            "Kp": 200,
             "Kd": 5,
+            "ScaleX": 1.0,
+            "ScaleY": 0.2,
+            "ScaleZ": 1.0,
             "TargetTheta0": 0,
             "UseWorldCoord": 0
         }

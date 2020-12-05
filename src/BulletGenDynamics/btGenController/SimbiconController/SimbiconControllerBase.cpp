@@ -240,7 +240,7 @@ double btGenSimbiconControllerBase::GetStanceFootWeightRatio()
            swing_foot_force = manager->GetVerticalTotalForceWithGround(
                mModel->GetLinkCollider(mSwingFoot->GetId()));
 
-    return stance_foot_force / (stance_foot_force + swing_foot_force);
+    return stance_foot_force / (stance_foot_force + swing_foot_force + 1e-6);
 }
 
 /**
@@ -278,10 +278,46 @@ void btGenSimbiconControllerBase::ComputeHipTorques(
     stancehip_force += root_makeup_torque * stancehip_to_swinghip_ratio;
     swinghip_force += root_makeup_torque * (1 - stancehip_to_swinghip_ratio);
 
+    {
+        int stance_hip_limit =
+                dynamic_cast<Joint *>(mModel->GetJointById(mStanceHipIdx))
+                    ->GetTorqueLim(),
+            swing_hip_limit =
+                dynamic_cast<Joint *>(mModel->GetJointById(mSwingHipIdx))
+                    ->GetTorqueLim();
+        if (stancehip_force.norm() > stance_hip_limit)
+        {
+            stancehip_force =
+                stancehip_force / stancehip_force.norm() * stance_hip_limit;
+        }
+        if (swinghip_force.norm() > swing_hip_limit)
+        {
+            swinghip_force =
+                swinghip_force / swinghip_force.norm() * swing_hip_limit;
+        }
+    }
+    forces[mStanceHipIdx].mForce = stancehip_force;
+    forces[mSwingHipIdx].mForce = swinghip_force;
     std::cout << "[log] final swing hip force = " << swinghip_force.transpose()
               << std::endl;
     std::cout << "[log] final stance hip force = "
               << stancehip_force.transpose() << std::endl;
+    std::cout << "root force = " << forces[mRootId].mForce.transpose()
+              << std::endl;
+
+    {
+        tVector root_force_affected = tVector::Zero();
+        for (int i = 0; i < mModel->GetNumOfJoint(); i++)
+        {
+            auto joint = mModel->GetJointById(i);
+            if (joint->GetParentId() == mModel->GetRoot()->GetId())
+            {
+                root_force_affected += -forces[i].mForce;
+            }
+        }
+        std::cout << "root affected force = " << root_force_affected.transpose()
+                  << std::endl;
+    }
 }
 
 void btGenSimbiconControllerBase::AdvanceInTime(double dt)
