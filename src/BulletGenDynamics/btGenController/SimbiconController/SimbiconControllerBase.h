@@ -26,7 +26,7 @@ protected:
     btGenPDController *mPDController;   // PD controller
     cRobotModelDynamics *mRefTrajModel; // ref traj model
     std::vector<btGenSimbiconState *> mStates;
-    int mStateIdx; // current state index
+    int mStateIndex; // current state index
     int mStance; // left stance or right stance? works with the macro BTGEN_LEFT_STANCE and BTGEN_RIGHT_STANCE
     int mRootId; // the id of root joint (usually zero I guess)
     Joint *mStanceFoot,
@@ -46,10 +46,10 @@ protected:
     void TransiteToState(int state);
     void UpdateDandV();
     void GetTargetPose();
-    void ComputeTorques(tEigenArr<btGenPDForce> &forces);
+    void ComputeTorques(double dt, tEigenArr<btGenPDForce> &forces);
     void ApplyTorques(const tEigenArr<btGenPDForce> &forces);
     double GetStanceFootWeightRatio();
-    void ComputeHipTorques();
+    void ComputeHipTorques(tEigenArr<btGenPDForce> &forces);
     void AdvanceInTime();
     void SetFSMStateTo(int state_idx);
     void SetStance(int new_stance);

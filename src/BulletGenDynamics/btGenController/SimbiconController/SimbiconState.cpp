@@ -1,8 +1,11 @@
 #include "SimbiconState.h"
 #include "BulletGenDynamics/btGenUtil/JsonUtil.h"
 #include "BulletGenDynamics/btGenUtil/MathUtil.h"
+#include <iostream>
 
-btGenSimbiconState::btGenSimbiconState(const Json::Value &conf, int state_id)
+//======================Simbicon state begin=======================
+btGenSimbiconState::btGenSimbiconState(const Json::Value &conf, int state_id,
+                                       cRobotModelDynamics *model)
 {
     mStateIndex = state_id;
     mNextStateIndex = btJsonUtil::ParseAsInt("next_state_id", conf);
@@ -11,6 +14,13 @@ btGenSimbiconState::btGenSimbiconState(const Json::Value &conf, int state_id)
         btJsonUtil::ParseAsBool("transition_on_foot_contact", conf);
     mMinPhiBeforeTransitionOnFootContact = 0.5;
     mMinSwingFootForceForContact = 20;
+
+    // begin to build the trajectories
+    const Json::Value &trajs = btJsonUtil::ParseAsValue("trajectories", conf);
+    for (int i = 0; i < trajs.size(); i++)
+    {
+        mTrajs.push_back(new btGenSimbiconTraj(trajs[i], model));
+    }
 }
 
 int btGenSimbiconState::GetStateStance(int old_stance) const
@@ -63,3 +73,10 @@ bool btGenSimbiconState::NeedTransition(double phi,
             return false;
     }
 }
+
+/**
+ * \brief           Get the number of control joint trajectories in this state
+*/
+int btGenSimbiconState::GetTrajectoryCount() const { return mTrajs.size(); }
+
+//======================Simbicon state end=======================

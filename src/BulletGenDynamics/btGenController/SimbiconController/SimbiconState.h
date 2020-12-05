@@ -1,26 +1,22 @@
 #pragma once
-#define LEFT_STANCE 0
-#define RIGHT_STANCE 1
+#include "SimbiconTraj.h"
 
-#define LEFT_STANCE_STR ("left_stance")
-#define RIGHT_STANCE_STR ("right_stance")
-
-namespace Json
-{
-class Value;
-};
-
-class cRobotModelDynamics;
-
+/**
+ * \brief           Simbicon FSM state
+*/
 class btGenSimbiconState
 {
 public:
-    btGenSimbiconState(const Json::Value &conf, int state_id);
+    btGenSimbiconState(const Json::Value &conf, int state_id,
+                       cRobotModelDynamics *model);
     int GetStateStance(int old_stance) const;
+    int GetTrajectoryCount() const;
     double GetStateTime() const;
     int GetNextStateIndex() const;
     bool NeedTransition(double phi, double swing_foot_vertical_force,
                         double stance_foot_vertical_force) const;
+
+    std::vector<btGenSimbiconTraj *> mTrajs;
 
 protected:
     int mStateIndex;               // state index

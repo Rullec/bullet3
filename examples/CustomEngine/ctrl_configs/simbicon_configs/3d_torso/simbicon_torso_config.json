@@ -7,78 +7,115 @@
         "next_state_id": 0,
         "time": 1,
         "transition_on_foot_contact": true,
-        "Swing_Hip": {
-            "rotation_axis": [
-                1,
-                0,
-                0
-            ],
-            "feedback": {
-                "feedback_projection_axis": [
-                    0,
-                    0,
-                    1
-                ],
-                "cd": -0.5,
-                "cv": -0.2
+        "trajectories": [
+            {
+                "joint": "SWING_Leg",
+                "base_trajs": [
+                    {
+                        "rotation_axis": [
+                            1,
+                            0,
+                            0
+                        ],
+                        "feedback": {
+                            "feedback_projection_axis": [
+                                0,
+                                0,
+                                1
+                            ],
+                            "cd": -0.5,
+                            "cv": -0.2
+                        },
+                        "time_knots": [
+                            0,
+                            0.25,
+                            0.75,
+                            1.0
+                        ],
+                        "value_knots": [
+                            -0.04,
+                            -0.45,
+                            -0.5,
+                            0.1
+                        ]
+                    },
+                    {
+                        "rotation_axis": [
+                            0,
+                            0,
+                            1
+                        ],
+                        "feedback": {
+                            "feedback_projection_axis": [
+                                1,
+                                0,
+                                0
+                            ],
+                            "cd": 0.5,
+                            "cv": 0.2
+                        },
+                        "time_knots": [
+                            0,
+                            0.5,
+                            1
+                        ],
+                        "value_knots": [
+                            0,
+                            0,
+                            0
+                        ]
+                    }
+                ]
             },
-            "base_trajectory": {
-                "time_knots": [
-                    0,
-                    0.25,
-                    0.75,
-                    1.0
-                ],
-                "value_knots": [
-                    -0.04,
-                    -0.45,
-                    -0.5,
-                    0.1
+            {
+                "joint": "SWING_Foot",
+                "base_trajs": [
+                    {
+                        "rotation_axis": [
+                            1,
+                            0,
+                            0
+                        ],
+                        "time_knots": [
+                            0.01,
+                            0.21,
+                            0.61,
+                            0.75,
+                            1.0
+                        ],
+                        "value_knots": [
+                            0.075,
+                            0.83,
+                            1.22,
+                            0.05,
+                            0.05
+                        ]
+                    }
+                ]
+            },
+            {
+                "joint": "STANCE_Foot",
+                "base_trajs": [
+                    {
+                        "rotation_axis": [
+                            1,
+                            0,
+                            0
+                        ],
+                        "time_knots": [
+                            0.00,
+                            0.75,
+                            1.0
+                        ],
+                        "value_knots": [
+                            -0.05,
+                            -0.05,
+                            -0.10
+                        ]
+                    }
                 ]
             }
-        },
-        "SWING_Knee": {
-            "rotation_axis": [
-                1,
-                0,
-                0
-            ],
-            "base_trajectory": {
-                "time_knots": [
-                    0.01,
-                    0.21,
-                    0.61,
-                    0.75,
-                    1.0
-                ],
-                "value_knots": [
-                    0.075,
-                    0.83,
-                    1.22,
-                    0.05,
-                    0.05
-                ]
-            }
-        },
-        "STANCE_Knee": {
-            "rotation_axis": [
-                1,
-                0,
-                0
-            ],
-            "base_trajectory": {
-                "time_knots": [
-                    0.00,
-                    0.75,
-                    1.0
-                ],
-                "value_knots": [
-                    -0.05,
-                    -0.05,
-                    -0.10
-                ]
-            }
-        }
+        ]
     },
     "init_stance": "left_stance",
     "init_state": 0,

@@ -15,7 +15,7 @@ btGenSimbiconControllerBase::btGenSimbiconControllerBase(
     mPDController = new btGenPDController(mWorld);
     mRefTrajModel = nullptr;
     mStates.clear();
-    mStateIdx = -1;
+    mStateIndex = -1;
     mStance = LEFT_STANCE;
     mRootId = -1;
     mStanceFoot = mSwingFoot = nullptr;
@@ -73,9 +73,9 @@ void btGenSimbiconControllerBase::Init(cRobotModelDynamics *model,
     InitStartPose(root);
 
     // 4. create start state
-    mStateIdx = btJsonUtil::ParseAsInt("init_state", root);
-    BTGEN_ASSERT(mStateIdx < mStates.size());
-    TransiteToState(mStateIdx);
+    mStateIndex = btJsonUtil::ParseAsInt("init_state", root);
+    BTGEN_ASSERT(mStateIndex < mStates.size());
+    TransiteToState(mStateIndex);
 
     // 5. create start stance
     std::string init_stance_str =
@@ -101,24 +101,108 @@ void btGenSimbiconControllerBase::Update(double dt)
 {
     // 1. caluclate the contorl torques
     tEigenArr<btGenPDForce> forces(0);
-    ComputeTorques(forces);
+    ComputeTorques(dt, forces);
 
     // 2. apply the control torques
     ApplyTorques(forces);
 }
-void btGenSimbiconControllerBase::Reset() {}
-void btGenSimbiconControllerBase::UpdateDandV() {}
-void btGenSimbiconControllerBase::GetTargetPose() {}
-void btGenSimbiconControllerBase::ComputeTorques(
-    tEigenArr<btGenPDForce> &forces)
+void btGenSimbiconControllerBase::Reset() { BTGEN_ASSERT(false); }
+
+/**
+ * \brief           calculate the vector d and v in character frame
+*/
+void btGenSimbiconControllerBase::UpdateDandV()
 {
+    // 1. d = com - stance_foot
+    tVector3d stance_foot =
+                  mModel->GetLinkById(mStanceFoot->GetId())->GetWorldPos(),
+              com_pos = this->mModel->GetCoMPosition();
+    mD = com_pos - stance_foot;
+    std::cout << "[debug] world D = " << mD.transpose() << std::endl;
+    // 2. v = com_vel
+    mV = mModel->GetComVelocity();
+    std::cout << "[debug] world V = " << mV.transpose() << std::endl;
+
+    // 3. get charcter frame, convert the vector from world frame to char frame
+    double heading = mModel->GetHeading();
+    std::cout << "[debug] heading = " << heading << std::endl;
+    tMatrix3d char_to_world =
+        btMathUtil::AxisAngleToRotmat(
+            tVector(0, 1, 0, 0) *
+            heading) // rotation a vector in char frame to world frame
+            .block(0, 0, 3, 3);
+    mD = char_to_world.transpose() * mD;
+    mV = char_to_world.transpose() * mV;
+    std::cout << "[debug] char D = " << mD.transpose() << std::endl;
+    std::cout << "[debug] char V = " << mV.transpose() << std::endl;
+}
+void btGenSimbiconControllerBase::GetTargetPose() {}
+
+/**
+ * \brief           compute the simbicon control torques on each joint
+*/
+void btGenSimbiconControllerBase::ComputeTorques(
+    double dt, tEigenArr<btGenPDForce> &forces)
+{
+    forces.clear();
+
+    // 1. update d and v in character frame
+    UpdateDandV();
+
+    // 2. compute the target pose
+    int dof = mModel->GetNumOfFreedom();
+    tVectorXd tar_pose = tVectorXd::Zero(dof), tar_vel = tVectorXd::Zero(dof);
+    btGenSimbiconState *cur_state = mStates[mStateIndex];
+    for (int i = 0; i < cur_state->GetTrajectoryCount(); i++)
+    {
+        auto cur_traj = cur_state->mTrajs[i];
+        int joint_idx = cur_traj->getJointIndex(mStance);
+        auto cur_joint = dynamic_cast<Joint *>(mModel->GetJointById(joint_idx));
+        tQuaternion new_orient = cur_traj->evaluateTrajectory(
+            this, cur_joint, mStance, mPhi, mD, mV);
+
+        switch (cur_joint->GetJointType())
+        {
+        case JointType::SPHERICAL_JOINT:
+        {
+            BTGEN_ASSERT(false);
+            break;
+        }
+        case JointType::REVOLUTE_JOINT:
+        {
+            BTGEN_ASSERT(false);
+            break;
+        }
+        default:
+            BTGEN_ASSERT(false);
+            break;
+        }
+    }
+    // 3. compute the explicit PD force on eacj joint
+    mPDController->SetPDTargetq(tar_pose);
+    mPDController->SetPDTargetqdot(tar_vel);
+
+    mPDController->CalculateControlForces(dt, forces);
+    // 4. compute hip torques
+    ComputeHipTorques(forces);
+    // done
 }
 double btGenSimbiconControllerBase::GetStanceFootWeightRatio()
 {
     BTGEN_ASSERT(false);
     return -1;
 }
-void btGenSimbiconControllerBase::ComputeHipTorques() {}
+
+/**
+ * \brief               Compute control torques on hips (stance hip and swing hip)
+ * \param forces        ref 
+*/
+void btGenSimbiconControllerBase::ComputeHipTorques(
+    tEigenArr<btGenPDForce> &forces)
+{
+    BTGEN_ASSERT(false);
+}
+
 void btGenSimbiconControllerBase::AdvanceInTime() {}
 
 /**
@@ -135,7 +219,7 @@ void btGenSimbiconControllerBase::InitStates(const Json::Value &conf)
         std::string state_str = STATE_BASE_STR + std::to_string(i);
         const Json::Value &state_json =
             btJsonUtil::ParseAsValue(state_str, conf);
-        auto state = new btGenSimbiconState(state_json, i);
+        auto state = new btGenSimbiconState(state_json, i, mModel);
         mStates.push_back(state);
     }
 }
@@ -197,6 +281,8 @@ void btGenSimbiconControllerBase::ApplyTorques(
 void btGenSimbiconControllerBase::TransiteToState(int state)
 {
     SetFSMStateTo(state);
+    SetStance(mStates[this->mStateIndex]->GetStateStance(mStance));
+    mPhi = 0;
 }
 
 /**
@@ -205,8 +291,8 @@ void btGenSimbiconControllerBase::TransiteToState(int state)
 void btGenSimbiconControllerBase::SetFSMStateTo(int state_idx)
 {
     BTGEN_ASSERT(state_idx >= 0 && state_idx < mStates.size());
-    mStateIdx = state_idx;
-    SetStance(mStates[mStateIdx]->GetStateStance(mStance));
+    mStateIndex = state_idx;
+    SetStance(mStates[mStateIndex]->GetStateStance(mStance));
 }
 
 /**
