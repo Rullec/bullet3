@@ -268,8 +268,8 @@ void btGenSimbiconControllerBase::ComputeHipTorques(
         auto joint = mModel->GetJointById(i);
         if (joint->GetParentId() == mModel->GetRoot()->GetId())
         {
-            std::cout << "[debug] joint " << joint->GetName()
-                      << "'s parent is root\n";
+            // std::cout << "[debug] joint " << joint->GetName()
+            //           << "'s parent is root\n";
             root_makeup_torque -= forces[i].mForce;
         }
     }
@@ -302,7 +302,7 @@ void btGenSimbiconControllerBase::ComputeHipTorques(
               << std::endl;
     std::cout << "[log] final stance hip force = "
               << stancehip_force.transpose() << std::endl;
-    std::cout << "root force = " << forces[mRootId].mForce.transpose()
+    std::cout << "[debug] joint root force = " << forces[mRootId].mForce.transpose()
               << std::endl;
 
     {
@@ -315,8 +315,8 @@ void btGenSimbiconControllerBase::ComputeHipTorques(
                 root_force_affected += -forces[i].mForce;
             }
         }
-        std::cout << "root affected force = " << root_force_affected.transpose()
-                  << std::endl;
+        // std::cout << "root affected force = " << root_force_affected.transpose()
+        //           << std::endl;
     }
 }
 
@@ -409,6 +409,8 @@ void btGenSimbiconControllerBase::ApplyTorques(
     {
         if (x.mJoint->GetIsRootJoint() == false)
         {
+            std::cout << "[debug] joint " << x.mJoint->GetName()
+                      << " force = " << x.mForce.transpose() << std::endl;
             mModel->ApplyJointTorque(x.mJoint->GetId(), x.mForce);
         }
     }
