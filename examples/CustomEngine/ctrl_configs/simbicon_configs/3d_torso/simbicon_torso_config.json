@@ -4,6 +4,9 @@
     "draw_target_pose": true,
     "num_of_states": 1,
     "state_0": {
+        "next_state_id": 0,
+        "time": 1,
+        "transition_on_foot_contact": true,
         "Swing_Hip": {
             "rotation_axis": [
                 1,
