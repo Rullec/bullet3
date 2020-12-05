@@ -36,7 +36,6 @@ BaseTrajectory::BaseTrajectory(const Json::Value &conf)
     {
         mBalanceFeedback = nullptr;
     }
-    mLeftStanceIndex = mRightStanceIndex = -1;
 }
 
 BaseTrajectory::~BaseTrajectory() { delete mBalanceFeedback; }
@@ -64,49 +63,48 @@ btGenSimbiconTraj::btGenSimbiconTraj(const Json::Value &conf,
     {
         auto new_base = new BaseTrajectory(base_trajs[i]);
 
-        // resolve the joint id
-        {
-            std::string SWING_STR = "SWING_", STANCE_STR = "STANCE_";
-            std::string base_joint_name = "";
-            if (mJointName.find(SWING_STR) != -1)
-                base_joint_name = mJointName.substr(SWING_STR.size());
-            else if (mJointName.find(STANCE_STR) != -1)
-                base_joint_name = mJointName.substr(STANCE_STR.size());
-            else
-                BTGEN_ASSERT(false);
-
-            std::string left_joint_name = "Left" + base_joint_name,
-                        right_joint_name = "Right" + base_joint_name;
-
-            auto left_joint = model->GetLink(left_joint_name),
-                 right_joint = model->GetLink(right_joint_name);
-            std::cout << "[debug] left name = " << left_joint_name
-                      << " id = " << left_joint->GetId() << std::endl;
-            std::cout << "[debug] right name = " << right_joint_name
-                      << " id = " << right_joint->GetId() << std::endl;
-            BTGEN_ASSERT(left_joint != nullptr);
-            BTGEN_ASSERT(right_joint != nullptr);
-            if (mJointName.find(SWING_STR) != -1)
-            {
-                // swing joint
-                new_base->mLeftStanceIndex = right_joint->GetId();
-                new_base->mRightStanceIndex = left_joint->GetId();
-            }
-            else if (mJointName.find(STANCE_STR) != -1)
-            {
-                new_base->mRightStanceIndex = right_joint->GetId();
-                new_base->mLeftStanceIndex = left_joint->GetId();
-            }
-            else
-            {
-                BTGEN_ASSERT(false);
-            }
-            std::cout << "left stance index = " << new_base->mLeftStanceIndex
-                      << " right stance index = " << new_base->mRightStanceIndex
-                      << std::endl;
-        }
-
         mBaseTrajs.push_back(new_base);
+    }
+
+    // resolve the joint id
+    {
+        std::string SWING_STR = "SWING_", STANCE_STR = "STANCE_";
+        std::string base_joint_name = "";
+        if (mJointName.find(SWING_STR) != -1)
+            base_joint_name = mJointName.substr(SWING_STR.size());
+        else if (mJointName.find(STANCE_STR) != -1)
+            base_joint_name = mJointName.substr(STANCE_STR.size());
+        else
+            BTGEN_ASSERT(false);
+
+        std::string left_joint_name = "Left" + base_joint_name,
+                    right_joint_name = "Right" + base_joint_name;
+
+        auto left_joint = model->GetLink(left_joint_name),
+             right_joint = model->GetLink(right_joint_name);
+        std::cout << "[debug] left name = " << left_joint_name
+                  << " id = " << left_joint->GetId() << std::endl;
+        std::cout << "[debug] right name = " << right_joint_name
+                  << " id = " << right_joint->GetId() << std::endl;
+        BTGEN_ASSERT(left_joint != nullptr);
+        BTGEN_ASSERT(right_joint != nullptr);
+        if (mJointName.find(SWING_STR) != -1)
+        {
+            // swing joint
+            mLeftStanceIndex = right_joint->GetId();
+            mRightStanceIndex = left_joint->GetId();
+        }
+        else if (mJointName.find(STANCE_STR) != -1)
+        {
+            mRightStanceIndex = right_joint->GetId();
+            mLeftStanceIndex = left_joint->GetId();
+        }
+        else
+        {
+            BTGEN_ASSERT(false);
+        }
+        std::cout << "left stance index = " << mLeftStanceIndex
+                  << " right stance index = " << mRightStanceIndex << std::endl;
     }
 }
 
@@ -120,8 +118,12 @@ btGenSimbiconTraj::~btGenSimbiconTraj()
 */
 int btGenSimbiconTraj::getJointIndex(int stance)
 {
-    BTGEN_ASSERT(false);
-    return -1;
+    if (stance == LEFT_STANCE)
+        return mLeftStanceIndex;
+    else if (stance == RIGHT_STANCE)
+        return mRightStanceIndex;
+    else
+        BTGEN_ASSERT(false);
 }
 
 /**

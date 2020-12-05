@@ -31,7 +31,7 @@ struct BaseTrajectory
     tVector3d mRotationAxis;
     tVectorXd mTimeKnots, mValueKnots;
     tFeedBack *mBalanceFeedback;
-    int mLeftStanceIndex, mRightStanceIndex;
+    
 };
 
 /**
@@ -50,6 +50,6 @@ public:
                                    const tVector3d &v) const;
 protected:
     std::string mJointName;
-
+    int mLeftStanceIndex, mRightStanceIndex;
     std::vector<BaseTrajectory *> mBaseTrajs;
 };
