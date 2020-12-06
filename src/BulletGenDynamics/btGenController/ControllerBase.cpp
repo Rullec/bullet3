@@ -10,6 +10,7 @@ btGenControllerBase::btGenControllerBase(ebtGenControllerType type,
     mBulletGUIHelper = nullptr;
     mDrawFrame.clear();
     mDrawPointsList.clear();
+    mDrawLines.clear();
 }
 
 btGenControllerBase::~btGenControllerBase()
@@ -146,4 +147,42 @@ btCollisionObject *btGenControllerBase::CreateLine(double length, double radius)
     obj->setCollisionFlags(0);
     mWorld->GetInternalWorld()->addCollisionObject(obj, 0, 0);
     return obj;
+}
+
+/**
+ * \brief               Draw a line
+*/
+void btGenControllerBase::DrawLine(const tVector3d &st, const tVector3d &ed)
+{
+    tVector3d dir = (ed - st).normalized();
+    double length = (ed - st).norm();
+    tVector3d pos = (ed + st) / 2;
+    btCollisionObject *obj = CreateLine(length, 0.01);
+    mDrawLines.push_back(obj);
+    // cur pos : (0, 0, 0), cur dir : (0, 1, 0)
+    // target pose: (ed + st) / 2, target dir: (ed - st).noramlzied
+    tMatrix rot_mat = btMathUtil::DirToRotMat(btMathUtil::Expand(dir, 0),
+                                              tVector(0, 1, 0, 0));
+    rot_mat.block(0, 3, 3, 1) = pos;
+    obj->setWorldTransform(btBulletUtil::tMatrixTobtTransform(rot_mat));
+}
+
+void btGenControllerBase::ClearLines()
+{
+    if (mBulletGUIHelper == nullptr)
+        return;
+    auto inter_world = mWorld->GetInternalWorld();
+
+    for (auto &pt : this->mDrawLines)
+    {
+        // inter_world->getCollisionObjectArray().remove(pt);
+        delete pt->getCollisionShape();
+        mWorld->GetInternalWorld()->removeCollisionObject(pt);
+        mBulletGUIHelper->removeGraphicsInstance(pt->getUserIndex());
+
+        delete pt;
+    }
+
+    std::cout << "[debug] clear lines " << mDrawLines.size() << std::endl;
+    mDrawLines.clear();
 }

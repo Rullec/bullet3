@@ -5,6 +5,7 @@
 #include "BulletGenDynamics/btGenController/SimbiconController/SimbiconState.h"
 #include "BulletGenDynamics/btGenModel/Joint.h"
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
+#include "BulletGenDynamics/btGenSolver/ContactSolver.h"
 #include "BulletGenDynamics/btGenUtil/JsonUtil.h"
 // #define APPLY_ROOT_TORQUE
 
@@ -108,6 +109,7 @@ void btGenSimbiconControllerBase::Init(cRobotModelDynamics *model,
 */
 void btGenSimbiconControllerBase::Update(double dt)
 {
+    ClearLines();
     // 1. caluclate the contorl torques
     tEigenArr<btGenPDForce> forces(0);
     ComputeTorques(dt, forces);
@@ -117,6 +119,20 @@ void btGenSimbiconControllerBase::Update(double dt)
 
     // 3. update controller
     AdvanceInTime(dt);
+
+    // 4. draw contact points
+    {
+        // auto mana = mWorld->GetContactManager();
+        // for (auto &f : mWorld->GetContactForces())
+        // {
+        //     if (f->mPassiveObj == mWorld->GetGround())
+        //     {
+        //         tVector3d st = f->mWorldPos.segment(0, 3);
+        //         tVector3d ed = st + f->mForce.segment(0, 3) / 100;
+        //         DrawLine(st, ed);
+        //     }
+        // }
+    }
 }
 void btGenSimbiconControllerBase::Reset() { BTGEN_ASSERT(false); }
 
@@ -420,6 +436,13 @@ void btGenSimbiconControllerBase::ApplyTorques(
             std::cout << "[debug] joint " << x.mJoint->GetName()
                       << " force = " << x.mForce.transpose() << std::endl;
             mModel->ApplyJointTorque(x.mJoint->GetId(), x.mForce);
+
+            // // draw control forces
+            // {
+            //     tVector3d st = x.mJoint->GetWorldPos();
+            //     tVector3d ed = x.mForce.segment(0, 3) / 100;
+            //     DrawLine(st, ed);
+            // }
         }
     }
 }

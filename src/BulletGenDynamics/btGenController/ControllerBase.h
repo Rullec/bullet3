@@ -42,10 +42,14 @@ protected:
     std::vector<btCollisionObject *>
         mDrawFrame; // draw a reference 3d frame (x y z), vector = three axes
 
+    std::vector<btCollisionObject *> mDrawLines; // draw contact force lines list
+
     // methods
     void DrawPoint(const tVector3d &pos, double r = 0.05);
     void DrawFrame(const tMatrix &trans);
+    void DrawLine(const tVector3d &st, const tVector3d &ed);
     void ClearDrawPoints();
+    void ClearLines();
 
 private:
     btCollisionObject *CreateLine(double length, double radius);
