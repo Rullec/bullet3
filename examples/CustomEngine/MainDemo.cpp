@@ -326,12 +326,14 @@ void CustomEngineMainDemo::Test()
     //               << joint->GetJointType() << std::endl;
     // }
     // exit(0);
+    mb->TestmTqq();
+    mb->TestmTqqq();
+    mb->TestmWq();
+    mb->TestmWqq();
+    mb->TestmWqqq();
+
     mb->TestdMassMatrixdq();
     mb->TestSecondJacobian();
-    mb->TestThirdJacobian();
-    mb->TestdJdotdq();
-    mb->TestThirdJacobian();
-    mb->TestdJdotdq();
     mb->TestThirdJacobian();
     mb->TestdJdotdq();
     mb->TestJacobian();

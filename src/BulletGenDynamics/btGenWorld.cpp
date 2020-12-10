@@ -73,7 +73,7 @@ btGeneralizeWorld::~btGeneralizeWorld()
     delete m_collisionConfiguration;
     mManifolds.clear();
     for (auto &x : mCollisionShapeArray)
-        delete x;
+        delete x.second;
     mCollisionShapeArray.clear();
 
     delete mLCPContactSolver;
@@ -203,7 +203,7 @@ void btGeneralizeWorld::AddGround(double height)
     {
         btStaticPlaneShape *plane =
             new btStaticPlaneShape(btVector3(0, 1, 0), height);
-        mCollisionShapeArray.push_back(plane);
+        mCollisionShapeArray.push_back(std::make_pair(1, plane));
         btTransform trans;
         trans.setIdentity();
         trans.setOrigin(btVector3(0, 0, 0));
@@ -234,20 +234,18 @@ void btGeneralizeWorld::AddObj(int n, const std::string &obj_type,
     btCollisionShape *colShape = nullptr;
     if (obj_type == "ball")
     {
-        colShape = new btSphereShape(btScalar(0.5));
-        btCompoundShape *compunde = new btCompoundShape();
-        compunde->addChildShape(btTransform::getIdentity(), colShape);
-        mCollisionShapeArray.push_back(compunde);
+        colShape = GetSphereCollisionShape(0.5);
+        mCollisionShapeArray.push_back(std::make_pair(1, colShape));
     }
     else if (obj_type == "cube")
     {
-        colShape = new btBoxShape(btVector3(0.5, 0.5, 0.5));
-        mCollisionShapeArray.push_back(colShape);
+        colShape = GetBoxCollisionShape(tVector3d(0.5, 0.5, 0.5));
+        mCollisionShapeArray.push_back(std::make_pair(1, colShape));
     }
     else if (obj_type == "stick")
     {
-        colShape = new btBoxShape(btVector3(0.001, 0.1, 2));
-        mCollisionShapeArray.push_back(colShape);
+        colShape = GetBoxCollisionShape(tVector3d(0.001, 0.1, 2));
+        mCollisionShapeArray.push_back(std::make_pair(1, colShape));
     }
     else
     {
@@ -503,8 +501,8 @@ void btGeneralizeWorld::createRigidBody(double mass,
             // recreate a feasible BIG cube
             mass = 0;
             double cube_size = 100;
-            shape = createBoxShape(
-                btVector3(cube_size / 2, cube_size / 2, cube_size / 2));
+            shape = GetBoxCollisionShape(
+                tVector3d(cube_size / 2, cube_size / 2, cube_size / 2));
             tMatrix rot = btMathUtil::DirToRotMat(
                 btBulletUtil::btVectorTotVector0(normal), tVector(0, 1, 0, 0));
             btVector3 translate = normal * (constant - cube_size / 2);
@@ -1028,12 +1026,12 @@ void btGeneralizeWorld::ClearForce()
     }
 }
 
-btBoxShape *btGeneralizeWorld::createBoxShape(const btVector3 &halfExtents)
-{
-    btBoxShape *box = new btBoxShape(halfExtents);
-    mCollisionShapeArray.push_back(box);
-    return box;
-}
+// btBoxShape *btGeneralizeWorld::createBoxShape(const btVector3 &halfExtents)
+// {
+//     btBoxShape *box = new btBoxShape(halfExtents);
+//     mCollisionShapeArray.push_back(std::make box);
+//     return box;
+// }
 
 void btGeneralizeWorld::PushStatePreCollision()
 {
@@ -1365,6 +1363,83 @@ void btGeneralizeWorld::AddController(const std::string &path)
     m_dispatcher->SetController(mCtrl);
 }
 
+btCollisionShape *btGeneralizeWorld::GetSphereCollisionShape(double radius)
+{
+    for (int i = 0; i < mCollisionShapeArray.size(); i++)
+    {
+        if (SPHERE_SHAPE_PROXYTYPE ==
+            mCollisionShapeArray[i].second->getShapeType())
+        {
+            if (std::fabs(dynamic_cast<btSphereShape *>(
+                              mCollisionShapeArray[i].second)
+                              ->getRadius() -
+                          radius) < 1e-10)
+            {
+                mCollisionShapeArray[i].first += 1; // reference count
+                return mCollisionShapeArray[i].second;
+            }
+        }
+    }
+
+    // hasn't found, create a new one
+    mCollisionShapeArray.push_back(
+        std::make_pair<int, btCollisionShape *>(1, new btSphereShape(radius)));
+    return mCollisionShapeArray.back().second;
+}
+
+btCollisionShape *
+btGeneralizeWorld::GetBoxCollisionShape(const tVector3d &half_extends)
+{
+    for (int i = 0; i < mCollisionShapeArray.size(); i++)
+    {
+        if (BOX_SHAPE_PROXYTYPE ==
+            mCollisionShapeArray[i].second->getShapeType())
+        {
+            auto cur_box =
+                dynamic_cast<btBoxShape *>(mCollisionShapeArray[i].second);
+            tVector3d old_dimens = btBulletUtil::btVectorTotVector0(
+                                       cur_box->getHalfExtentsWithoutMargin())
+                                       .segment(0, 3);
+
+            if ((old_dimens - half_extends).norm() < 1e-10)
+            {
+                mCollisionShapeArray[i].first += 1; // reference count
+                return mCollisionShapeArray[i].second;
+            }
+        }
+    }
+
+    // hasn't found, create a new one
+    mCollisionShapeArray.push_back(std::make_pair(
+        1, new btBoxShape(
+               btVector3(half_extends[0], half_extends[1], half_extends[2]))));
+    return mCollisionShapeArray.back().second;
+}
+btCollisionShape *btGeneralizeWorld::GetCapsuleCollisionShape(double radius,
+                                                              double height)
+{
+    for (int i = 0; i < mCollisionShapeArray.size(); i++)
+    {
+        if (CAPSULE_SHAPE_PROXYTYPE ==
+            mCollisionShapeArray[i].second->getShapeType())
+        {
+            auto cur_capsule =
+                dynamic_cast<btCapsuleShape *>(mCollisionShapeArray[i].second);
+
+            if (std::fabs(radius - cur_capsule->getRadius()) < 1e-10 &&
+                std::fabs(height - cur_capsule->getHalfHeight() * 2) < 1e-10)
+            {
+                mCollisionShapeArray[i].first += 1; // reference count
+                return mCollisionShapeArray[i].second;
+            }
+        }
+    }
+
+    // hasn't found, create a new one
+    mCollisionShapeArray.push_back(std::make_pair<int, btCollisionShape *>(
+        1, new btCapsuleShape(radius, height)));
+    return mCollisionShapeArray.back().second;
+}
 // /**
 //  * \brief			Initialize the guide trajectory from target file
 // */

@@ -56,15 +56,15 @@ cRobotModelDynamics::~cRobotModelDynamics()
     // 	delete x;
     // }
     // mColShapes.clear();
-    // for (auto &x : mColliders)
-    // {
-    //     if (x->getCollisionShape() != nullptr)
-    //     {
-    //         delete x->getCollisionShape();
-    //         x->setCollisionShape(nullptr);
-    //     }
-    //     delete x;
-    // }
+    for (auto &x : mColliders)
+    {
+        // if (x->getCollisionShape() != nullptr)
+        // {
+        //     // delete x->getCollisionShape();
+        //     // x->setCollisionShape(nullptr);
+        // }
+        delete x;
+    }
     mColliders.clear();
 
     for (auto &x : mStateStack)
@@ -121,22 +121,23 @@ void cRobotModelDynamics::InitSimVars(btGeneralizeWorld *world, bool zero_pose,
         switch (shape_type)
         {
         case ShapeType::SPHERE_SHAPE:
-            shape = new btSphereShape(btScalar(mesh_scale[0]) / 2);
+
+            shape = world->GetSphereCollisionShape(btScalar(mesh_scale[0]) / 2);
             // std::cout << "[btRobot] sphere radius = " <<
             // btScalar(mesh_scale[0]) / 2 << std::endl;
             break;
         case ShapeType::BOX_SHAPE:
-            shape = new btBoxShape(btBulletUtil::tVectorTobtVector(
-                                       btMathUtil::Expand(mesh_scale, 0)) /
-                                   2);
+            shape = world->GetBoxCollisionShape(
+                tVector3d(mesh_scale[0], mesh_scale[1], mesh_scale[2]) / 2);
             break;
         case ShapeType::CAPSULE_SHAPE:
         {
             double radius = 0.5 * mesh_scale[0];
             double height = mesh_scale[1];
-            shape = new btCapsuleShape(radius, height);
+
+            shape = world->GetCapsuleCollisionShape(radius, height);
         }
-        break;
+
         default:
             std::cout << "unsupported type in init sim vars\n";
             exit(0);
@@ -1876,6 +1877,8 @@ void cRobotModelDynamics::TestLinkdJdotdq(int id)
         {
             printf("[error] link %d djvdotdq%d diff is too big %.10f\n", id,
                    total_i, djvdotdq_diff_norm);
+            std::cout << "num = \n" << djvdotdq_num << std::endl;
+            std::cout << "ana = \n" << dJkvdotdq[total_i] << std::endl;
             exit(0);
         }
         if (djwdotdq_diff_norm > 1e-5)
@@ -2271,6 +2274,8 @@ void cRobotModelDynamics::ConvertGenForceToCartesianForceTorque(
 
         // we assume that the torque jacobian has only some critical columns to be nonzeros
         tMatrixXd torque_jacobian = child_link_jw - parent_link_jw;
+        // std::cout << "child jw = \n " << child_link_jw << std::endl;
+        // std::cout << "parent jw = \n " << parent_link_jw << std::endl;
         // std::cout << "for joint " << i << " torque jacobian = \n " << torque_jacobian.transpose() << std::endl;
         tMatrixXd nonzero_jacobian = torque_jacobian.block(0, offset, 3, size);
         {
@@ -2292,6 +2297,27 @@ void cRobotModelDynamics::ConvertGenForceToCartesianForceTorque(
             double value =
                 gen_force_joint[0] / global_axis.dot(nonzero_jacobian.col(0));
             torque = value * global_axis;
+        }
+        else if (size == 2)
+        {
+            // for universal joint
+            // std::cout << "torque jac = \n" << torque_jacobian << std::endl;
+            // std::cout << "non zero jac = \n" << nonzero_jacobian << std::endl;
+            // exit(0);
+            tVector3d axis0 = joint->GetWorldOrientation() *
+                              joint->GetFreedoms(0)->axis,
+                      axis1 = joint->GetWorldOrientation() *
+                              joint->GetFreedoms(1)->axis;
+            tMatrixXd cartesian_2_forces_dirs = tMatrixXd::Zero(3, 2);
+            cartesian_2_forces_dirs.col(0) = axis0;
+            cartesian_2_forces_dirs.col(1) = axis1;
+            tVectorXd cartesian_2_forces_value =
+                (nonzero_jacobian.transpose() * cartesian_2_forces_dirs)
+                    .inverse() *
+                gen_force_joint;
+            torque = cartesian_2_forces_dirs * cartesian_2_forces_value;
+            // std::cout << "cartesian torque = " << torque.transpose()
+            //           << std::endl;
         }
         else
         {

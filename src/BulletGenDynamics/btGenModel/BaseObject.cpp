@@ -2,6 +2,25 @@
 #include "EulerAngelRotationMatrix.h"
 #include "tools.h"
 #include <iostream>
+JointType BuildJointType(std::string name)
+{
+    for (int i = 0; i < JointType::TOTAL_JOINT_TYPE; i++)
+    {
+        if (joint_type_keys[i] == name)
+            return static_cast<JointType>(i);
+    }
+    return JointType::INVALID_JOINT;
+}
+
+ShapeType BuildShapeType(std::string name)
+{
+    for (int i = 0; i < ShapeType::TOTAL_SHAPE_TYPE; i++)
+    {
+        if (shape_type_keys[i] == name)
+            return static_cast<ShapeType>(i);
+    }
+    return ShapeType::INVALID_SHAPE_TYPE;
+}
 
 BaseObjectParams::BaseObjectParams()
 {

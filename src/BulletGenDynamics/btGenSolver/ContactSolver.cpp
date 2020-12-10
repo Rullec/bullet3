@@ -79,6 +79,14 @@ btGenContactSolver::btGenContactSolver(const std::string &config_path,
         btJsonUtil::ParseAsBool("enable_multibody_self_collision", config);
     mEnableConvertMatTest =
         btJsonUtil::ParseAsBool("enable_convert_mat_test", config);
+    mEnableContactPenetrationResolve =
+        btJsonUtil::ParseAsBool("enable_contact_penetration_resolve", config);
+    mEnableJointLimitPenetrationResolve = btJsonUtil::ParseAsBool(
+        "enable_joint_limit_penetration_resolve", config);
+    mContactErp =
+        btJsonUtil::ParseAsDouble("contact_penetration_resolve_erp", config);
+    mJointLimitErp =
+        btJsonUtil::ParseAsDouble("contact_penetration_resolve_erp", config);
 
     // lcp related config
     mEnableLCPCalc = btJsonUtil::ParseAsBool("enable_lcp_calculation", config);
@@ -418,6 +426,17 @@ void btGenContactSolver::SolveByLCP()
         line_n.segment(0, 1) =
             normal_vel_convert_result_based_vec.block(i, 0, 1, 1);
 
+        if (mEnableContactPenetrationResolve == true)
+        {
+            double penetration = mContactConstraintData[i]->distance;
+            if (penetration < 0)
+            {
+                // std::cout << "[debug] normal contact point " << i
+                //           << " penetration " << penetration << std::endl;
+                line_n[0] += penetration / cur_dt * mContactErp;
+            }
+        }
+
         // 3.2 add C-related terms and frictional case
         if (mEnableFrictionalLCP)
         {
@@ -445,6 +464,20 @@ void btGenContactSolver::SolveByLCP()
                                                       1, final_shape);
         n[mNumContactPoints * single_size + i] =
             normal_vel_convert_result_based_vec[mNumContactPoints + i];
+
+        if (mEnableJointLimitPenetrationResolve == true)
+        {
+            n[mNumContactPoints * single_size + i] +=
+                mJointLimitConstraintData[i]->violate_value * mJointLimitErp;
+            if (mEnableDebugOutput == true)
+            {
+                std::cout << "[debug] for joint limit cons " << i
+                          << " add violate erp = "
+                          << mJointLimitConstraintData[i]->violate_value *
+                                 mJointLimitErp
+                          << std::endl;
+            }
+        }
     }
     // std::cout << "[lcp] LCP M cond num = " <<
     // cMathUtil::CalcConditionNumber(M) << std::endl; add small values to
@@ -905,6 +938,11 @@ void btGenContactSolver::AddManifold(btPersistentManifold *manifold)
             data->Setup(mNumFrictionDirs);
             data->mbody0GroupId = map_colobjid_to_groupid[data->GetBody0Id()];
             data->mbody1GroupId = map_colobjid_to_groupid[data->GetBody1Id()];
+            if (mEnableDebugOutput == true)
+            {
+                std::cout << "[debug] contact " << j
+                          << " penetration = " << data->distance << std::endl;
+            }
             // std::cout << "data0 vel = " << data->GetVelOnBody0().transpose()
             // << std::endl; std::cout << "data1 vel = " <<
             // data->GetVelOnBody1().transpose() << std::endl;
@@ -996,13 +1034,30 @@ void btGenContactSolver::AddJointLimit()
         for (int dof_id = root_dof_end; dof_id < model->GetNumOfFreedom();
              dof_id++)
         {
+            bool is_violated = false;
+            bool is_upper_bound_violated = false;
+            double boundary = 0;
+            double violate_value = 0;
             // 2.1 if the joint limit is violated
-            if (q[dof_id] >= ub[dof_id] || q[dof_id] <= lb[dof_id])
+            if (q[dof_id] >= ub[dof_id])
             {
-                bool upper_bound_violate = q[dof_id] >= ub[dof_id];
+                is_violated = true;
+                is_upper_bound_violated = true;
+                boundary = ub[dof_id];
+                violate_value = (ub[dof_id] - q[dof_id]) / cur_dt;
+            }
+            else if (q[dof_id] <= lb[dof_id])
+            {
+                is_violated = true;
+                boundary = lb[dof_id];
+                violate_value = (q[dof_id] - lb[dof_id]) / cur_dt; // < 0
+            }
+
+            if (is_violated == true)
+            {
                 mJointLimitConstraintData.push_back(new btGenJointLimitData(
                     mNumContactPoints + mJointLimitConstraintData.size(), model,
-                    dof_id, upper_bound_violate));
+                    dof_id, is_upper_bound_violated, violate_value));
                 mJointLimitConstraintData.back()->dt = cur_dt;
 
                 // 3. add joint limit constraint into the collision group
@@ -1017,8 +1072,11 @@ void btGenContactSolver::AddJointLimit()
                     std::cout << "[joint limit] add limit for dof " << dof_id
                               << " joint "
                               << model->GetJointByDofId(dof_id)->GetName()
-                              << " val = " << q[dof_id]
-                              << ", is upper bound = " << upper_bound_violate
+                              << " val = " << q[dof_id] << " "
+                              << ((is_upper_bound_violated == true) ? ("upper")
+                                                                    : ("lower"))
+                              << " bound " << boundary
+                              << " violate = " << violate_value * cur_dt
                               << std::endl;
                 }
 

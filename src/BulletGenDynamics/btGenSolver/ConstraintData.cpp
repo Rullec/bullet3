@@ -11,13 +11,14 @@ extern btGenCollisionObject *UpcastColObj(const btCollisionObject *col);
 
 btGenJointLimitData::btGenJointLimitData(int constraint_id_,
                                          cRobotModelDynamics *multibody_,
-                                         int dof_id_, bool is_upper_bound_)
+                                         int dof_id_, bool is_upper_bound_,
+                                         double violate_value_)
 {
     this->constraint_id = constraint_id_;
     multibody = multibody_;
     dof_id = dof_id_;
     is_upper_bound = is_upper_bound_;
-
+    violate_value = violate_value_;
     joint_direction = multibody->GetFreedomDirectionWorldFrame(dof_id);
     // if (is_upper_bound) joint_direction *= -1;
 }
@@ -50,7 +51,14 @@ void btGenContactPointData::Init(double dt_, btPersistentManifold *manifold,
     mContactPtOnA = btBulletUtil::btVectorTotVector1(pt.getPositionWorldOnA());
     mContactPtOnB = btBulletUtil::btVectorTotVector1(pt.getPositionWorldOnB());
     distance = pt.getDistance();
-
+    // std::cout << "[debug] viodistance = " << distance << std::endl;
+    // std::cout << "pt A = " << mContactPtOnA.transpose() << std::endl;
+    // std::cout << "pt B = " << mContactPtOnB.transpose() << std::endl;
+    // std::cout << "pt A-B = " << (mContactPtOnA - mContactPtOnB).norm()
+    //           << std::endl;
+    // double penetration = (mContactPtOnA - mContactPtOnB).dot(mNormalPointToA);
+    // std::cout << "penetration = " << penetration << std::endl;
+    // std::cout << "normal to A = " << mNormalPointToA.transpose() << std::endl;
     // judge if it is self collsiion (only for multibody)
     if (eColObjType::RobotCollder == mBodyA->GetType() &&
         eColObjType::RobotCollder == mBodyB->GetType())

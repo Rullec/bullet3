@@ -42,6 +42,9 @@ protected:
     void ControlForceLimitNone(tVector &force,
                                const tVectorXd &local_target_theta,
                                const tVectorXd &local_target_vel) const;
+    void ControlForceUniversal(tVector &force,
+                               const tVectorXd &local_target_theta,
+                               const tVectorXd &local_target_vel) const;
     void ControlForceRevolute(tVector &force,
                               const tVectorXd &local_target_theta,
                               const tVectorXd &local_target_vel) const;

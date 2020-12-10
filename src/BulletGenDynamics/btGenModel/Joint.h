@@ -84,6 +84,7 @@ public:
     void SetDiffWeight(double lim);
     double GetDiffWeight() const;
     tVectorXd GetJointLocalVel() const;
+    tVectorXd GetJointLocalTheta() const;
     // void SetJointVel(const tVector3d &vel_);
     // void SetJointOmega(const tVector3d &omega_);
     // tVector3d GetJointVel() const;
@@ -123,6 +124,7 @@ protected:
 
     // method
     void ComputeLocalTransformThirdDeriveSpherical();
+    // void ComputeLocalTransformThirdDeriveUniversal();
 };
 
 #endif // ROBOT_JOINT_H
