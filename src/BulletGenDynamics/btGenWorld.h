@@ -84,6 +84,9 @@ public:
     eIntegrationScheme GetIntegrationScheme() const;
     static eIntegrationScheme BuildIntegrationScheme(const std::string str);
     static std::string BuildIntegrationSchemeStr(eIntegrationScheme scheme);
+    btCollisionShape *GetSphereCollisionShape(double radius);
+    btCollisionShape *GetBoxCollisionShape(const tVector3d &half_extends);
+    btCollisionShape *GetCapsuleCollisionShape(double radius, double height);
 
 protected:
     btDiscreteDynamicsWorld *mInternalWorld;
@@ -127,14 +130,14 @@ protected:
         mConstraintGenalizedForce; // multibody generalized force for joint limit
     std::vector<btGenConstraintGeneralizedForce *> mContactAwareControlForce;
     btGenContactManager *mContactManager;
-    std::vector<btCollisionShape *> mCollisionShapeArray;
+    std::vector<std::pair<int, btCollisionShape *>> mCollisionShapeArray;
     void createRigidBody(double mass, const btTransform &startTransform,
                          btCollisionShape *shape, const std::string &name,
                          const btVector4 &color = btVector4(1, 0, 0, 1));
     // void createRigidBodyNew(double mass, const btTransform& startTransform,
     // btCollisionShape* shape, const std::string& name, const btVector4& color
     // = btVector4(1, 0, 0, 1));
-    btBoxShape *createBoxShape(const btVector3 &halfExtents);
+    // btBoxShape *createBoxShape(const btVector3 &halfExtents);
 
     // 1. add gravity
     void ApplyGravity();

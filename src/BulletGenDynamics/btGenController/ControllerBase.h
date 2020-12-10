@@ -57,8 +57,8 @@ protected:
 
 private:
     btCollisionObject *CreateLine(double length, double radius);
-    btCollisionShape *GetSphereCollsiionShape(double radius);
-    btCollisionShape *GetCapsuleCollsiionShape(double param1, double param2,
-                                               double param3);
+    // btCollisionShape *GetSphereCollsiionShape(double radius);
+    // btCollisionShape *GetCapsuleCollsiionShape(double param1, double param2,
+    //                                            double param3);
 };
 #endif /*CONTROLLER_BASW_H_*/

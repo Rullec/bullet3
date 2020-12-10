@@ -11,7 +11,8 @@ class RenderStruct;
 
 enum ShapeType
 {
-    SPHERE_SHAPE,
+    INVALID_SHAPE_TYPE = -1,
+    SPHERE_SHAPE = 0,
     BOX_SHAPE,
     CAPSULE_SHAPE,
     CYLINDER,
@@ -20,6 +21,7 @@ enum ShapeType
 
 const std::string shape_type_keys[TOTAL_SHAPE_TYPE] = {"sphere", "box",
                                                        "capsule", "cylinder"};
+ShapeType BuildShapeType(std::string string);
 
 enum eRootFreedomEnum
 {
@@ -53,12 +55,15 @@ enum JointType
     FIXED_NONE_JOINT,
     SPHERICAL_JOINT,
     REVOLUTE_JOINT,
+    UNIVERSAL_JOINT,
     FIXED_JOINT,
     TOTAL_JOINT_TYPE
 };
 const std::string joint_type_keys[TOTAL_JOINT_TYPE] = {
     "none",      "limit_none", "bipedal_none", "fixed_none",
-    "spherical", "revolute",   "fixed"};
+    "spherical", "revolute",   "universal",    "fixed"};
+JointType BuildJointType(std::string name);
+
 struct BaseObjectParams
 {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;

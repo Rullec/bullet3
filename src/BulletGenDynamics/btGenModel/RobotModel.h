@@ -208,6 +208,9 @@ protected:
                               const tVector3d &upper_limit);
     void AddRevoluteJointFreedoms(BaseObject *joint, double lower_limit = -M_PI,
                                   double upper_limit = M_PI);
+    void AddUniversalJointFreedoms(BaseObject *joint, const tVector2d &lb,
+                                   const tVector2d &ub, const tVector3d &axis0,
+                                   const tVector3d &axis1);
     void UpdateFreedomId();
 
     void LoadBaseMesh();
@@ -218,8 +221,8 @@ protected:
 
     void GetMeshRotation(tVector3d &mesh_rotation, tVector3d &direction) const;
 
-    void InitJointTypeMap();
-    void InitShapeMap();
+    // void InitJointTypeMap();
+    // void InitShapeMap();
 
     BaseObject *GetBaseObjectById(int id, int type = JOINT) const;
 
@@ -249,8 +252,8 @@ protected:
     int num_of_valid_joint; // used when load asf, to determine how many lines
                             // should be read in one frame
 
-    static std::map<std::string, int> joint_type_map;
-    static std::map<std::string, int> shape_map;
+    // static std::map<std::string, int> joint_type_map;
+    // static std::map<std::string, int> shape_map;
 
     int deep_mimic_motion_size;
     int model_type;

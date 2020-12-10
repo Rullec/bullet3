@@ -146,6 +146,11 @@ tQuaternion btMathUtil::AxisAngleToQuaternion(const tVector &angvel)
                        norm_angvel[2] * sin_theta_2);
 }
 
+/**
+ * \brief       Convert the axis angle to rotation matrix
+ * 
+ * this should be rewrite by matrix-form Rodrigus formula
+*/
 tMatrix btMathUtil::AxisAngleToRotmat(const tVector &angvel)
 {
     return btMathUtil::RotMat(AxisAngleToQuaternion(angvel));

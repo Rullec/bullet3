@@ -1,5 +1,6 @@
 #include "RobotModel.h"
 #include "BipedalRootJoint.h"
+#include "BulletGenDynamics/btGenUtil/JsonUtil.h"
 #include "FixedRootJoint.h"
 #include "Joint.h"
 #include "LimitRootJoint.h"
@@ -10,10 +11,10 @@
 #include "json/json.h"
 // #include "R
 // #define DAMPING_COEF 0
-std::map<std::string, int> cRobotModel::joint_type_map;
-std::map<std::string, int> cRobotModel::shape_map;
+// std::map<std::string, int> cRobotModel::joint_type_map;
+// std::map<std::string, int> cRobotModel::shape_map;
 
-static const std::string coriolis_info = "coriolis_record.log";
+// static const std::string coriolis_info = "coriolis_record.log";
 // extern std::string gOutputLogPath;
 // cRobotModel::cRobotModel(const char* model_file) : root(nullptr), name(""),
 // num_of_freedom(0), end_link(nullptr), com(0, 0, 0), total_mass(0),
@@ -51,8 +52,8 @@ cRobotModel::cRobotModel()
 }
 void cRobotModel::Init(const char *model_file, double scale, int type)
 {
-    InitJointTypeMap();
-    InitShapeMap();
+    // InitJointTypeMap();
+    // InitShapeMap();
     LoadBaseMesh();
 
     char_file = std::string(model_file);
@@ -339,11 +340,12 @@ void cRobotModel::Load(const char *model_file)
         {
             std::stringstream ss_shape;
             ss_shape << mesh_shape->GetText();
-            auto itr = shape_map.find(ss_shape.str());
-            if (itr != shape_map.end())
+            ShapeType type = BuildShapeType(std::string(mesh_shape->GetText()));
+
+            if (type != ShapeType::INVALID_SHAPE_TYPE)
             {
                 BaseObjectShapeParam param;
-                param.shape_type = itr->second;
+                param.shape_type = type;
                 param.top_scale = 1;
                 param.bottom_scale = 1;
                 links[link_name->Value()]->UpdateShape(param);
@@ -662,6 +664,41 @@ void cRobotModel::AddRevoluteJointFreedoms(BaseObject *joint, double lb,
     f.ub = ub;
 
     joint->AddFreedom(f);
+}
+
+/**
+ * \brief               Add a universal joint's freedoms into the robot model
+ * \param joint         joint pointer
+ * \param lb            lower bound of joint freedom
+ * \param ub            upper bound of joint freedom
+ * \param axis0         the first rotation axis in universal joint
+ * \param axis1         the second rotation axis in universal joint
+*/
+void cRobotModel::AddUniversalJointFreedoms(BaseObject *joint,
+                                            const tVector2d &lb,
+                                            const tVector2d &ub,
+                                            const tVector3d &axis0,
+                                            const tVector3d &axis1)
+{
+    for (int freedom_order = 0; freedom_order < 2; ++freedom_order)
+    {
+        Freedom f;
+        f.id = 0;
+        f.name = joint->GetName();
+        f.type = JointType::UNIVERSAL_JOINT;
+        if (freedom_order == 0)
+            f.axis = axis0;
+        else if (freedom_order == 1)
+            f.axis = axis1;
+        else
+            BTGEN_ASSERT(false);
+
+        f.v = 0;
+        f.lb = lb[freedom_order];
+        f.ub = ub[freedom_order];
+
+        joint->AddFreedom(f);
+    }
 }
 
 void cRobotModel::UpdateFreedomId()
@@ -1055,12 +1092,9 @@ void cRobotModel::LoadJsonModel(const char *file_path, double model_scale)
         double diff_weight = (*itr)["DiffWeight"].asDouble();
 
         std::string type_str = (*itr)["Type"].asString();
-        if (joint_type_map.find(type_str) == joint_type_map.end())
-        {
-            printf("[error] no type called %s\n", type_str.c_str());
-            exit(0);
-        }
-        int joint_type = joint_type_map[type_str];
+
+        int joint_type = BuildJointType(type_str);
+        BTGEN_ASSERT(joint_type != JointType::INVALID_JOINT);
 
         if (param.name == "root_joint")
         {
@@ -1076,7 +1110,9 @@ void cRobotModel::LoadJsonModel(const char *file_path, double model_scale)
         joint->SetJointType(static_cast<JointType>(joint_type));
         static_cast<Joint *>(joint)->SetTorqueLim(torque_lim);
         static_cast<Joint *>(joint)->SetDiffWeight(diff_weight);
-        if (joint_type == SPHERICAL_JOINT)
+        switch (joint_type)
+        {
+        case JointType::SPHERICAL_JOINT:
         {
             tVector3d lower_limit, upper_limit;
             for (int i = 0; i < 3; i++)
@@ -1087,12 +1123,33 @@ void cRobotModel::LoadJsonModel(const char *file_path, double model_scale)
                     (*itr)["LimHigh" + std::to_string(i)].asDouble();
             }
             AddSphericalFreedoms(joint, lower_limit, upper_limit);
+            break;
         }
-        else if (joint_type == REVOLUTE_JOINT)
+        case JointType::REVOLUTE_JOINT:
         {
             double lower_limit = (*itr)["LimLow0"].asDouble(),
                    upper_limit = (*itr)["LimHigh0"].asDouble();
             AddRevoluteJointFreedoms(joint, lower_limit, upper_limit);
+            break;
+        }
+        case JointType::UNIVERSAL_JOINT:
+        {
+            Eigen::Vector2d lb, ub;
+            lb[0] = btJsonUtil::ParseAsDouble("LimLow0", *itr);
+            lb[1] = btJsonUtil::ParseAsDouble("LimLow1", *itr);
+            ub[0] = btJsonUtil::ParseAsDouble("LimHigh0", *itr);
+            ub[1] = btJsonUtil::ParseAsDouble("LimHigh1", *itr);
+            tVectorXd two_axis = btJsonUtil::ReadVectorJson(
+                btJsonUtil::ParseAsValue("Axis", *itr));
+            tVector3d axis0 = two_axis.segment(0, 3),
+                      axis1 = two_axis.segment(3, 3);
+            AddUniversalJointFreedoms(joint, lb, ub, axis0, axis1);
+            break;
+        }
+
+        default:
+            BTGEN_ASSERT(false);
+            break;
         }
     }
     // std::cout << "before add root joint, joint num = " << joint_node.size()
@@ -1128,16 +1185,8 @@ void cRobotModel::LoadJsonModel(const char *file_path, double model_scale)
         mesh_rot.z() = (*itr)["AttachThetaZ"].asFloat();
         col_group = (*itr)["ColGroup"].asInt();
         std::string shape = (*itr)["Shape"].asString();
-        auto shape_itr = shape_map.find(shape);
-        if (shape_itr != shape_map.end())
-        {
-            param.shape_type = shape_itr->second;
-        }
-        else
-        {
-            Printer::Error("shape type error");
-            exit(-1);
-        }
+        param.shape_type = BuildShapeType(shape);
+        BTGEN_ASSERT(param.shape_type != ShapeType::INVALID_SHAPE_TYPE);
 
         float width = (*itr)["Param0"].asFloat() * model_scale;
         float length = (*itr)["Param1"].asFloat() * model_scale;
@@ -1190,8 +1239,8 @@ void cRobotModel::LoadJsonModel(const char *file_path, double model_scale)
                 base_object = link_itr->second;
             }
         }
-        int shape_type = shape_map[(*itr)["Shape"].asString()];
-
+        int shape_type = BuildShapeType((*itr)["Shape"].asString());
+        BTGEN_ASSERT(shape_type != ShapeType::INVALID_SHAPE_TYPE);
         BaseObjectShapeParam shape_param;
         shape_param.top_scale = (*itr)["TopScale"].asDouble();
         shape_param.bottom_scale = (*itr)["BottomScale"].asDouble();
@@ -1276,27 +1325,27 @@ void cRobotModel::GetMeshRotation(tVector3d &mesh_rotation,
     mesh_rotation = q.toRotationMatrix().eulerAngles(0, 1, 2);
 }
 
-void cRobotModel::InitJointTypeMap()
-{
-    if (joint_type_map.empty())
-    {
-        for (int i = 0; i < TOTAL_JOINT_TYPE; ++i)
-        {
-            joint_type_map.insert(std::make_pair(joint_type_keys[i], i));
-        }
-    }
-}
+// void cRobotModel::InitJointTypeMap()
+// {
+//     if (joint_type_map.empty())
+//     {
+//         for (int i = 0; i < TOTAL_JOINT_TYPE; ++i)
+//         {
+//             joint_type_map.insert(std::make_pair(joint_type_keys[i], i));
+//         }
+//     }
+// }
 
-void cRobotModel::InitShapeMap()
-{
-    if (shape_map.empty())
-    {
-        for (int i = 0; i < TOTAL_SHAPE_TYPE; ++i)
-        {
-            shape_map.insert(std::make_pair(shape_type_keys[i], i));
-        }
-    }
-}
+// void cRobotModel::InitShapeMap()
+// {
+//     if (shape_map.empty())
+//     {
+//         for (int i = 0; i < TOTAL_SHAPE_TYPE; ++i)
+//         {
+//             shape_map.insert(std::make_pair(shape_type_keys[i], i));
+//         }
+//     }
+// }
 
 // btRigidBody* createRigidBody(float mass, const btTransform& startTransform,
 // btCollisionShape* shape, const std::string& name, const btVector4& color)

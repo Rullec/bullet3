@@ -8,6 +8,9 @@
             "Name": "root",
             "Kp": 100,
             "Kd": 10,
+            "ScaleX": 1.0,
+            "ScaleY": 1.0,
+            "ScaleZ": 1.0,
             "TargetTheta0": 0,
             "UseWorldCoord": 0
         },
@@ -16,6 +19,9 @@
             "Name": "LeftLeg",
             "Kp": 100,
             "Kd": 1,
+            "ScaleX": 1.0,
+            "ScaleY": 1.0,
+            "ScaleZ": 1.0,
             "TargetTheta0": 0,
             "UseWorldCoord": 0
         }

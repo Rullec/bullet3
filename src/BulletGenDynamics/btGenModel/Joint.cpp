@@ -210,8 +210,7 @@ void Joint::UpdateState(bool compute_gradient)
 }
 
 /**
- * \brief
- * ���µ�ǰ���󣬼�����ת����
+ * \brief       
  */
 void Joint::UpdateMatrix()
 {
@@ -485,6 +484,18 @@ void Joint::ComputeLocalTransformThirdDerive()
         mTqqq[0][0][0] = r_m_third_deriv[0];
     }
     break;
+    case JointType::UNIVERSAL_JOINT:
+    {
+        // ComputeLocalTransformThirdDeriveUniversal();
+        // T = R_axis1 * R_axis0
+        // dT^3/dq1^3 = r_m_
+        mTqqq[1][1][1] = r_m_third_deriv[1] * r_m[0];
+        mTqqq[1][1][0] = r_m_second_deriv[1] * r_m_first_deriv[0];
+        mTqqq[1][0][0] = r_m_first_deriv[1] * r_m_second_deriv[0];
+        mTqqq[0][0][0] = r_m[1] * r_m_third_deriv[0];
+
+        break;
+    }
     default:
         std::cout
             << "[error] Joint compute 3rd derivatives unsupport joint type "
@@ -1159,6 +1170,15 @@ tVectorXd Joint::GetJointLocalVel() const
     return res;
 }
 
+tVectorXd Joint::GetJointLocalTheta() const
+{
+    std::vector<double> theta;
+    GetFreedomValue(theta);
+    tVectorXd res = tVectorXd::Zero(theta.size());
+    for (int i = 0; i < theta.size(); i++)
+        res[i] = theta[i];
+    return res;
+}
 /**
  * \brief           Get the freedom offset of this joint in global freedom sequence
 */

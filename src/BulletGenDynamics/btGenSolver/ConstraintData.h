@@ -10,11 +10,12 @@ struct btGenJointLimitData
 {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
     btGenJointLimitData(int constraint_id, cRobotModelDynamics *multibody,
-                        int dof_id, bool is_upper_bound);
+                        int dof_id, bool is_upper_bound, double violate_value);
 
     void ApplyGeneralizedForce(double val);
     void ApplyJointTorque(double val);
     int constraint_id;
+    double violate_value;
     cRobotModelDynamics *multibody;
     double dt;
     int dof_id;

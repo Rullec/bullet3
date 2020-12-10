@@ -132,6 +132,10 @@ void btGenSimbiconControllerBase::Update(double dt)
         //         DrawLine(st, ed);
         //     }
         // }
+        // std::cout << "trans = \n"
+        //           << mModel->GetJointById(mStanceHipIdx)->GetGlobalTransform()
+        //           << std::endl;
+        // DrawFrame(mModel->GetJointById(mStanceHipIdx)->GetGlobalTransform());
     }
 }
 void btGenSimbiconControllerBase::Reset() { BTGEN_ASSERT(false); }
@@ -146,14 +150,14 @@ void btGenSimbiconControllerBase::UpdateDandV()
                   mModel->GetLinkById(mStanceFoot->GetId())->GetWorldPos(),
               com_pos = this->mModel->GetCoMPosition();
     mD = com_pos - stance_foot;
-    std::cout << "[debug] world D = " << mD.transpose() << std::endl;
+    // std::cout << "[debug] world D = " << mD.transpose() << std::endl;
     // 2. v = com_vel
     mV = mModel->GetComVelocity();
-    std::cout << "[debug] world V = " << mV.transpose() << std::endl;
+    // std::cout << "[debug] world V = " << mV.transpose() << std::endl;
 
     // 3. get charcter frame, convert the vector from world frame to char frame
     double heading = mModel->GetHeading();
-    std::cout << "[debug] heading = " << heading << std::endl;
+    // std::cout << "[debug] heading = " << heading << std::endl;
     tMatrix3d char_to_world =
         btMathUtil::AxisAngleToRotmat(
             tVector(0, 1, 0, 0) *
@@ -161,8 +165,8 @@ void btGenSimbiconControllerBase::UpdateDandV()
             .block(0, 0, 3, 3);
     mD = char_to_world.transpose() * mD;
     mV = char_to_world.transpose() * mV;
-    std::cout << "[debug] char D = " << mD.transpose() << std::endl;
-    std::cout << "[debug] char V = " << mV.transpose() << std::endl;
+    std::cout << "[debug] d = " << mD.transpose() << " v = " << mV.transpose()
+              << std::endl;
 }
 void btGenSimbiconControllerBase::GetTargetPose() {}
 
@@ -505,7 +509,7 @@ void btGenSimbiconControllerBase::SetStance(int new_stance)
 void btGenSimbiconControllerBase::UpdateRefModel(const tVectorXd &tar_pose)
 {
     tVectorXd new_pose = tar_pose;
-    new_pose[1] = 2.0;
+    new_pose[1] = 2.1;
     mRefTrajModel->SetqAndqdot(new_pose,
                                tVectorXd::Zero(mModel->GetNumOfFreedom()));
 }

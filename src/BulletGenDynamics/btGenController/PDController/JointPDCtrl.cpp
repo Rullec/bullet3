@@ -74,6 +74,9 @@ btGenJointPDCtrl::CalcControlForce(const tVectorXd &control_tar_q,
     case JointType::LIMIT_NONE_JOINT:
         ControlForceLimitNone(force, local_target_theta, local_target_vel);
         break;
+    case JointType::UNIVERSAL_JOINT:
+        ControlForceUniversal(force, local_target_theta, local_target_vel);
+        break;
     default:
         BTGEN_ASSERT(false);
         break;
@@ -588,4 +591,23 @@ void btGenJointPDCtrl::ControlForceLimitNone(
            cur_vel = mModel->Getqdot()[joint->GetOffset()];
     force[0] = mKp * (local_target_theta[0] - cur_theta) +
                mKd * (local_target_vel[0] - cur_vel);
+}
+
+/**
+ * \brief           calc force for force
+*/
+void btGenJointPDCtrl::ControlForceUniversal(
+    tVector &force, const tVectorXd &local_target_theta,
+    const tVectorXd &local_target_vel) const
+{
+    tVectorXd local_cur_vel = mJoint->GetJointLocalVel();
+    tVectorXd local_cur_theta = mJoint->GetJointLocalTheta();
+    tMatrixXd axis_mat = tMatrixXd::Zero(3, 2);
+    axis_mat.col(0) = mJoint->GetFreedoms(0)->axis;
+    axis_mat.col(1) = mJoint->GetFreedoms(1)->axis;
+
+    tVector3d local_force =
+        axis_mat * (mKp * (local_target_theta - local_cur_theta) +
+                    mKd * (local_target_vel - local_cur_vel));
+    force.segment(0, 3) = mJoint->GetWorldOrientation() * local_force;
 }
