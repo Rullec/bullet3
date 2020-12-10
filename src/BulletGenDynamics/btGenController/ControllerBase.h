@@ -7,17 +7,19 @@ enum ebtGenControllerType
     SimbiconSPDController,
     ContactAwareController,
     SimbiconController,
+    ShowLimitController,
     BTGEN_NUM_CONTROLLER_TYPE
 };
 
 static const std::string
     gbtGenControllerTypeStr[ebtGenControllerType::BTGEN_NUM_CONTROLLER_TYPE] = {
         "PDController", "SimbiconSPDController", "ContactAwareController",
-        "SimbiconController"};
+        "SimbiconController", "ShowLimitController"};
 class btGeneralizeWorld;
 class cRobotModelDynamics;
 class btCollisionObject;
 struct GUIHelperInterface;
+class btCollisionShape;
 class btGenControllerBase
 {
 public:
@@ -42,7 +44,9 @@ protected:
     std::vector<btCollisionObject *>
         mDrawFrame; // draw a reference 3d frame (x y z), vector = three axes
 
-    std::vector<btCollisionObject *> mDrawLines; // draw contact force lines list
+    std::vector<btCollisionObject *>
+        mDrawLines; // draw contact force lines list
+    std::vector<std::pair<int, btCollisionShape *>> mCollisionShapes;
 
     // methods
     void DrawPoint(const tVector3d &pos, double r = 0.05);
@@ -53,5 +57,8 @@ protected:
 
 private:
     btCollisionObject *CreateLine(double length, double radius);
+    btCollisionShape *GetSphereCollsiionShape(double radius);
+    btCollisionShape *GetCapsuleCollsiionShape(double param1, double param2,
+                                               double param3);
 };
 #endif /*CONTROLLER_BASW_H_*/

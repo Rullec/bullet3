@@ -645,8 +645,8 @@ void btGenContactSolver::RebuildColObjData()
             break;
         }
         default:
-            std::cout << "[lcp] body " << i
-                      << " cannot be recognized, ignore\n";
+            // std::cout << "[lcp] body " << i
+            //           << " cannot be recognized, ignore\n";
             continue;
             break;
         }
@@ -661,10 +661,8 @@ void btGenContactSolver::RebuildColObjData()
 
     if (ignored_ids.size())
     {
-        std::cout << "[lcp] body ";
-        for (auto &x : ignored_ids)
-            std::cout << x << " ";
-        std::cout << "cannot be recognized, ignored\n";
+        printf("[lcp] %d bodies cannot be recognized, ignored\n",
+               ignored_ids.size());
     }
     // 2. collect all multibodies
     for (auto &iter : model_set)
@@ -982,7 +980,7 @@ void btGenContactSolver::AddJointLimit()
 
         // std::cout << "[debug] lb = " << lb.transpose() << std::endl;
         // std::cout << "[debug] ub = " << ub.transpose() << std::endl;
-        if ((ub - lb).minCoeff() < 1e-10)
+        if ((ub - lb).minCoeff() < -1e-10)
         {
             std::cout << "[error] add joint limit invalid\nub = "
                       << ub.transpose() << "\nlb = " << lb.transpose()
@@ -1017,6 +1015,8 @@ void btGenContactSolver::AddJointLimit()
                 if (mEnableDebugOutput)
                 {
                     std::cout << "[joint limit] add limit for dof " << dof_id
+                              << " joint "
+                              << model->GetJointByDofId(dof_id)->GetName()
                               << " val = " << q[dof_id]
                               << ", is upper bound = " << upper_bound_violate
                               << std::endl;

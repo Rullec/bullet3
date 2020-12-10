@@ -6,8 +6,8 @@
         {
             "ID": 0,
             "Name": "root",
-            "Kp": 1000,
-            "Kd": 10,
+            "Kp": 3000,
+            "Kd": 30,
             "ScaleX": 1.0,
             "ScaleY": 1.0,
             "ScaleZ": 1.0,
@@ -39,8 +39,8 @@
         {
             "ID": 3,
             "Name": "RFootTongue",
-            "Kp": 100,
-            "Kd": 0.5,
+            "Kp": 50,
+            "Kd": 0.1,
             "ScaleX": 1.0,
             "ScaleY": 1.0,
             "ScaleZ": 1.0,
@@ -72,8 +72,8 @@
         {
             "ID": 6,
             "Name": "LFootTongue",
-            "Kp": 100,
-            "Kd": 0.5,
+            "Kp": 50,
+            "Kd": 0.1,
             "ScaleX": 1.0,
             "ScaleY": 1.0,
             "ScaleZ": 1.0,

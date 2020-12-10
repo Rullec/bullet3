@@ -88,6 +88,7 @@ SET(
 	./btGenController/SimbiconController/SimbiconControllerBase.cpp
 	./btGenController/SimbiconController/SimbiconState.cpp
 	./btGenController/SimbiconController/SimbiconTraj.cpp
+	./btGenController/ShowLimitController/ShowLimitController.cpp
 	./btGenController/Trajectory/btTraj.cpp
 	./btGenController/Trajectory/btTrajContactMigrator.cpp
 )

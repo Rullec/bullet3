@@ -19,6 +19,7 @@ public:
     // void InitSimVars(btDiscreteDynamicsWorld* world, bool zero_pose, bool
     // zero_pose_vel);
     virtual void SetqAndqdot(const tVectorXd &q, const tVectorXd &qdot);
+    virtual void Setq(const tVectorXd &q);
     virtual void Setqdot(const tVectorXd &qdot);
     void SetMassMatEps(double eps);
     void ApplyGravity(const tVector &g); // apply force

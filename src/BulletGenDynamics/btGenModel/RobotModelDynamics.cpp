@@ -460,6 +460,8 @@ void cRobotModelDynamics::SetqAndqdot(const tVectorXd &q_,
     UpdateCartesianVelocity();
     SyncToBullet();
 }
+
+void cRobotModelDynamics::Setq(const tVectorXd &q) { SetqAndqdot(q, mqdot); }
 void cRobotModelDynamics::Setqdot(const tVectorXd &qdot_)
 {
     mqdot = qdot_;
