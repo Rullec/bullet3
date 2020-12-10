@@ -260,7 +260,14 @@ double btGenSimbiconControllerBase::GetStanceFootWeightRatio()
            swing_foot_force = manager->GetVerticalTotalForceWithGround(
                mModel->GetLinkCollider(mSwingFoot->GetId()));
 
-    return stance_foot_force / (stance_foot_force + swing_foot_force + 1e-6);
+    double ratio =
+        stance_foot_force / (stance_foot_force + swing_foot_force + 1e-6);
+
+    // if the ratio is very small, we took -1
+    if (std::fabs(ratio) < 1e-2)
+        ratio = -1;
+
+    return ratio;
 }
 
 /**

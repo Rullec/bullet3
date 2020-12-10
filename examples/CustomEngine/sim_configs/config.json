@@ -7,7 +7,7 @@
     "real_time_sim": true,
     "multibody_path_2links": "../DeepMimic/data/0805/characters/skeleton_2links.json",
     "multibody_path": "../DeepMimic/data/1127/characters/lower_halfbody_torso.json",
-    "enable_controller": true,
+    "enable_controller": false,
     "enable_contact_aware_control": false,
     "contact_aware_ref_traj": "../DeepMimic/data/id_test/sample_legs/traj_legs_51668091.json",
     "ctrl_config": "examples/CustomEngine/ctrl_configs/simbicon_configs/3d_torso/simbicon_torso_config.json",
