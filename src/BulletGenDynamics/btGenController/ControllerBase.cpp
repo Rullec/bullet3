@@ -70,7 +70,7 @@ void btGenControllerBase::DrawPoint(const tVector3d &pos,
                                     double radius /* = 0.05*/)
 {
     BTGEN_ASSERT(mBulletGUIHelper != nullptr);
-    btCollisionShape *colShape = GetSphereCollsiionShape(radius);
+    btCollisionShape *colShape = mWorld->GetSphereCollisionShape(radius);
     btCollisionObject *obj = new btCollisionObject();
     btTransform trans;
     // trans.setOrigin(btVector3(pos[0], pos[1], pos[2]));
@@ -140,7 +140,7 @@ btCollisionObject *btGenControllerBase::CreateLine(double length, double radius)
 {
     btCollisionShape *colShape = nullptr;
     btCollisionObject *obj = new btCollisionObject();
-    colShape = new btCapsuleShape(radius, length);
+    colShape = mWorld->GetCapsuleCollisionShape(radius, length);
     btTransform trans;
     trans.setOrigin(btVector3(0, 0, 0));
     obj->setWorldTransform(trans);
@@ -187,32 +187,32 @@ void btGenControllerBase::ClearLines()
     std::cout << "[debug] clear lines " << mDrawLines.size() << std::endl;
     mDrawLines.clear();
 }
-btCollisionShape *btGenControllerBase::GetSphereCollsiionShape(double radius)
-{
-    for (auto &x : mCollisionShapes)
-    {
-        if (x.second->getShapeType() == SPHERE_SHAPE_PROXYTYPE)
-        {
-            auto sphere = dynamic_cast<btSphereShape *>(x.second);
-            BTGEN_ASSERT(sphere != nullptr);
-            if (sphere->getRadius() == radius)
-            {
-                x.first++;
-                return x.second;
-            }
-        }
-    }
+// btCollisionShape *btGenControllerBase::GetSphereCollsiionShape(double radius)
+// {
+//     for (auto &x : mCollisionShapes)
+//     {
+//         if (x.second->getShapeType() == SPHERE_SHAPE_PROXYTYPE)
+//         {
+//             auto sphere = dynamic_cast<btSphereShape *>(x.second);
+//             BTGEN_ASSERT(sphere != nullptr);
+//             if (sphere->getRadius() == radius)
+//             {
+//                 x.first++;
+//                 return x.second;
+//             }
+//         }
+//     }
 
-    // no, create
-    btSphereShape *sphere_shape = new btSphereShape(radius);
-    mCollisionShapes.push_back(
-        std::make_pair<int, btCollisionShape *>(1, sphere_shape));
-    return sphere_shape;
-}
+//     // no, create
+//     btSphereShape *sphere_shape = new btSphereShape(radius);
+//     mCollisionShapes.push_back(
+//         std::make_pair<int, btCollisionShape *>(1, sphere_shape));
+//     return sphere_shape;
+// }
 
-btCollisionShape *btGenControllerBase::GetCapsuleCollsiionShape(double param1,
-                                                                double param2,
-                                                                double param3)
-{
-    BTGEN_ASSERT(false);
-}
+// btCollisionShape *btGenControllerBase::GetCapsuleCollsiionShape(double param1,
+//                                                                 double param2,
+//                                                                 double param3)
+// {
+//     BTGEN_ASSERT(false);
+// }

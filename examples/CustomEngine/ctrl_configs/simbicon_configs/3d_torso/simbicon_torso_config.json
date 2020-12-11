@@ -5,7 +5,7 @@
     "num_of_states": 1,
     "state_0": {
         "next_state_id": 0,
-        "time": 0.4,
+        "time": 0.6,
         "transition_on_foot_contact": true,
         "trajectories": [
             {
