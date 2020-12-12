@@ -119,6 +119,7 @@ void CustomEngineMainDemo::initPhysics()
     if (physics_param->mAddMultibody)
     {
         mGenWorld->AddMultibody(physics_param->mMultibodyPath);
+        // Test();
 
         // add controller
         if (physics_param->mEnableController)
@@ -141,7 +142,6 @@ void CustomEngineMainDemo::initPhysics()
                                           true);
             }
         }
-        // Test();
     }
 
     if (physics_param->mEnableGround)
@@ -307,13 +307,22 @@ void CustomEngineMainDemo::SinglestepSim(float dt)
     global_frame_id++;
     return;
 }
+#include "BulletGenDynamics/btGenModel/ExpMapRotMat.h"
 #include "BulletGenDynamics/btGenModel/Joint.h"
 #include "BulletGenDynamics/btGenModel/Link.h"
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
 void CustomEngineMainDemo::Test()
 {
-    std::cout << "begin test\n";
+    std::cout << "[debug] begin test\n";
+    auto exp_map = new ExpMapRotation();
+    exp_map->SetAxis(tVector::Random());
+    exp_map->Test();
+    delete exp_map;
+    std::cout << "[log] exp test succ\n";
+    // exit(0);
+
     auto mb = mGenWorld->GetMultibody();
+    mb->SetComputeSecondDerive(true);
     mb->SetComputeThirdDerive(true);
     int dof = mb->GetNumOfFreedom();
     tVectorXd q = tVectorXd::Random(dof), qdot = tVectorXd::Random(dof);
@@ -326,6 +335,7 @@ void CustomEngineMainDemo::Test()
     //               << joint->GetJointType() << std::endl;
     // }
     // exit(0);
+    mb->TestmTq();
     mb->TestmTqq();
     mb->TestmTqqq();
     mb->TestmWq();

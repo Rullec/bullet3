@@ -714,14 +714,14 @@ void btGenContactAwareController::CreateRefChar()
 
         mRefTrajModel->Init(mModel->GetCharFile().c_str(), mModel->GetScale(),
                             ModelType::JSON);
-        mRefTrajModel->InitSimVars(mWorld, true, true, false);
+        mRefTrajModel->InitSimVars(mWorld, "", false);
     }
     if (mDrawTargetFBFCharacter)
     {
         mFBFTrajModel = new cRobotModelDynamics();
         mFBFTrajModel->Init(mModel->GetCharFile().c_str(), mModel->GetScale(),
                             ModelType::JSON);
-        mFBFTrajModel->InitSimVars(mWorld, true, true, false);
+        mFBFTrajModel->InitSimVars(mWorld, "", false);
     }
     // mRefModel->SetqAndqdot(mRefTraj->mq[mInternalFrameId],
     // mRefTraj->mqdot[mInternalFrameId]);

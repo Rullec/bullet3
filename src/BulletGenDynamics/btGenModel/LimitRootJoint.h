@@ -1,7 +1,7 @@
 #ifndef ROBOT_LIMITROOTJOINT_H
 #define ROBOT_LIMITROOTJOINT_H
 #define INF 0x3f3f3f3f
-#include "EulerAngelRotationMatrix.h"
+#include "EulerAngleRotationMatrix.h"
 #include "Joint.h"
 #include "Printer.h"
 

@@ -452,6 +452,10 @@ tMatrix btMathUtil::VectorToSkewMat(const tVector &vec)
 
     return res;
 }
+tMatrix btMathUtil::VectorToSkewMat2(const tVector &vec)
+{
+    return btMathUtil::VectorToSkewMat(vec) * btMathUtil::VectorToSkewMat(vec);
+}
 // Nx3 friction cone
 // each row is a direction now
 tMatrixXd btMathUtil::ExpandFrictionCone(int num_friction_dirs,
@@ -730,4 +734,228 @@ tVector btMathUtil::ConvertEulerAngleVelToAxisAngleVel(
         btMathUtil::EulerangleToAxisAngle(qdot_euler * dt, order) / dt;
     // std::cout << "aa vel = " << aa_vel.transpose() << std::endl;
     return aa_vel;
+}
+
+/**
+ * 
+ * \brief       Get the first order derivative of skew matrix
+*/
+tMatrix btMathUtil::SkewMatFirstDeriv(const tVector &theta, int i)
+{
+    double x = theta[0], y = theta[1], z = theta[2];
+    tMatrix res = tMatrix::Zero();
+    switch (i)
+    {
+    case 0: // w.r.t x
+        res(1, 2) = -1;
+        res(2, 1) = 1;
+        break;
+    case 1: // w.r.t y
+        res(0, 2) = 1;
+        res(2, 0) = -1;
+
+        break;
+    case 2: // w.r.t z
+        res(0, 1) = -1;
+        res(1, 0) = 1;
+        break;
+    default:
+        BTGEN_ASSERT(false);
+        break;
+    }
+    return res;
+}
+
+/**
+ * \brief           get d^2[a]/daiaj = 0
+*/
+tMatrix btMathUtil::SkewMatSecondDeriv(const tVector &theta, int i, int j)
+{
+    return tMatrix::Zero();
+}
+
+/**
+ * \brief           get d([a]^2)/dai
+*/
+tMatrix btMathUtil::SkewMat2FirstDeriv(const tVector &theta, int i)
+{
+    double x = theta[0], y = theta[1], z = theta[2];
+    tMatrix res = tMatrix::Zero();
+    switch (i)
+    {
+    case 0: // w.r.t x
+        res(0, 1) = y;
+        res(0, 2) = z;
+        res(1, 0) = y;
+        res(1, 1) = -2 * x;
+        res(2, 0) = z;
+        res(2, 2) = -2 * x;
+        break;
+    case 1: // w.r.t y
+        res(0, 0) = -2 * y;
+        res(0, 1) = x;
+        res(1, 0) = x;
+        res(1, 2) = z;
+        res(2, 1) = z;
+        res(2, 2) = -2 * y;
+
+        break;
+    case 2: // w.r.t z
+        res(0, 0) = -2 * z;
+        res(0, 2) = x;
+        res(1, 1) = -2 * z;
+        res(1, 2) = y;
+        res(2, 0) = x;
+        res(2, 1) = y;
+        break;
+    default:
+        BTGEN_ASSERT(false);
+        break;
+    }
+    return res;
+}
+
+/**
+ * \brief           Calculate d^2([a]^2)/(d ai aj)
+*/
+tMatrix btMathUtil::SkewMat2SecondDeriv(const tVector &theta, int i, int j)
+{
+    BTGEN_ASSERT(i >= 0 && i <= 2);
+    BTGEN_ASSERT(j >= 0 && j <= 2);
+    tMatrix res = tMatrix::Zero();
+    if (i == j)
+    {
+        for (int m = 0; m < 3; m++)
+        {
+            if (m == i)
+                continue;
+            res(m, m) = -2;
+        }
+    }
+    else
+    {
+        res(i, j) = 1;
+        res(j, i) = 1;
+    }
+    return res;
+}
+
+void btMathUtil::TestSkewMatDeriv()
+{
+    // 1. test skewmat first deriv
+    tVector theta = tVector::Random();
+    const tMatrix old_skewmat = btMathUtil::VectorToSkewMat(theta);
+    const tMatrix old_skewmat2 = btMathUtil::VectorToSkewMat2(theta);
+    double eps = 1e-6;
+    {
+        tEigenArr<tMatrix> dSkewMatdai(3);
+        for (int i = 0; i < 3; i++)
+            dSkewMatdai[i] = btMathUtil::SkewMatFirstDeriv(theta, i);
+
+        for (int i = 0; i < 3; i++)
+        {
+            theta[i] += eps;
+            tMatrix new_skewmat = btMathUtil::VectorToSkewMat(theta);
+            tMatrix diff = (new_skewmat - old_skewmat) / eps - dSkewMatdai[i];
+            BTGEN_ASSERT(diff.norm() < 10 * eps);
+            theta[i] -= eps;
+        }
+        std::cout << "[debug] test skewmat first order deriv succ\n";
+    }
+
+    // 2. test skewmat second deriv
+    {
+        tEigenArr<tMatrix> old_dSkewMatdai(3);
+        for (int i = 0; i < 3; i++)
+            old_dSkewMatdai[i] = btMathUtil::SkewMatFirstDeriv(theta, i);
+
+        tEigenArr<tEigenArr<tMatrix>> ddSkewMatdaiaj(3);
+        for (auto &x : ddSkewMatdaiaj)
+            x.resize(3);
+
+        for (int i = 0; i < 3; i++)
+        {
+            for (int j = 0; j < 3; j++)
+            {
+                ddSkewMatdaiaj[i][j] =
+                    btMathUtil::SkewMatSecondDeriv(theta, i, j);
+            }
+        }
+
+        // begin to test
+        for (int i = 0; i < 3; i++)
+        {
+            theta[i] += eps;
+            tEigenArr<tMatrix> new_dSkewMatdai(3);
+            for (int i = 0; i < 3; i++)
+                new_dSkewMatdai[i] = btMathUtil::SkewMatFirstDeriv(theta, i);
+
+            for (int j = 0; j < 3; j++)
+            {
+                tMatrix diff = (new_dSkewMatdai[j] - old_dSkewMatdai[j]) / eps -
+                               ddSkewMatdaiaj[i][j];
+                BTGEN_ASSERT(diff.norm() < 10 * eps);
+            }
+            theta[i] -= eps;
+        }
+        std::cout << "[debug] test skewmat second order deriv succ\n";
+    }
+
+    // 3. test skewmat2 first deriv
+    {
+        tEigenArr<tMatrix> skewmat2_first_deriv(3);
+        for (int i = 0; i < 3; i++)
+            skewmat2_first_deriv[i] = btMathUtil::SkewMat2FirstDeriv(theta, i);
+
+        for (int i = 0; i < 3; i++)
+        {
+            theta[i] += eps;
+            tMatrix new_skewmat2 = btMathUtil::VectorToSkewMat2(theta);
+            tMatrix diff =
+                (new_skewmat2 - old_skewmat2) / eps - skewmat2_first_deriv[i];
+            BTGEN_ASSERT(diff.norm() < 10 * eps);
+            // std::cout << i << " Passed\n";
+            theta[i] -= eps;
+        }
+        std::cout << "[debug] test skewmat2 first order deriv succ\n";
+    }
+
+    // 4. test skewmat2 second deriv
+    {
+        tEigenArr<tMatrix> old_dSkewMat2dai(3);
+        for (int i = 0; i < 3; i++)
+            old_dSkewMat2dai[i] = btMathUtil::SkewMat2FirstDeriv(theta, i);
+
+        tEigenArr<tEigenArr<tMatrix>> ddSkewMat2daiaj(3);
+        for (auto &x : ddSkewMat2daiaj)
+            x.resize(3);
+
+        for (int i = 0; i < 3; i++)
+        {
+            for (int j = 0; j < 3; j++)
+            {
+                ddSkewMat2daiaj[i][j] =
+                    btMathUtil::SkewMat2SecondDeriv(theta, i, j);
+            }
+        }
+
+        // begin to test
+        for (int i = 0; i < 3; i++)
+        {
+            theta[i] += eps;
+            tEigenArr<tMatrix> new_dSkewMat2dai(3);
+            for (int i = 0; i < 3; i++)
+                new_dSkewMat2dai[i] = btMathUtil::SkewMat2FirstDeriv(theta, i);
+
+            for (int j = 0; j < 3; j++)
+            {
+                tMatrix diff =
+                    (new_dSkewMat2dai[j] - old_dSkewMat2dai[j]) / eps -
+                    ddSkewMat2daiaj[i][j];
+                BTGEN_ASSERT(diff.norm() < 10 * eps);
+            }
+            theta[i] -= eps;
+        }
+        std::cout << "[debug] test skewmat2 second order deriv succ\n";
+    }
 }

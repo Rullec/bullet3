@@ -97,7 +97,7 @@ void btGenSimbiconControllerBase::Init(cRobotModelDynamics *model,
 
     mRefTrajModel->Init(mModel->GetCharFile().c_str(), mModel->GetScale(),
                         ModelType::JSON);
-    mRefTrajModel->InitSimVars(mWorld, true, true, false);
+    mRefTrajModel->InitSimVars(mWorld, "", false);
     UpdateRefModel(tVectorXd::Zero(mModel->GetNumOfFreedom()));
 }
 
@@ -173,6 +173,7 @@ void btGenSimbiconControllerBase::GetTargetPose() {}
 /**
  * \brief           compute the simbicon control torques on each joint
 */
+#include "BulletGenDynamics/btGenModel/BallInSocketJoint.h"
 void btGenSimbiconControllerBase::ComputeTorques(
     double dt, tEigenArr<btGenPDForce> &forces)
 {
@@ -214,6 +215,30 @@ void btGenSimbiconControllerBase::ComputeTorques(
             BTGEN_ASSERT(size == 1);
             tar_pose[offset] = btMathUtil::QuaternionToEulerAngles(
                 local_target, btRotationOrder::bt_XYZ)[0];
+            break;
+        }
+        case JointType::BALLINSOCKET_JOINT:
+        {
+            BTGEN_ASSERT(size == 3);
+            auto ball_joint = dynamic_cast<BallInSocketJoint *>(cur_joint);
+            tVectorXd local_tar_pose =
+                ball_joint->CalcTargetPoseByTargetLocalTransform(local_target);
+            tQuaternion restored_orient = btMathUtil::RotMatToQuaternion(
+                ball_joint->CalcTargetLocalTransform(local_tar_pose));
+            tVector diff = restored_orient.coeffs() - local_target.coeffs();
+            tar_pose.segment(offset, size) = local_tar_pose.segment(0, size);
+            if (diff.norm() > 1e-2)
+            {
+                std::cout << "diff = " << diff.transpose() << std::endl;
+                std::cout << "original tar = "
+                          << local_target.coeffs().transpose() << std::endl;
+                std::cout << "restored tar = "
+                          << restored_orient.coeffs().transpose() << std::endl;
+                BTGEN_ASSERT(false);
+            }
+            std::cout << "[log] ball-in-socket joint " << ball_joint->GetName()
+                      << " restored q = " << local_tar_pose.transpose()
+                      << std::endl;
             break;
         }
         default:

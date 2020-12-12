@@ -18,7 +18,7 @@ btGenCollisionDispatcher::btGenCollisionDispatcher(
     mCollisionType = "";
     mController = nullptr;
     mModel = nullptr;
-    std::cout << "[log] gen collision dispatcher is init\n";
+    std::cout << "[log] btGenCollisionDispatcher initialized\n";
     ParseConf(conf);
 }
 

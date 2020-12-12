@@ -40,7 +40,7 @@ cRobotModelDynamics::cRobotModelDynamics()
     mEnableCollision = true;
     mDampingCoef1 = 0;
     mDampingCoef2 = 0;
-    mEpsDiagnoal = 0;
+
     mEnableEulerAngleClamp = true;
     mMaxVel = 100.0;
     mEnableContactAwareController = false;
@@ -82,23 +82,17 @@ void cRobotModelDynamics::ComputeDampingMatrix()
         mDampingCoef1 * mass_matrix + mDampingCoef2 * coriolis_matrix;
 }
 
-void cRobotModelDynamics::ComputeMassMatrix()
-{
-    cRobotModel::ComputeMassMatrix();
-    // std::cout << "[model] add eps " << eps_diagnoal_mass_mat << " on the
-    // diagnoal of mass matrix\n";
-    mass_matrix += mEpsDiagnoal *
-                   tMatrixXd::Identity(mass_matrix.rows(), mass_matrix.cols());
-}
-
 /**
  * \brief					create Multibody colliders in
  * bullet world \param world				the ptr to btWorld
  * */
 extern std::map<int, std::string> col_name;
 #include "BulletGenDynamics/btGenModel/Joint.h"
-void cRobotModelDynamics::InitSimVars(btGeneralizeWorld *world, bool zero_pose,
-                                      bool zero_pose_vel, bool enable_collision)
+#include "BulletGenDynamics/btGenUtil/FileUtil.h"
+#include "BulletGenDynamics/btGenUtil/JsonUtil.h"
+void cRobotModelDynamics::InitSimVars(btGeneralizeWorld *world,
+                                      std::string init_pose_path,
+                                      bool enable_collision)
 {
     mWorld = world;
     auto internal_world = world->GetInternalWorld();
@@ -200,28 +194,42 @@ void cRobotModelDynamics::InitSimVars(btGeneralizeWorld *world, bool zero_pose,
 
     mGenForce.resize(dof);
     mGenForce.setZero();
-    if (zero_pose == true)
-        mq.setZero();
-    else
-    {
-        mq.setRandom();
-    }
 
-    if (zero_pose_vel == true)
-        mqdot.setZero();
-    else
+    // load init pose
     {
-        mqdot.setRandom();
-    }
-    switch (GetRoot()->GetJointType())
-    {
-    case JointType::BIPEDAL_NONE_JOINT:
-        mq[0] = 1.0;
-        break;
-    case JointType::NONE_JOINT:
-        mq[1] = 0.75;
-    default:
-        break;
+        if (btFileUtil::ExistsFile(init_pose_path) == false)
+        {
+            mq.setZero();
+            mqdot.setZero();
+            printf("[warn] init pose path = %s doesn't exist, the init pose is "
+                   "set to zero\n",
+                   init_pose_path.c_str());
+        }
+        else
+        {
+
+            Json::Value init_pose_vel;
+            btJsonUtil::LoadJson(init_pose_path, init_pose_vel);
+
+            mq = btJsonUtil::ReadVectorJson(
+                btJsonUtil::ParseAsValue("pose", init_pose_vel));
+            mqdot = btJsonUtil::ReadVectorJson(
+                btJsonUtil::ParseAsValue("vel", init_pose_vel));
+            if (mq.size() != GetNumOfFreedom())
+            {
+                std::cout << "[error] the init pose at " << init_pose_path
+                          << " length " << mq.size() << " != dof "
+                          << GetNumOfFreedom() << std::endl;
+                exit(0);
+            }
+            if (mqdot.size() != GetNumOfFreedom())
+            {
+                std::cout << "[error] the init vel at " << init_pose_path
+                          << " length " << mqdot.size() << " != dof "
+                          << GetNumOfFreedom() << std::endl;
+                exit(0);
+            }
+        }
     }
 
     cRobotModelDynamics::SetqAndqdot(mq, mqdot);
@@ -471,7 +479,6 @@ void cRobotModelDynamics::Setqdot(const tVectorXd &qdot_)
     UpdateCartesianVelocity();
     SyncToBullet();
 }
-void cRobotModelDynamics::SetMassMatEps(double eps) { mEpsDiagnoal = eps; }
 
 void cRobotModelDynamics::ApplyGravity(const tVector &g) // apply force
 {
@@ -524,6 +531,8 @@ void cRobotModelDynamics::ApplyForce(int link_id, const tVector &force,
 
     if (force.hasNaN())
     {
+        printf("[error] link %d force ", link_id);
+        std::cout << force.transpose() << std::endl;
         BTGEN_ASSERT(false);
     }
     // 1. apply the force directly

@@ -104,8 +104,7 @@ protected:
     double mRigidDamping;
     double mMBDamping1;
     double mMBDamping2;
-    bool mMBZeroInitPose;
-    bool mMBZeroInitPoseVel;
+    std::string mMBInitPose;
     // bool mMBEnableRk4;
     double mMBEpsDiagnoalMassMat;
     double mMBMaxVel;

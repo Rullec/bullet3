@@ -7,8 +7,10 @@ SET(
 	BulletGenModel_SRCS
 	./btGenModel/BaseObject.cpp
 	./btGenModel/ColObjBase.cpp
-	./btGenModel/EulerAngelRotationMatrix.cpp
+	./btGenModel/EulerAngleRotationMatrix.cpp
+	./btGenModel/ExpMapRotMat.cpp
 	./btGenModel/Joint.cpp
+	./btGenModel/BallInSocketJoint.cpp
 	./btGenModel/Link.cpp
 	./btGenModel/Printer.cpp
 	./btGenModel/RobotCollider.cpp

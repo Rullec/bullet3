@@ -2,7 +2,7 @@
 #include "ModelEigenUtils.h"
 
 tVector3d QuaternionToEuler(const tQuaternion &q);
-tMatrix3d EulerAngelRotation(double x, double y, double z);
+tMatrix3d EulerAngleRotation(double x, double y, double z);
 tMatrix EulerAngleTransform(const tVector3d &v, const Eigen::Vector3i &order);
 tMatrix3d EulerAngleRotation(const tVector3d &v, const Eigen::Vector3i &order);
 

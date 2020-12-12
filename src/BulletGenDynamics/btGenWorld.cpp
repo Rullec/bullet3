@@ -3,7 +3,7 @@
 #include "BulletGenDynamics/btGenController/BuildController.h"
 #include "BulletGenDynamics/btGenController/PDController/btGenPDController.h"
 #include "BulletGenDynamics/btGenController/Trajectory/btTraj.h"
-#include "BulletGenDynamics/btGenModel/EulerAngelRotationMatrix.h"
+#include "BulletGenDynamics/btGenModel/EulerAngleRotationMatrix.h"
 #include "BulletGenDynamics/btGenUtil/TimeUtil.hpp"
 #include "btGenController/ContactAwareController/btGenContactAwareController.h"
 #include "btGenModel/RobotModelDynamics.h"
@@ -134,10 +134,7 @@ void btGeneralizeWorld::Init(const std::string &config_path)
 
             mMBDamping1 = btJsonUtil::ParseAsDouble("mb_damping1", config_js);
             mMBDamping2 = btJsonUtil::ParseAsDouble("mb_damping2", config_js);
-            mMBZeroInitPose =
-                btJsonUtil::ParseAsBool("mb_zero_init_pose", config_js);
-            mMBZeroInitPoseVel =
-                btJsonUtil::ParseAsBool("mb_zero_init_pose_vel", config_js);
+            mMBInitPose = btJsonUtil::ParseAsString("mb_init_pose", config_js);
             // mMBTestJacobian = btJsonUtil::ParseAsBool("mb_test_jacobian",
             // config_js); mMBEAngleClamp =
             // btJsonUtil::ParseAsBool("mb_angle_clamp", config_js);
@@ -351,8 +348,9 @@ void btGeneralizeWorld::AddMultibody(const std::string &skeleton_name)
     mMultibody->SetDampingCoeff(mMBDamping1, mMBDamping2);
     // mMultibody->SetAngleClamp(mMBEAngleClamp);
     mMultibody->SetMaxVel(mMBMaxVel);
+    mMultibody->SetMassMatEps(mMBEpsDiagnoalMassMat);
 
-    mMultibody->InitSimVars(this, mMBZeroInitPose, mMBZeroInitPoseVel, true);
+    mMultibody->InitSimVars(this, mMBInitPose, true);
     this->m_dispatcher->SetModel(mMultibody);
 
     // if (mMBEnableGuideAction == true)

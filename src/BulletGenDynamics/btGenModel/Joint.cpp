@@ -1,7 +1,6 @@
 #include "Joint.h"
-#include "EulerAngelRotationMatrix.h"
+#include "EulerAngleRotationMatrix.h"
 #include "Printer.h"
-// #include "BasePoint.h"
 #include "tools.h"
 
 // buffer used in jacobian calculation
@@ -1231,7 +1230,6 @@ void Joint::ComputeLocalJkw()
 
         tMatrix3d dRdq_RT =
             mTq[i].topLeftCorner<3, 3>() * local_rotation.transpose();
-
         // 2. check that it's a skew matrix
         // 3. extract the skew vector and put it into the matrix's column
         tVector col = btMathUtil::SkewMatToVector(dRdq_RT);

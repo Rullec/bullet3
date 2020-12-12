@@ -95,10 +95,11 @@ public:
     static tVector AngularVelToqdot(const tVector &omega, const tVector &cur_q,
                                     const btRotationOrder &order);
     static tMatrix VectorToSkewMat(const tVector &);
+    static tMatrix VectorToSkewMat2(const tVector &);
     template <typename T> static tVector SkewMatToVector(const T &mat)
     {
         // verify mat is a skew matrix
-        assert((mat + mat.transpose()).norm() < 1e-10);
+        assert((mat + mat.transpose()).norm() < 1e-6);
 
         // squeeze a mat to a vector
         tVector res = tVector::Zero();
@@ -107,6 +108,11 @@ public:
         res[2] = mat(1, 0);
         return res;
     }
+    static tMatrix SkewMatFirstDeriv(const tVector &theta, int i);
+    static tMatrix SkewMatSecondDeriv(const tVector &theta, int i, int j);
+    static tMatrix SkewMat2FirstDeriv(const tVector &theta, int i);
+    static tMatrix SkewMat2SecondDeriv(const tVector &theta, int i, int j);
+    static void TestSkewMatDeriv();
     static tMatrixXd ExpandFrictionCone(int num_friction_dirs,
                                         const tVector &normal);
     static tMatrix InverseTransform(const tMatrix &);

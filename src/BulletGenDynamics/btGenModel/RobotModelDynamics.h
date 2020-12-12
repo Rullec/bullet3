@@ -14,14 +14,14 @@ public:
     void Init(const char *model_file, double scale, int type);
 
     // ----------------------simulation APIs----------------------
-    void InitSimVars(btGeneralizeWorld *world, bool zero_pose,
-                     bool zero_pose_vel, bool enable_collision = true);
+    void InitSimVars(btGeneralizeWorld *world, std::string pose_path,
+                     bool enable_collision = true);
     // void InitSimVars(btDiscreteDynamicsWorld* world, bool zero_pose, bool
     // zero_pose_vel);
     virtual void SetqAndqdot(const tVectorXd &q, const tVectorXd &qdot);
     virtual void Setq(const tVectorXd &q);
     virtual void Setqdot(const tVectorXd &qdot);
-    void SetMassMatEps(double eps);
+
     void ApplyGravity(const tVector &g); // apply force
     tVectorXd CalcGenGravity(
         const tVector &g) const; // calculate the generalized gravity, sometimes
@@ -122,15 +122,13 @@ protected:
     double mDampingCoef1,
         mDampingCoef2;           // damping coeffs used in Rayleigh damping
     bool mEnableEulerAngleClamp; // always clamp the euler angle to [-pi, pi]
-    double mEpsDiagnoal; // add epsilon on the diagonal of mass matrix, in order
-                         // to refine it.
-    double mMaxVel;      // the max velocity of generalized coordinates
+
+    double mMaxVel; // the max velocity of generalized coordinates
     btGeneralizeWorld *mWorld;
     // member methods
     // void UpdateRK4InternalUpdate(tVectorXd& q, tVectorXd& qdot, tVectorXd&
     // Q);
     void UpdateCartesianVelocity();
-    void ComputeMassMatrix();
     void ComputeDampingMatrix();
     void TestRotationChar();
     void TestLinkddJvddq(int id);

@@ -451,7 +451,7 @@ void btGenContactSolver::SolveByLCP()
             line_M.block(single_size - 1, i * single_size, 1, single_size) +=
                 C_mufn - C_c;
         }
-
+        
         // 3.3 give line M and line n to total M and n
         M.block(i * single_size, 0, single_size, final_shape) = line_M;
         n.segment(i * single_size, single_size) = line_n;
@@ -536,7 +536,13 @@ void btGenContactSolver::SolveByLCP()
     {
         std::cout << "[error] bt LCP solved failed, ret !=0 \n";
     }
-
+    if (x_lcp.hasNaN() == true)
+    {
+        std::cout << "[lcp] constraint force has Nan = " << x_lcp.transpose()
+                  << std::endl;
+        std::cout << "M=\n" << M << std::endl;
+        std::cout << "n=\n" << n.transpose() << std::endl;
+    }
     // Convert LCP result vector to cartesian forces
     ConvertLCPResult();
 
