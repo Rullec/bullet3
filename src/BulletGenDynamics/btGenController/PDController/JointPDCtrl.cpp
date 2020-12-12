@@ -1,4 +1,5 @@
 #include "BulletGenDynamics/btGenController/PDController/JointPDCtrl.h"
+#include "BulletGenDynamics/btGenModel/BallInSocketJoint.h"
 #include "BulletGenDynamics/btGenModel/Joint.h"
 #include "BulletGenDynamics/btGenModel/Link.h"
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
@@ -76,6 +77,9 @@ btGenJointPDCtrl::CalcControlForce(const tVectorXd &control_tar_q,
         break;
     case JointType::UNIVERSAL_JOINT:
         ControlForceUniversal(force, local_target_theta, local_target_vel);
+        break;
+    case JointType::BALLINSOCKET_JOINT:
+        ControlForceBallInSocket(force, local_target_theta, local_target_vel);
         break;
     default:
         BTGEN_ASSERT(false);
@@ -388,6 +392,14 @@ tVectorXd btGenJointPDCtrl::CalcLocalControlTargetByWorldTarget(
         control_target[2] = aa[0];
     }
     break;
+
+    case JointType::BALLINSOCKET_JOINT:
+    {
+        auto ball_joint = dynamic_cast<BallInSocketJoint *>(mJoint);
+        control_target = ball_joint->CalcTargetPoseByTargetLocalTransform(
+            btMathUtil::RotMatToQuaternion(local_target));
+        break;
+    }
     default:
         std::cout << "joint type " << mJoint->GetJointType()
                   << " unsupported in joint pd ctrl\n";
@@ -594,7 +606,7 @@ void btGenJointPDCtrl::ControlForceLimitNone(
 }
 
 /**
- * \brief           calc force for force
+ * \brief           calc force for universal joint
 */
 void btGenJointPDCtrl::ControlForceUniversal(
     tVector &force, const tVectorXd &local_target_theta,
@@ -610,4 +622,53 @@ void btGenJointPDCtrl::ControlForceUniversal(
         axis_mat * (mKp * (local_target_theta - local_cur_theta) +
                     mKd * (local_target_vel - local_cur_vel));
     force.segment(0, 3) = mJoint->GetWorldOrientation() * local_force;
+}
+
+/**
+ * \brief           Calc force for ball-in-socket joint
+ * \param force     reult control force
+ * \param local_target_theta    the target q of this joint
+ * \param local_target_vel      the target qdot of this joint
+*/
+#include "BulletGenDynamics/btGenModel/BallInSocketJoint.h"
+void btGenJointPDCtrl::ControlForceBallInSocket(
+    tVector &force, const tVectorXd &local_target_theta,
+    const tVectorXd &local_target_vel) const
+{
+    auto ball_joint = dynamic_cast<BallInSocketJoint *>(mJoint);
+    BTGEN_ASSERT(ball_joint != nullptr);
+
+    // 1. get the target and current quantities
+    tMatrix tar_orient =
+        ball_joint->CalcTargetLocalTransform(local_target_theta.segment(0, 3));
+    tMatrix cur_orient = mJoint->GetLocalTransform();
+
+    // joint vel: xdot, ydot, zdot of euler angles
+    // joint omega: angular velocity
+    tVector3d target_joint_vel = local_target_vel.segment(0, 3);
+    tVector3d cur_joint_vel = mJoint->GetJointLocalVel().segment(0, 3);
+    tVector3d target_omega = mJoint->GetLocalJkw() * target_joint_vel;
+    tVector3d cur_omega = mJoint->GetLocalJkw() * cur_joint_vel;
+
+    // 2. calc the diff
+    // tar = diff * cur
+    // diff = tar * cur.T
+    tVector3d omega_diff = target_omega - cur_omega;
+    tVector3d orient_diff =
+        btMathUtil::RotmatToAxisAngle(tar_orient * cur_orient.transpose())
+            .segment(0, 3);
+    std::cout << "ball in socket omega diff oppo: " << omega_diff.transpose()
+              << std::endl;
+    tVector3d local_force = mKp * orient_diff + mKd * omega_diff;
+
+    local_force[0] *= mScale[0];
+    local_force[1] *= mScale[1];
+    local_force[2] *= mScale[2];
+
+    // 3. global control force
+    tVector3d global_force =
+        mJoint->GetWorldOrientation() *
+        mJoint->GetLocalTransform().block(0, 0, 3, 3).transpose() * local_force;
+
+    force.segment(0, 3) = global_force;
 }

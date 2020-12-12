@@ -35,6 +35,7 @@ struct CustomEngineMainDemo : public CommonRigidBodyBase
         bool mAddObj;
         bool mAddMultibody;
         bool mEnableGround;
+        bool mCameraFocusOnCharacter;
         double mGroundHeight;
         std::string mMultibodyPath;
         int mObjLinkNum;
@@ -68,6 +69,7 @@ protected:
     void MultistepSim(float dt);
     void SinglestepSim(float dt);
     void Test();
+    void FocusTheChar();
     btGeneralizeWorld *mGenWorld;
     btGenContactAwareController *mAwareController;
     double mTimestep;
@@ -93,6 +95,8 @@ void CustomEngineMainDemo::stepSimulation(float dt)
         dt = physics_param->mDefaultTimestep;
         SinglestepSim(dt);
     }
+    if (this->physics_param->mCameraFocusOnCharacter == true)
+        FocusTheChar();
     m_guiHelper->autogenerateGraphicsObjects(m_dynamicsWorld);
 }
 
@@ -119,6 +123,7 @@ void CustomEngineMainDemo::initPhysics()
     if (physics_param->mAddMultibody)
     {
         mGenWorld->AddMultibody(physics_param->mMultibodyPath);
+        // Test();
 
         // add controller
         if (physics_param->mEnableController)
@@ -141,7 +146,6 @@ void CustomEngineMainDemo::initPhysics()
                                           true);
             }
         }
-        // Test();
     }
 
     if (physics_param->mEnableGround)
@@ -188,6 +192,7 @@ CustomEngineMainDemo::tParams::tParams(const std::string &path)
         btJsonUtil::ParseAsString("simulator_path", json_root);
     mAddMultibody = json_root["add_multibody"].asBool();
     mMultibodyPath = json_root["multibody_path"].asString();
+    mCameraFocusOnCharacter = json_root["camera_focus_character"].asBool();
     mAddObj = json_root["add_obj"].asBool();
     mEnableGround = json_root["enable_ground"].asBool();
     mGroundHeight = btJsonUtil::ParseAsDouble("ground_height", json_root);
@@ -276,6 +281,7 @@ void CustomEngineMainDemo::MultistepSim(float dt)
                                           true);
             }
             mGenWorld->ClearForce();
+
             mGenWorld->StepSimulation(
                 static_cast<float>(physics_param->mDefaultTimestep));
 
@@ -307,13 +313,22 @@ void CustomEngineMainDemo::SinglestepSim(float dt)
     global_frame_id++;
     return;
 }
+#include "BulletGenDynamics/btGenModel/ExpMapRotMat.h"
 #include "BulletGenDynamics/btGenModel/Joint.h"
 #include "BulletGenDynamics/btGenModel/Link.h"
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
 void CustomEngineMainDemo::Test()
 {
-    std::cout << "begin test\n";
+    std::cout << "[debug] begin test\n";
+    auto exp_map = new ExpMapRotation();
+    exp_map->SetAxis(tVector::Random());
+    exp_map->Test();
+    delete exp_map;
+    std::cout << "[log] exp test succ\n";
+    // exit(0);
+
     auto mb = mGenWorld->GetMultibody();
+    mb->SetComputeSecondDerive(true);
     mb->SetComputeThirdDerive(true);
     int dof = mb->GetNumOfFreedom();
     tVectorXd q = tVectorXd::Random(dof), qdot = tVectorXd::Random(dof);
@@ -326,6 +341,7 @@ void CustomEngineMainDemo::Test()
     //               << joint->GetJointType() << std::endl;
     // }
     // exit(0);
+    mb->TestmTq();
     mb->TestmTqq();
     mb->TestmTqqq();
     mb->TestmWq();
@@ -349,4 +365,31 @@ void CustomEngineMainDemo::Test()
     mb->TestConvertGenForceToJointTorque();
     std::cout << "test done\n";
     exit(0);
+}
+
+void CustomEngineMainDemo::FocusTheChar()
+{
+    int width;
+    int height;
+    float viewMatrix[16];
+    float projectionMatrix[16];
+    float camUp[3];
+    float camForward[3];
+    float hor[3];
+    float vert[3];
+    float yaw;
+    float pitch;
+    float camDist;
+    float camTarget[3];
+
+    /**
+     
+    */
+    m_guiHelper->getCameraInfo(&width, &height, viewMatrix, projectionMatrix,
+                               camUp, camForward, hor, vert, &yaw, &pitch,
+                               &camDist, camTarget);
+
+    tVector3d world_pos = mGenWorld->GetMultibody()->GetRoot()->GetWorldPos();
+    m_guiHelper->resetCamera(camDist, yaw, pitch, world_pos[0], world_pos[1],
+                             world_pos[2]);
 }

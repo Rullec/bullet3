@@ -81,6 +81,7 @@ public:
     void ComputeJw(); // compute link jw
     void ComputeAngularVelocity(tMatrixXd &omega, tVectorXd &q_dot);
     void SetOmega(EIGEN_V_tVector &omega, int st_joint);
+    void SetMassMatEps(double eps);
     const tMatrixXd &GetMassMatrix() const { return mass_matrix; }
     const tMatrixXd &GetCoriolisMatrix() const { return coriolis_matrix; }
     void ComputedMassMatrixdq(EIGEN_V_MATXD &dMdq) const;
@@ -144,6 +145,7 @@ public:
     void TestmWqqq();
     void TestmTqqq();
     void TestmTqq();
+    void TestmTq();
     void TestmWqq();
     void TestmWq();
 
@@ -153,6 +155,7 @@ protected:
     void TestJointmTqq(int joint);
     void TestJointmWqq(int joint);
     void TestJointmWq(int joint);
+    void TestJointmTq(int joint);
     // compute methods is prohibited to be called outside of the class
     void ComputeMassMatrix();
     void ComputeCoriolisMatrix(tVectorXd &q_dot);
@@ -211,6 +214,11 @@ protected:
     void AddUniversalJointFreedoms(BaseObject *joint, const tVector2d &lb,
                                    const tVector2d &ub, const tVector3d &axis0,
                                    const tVector3d &axis1);
+    void AddBallInSocketJointFreedoms(BaseObject *joint, const tVector3d &lb,
+                                      const tVector3d &ub,
+                                      const tVector3d &swing_axis0,
+                                      const tVector3d &swing_axis1);
+
     void UpdateFreedomId();
 
     void LoadBaseMesh();
@@ -271,6 +279,8 @@ protected:
     tVectorXd mq, mqdot;
     std::string char_file;
     double scale;
+    double mEpsDiagnoal; // add epsilon on the diagonal of mass matrix, in order
+                         // to refine it.
 };
 
 #endif // ROBOT_ROBOTMODEL_H

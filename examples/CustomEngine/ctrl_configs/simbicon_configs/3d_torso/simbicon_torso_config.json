@@ -5,7 +5,7 @@
     "num_of_states": 1,
     "state_0": {
         "next_state_id": 0,
-        "time": 0.6,
+        "time": 0.3,
         "transition_on_foot_contact": true,
         "trajectories": [
             {
@@ -119,5 +119,5 @@
     },
     "init_stance": "left_stance",
     "init_state": 0,
-    "init_pose": "examples/CustomEngine/ctrl_configs/simbicon_configs/3d_torso/init_pose.json"
+    "init_pose": "examples/CustomEngine/ctrl_configs/simbicon_configs/3d_torso/init_pose_ball.json"
 }

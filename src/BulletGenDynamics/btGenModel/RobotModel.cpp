@@ -1,4 +1,5 @@
 #include "RobotModel.h"
+#include "BallInSocketJoint.h"
 #include "BipedalRootJoint.h"
 #include "BulletGenDynamics/btGenUtil/JsonUtil.h"
 #include "FixedRootJoint.h"
@@ -49,6 +50,7 @@ cRobotModel::cRobotModel()
 {
     compute_second_deriv = false;
     compute_third_deriv = false;
+    mEpsDiagnoal = 0;
 }
 void cRobotModel::Init(const char *model_file, double scale, int type)
 {
@@ -638,7 +640,7 @@ void cRobotModel::AddSphericalFreedoms(BaseObject *joint,
         Freedom f;
         f.id = 0;
         f.name = joint->GetName();
-        f.type = REVOLUTE;
+        f.type = eFreedomType::REVOLUTE;
         f.axis = tVector3d(0, 0, 0);
         f.axis[freedom_order] = 1;
 
@@ -656,7 +658,7 @@ void cRobotModel::AddRevoluteJointFreedoms(BaseObject *joint, double lb,
     Freedom f;
     f.id = 0;
     f.name = joint->GetName();
-    f.type = REVOLUTE;
+    f.type = eFreedomType::REVOLUTE;
     f.axis = tVector3d(1, 0, 0);
 
     f.v = 0;
@@ -685,7 +687,7 @@ void cRobotModel::AddUniversalJointFreedoms(BaseObject *joint,
         Freedom f;
         f.id = 0;
         f.name = joint->GetName();
-        f.type = JointType::UNIVERSAL_JOINT;
+        f.type = eFreedomType::REVOLUTE;
         if (freedom_order == 0)
             f.axis = axis0;
         else if (freedom_order == 1)
@@ -699,6 +701,72 @@ void cRobotModel::AddUniversalJointFreedoms(BaseObject *joint,
 
         joint->AddFreedom(f);
     }
+}
+
+/**
+ * \brief       Add a ball-in-socket joint into the robot model
+ * the ball-in-socket joint is equiavalent to the spherical joint(3 DOFs as well), but the implemention is different
+ * the motion of it is decomposed into the swing and the twist, 
+ * the swing part(2DOF) is expressed by the exponential coordinate
+ * the twist part(1DOF) is expressed by euler angle
+ * 
+ * so the final RotMat of it is :
+ *  
+ * R = R_twist * R_swing
+*/
+void cRobotModel::AddBallInSocketJointFreedoms(BaseObject *joint,
+                                               const tVector3d &lb,
+                                               const tVector3d &ub,
+                                               const tVector3d &swing_axis0,
+                                               const tVector3d &swing_axis1)
+{
+    BTGEN_ASSERT(std::fabs(swing_axis0.norm() - 1) < 1e-10);
+    BTGEN_ASSERT(std::fabs(swing_axis1.norm() - 1) < 1e-10);
+    // add two swing freedom (exponential map)
+    {
+        for (int freedom_order = 0; freedom_order < 2; ++freedom_order)
+        {
+            Freedom f;
+            f.id = 0;
+            f.name = joint->GetName();
+            f.type = eFreedomType::EXPONENTIAL_MAP;
+            if (freedom_order == 0)
+                f.axis = swing_axis0;
+            else if (freedom_order == 1)
+                f.axis = swing_axis1;
+            else
+                BTGEN_ASSERT(false);
+
+            f.v = 0;
+            f.lb = lb[freedom_order];
+            f.ub = ub[freedom_order];
+
+            joint->AddFreedom(f);
+        }
+    }
+
+    // add one twist freedom (euler angle)
+    {
+        tVector3d twist_axis = swing_axis0.cross(swing_axis1);
+
+        if (twist_axis.minCoeff() < 0)
+            twist_axis *= -1;
+
+        BTGEN_ASSERT(std::fabs(twist_axis.maxCoeff() - 1) < 1e-10);
+        BTGEN_ASSERT(std::fabs(twist_axis.norm() - 1) < 1e-10);
+
+        Freedom f;
+        f.id = 0;
+        f.name = joint->GetName();
+        f.type = eFreedomType::REVOLUTE;
+        f.axis = twist_axis;
+        f.v = 0;
+        f.lb = lb[2];
+        f.ub = ub[2];
+
+        joint->AddFreedom(f);
+    }
+    dynamic_cast<BallInSocketJoint *>(joint)->SetupTwistAxis();
 }
 
 void cRobotModel::UpdateFreedomId()
@@ -1104,7 +1172,18 @@ void cRobotModel::LoadJsonModel(const char *file_path, double model_scale)
             continue;
         }
 
-        BaseObject *joint = new Joint(param);
+        // For non-rot joint
+        BaseObject *joint = nullptr;
+        if (joint_type == JointType::BALLINSOCKET_JOINT)
+        {
+            std::cout << "[debug] ball-in-socket joint " << param.name
+                      << " inited\n";
+            joint = new BallInSocketJoint(param);
+        }
+        else
+        {
+            joint = new Joint(param);
+        }
         joint_id_map.insert({param.id, joint});
         joints.insert({param.name, joint});
         joint->SetJointType(static_cast<JointType>(joint_type));
@@ -1146,7 +1225,23 @@ void cRobotModel::LoadJsonModel(const char *file_path, double model_scale)
             AddUniversalJointFreedoms(joint, lb, ub, axis0, axis1);
             break;
         }
+        case JointType::BALLINSOCKET_JOINT:
+        {
+            tVector3d lb, ub;
+            for (int i = 0; i < 3; i++)
+                lb[i] = btJsonUtil::ParseAsDouble("LimLow" + std::to_string(i),
+                                                  *itr),
+                ub[i] = btJsonUtil::ParseAsDouble("LimHigh" + std::to_string(i),
+                                                  *itr);
 
+            tVectorXd two_axis = btJsonUtil::ReadVectorJson(
+                btJsonUtil::ParseAsValue("Axis", *itr));
+            tVector3d swing_axis0 = two_axis.segment(0, 3),
+                      swing_axis1 = two_axis.segment(3, 3);
+            AddBallInSocketJointFreedoms(joint, lb, ub, swing_axis0,
+                                         swing_axis1);
+            break;
+        }
         default:
             BTGEN_ASSERT(false);
             break;
@@ -1581,6 +1676,7 @@ void cRobotModel::ComputeJacobiByGivenPointTotalDOFWorldFrame(
                 rt,
             1);
     target_joint->ComputeJacobiByGivenPointTotalDOF(j, p);
+    BTGEN_ASSERT(j.hasNaN() == false);
     // auto* target_link = GetLinkById(link_id);
     // auto* target_joint = target_link->GetParent();
     // tVector3d rt = point_world - target_link->GetWorldPos();
@@ -2006,7 +2102,7 @@ void cRobotModel::Update(bool compute_gradient)
         ComputeCoriolisMatrix(mqdot);
     }
 }
-
+void cRobotModel::SetMassMatEps(double eps) { mEpsDiagnoal = eps; }
 /**
  * \brief					Update the COM position of robot
  */
@@ -2296,7 +2392,9 @@ void cRobotModel::ComputeAngularVelocity(tMatrixXd &omega, tVectorXd &q_dot)
 
 void cRobotModel::ComputeMassMatrix()
 {
-    mass_matrix.setZero();
+    mass_matrix.setIdentity();
+    mass_matrix *= mEpsDiagnoal;
+    // std::cout << "eps = " << mEpsDiagnoal << std::endl;
     // std::cout << "------begin to calc mass mat------\n";
     for (auto &link : link_chain)
     {
@@ -2879,6 +2977,7 @@ void cRobotModel::TestJointmTqq(int id)
         EIGEN_V_tMatrixD mTqq_num(local_dof, tMatrix::Zero());
         for (int j = 0; j < local_dof; j++)
         {
+            // printf("[debug] test mTq%dq%d begin\n", i, j);
             mTq_new[j] = joint->GetMTQ(j);
             mTqq_num[j] = (mTq_new[j] - mTq[j]) / eps;
 
@@ -2888,8 +2987,15 @@ void cRobotModel::TestJointmTqq(int id)
             {
                 printf("[error] joint %d dT^2/dq%dq%d diff norm %.10f\n", id, i,
                        j, diff_norm);
-                exit(0);
+                std::cout << "new mTq = \n" << mTq_new[j] << std::endl;
+                std::cout << "old mTq = \n" << mTq[j] << std::endl;
+                std::cout << "num mTqq = \n" << mTqq_num[j] << std::endl;
+                std::cout << "ana mTqq = \n" << mTqq[i][j] << std::endl;
+                std::cout << "mTqq diff = \n" << diff << std::endl;
+                // exit(0);
             }
+            // else
+            //     printf("[log] joint %d test dT^2/dq%dq%d succ\n", id, i, j);
         }
 
         // compare the mTqq
@@ -2962,6 +3068,16 @@ void cRobotModel::TestJointmWqq(int id)
     printf("[log] TestmWqq for joint %d succ\n", id);
 }
 
+void cRobotModel::TestmTq()
+{
+    tVectorXd q_old = mq;
+    for (int i = 0; i < GetNumOfJoint(); i++)
+    {
+        TestJointmTq(i);
+    }
+    Apply(q_old, true);
+    std::cout << "[log] TestmTq for all joints succ\n";
+}
 void cRobotModel::TestmWq()
 {
     tVectorXd q_old = mq;
@@ -2973,6 +3089,43 @@ void cRobotModel::TestmWq()
     std::cout << "[log] TestmWq for all joints succ\n";
 }
 
+void cRobotModel::TestJointmTq(int id)
+{
+    // std::cout << "------begin test jont mTq for " << id << std::endl;
+
+    // 1. get old local transform
+    auto joint = dynamic_cast<Joint *>(GetJointById(id));
+    tMatrix old_local_trans = joint->GetLocalTransform();
+
+    // 2. get current mTq
+    tEigenArr<tMatrix> mTq_ana = GetJointXq(joint, 'T');
+
+    // 3. get the numerical result mTq, compare
+    double eps = 1e-5;
+    for (int i = 0; i < joint->GetNumOfFreedom(); i++)
+    {
+        int global_i = joint->GetFreedoms(i)->id;
+        mq[global_i] += eps;
+        Apply(mq, true);
+
+        tMatrix new_local_trans = joint->GetLocalTransform();
+        tMatrix mTq_num = (new_local_trans - old_local_trans) / eps;
+        tMatrix diff = mTq_num - mTq_ana[i];
+        double norm = diff.norm();
+
+        if (norm > 10 * eps)
+        {
+            printf("[error] test joint %d mTq%d failed\n", joint->GetId(), i);
+            std::cout << "ana = \n" << mTq_ana[i] << std::endl;
+            std::cout << "num = \n" << mTq_num << std::endl;
+            std::cout << "old trans = \n" << old_local_trans << std::endl;
+            std::cout << "new trans = \n" << new_local_trans << std::endl;
+            std::cout << "diff = \n" << diff << std::endl;
+            exit(0);
+        }
+        mq[global_i] -= eps;
+    }
+}
 void cRobotModel::TestJointmWq(int id)
 {
     // 1. get old mW, get current analytic mWq

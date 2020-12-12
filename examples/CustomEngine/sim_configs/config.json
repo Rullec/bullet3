@@ -5,8 +5,7 @@
     "enable_ground": true,
     "ground_height": 0,
     "real_time_sim": true,
-    "multibody_path_2links": "../DeepMimic/data/0805/characters/skeleton_2links_debug.json",
-    "multibody_path": "../DeepMimic/data/1127/characters/ankle_universal.json",
+    "multibody_path": "examples/CustomEngine/characters/ankle_universal_hip_ball.json",
     "enable_controller": true,
     "enable_contact_aware_control": false,
     "contact_aware_ref_traj": "../DeepMimic/data/id_test/sample_legs/traj_legs_51668091.json",
@@ -57,11 +56,12 @@
         0.01
     ],
     "camera_init_param": [
-        1,
+        2,
         180,
         0,
         0,
         0.5,
-        1
-    ]
+        0
+    ],
+    "camera_focus_character": true
 }

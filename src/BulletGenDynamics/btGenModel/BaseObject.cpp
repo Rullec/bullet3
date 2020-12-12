@@ -1,5 +1,5 @@
 #include "BaseObject.h"
-#include "EulerAngelRotationMatrix.h"
+#include "EulerAngleRotationMatrix.h"
 #include "tools.h"
 #include <iostream>
 JointType BuildJointType(std::string name)

@@ -34,10 +34,11 @@ enum eRootFreedomEnum
     TOTAL_ROOT_FREEDOM
 };
 
-enum
+enum eFreedomType
 {
-    REVOLUTE = 0,
-    TRANSLATE
+    REVOLUTE = 0,    // euler angle revolute freedom
+    TRANSLATE,       // translation freedom
+    EXPONENTIAL_MAP, // exponential map freedom
 };
 
 enum BASE_OBJ_TYPE
@@ -56,12 +57,13 @@ enum JointType
     SPHERICAL_JOINT,
     REVOLUTE_JOINT,
     UNIVERSAL_JOINT,
+    BALLINSOCKET_JOINT,
     FIXED_JOINT,
     TOTAL_JOINT_TYPE
 };
 const std::string joint_type_keys[TOTAL_JOINT_TYPE] = {
-    "none",      "limit_none", "bipedal_none", "fixed_none",
-    "spherical", "revolute",   "universal",    "fixed"};
+    "none",     "limit_none", "bipedal_none",   "fixed_none", "spherical",
+    "revolute", "universal",  "ball_in_socket", "fixed"};
 JointType BuildJointType(std::string name);
 
 struct BaseObjectParams

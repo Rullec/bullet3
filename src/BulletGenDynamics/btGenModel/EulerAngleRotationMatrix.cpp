@@ -1,4 +1,4 @@
-#include "EulerAngelRotationMatrix.h"
+#include "EulerAngleRotationMatrix.h"
 #include "ModelEigenUtils.h"
 #include <iostream>
 #include <math.h>
@@ -80,7 +80,7 @@ tMatrix EulerAngleTransform(const tVector3d &v, const Eigen::Vector3i &order)
            RotFunc4d[order[2]](v[order[2]]);
 }
 
-tMatrix3d EulerAngelRotation(double x, double y, double z)
+tMatrix3d EulerAngleRotation(double x, double y, double z)
 {
     tMatrix3d m;
     m = xconventionRotation(x) * yconventionRotation(y) *

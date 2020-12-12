@@ -307,7 +307,8 @@ void btGenCollisionObjData::Setup(int n_total_contact, int n_total_joint_limits)
         std::cout << "wrong type\n";
         exit(0);
     }
-
+    BTGEN_ASSERT(mConvertCartesianForceToVelocityMat.hasNaN() == false);
+    BTGEN_ASSERT(mConvertCartesianForceToVelocityVec.hasNaN() == false);
     // std::ofstream fout(gOutputLogPath, std::ios::app);
     // fout << "abs convert mat = \n"
     // 	 << mConvertCartesianForceToVelocityMat << std::endl;
@@ -468,6 +469,17 @@ void btGenCollisionObjData::SetupRobotCollider()
     coriolis_mat = model->GetCoriolisMatrix();
     damping_mat = model->GetDampingMatrix();
     M_dt_C_D_inv = (M + dt * (coriolis_mat + damping_mat)).inverse();
+    if (M_dt_C_D_inv.hasNaN() == true)
+    {
+        std::cout << "dt = " << dt << std::endl;
+        std::cout << "M = \n" << M << std::endl;
+        std::cout << "C = \n" << coriolis_mat << std::endl;
+        std::cout << "D = \n" << damping_mat << std::endl;
+        std::cout << "D+dtCd = \n"
+                  << M + dt * (coriolis_mat + damping_mat) << std::endl;
+        BTGEN_ASSERT(false);
+    }
+    BTGEN_ASSERT(inv_M.hasNaN() == false);
     const tMatrixXd &I = tMatrixXd::Identity(n_dof, n_dof);
 
     // residual part: the Q and qdot_next has a linear relationship, qdot_next = A * Q + b. b is the residual here
@@ -544,8 +556,9 @@ void btGenCollisionObjData::SetupRobotCollider()
             middle_part = dt * Minv in old-semi-implicit 
                         = others in new-semi-implicit
         */
+        BTGEN_ASSERT(Jac_partA.hasNaN() == false);
         Jac_partA *= A_middle_part;
-
+        BTGEN_ASSERT(Jac_partA.hasNaN() == false);
         // for each contact point that takes effect on this i-th contact point
         for (int j_cons_id = 0; j_cons_id < num_constraints; j_cons_id++)
         {
@@ -615,6 +628,8 @@ void btGenCollisionObjData::SetupRobotCollider()
             mConvertCartesianForceToVelocityMat
                 .block(i_st, j_st, i_size, j_size)
                 .noalias() = Jac_partA * Jac_partB;
+            BTGEN_ASSERT(Jac_partA.hasNaN() == false);
+            BTGEN_ASSERT(Jac_partB.hasNaN() == false);
         }
         // std::cout << "residaul a after = " << (*residual_a) << std::endl;
         // std::cout << "residual part = " << residual_part.transpose()

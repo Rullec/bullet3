@@ -37,22 +37,22 @@ public:
 
     bool IsJoint() const override { return true; }
     void UpdateState(bool compute_gradient) override;
-    void UpdateMatrix();
+    virtual void UpdateMatrix();
 
     // =============First order derivative=============
-    void ComputeLocalFirstDeriveMatrix(); // dRxdqx, dRy/dqy, dRz/dqz
+    virtual void ComputeLocalFirstDeriveMatrix(); // dRxdqx, dRy/dqy, dRz/dqz
     virtual void
     ComputeLocalTransformFirstDerive(); // T = Rz * Ry * Rx, calculate dT/dqx, dT/dqy, dT/dqz
     void ComputeGlobalTransformFirstDerive(); //
 
     // =============Second order derivative=============
     virtual void ComputeLocalJkw() override final;
-    void ComputeLocalSecondDeriveMatrix();
+    virtual void ComputeLocalSecondDeriveMatrix();
     virtual void ComputeLocalTransformSecondDerive();
     void ComputeGlobalTransformSecondDerive();
 
     // =============Third order derivative=============
-    void ComputeLocalThirdDeriveMatrix();
+    virtual void ComputeLocalThirdDeriveMatrix();
     virtual void ComputeLocalTransformThirdDerive();
     void ComputeGlobalTransformThirdDerive();
 
