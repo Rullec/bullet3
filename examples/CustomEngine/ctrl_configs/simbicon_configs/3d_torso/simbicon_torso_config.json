@@ -5,7 +5,7 @@
     "num_of_states": 1,
     "state_0": {
         "next_state_id": 0,
-        "time": 0.3,
+        "time": 0.5,
         "transition_on_foot_contact": true,
         "trajectories": [
             {
@@ -23,8 +23,8 @@
                                 0,
                                 1
                             ],
-                            "cd": -0.5,
-                            "cv": -0.2
+                            "cd": -0.7,
+                            "cv": -0.1
                         },
                         "time_knots": [
                             0,
@@ -51,7 +51,7 @@
                                 0,
                                 0
                             ],
-                            "cd": 0.5,
+                            "cd": 1.0,
                             "cv": 0.2
                         },
                         "time_knots": [
