@@ -96,18 +96,9 @@ public:
                                     const btRotationOrder &order);
     static tMatrix VectorToSkewMat(const tVector &);
     static tMatrix VectorToSkewMat2(const tVector &);
-    template <typename T> static tVector SkewMatToVector(const T &mat)
-    {
-        // verify mat is a skew matrix
-        assert((mat + mat.transpose()).norm() < 1e-6);
+    static tVector SkewMatToVector(const tMatrix &mat);
+    static tVector SkewMatToVector3d(const tMatrix3d &mat);
 
-        // squeeze a mat to a vector
-        tVector res = tVector::Zero();
-        res[0] = mat(2, 1);
-        res[1] = mat(0, 2);
-        res[2] = mat(1, 0);
-        return res;
-    }
     static tMatrix SkewMatFirstDeriv(const tVector &theta, int i);
     static tMatrix SkewMatSecondDeriv(const tVector &theta, int i, int j);
     static tMatrix SkewMat2FirstDeriv(const tVector &theta, int i);

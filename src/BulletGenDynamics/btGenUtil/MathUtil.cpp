@@ -959,3 +959,24 @@ void btMathUtil::TestSkewMatDeriv()
         std::cout << "[debug] test skewmat2 second order deriv succ\n";
     }
 }
+tVector btMathUtil::SkewMatToVector(const tMatrix &mat)
+{
+    return btMathUtil::SkewMatToVector(mat.block(0, 0, 3, 3));
+}
+tVector btMathUtil::SkewMatToVector3d(const tMatrix3d &mat)
+{
+    // verify mat is a skew matrix
+    double diff_norm = (mat + mat.transpose()).norm();
+    if (diff_norm > 1e-6)
+    {
+        std::cout << "[warn] skew mat to vector diff " << diff_norm
+                  << "> 1e-6\n";
+    }
+
+    // squeeze a mat to a vector
+    tVector res = tVector::Zero();
+    res[0] = (mat(2, 1) - mat(1, 2)) / 2;
+    res[1] = (mat(0, 2) - mat(2, 0)) / 2;
+    res[2] = (mat(1, 0) - mat(0, 1)) / 2;
+    return res;
+}

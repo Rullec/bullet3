@@ -172,6 +172,14 @@
             "LimLow0": -1.3,
             "LimLow1": -1,
             "LimLow2": -1,
+            "Axis": [
+               1,
+               0,
+               0,
+               0,
+               0,
+               1
+            ],
             "Name": "RightLeg",
             "Parent": 0,
             "TorqueLim": 200.0,

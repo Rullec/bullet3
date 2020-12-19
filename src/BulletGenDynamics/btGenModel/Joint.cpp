@@ -1232,7 +1232,7 @@ void Joint::ComputeLocalJkw()
             mTq[i].topLeftCorner<3, 3>() * local_rotation.transpose();
         // 2. check that it's a skew matrix
         // 3. extract the skew vector and put it into the matrix's column
-        tVector col = btMathUtil::SkewMatToVector(dRdq_RT);
+        tVector col = btMathUtil::SkewMatToVector3d(dRdq_RT);
         JK_w_local.col(i) = col.segment(0, 3);
     }
 }
