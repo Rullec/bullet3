@@ -390,6 +390,6 @@ void CustomEngineMainDemo::FocusTheChar()
                                &camDist, camTarget);
 
     tVector3d world_pos = mGenWorld->GetMultibody()->GetRoot()->GetWorldPos();
-    m_guiHelper->resetCamera(2, yaw, pitch, world_pos[0], world_pos[1],
+    m_guiHelper->resetCamera(camDist, yaw, pitch, world_pos[0], world_pos[1],
                              world_pos[2]);
 }
