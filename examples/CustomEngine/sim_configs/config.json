@@ -62,5 +62,6 @@
         0,
         0.5,
         1
-    ]
+    ],
+    "camera_focus_character": true
 }
