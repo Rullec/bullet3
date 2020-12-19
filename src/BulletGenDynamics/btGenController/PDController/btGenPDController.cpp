@@ -265,10 +265,37 @@ void btGenPDController::CalculateControlForcesSPD(
  * \brief           Calculate control forces by normal PD
  * \param 
 */
+void VerifyAngVel(cRobotModel *model)
+{
+    for (int i = 0; i < model->GetNumOfLinks(); i++)
+    {
+        auto joint = dynamic_cast<Joint *>(model->GetJointById(i));
+        int pid = joint->GetParentId(),
+            cid = joint->GetNumOfChildren() == 0
+                      ? -1
+                      : joint->GetFirstChild()->GetId();
+        if (pid == -1 || cid == -1)
+            continue;
+        auto plink = model->GetLinkById(pid), clink = model->GetLinkById(cid);
+        tVector3d p_w = plink->GetJKw() * model->Getqdot(),
+                  c_w = clink->GetJKw() * model->Getqdot();
+        tVector3d joint_w = joint->GetLocalJkw() *
+                            model->Getqdot().segment(joint->GetOffset(),
+                                                     joint->GetNumOfFreedom());
+        // global = rest * local
+        // rest = global * local.inv
+        tMatrix3d rest =
+            joint->GetWorldOrientation() * joint->GetRotations().transpose();
+        tVector3d joint_w_world = rest * joint_w;
+        std::cout << "joint " << i << " ang vel diff = "
+                  << (p_w + joint_w_world - c_w).transpose() << std::endl;
+    }
+}
 void btGenPDController::CalculateControlForcesExp(
     const tVectorXd &control_target_q, const tVectorXd control_target_qdot,
     tEigenArr<btGenPDForce> &pd_force_array)
 {
+    VerifyAngVel(mModel);
     pd_force_array.clear();
     btGenPDForce pd_force;
     for (int i = 0; i < mExpJointPDControllers.size(); i++)

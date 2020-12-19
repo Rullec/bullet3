@@ -657,7 +657,8 @@ void btGenJointPDCtrl::ControlForceBallInSocket(
     tVector3d orient_diff =
         btMathUtil::RotmatToAxisAngle(tar_orient * cur_orient.transpose())
             .segment(0, 3);
-
+    std::cout << "ball in socket omega diff oppo: " << omega_diff.transpose()
+              << std::endl;
     tVector3d local_force = mKp * orient_diff + mKd * omega_diff;
 
     local_force[0] *= mScale[0];
