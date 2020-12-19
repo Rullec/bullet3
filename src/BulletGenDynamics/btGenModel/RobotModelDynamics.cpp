@@ -195,44 +195,8 @@ void cRobotModelDynamics::InitSimVars(btGeneralizeWorld *world,
     mGenForce.resize(dof);
     mGenForce.setZero();
 
-    // load init pose
-    {
-        if (btFileUtil::ExistsFile(init_pose_path) == false)
-        {
-            mq.setZero();
-            mqdot.setZero();
-            printf("[warn] init pose path = %s doesn't exist, the init pose is "
-                   "set to zero\n",
-                   init_pose_path.c_str());
-        }
-        else
-        {
-
-            Json::Value init_pose_vel;
-            btJsonUtil::LoadJson(init_pose_path, init_pose_vel);
-
-            mq = btJsonUtil::ReadVectorJson(
-                btJsonUtil::ParseAsValue("pose", init_pose_vel));
-            mqdot = btJsonUtil::ReadVectorJson(
-                btJsonUtil::ParseAsValue("vel", init_pose_vel));
-            if (mq.size() != GetNumOfFreedom())
-            {
-                std::cout << "[error] the init pose at " << init_pose_path
-                          << " length " << mq.size() << " != dof "
-                          << GetNumOfFreedom() << std::endl;
-                exit(0);
-            }
-            if (mqdot.size() != GetNumOfFreedom())
-            {
-                std::cout << "[error] the init vel at " << init_pose_path
-                          << " length " << mqdot.size() << " != dof "
-                          << GetNumOfFreedom() << std::endl;
-                exit(0);
-            }
-        }
-    }
-
-    cRobotModelDynamics::SetqAndqdot(mq, mqdot);
+    // set init pose
+    SetqAndqdot(init_pose_path);
 
     tVectorXd lower, upper;
     GetJointLimit(lower, upper);
@@ -470,6 +434,48 @@ void cRobotModelDynamics::SetqAndqdot(const tVectorXd &q_,
     SyncToBullet();
 }
 
+void cRobotModelDynamics::SetqAndqdot(std::string init_pose_path)
+{
+    // load init pose
+
+    {
+        if (init_pose_path.size() == 0)
+        {
+            mq.setZero();
+            mqdot.setZero();
+            printf(
+                "[warn] init pose path hasn't been specified, the init pose is "
+                "set to zero\n");
+        }
+        else
+        {
+
+            Json::Value init_pose_vel;
+            btJsonUtil::LoadJson(init_pose_path, init_pose_vel);
+
+            mq = btJsonUtil::ReadVectorJson(
+                btJsonUtil::ParseAsValue("pose", init_pose_vel));
+            mqdot = btJsonUtil::ReadVectorJson(
+                btJsonUtil::ParseAsValue("vel", init_pose_vel));
+            if (mq.size() != GetNumOfFreedom())
+            {
+                std::cout << "[error] the init pose at " << init_pose_path
+                          << " length " << mq.size() << " != dof "
+                          << GetNumOfFreedom() << std::endl;
+                exit(0);
+            }
+            if (mqdot.size() != GetNumOfFreedom())
+            {
+                std::cout << "[error] the init vel at " << init_pose_path
+                          << " length " << mqdot.size() << " != dof "
+                          << GetNumOfFreedom() << std::endl;
+                exit(0);
+            }
+        }
+    }
+
+    cRobotModelDynamics::SetqAndqdot(mq, mqdot);
+}
 void cRobotModelDynamics::Setq(const tVectorXd &q) { SetqAndqdot(q, mqdot); }
 void cRobotModelDynamics::Setqdot(const tVectorXd &qdot_)
 {

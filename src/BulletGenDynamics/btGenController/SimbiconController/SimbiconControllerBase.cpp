@@ -234,7 +234,9 @@ void btGenSimbiconControllerBase::ComputeTorques(
                           << local_target.coeffs().transpose() << std::endl;
                 std::cout << "restored tar = "
                           << restored_orient.coeffs().transpose() << std::endl;
-                BTGEN_ASSERT(false);
+                std::cout
+                    << "[warn] ball in socket joint doesn't work as expected\n";
+                // BTGEN_ASSERT(false);
             }
             std::cout << "[log] ball-in-socket joint " << ball_joint->GetName()
                       << " restored q = " << local_tar_pose.transpose()
@@ -419,13 +421,9 @@ void btGenSimbiconControllerBase::InitStates(const Json::Value &conf)
 */
 void btGenSimbiconControllerBase::InitStartPose(const Json::Value &conf)
 {
-    std::string st_pose = btJsonUtil::ParseAsString("init_pose", conf);
-    Json::Value pose;
-    btJsonUtil::LoadJson(st_pose, pose);
-    int dof = mModel->GetNumOfFreedom();
-    BTGEN_ASSERT(pose.size() == dof);
-    tVectorXd q = btJsonUtil::ReadVectorJson(pose);
-    mModel->SetqAndqdot(q, tVectorXd::Zero(dof));
+    std::string init_pose_vel = btJsonUtil::ParseAsString("init_pose", conf);
+
+    mModel->SetqAndqdot(init_pose_vel);
 }
 
 /**
