@@ -46,10 +46,13 @@ public:
     tMatrix GetInvInertia() const;
     tMatrix GetInertia() const;
     tVector GetWorldPos() const;
+    void SetWorldPos(const tVector &);
+    void SetOrientation(const tQuaternion &);
     tQuaternion GetOrientation() const;
     tVector GetLinVel() const;
     tVector GetAngVel() const;
     tVector GetTotalTorque() const;
+    tVector GetTotalForce() const;
     virtual tVector GetVelocityOnPoint(const tVector &pt) override final;
     void SetLinVel(const tVector &v);
     void SetAngVel(const tVector &v);

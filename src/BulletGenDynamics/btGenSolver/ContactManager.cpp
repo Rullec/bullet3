@@ -49,3 +49,26 @@ double btGenContactManager::GetVerticalTotalForceWithGround(
     }
     return total_v_f;
 }
+
+tVector btGenContactManager::GetTotalForceWithGround(
+    const btCollisionObject *body) const
+{
+    const auto ground = mWorld->GetGround();
+    auto contact_forces = mWorld->GetContactForces();
+
+    tVector total_f = tVector::Zero();
+    for (auto &f : contact_forces)
+    {
+        if (f->mObj == body && f->mPassiveObj == ground)
+        {
+            total_f += f->mForce;
+        }
+    }
+    return total_f;
+}
+
+int btGenContactManager::GetNumOfContactWithGround(
+    const btCollisionObject *b1) const
+{
+    return this->GetTwoObjsNumOfContact(b1, mWorld->GetGround());
+}

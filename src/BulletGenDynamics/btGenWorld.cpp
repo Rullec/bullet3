@@ -72,8 +72,12 @@ btGeneralizeWorld::~btGeneralizeWorld()
     delete m_dispatcher;
     delete m_collisionConfiguration;
     mManifolds.clear();
-    for (auto &x : mCollisionShapeArray)
-        delete x.second;
+    for (int i = 0; i < mCollisionShapeArray.size(); i++)
+    {
+        delete mCollisionShapeArray[i].second;
+    }
+    // for (auto &x : mCollisionShapeArray)
+    //     delete x.second;
     mCollisionShapeArray.clear();
 
     delete mLCPContactSolver;
@@ -232,17 +236,14 @@ void btGeneralizeWorld::AddObj(int n, const std::string &obj_type,
     if (obj_type == "ball")
     {
         colShape = GetSphereCollisionShape(0.5);
-        mCollisionShapeArray.push_back(std::make_pair(1, colShape));
     }
     else if (obj_type == "cube")
     {
         colShape = GetBoxCollisionShape(tVector3d(0.5, 0.5, 0.5));
-        mCollisionShapeArray.push_back(std::make_pair(1, colShape));
     }
     else if (obj_type == "stick")
     {
         colShape = GetBoxCollisionShape(tVector3d(0.001, 0.1, 2));
-        mCollisionShapeArray.push_back(std::make_pair(1, colShape));
     }
     else
     {
@@ -252,8 +253,9 @@ void btGeneralizeWorld::AddObj(int n, const std::string &obj_type,
 
     /// Create Dynamic Objects
     btTransform startTransform;
-    startTransform.setIdentity();
-    startTransform.setOrigin(btVector3(0, -1, 0));
+    startTransform.setRotation(
+        btBulletUtil::tQuaternionTobtQuaternion(tQuaternion::UnitRandom()));
+    startTransform.setOrigin(btVector3(0, 1, 0));
     // startTransform.setOrigin(btVector3(0.680375, -1.18218, 0.566198));
     // tQuaternion qua = tQuaternion(0.800701, 0.372043, 0.28516, -0.373023);
     // startTransform.setRotation(btBulletUtil::tQuaternionTobtQuaternion(qua));
@@ -275,7 +277,7 @@ void btGeneralizeWorld::AddObj(int n, const std::string &obj_type,
             for (int j = 0; j < 1; j++)
             {
                 startTransform.setOrigin(btVector3(
-                    btScalar(1 * i), btScalar(-1 + 1.1 * k), btScalar(1 * j)));
+                    btScalar(1 * i), btScalar(1 + 1.1 * k), btScalar(1 * j)));
                 if (add_perturb)
                     startTransform.setOrigin(startTransform.getOrigin() +
                                              btBulletUtil::tVectorTobtVector(
@@ -464,6 +466,8 @@ btBroadphaseInterface *btGeneralizeWorld::GetBroadphase()
 {
     return m_broadphase;
 }
+
+int btGeneralizeWorld::GetNumOfRigidBody() const { return mSimObjs.size(); }
 btGenCollisionDispatcher *btGeneralizeWorld::GetDispatcher()
 {
     return m_dispatcher;
@@ -473,6 +477,28 @@ btDefaultCollisionConfiguration *btGeneralizeWorld::GetConfiguration()
     return m_collisionConfiguration;
 }
 
+btGenRigidBody *btGeneralizeWorld::GetRigidBodyById(int id)
+{
+    if (id < 0 || id >= GetNumOfRigidBody())
+    {
+        printf(
+            "[warn] GetRigidBodyById = %d illegan when total num of rbs = %d\n",
+            id, GetNumOfRigidBody());
+        return nullptr;
+    }
+    return mSimObjs[id];
+}
+btGenRigidBody *btGeneralizeWorld::GetRigidBodyByName(std::string name)
+{
+    for (auto &x : mSimObjs)
+    {
+        if (x->GetName() == name)
+        {
+            return x;
+        }
+    }
+    return nullptr;
+}
 btGeneralizeWorld::eContactResponseMode
 btGeneralizeWorld::GetContactResponseMode() const
 {
@@ -485,35 +511,35 @@ void btGeneralizeWorld::createRigidBody(double mass,
                                         const std::string &name,
                                         const btVector4 &color)
 {
-    // judge whether it is statid plane
+    // judge whether it is static plane
     btTransform new_trans = startTransform_;
-    {
-        btStaticPlaneShape *static_plane =
-            dynamic_cast<btStaticPlaneShape *>(shape);
-        if (static_plane != nullptr)
-        {
-            // std::cout << "add static plane\n";
-            btVector3 normal = static_plane->getPlaneNormal();
-            btScalar constant = static_plane->getPlaneConstant();
+    // {
+    //     btStaticPlaneShape *static_plane =
+    //         dynamic_cast<btStaticPlaneShape *>(shape);
+    //     if (static_plane != nullptr)
+    //     {
+    //         // std::cout << "add static plane\n";
+    //         btVector3 normal = static_plane->getPlaneNormal();
+    //         btScalar constant = static_plane->getPlaneConstant();
 
-            // recreate a feasible BIG cube
-            mass = 0;
-            double cube_size = 100;
-            shape = GetBoxCollisionShape(
-                tVector3d(cube_size / 2, cube_size / 2, cube_size / 2));
-            tMatrix rot = btMathUtil::DirToRotMat(
-                btBulletUtil::btVectorTotVector0(normal), tVector(0, 1, 0, 0));
-            btVector3 translate = normal * (constant - cube_size / 2);
-            // std::cout << "rot = \n"
-            // 		  << rot << std::endl;
-            // std::cout << "translate = " <<
-            // btBulletUtil::btVectorTotVector0(translate).transpose() <<
-            // std::endl;
-            new_trans.setOrigin(translate);
-            new_trans.setRotation(btBulletUtil::tQuaternionTobtQuaternion(
-                btMathUtil::RotMatToQuaternion(rot)));
-        }
-    }
+    //         // recreate a feasible BIG cube
+    //         mass = 0;
+    //         double cube_size = 100;
+    //         shape = GetBoxCollisionShape(
+    //             tVector3d(cube_size / 2, cube_size / 2, cube_size / 2));
+    //         tMatrix rot = btMathUtil::DirToRotMat(
+    //             btBulletUtil::btVectorTotVector0(normal), tVector(0, 1, 0, 0));
+    //         btVector3 translate = normal * (constant - cube_size / 2);
+    //         // std::cout << "rot = \n"
+    //         // 		  << rot << std::endl;
+    //         // std::cout << "translate = " <<
+    //         // btBulletUtil::btVectorTotVector0(translate).transpose() <<
+    //         // std::endl;
+    //         new_trans.setOrigin(translate);
+    //         new_trans.setRotation(btBulletUtil::tQuaternionTobtQuaternion(
+    //             btMathUtil::RotMatToQuaternion(rot)));
+    //     }
+    // }
 
     btVector3 localInertia(0, 0, 0);
 
@@ -1378,7 +1404,6 @@ btCollisionShape *btGeneralizeWorld::GetSphereCollisionShape(double radius)
             }
         }
     }
-
     // hasn't found, create a new one
     mCollisionShapeArray.push_back(
         std::make_pair<int, btCollisionShape *>(1, new btSphereShape(radius)));

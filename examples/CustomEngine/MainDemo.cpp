@@ -408,7 +408,14 @@ void CustomEngineMainDemo::FocusTheChar()
                                camUp, camForward, hor, vert, &yaw, &pitch,
                                &camDist, camTarget);
 
-    tVector3d world_pos = mGenWorld->GetMultibody()->GetRoot()->GetWorldPos();
+    auto mb = mGenWorld->GetMultibody();
+    if (mb == nullptr)
+    {
+        printf(
+            "[warn] no character info, camera cannot focus on the multibody\n");
+        return;
+    }
+    tVector3d world_pos = mb->GetRoot()->GetWorldPos();
     m_guiHelper->resetCamera(camDist, yaw, pitch, world_pos[0], world_pos[1],
                              world_pos[2]);
 }
