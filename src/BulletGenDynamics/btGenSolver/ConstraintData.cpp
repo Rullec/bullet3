@@ -767,6 +767,8 @@ void btGenCollisionObjData::SetupRigidBody()
             inv_inertia = rigidbody->GetInvInertia();
     double dt = mContactPts[0]->dt;
     double invmass = rigidbody->GetInvMass();
+    tVector total_force = rigidbody->GetTotalForce(),
+            total_torque = rigidbody->GetTotalTorque();
     for (int i = 0; i < n_my_contact; i++)
     {
         btGenContactPointData *data = mContactPts[i];
@@ -798,10 +800,19 @@ void btGenCollisionObjData::SetupRigidBody()
         }
 
         // form the residual
+        /*
+            vt
+            + 
+            dt * inv_m * total_force
+            -[r] * dt * Inertia_inv * (total_torque - [w]*(Inertia * w))
+             - [r] * w
+        */
         mConvertCartesianForceToVelocityVec.segment(i_id * 3, 3) =
-            (rigidbody->GetLinVel() - RelPosSkew[i] * angvel +
-             dt * RelPosSkew[i] * inv_inertia *
-                 btMathUtil::VectorToSkewMat(angvel) * inertia * angvel)
+            (rigidbody->GetLinVel() + dt * invmass * total_force -
+             RelPosSkew[i] * dt * inv_inertia *
+                 (total_torque -
+                  btMathUtil::VectorToSkewMat(angvel) * (inertia * angvel)) -
+             RelPosSkew[i] * angvel)
                 .segment(0, 3);
     }
 }

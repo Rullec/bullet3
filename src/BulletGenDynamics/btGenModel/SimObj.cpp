@@ -205,7 +205,7 @@ bool btGenRigidBody::IsStatic() const
 }
 
 tVector btGenRigidBody::GetTotalTorque() const { return mTotalTorque; }
-
+tVector btGenRigidBody::GetTotalForce() const { return mTotalForce; }
 /**
  * \brief			Get the velocity of a global point
  * \param pt		the position in world frame
@@ -222,6 +222,17 @@ tVector btGenRigidBody::GetVelocityOnPoint(const tVector &pt)
 float btGenRigidBody::GetMass() const { return 1.0 / mInvMass; }
 float btGenRigidBody::GetInvMass() const { return mInvMass; }
 tVector btGenRigidBody::GetWorldPos() const { return mOrigin; }
+
+void btGenRigidBody::SetWorldPos(const tVector &world_pos)
+{
+    mOrigin = world_pos;
+    WriteTransAndVelToBullet();
+}
+void btGenRigidBody::SetOrientation(const tQuaternion &rot)
+{
+    mLocalRot = rot;
+    WriteTransAndVelToBullet();
+}
 
 tQuaternion btGenRigidBody::GetOrientation() const { return mLocalRot; }
 

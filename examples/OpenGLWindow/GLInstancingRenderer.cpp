@@ -1114,7 +1114,7 @@ int GLInstancingRenderer::registerShape(const float* vertices, int numvertices, 
 	}
 
 	gfxObj->m_primitiveType = primitiveType;
-	printf("[debug] graphisc num instances %d\n", m_graphicsInstances.size());
+	printf("[debug] graphic num instances %d\n", m_graphicsInstances.size());
 	if (m_graphicsInstances.size())
 	{
 		b3GraphicsInstance* prevObj = m_graphicsInstances[m_graphicsInstances.size() - 1];

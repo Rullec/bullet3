@@ -73,6 +73,9 @@ public:
     btGenControllerBase *GetController();
     btDiscreteDynamicsWorld *GetInternalWorld();
     btBroadphaseInterface *GetBroadphase();
+    int GetNumOfRigidBody() const;
+    btGenRigidBody *GetRigidBodyById(int id);
+    btGenRigidBody *GetRigidBodyByName(std::string name);
     btGenCollisionDispatcher *GetDispatcher();
     btDefaultCollisionConfiguration *GetConfiguration();
     eContactResponseMode GetContactResponseMode() const;
