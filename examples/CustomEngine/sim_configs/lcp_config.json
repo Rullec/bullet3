@@ -1,7 +1,8 @@
 {
-    "lcp_solver_type_lemke": "btPath",
-    "lcp_solver_type_bb": "NativeLemke",
-    "lcp_solver_type": "odeDantzig",
+    "lcp_solver_type_bb": "btPath",
+    "lcp_solver_type_lemke": "NativeLemke",
+    "lcp_solver_type": "MobyOld",
+    "lcp_solver_type_dantzig": "odeDantzig",
     "enable_multibody_self_collision": true,
     "enable_convert_mat_test": false,
     "enable_lcp_calculation": true,
@@ -11,7 +12,7 @@
     "use_lcp_result": true,
     "enable_contact_penetration_resolve": true,
     "enable_joint_limit_penetration_resolve": true,
-    "contact_penetration_resolve_erp": 0.1,
+    "contact_penetration_resolve_erp": 0,
     "joint_limit_penetration_resolve_erp": 1,
     "enable_sequential_impulse_calculation": false,
     "enable_frictional_sequential_impulse": false,
@@ -20,7 +21,8 @@
     "converge_threshold_sequential_impulse": 0.1,
     "enable_si_lcp_comparision": false,
     "enable_debug_output": false,
-    "diagonal_eps": 0.001,
+    "diagonal_eps": 1e-8,
     "mu": 1,
-    "num_of_friction_cone": 4
+    "num_of_friction_cone": 4,
+    "enable_lcp_profiling": true
 }

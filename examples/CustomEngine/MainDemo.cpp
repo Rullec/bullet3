@@ -14,6 +14,7 @@
 #include "BulletGenDynamics/btGenController/ContactAwareController/FBFCalculator/btGenFrameByFrameCalculator.h"
 #include "BulletGenDynamics/btGenController/ContactAwareController/btGenContactAwareController.h"
 #include "BulletGenDynamics/btGenUtil/JsonUtil.h"
+#include "BulletGenDynamics/btGenUtil/TimeUtil.hpp"
 #include "BulletGenDynamics/btGenWorld.h"
 #include <fstream>
 #include <iostream>
@@ -35,6 +36,7 @@ struct CustomEngineMainDemo : public CommonRigidBodyBase
         bool mAddObj;
         bool mAddMultibody;
         bool mEnableGround;
+        bool mEnableProfiling;
         bool mCameraFocusOnCharacter;
         double mGroundHeight;
         std::string mMultibodyPath;
@@ -195,6 +197,7 @@ CustomEngineMainDemo::tParams::tParams(const std::string &path)
     mCameraFocusOnCharacter = json_root["camera_focus_character"].asBool();
     mAddObj = json_root["add_obj"].asBool();
     mEnableGround = json_root["enable_ground"].asBool();
+    mEnableProfiling = json_root["enable_profiling"].asBool();
     mGroundHeight = btJsonUtil::ParseAsDouble("ground_height", json_root);
     mObjLinkNum = json_root["obj_num"].asInt();
     mObjType = json_root["obj_type"].asString();
@@ -282,8 +285,16 @@ void CustomEngineMainDemo::MultistepSim(float dt)
             }
             mGenWorld->ClearForce();
 
+            if (physics_param->mEnableProfiling == true)
+            {
+                btTimeUtil::Begin("stepsim");
+            }
             mGenWorld->StepSimulation(
                 static_cast<float>(physics_param->mDefaultTimestep));
+            if (physics_param->mEnableProfiling == true)
+            {
+                btTimeUtil::End("stepsim");
+            }
 
             global_frame_id++;
         }
@@ -306,8 +317,16 @@ void CustomEngineMainDemo::SinglestepSim(float dt)
     else
     {
         mGenWorld->ClearForce();
+        if (physics_param->mEnableProfiling == true)
+        {
+            btTimeUtil::Begin("stepsim");
+        }
         mGenWorld->StepSimulation(
             static_cast<float>(physics_param->mDefaultTimestep));
+        if (physics_param->mEnableProfiling == true)
+        {
+            btTimeUtil::End("stepsim");
+        }
     }
 
     global_frame_id++;

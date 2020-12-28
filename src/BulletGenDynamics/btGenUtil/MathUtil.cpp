@@ -178,7 +178,6 @@ tVector btMathUtil::QuaternionToAxisAngle(const tQuaternion &quater)
                     z = az * sin(theta/2)
             axis angle = theta * [ax, ay, az, 0]
     */
-    tVector axis_angle = tVector::Zero();
 
     double theta = 2 * std::acos(quater.w());
 
@@ -191,7 +190,11 @@ tVector btMathUtil::QuaternionToAxisAngle(const tQuaternion &quater)
     // std::cout << theta << " " << std::sin(theta / 2) << std::endl;
     double ax = quater.x() / sin_theta_2, ay = quater.y() / sin_theta_2,
            az = quater.z() / sin_theta_2;
-    return theta * tVector(ax, ay, az, 0);
+    tVector axis_angle = tVector(ax, ay, az, 0);
+    if (axis_angle.hasNaN())
+        return tVector::Zero();
+    else
+        return theta * tVector(ax, ay, az, 0);
 }
 
 tVector btMathUtil::RotmatToAxisAngle(const tMatrix &mat)
