@@ -82,10 +82,13 @@ protected:
     float cur_dt;
     bool mEnableMultibodySelfCol; // enable the self-collision of multibody
     bool mEnableConvertMatTest;
-    bool mEnableContactPenetrationResolve;    // resolve contact penetration or not
-    bool mEnableJointLimitPenetrationResolve; // resolve joint limit penetration or not
-    double mContactErp;    // erp value when resolving the contact penetration
-    double mJointLimitErp; // erp value when resolving the joint limit penetration
+    bool mEnableContactPenetrationResolve; // resolve contact penetration or not
+    bool
+        mEnableJointLimitPenetrationResolve; // resolve joint limit penetration or not
+    bool mEnableLCPProfiling;                // profiling the LCP solver
+    double mContactErp; // erp value when resolving the contact penetration
+    double
+        mJointLimitErp; // erp value when resolving the joint limit penetration
     bool mEnableDebugOutput;
 
     // lcp config

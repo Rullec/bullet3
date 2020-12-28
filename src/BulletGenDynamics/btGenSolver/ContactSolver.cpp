@@ -74,6 +74,8 @@ btGenContactSolver::btGenContactSolver(const std::string &config_path,
 
     mNumFrictionDirs = btJsonUtil::ParseAsInt("num_of_friction_cone", config);
     mMu = btJsonUtil::ParseAsFloat("mu", config);
+    mEnableLCPProfiling =
+        btJsonUtil::ParseAsBool("enable_lcp_profiling", config);
     cur_dt = 0;
     mEnableMultibodySelfCol =
         btJsonUtil::ParseAsBool("enable_multibody_self_collision", config);
@@ -451,7 +453,7 @@ void btGenContactSolver::SolveByLCP()
             line_M.block(single_size - 1, i * single_size, 1, single_size) +=
                 C_mufn - C_c;
         }
-        
+
         // 3.3 give line M and line n to total M and n
         M.block(i * single_size, 0, single_size, final_shape) = line_M;
         n.segment(i * single_size, single_size) = line_n;
@@ -484,11 +486,11 @@ void btGenContactSolver::SolveByLCP()
     // diagnal to keep it away from singular, similar to cfm varaible in ODE as
     // RTQL8 said std::cout << "[debug] add diagnoal eps " << mDiagonalEps << "
     // on LCP M\n";
-    for (int i = 0; i < M.rows(); i++)
-    {
-        M(i, i) *= (1 + mDiagonalEps);
-    }
-    // M += tMatrixXd::Identity(M.rows(), M.cols()) * 1e-5;
+    // for (int i = 0; i < M.rows(); i++)
+    // {
+    //     M(i, i) *= (1 + mDiagonalEps);
+    // }
+    M += tMatrixXd::Identity(M.rows(), M.cols()) * mDiagonalEps;
     // std::cout << "[lcp] After M cond num = " <<
     // cMathUtil::CalcConditionNumber(M) << std::endl; std::cout << "begin to do
     // lcp solveing\n"; std::ofstream fout(log_path, std::ios::app); fout <<
@@ -505,7 +507,11 @@ void btGenContactSolver::SolveByLCP()
             ->SetInfo(mNumFrictionDirs, this->mMu, mNumContactPoints,
                       mNumJointLimitConstraints, mEnableFrictionalLCP);
     }
+    if (mEnableLCPProfiling == true)
+        btTimeUtil::Begin("lcp_solver");
     int ret = mLCPSolver->Solve(x_lcp.size(), M, n, x_lcp);
+    if (mEnableLCPProfiling == true)
+        btTimeUtil::End("lcp_solver");
     // std::cout << "[lcp] M norm = " << M.norm() << std::endl;
     // std::cout << "[lcp] n norm = " << n.norm() << std::endl;
     // std::cout << "[lcp] x norm = " << x_lcp.norm() << std::endl;
@@ -1182,10 +1188,22 @@ void btGenContactSolver::CalcResultVectorBasedConvertMat()
         for (int j = 0; j < mNumContactPoints; j++)
         {
             auto &data = mContactConstraintData[j];
-            normal_vel_convert_result_based_mat.block(
-                row_st + i, j * single_size, 1, single_size) =
-                normal_vel_convert_mat.block(row_st + i, j * 3, 1, 3) *
-                data->mS;
+
+            if (mEnableFrictionalLCP == true)
+            {
+                normal_vel_convert_result_based_mat.block(
+                    row_st + i, j * single_size, 1, single_size) =
+                    normal_vel_convert_mat.block(row_st + i, j * 3, 1, 3) *
+                    data->mS;
+            }
+            else
+            {
+                // only normal case
+                normal_vel_convert_result_based_mat.block(
+                    row_st + i, j * single_size, 1, single_size) =
+                    normal_vel_convert_mat.block(row_st + i, j * 3, 1, 3) *
+                    data->mNormalPointToA.segment(0, 3);
+            }
         }
 
         for (int j = 0; j < mNumJointLimitConstraints; j++)

@@ -7,6 +7,8 @@ enum eLCPSolverType
     BulletLemke,
     BulletDantzig,
     ODEDantzig,
+    MobyOld,
+    MobyNew,
     NUM_LCP_SOLVER
 };
 
