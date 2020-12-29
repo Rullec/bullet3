@@ -285,6 +285,12 @@ bool moby_lcp_solver::lcp_fast(const Eigen::MatrixXd &M,
         _z = _z * -1;
 
         // solve for nonbasic z
+        if (_Msub.rows() == 0 && _Msub.cols() == 0)
+        {
+            std::cout << "[warn] Moby: Msub size " << _Msub.rows() << " "
+                      << _Msub.cols() << " exit iteration\n";
+            break;
+        }
         _z = _Msub.lu().solve(_z);
 
         // compute w and find minimum value
