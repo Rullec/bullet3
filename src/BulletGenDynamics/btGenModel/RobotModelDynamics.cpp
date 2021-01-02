@@ -2295,8 +2295,8 @@ void cRobotModelDynamics::ConvertGenForceToCartesianForceTorque(
         tMatrixXd nonzero_jacobian = torque_jacobian.block(0, offset, 3, size);
         {
             torque_jacobian.block(0, offset, 3, size).setZero();
-
-            BTGEN_ASSERT(torque_jacobian.norm() < 1e-6);
+            // std::cout << "torque jac = \n" << torque_jacobian << std::endl;
+            BTGEN_ASSERT(torque_jacobian.cwiseAbs().maxCoeff() < 1e-6);
         }
         tVector3d torque = tVector3d::Zero();
         tVectorXd gen_force_joint = gen_force.segment(offset, size);
