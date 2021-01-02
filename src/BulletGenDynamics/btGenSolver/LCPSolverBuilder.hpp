@@ -27,7 +27,8 @@ cLCPSolverBase *BuildLCPSolver(const std::string &type)
     }
     else if (type == "MobyNew")
     {
-        solver = new btGenMobyLCPSovlerNew();
+        BTGEN_ASSERT(false);
+        // solver = new btGenMobyLCPSovlerNew();
     }
     else
     {

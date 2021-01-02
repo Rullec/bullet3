@@ -40,8 +40,8 @@ SET(
 	./btGenSolver/NativeLemke/NativeLemkeLCPSolver.cpp
 	./btGenSolver/MobyOld/MobyLCPSolverOld.cpp
 	./btGenSolver/MobyOld/moby_lcp_internal.cpp
-	./btGenSolver/MobyNew/MobyLCPSolverNew.cpp
-	./btGenSolver/MobyNew/unrevised_lemke_solver.cc
+	# ./btGenSolver/MobyNew/MobyLCPSolverNew.cpp
+	# ./btGenSolver/MobyNew/unrevised_lemke_solver.cc
 	./btGenSolver/btPath/btPath.cpp
 	./btGenSolver/odeDantzig/error.cpp
 	./btGenSolver/odeDantzig/fastdot.cpp
