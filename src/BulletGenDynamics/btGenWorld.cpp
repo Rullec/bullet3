@@ -20,9 +20,20 @@ int global_frame_id = 0;
 std::map<int, std::string> col_name;
 // const std::string path = "momentum.txt";
 bool enable_bullet_sim = false;
+tVectorXd gTestCtrlForce;
 // const std::string output_path = "multibody_0.rec";
 // extern bool gPauseSimulation;
 // const std::string log_path = "debug_solve_new.txt";
+
+btGeneralizeWorld::tFrameInfo::tFrameInfo()
+{
+    frame_id = -1;
+    timestep = 0;
+    q.resize(0), qdot.resize(0), qddot.resize(0), mass_mat.resize(0, 0),
+        coriolis_mat.resize(0, 0), damping_mat.resize(0, 0),
+        mass_mat_inv.resize(0, 0);
+    force_array.clear(), torque_array.clear();
+}
 btGeneralizeWorld::btGeneralizeWorld()
 {
     // mPDController = nullpt
@@ -139,6 +150,13 @@ void btGeneralizeWorld::Init(const std::string &config_path)
             mMBDamping1 = btJsonUtil::ParseAsDouble("mb_damping1", config_js);
             mMBDamping2 = btJsonUtil::ParseAsDouble("mb_damping2", config_js);
             mMBInitPose = btJsonUtil::ParseAsString("mb_init_pose", config_js);
+            mEnableTestGradientDxnextDctrlForce = btJsonUtil::ParseAsBool(
+                "enable_test_gradient_dxnext_dctrlForce", config_js);
+            mEnableTestGradientDxnextDctrlForceRandomCtrlForce =
+                btJsonUtil::ParseAsBool(
+                    "enable_test_gradient_dxnext_dctrlForce_random_ctrl_force",
+                    config_js);
+
             // mMBTestJacobian = btJsonUtil::ParseAsBool("mb_test_jacobian",
             // config_js); mMBEAngleClamp =
             // btJsonUtil::ParseAsBool("mb_angle_clamp", config_js);
@@ -407,23 +425,33 @@ void btGeneralizeWorld::StepSimulation(double dt)
     //           << mFrameId << " time " << mTime << "------------------\n";
     // std::cout <<
     // "[bt] col obj num = " << mInternalWorld->getNumCollisionObjects() <<
-    // std::endl; std::cout << "[bt update] q0 = " <<
-    // mMultibody->Getq().transpose() << std::endl; btTimeUtil::Begin("step");
+    // std::endl;
+    // std::cout << "[bt update] frame " << mFrameId
+    //           << " q0 = " << mMultibody->Getq().transpose() << std::endl;
+    // btTimeUtil::Begin("step");
+
     if (enable_bullet_sim)
     {
         mInternalWorld->stepSimulation(dt);
     }
     else
     {
+        PreUpdate(dt);
         ApplyGravity();
         CollisionDetect();
         UpdateController(dt);
         // ApplyGuideAction();
         CollisionResponse(dt);
         // CheckGuideTraj();
+        mDxnextDctrlforce = CalcDxnextDCtrlForce(dt);
 
         Update(dt);
         PostUpdate(dt);
+
+        if (mEnableTestGradientDxnextDctrlForce)
+        {
+            TestDxnextDCtrlForce(dt);
+        }
     }
 
     mFrameId++;
@@ -434,6 +462,16 @@ void btGeneralizeWorld::StepSimulation(double dt)
     // btTimeUtil::End("stepsim");
 }
 void btGeneralizeWorld::PostUpdate(double dt) { mTime += dt; }
+void btGeneralizeWorld::PreUpdate(double dt)
+{
+    mLastFrameInfo.timestep = dt;
+
+    if (mMultibody)
+    {
+        mLastFrameInfo.q = mMultibody->Getq();
+        mLastFrameInfo.qdot = mMultibody->Getqdot();
+    }
+}
 std::vector<btGenContactForce *> btGeneralizeWorld::GetContactForces() const
 {
     return mContactForces;
@@ -634,10 +672,37 @@ void btGeneralizeWorld::ApplyGravity()
  * \brief				Update the contact-aware LCP controller
  *
  */
+
 void btGeneralizeWorld::UpdateController(double dt)
 {
     if (HasController() == true)
         mCtrl->Update(dt);
+
+    if (mEnableTestGradientDxnextDctrlForceRandomCtrlForce &&
+        mEnableTestGradientDxnextDctrlForce && mMultibody)
+    {
+
+        // 1. get the pure gravity gen force
+        tVectorXd QG = mMultibody->CalcGenGravity(mGravity);
+        tVectorXd Q_total = mMultibody->GetGeneralizedForce();
+        tVectorXd Q_others = Q_total - QG;
+        if (Q_others.norm() < 1e-10)
+        {
+            gTestCtrlForce = tVectorXd::Random(mMultibody->GetNumOfFreedom());
+            for (int i = 0; i < mMultibody->GetNumOfFreedom(); i++)
+            {
+                mMultibody->ApplyGeneralizedForce(i, gTestCtrlForce[i]);
+            }
+        }
+        else
+        {
+            gTestCtrlForce = Q_others;
+        }
+
+        std::cout
+            << "[warn] enable random force for testing gradient DxnextDctrl = "
+            << gTestCtrlForce.transpose() << std::endl;
+    }
 }
 
 // 2. collision detect, collect contact info
@@ -1463,6 +1528,11 @@ btCollisionShape *btGeneralizeWorld::GetCapsuleCollisionShape(double radius,
         1, new btCapsuleShape(radius, height)));
     return mCollisionShapeArray.back().second;
 }
+
+tMatrixXd btGeneralizeWorld::GetDxnextDCtrlForce() const
+{
+    return mDxnextDctrlforce;
+}
 // /**
 //  * \brief			Initialize the guide trajectory from target file
 // */
@@ -1550,4 +1620,149 @@ btGeneralizeWorld::eIntegrationScheme
 btGeneralizeWorld::GetIntegrationScheme() const
 {
     return mIntegrationScheme;
+}
+
+/**
+ * \brief       calculate d(x_next) /d(ctrl_force)
+ * 
+ * d(x_next) / d(ctrl_force)
+ *  = dt * \tilde{M}^{-1} * [dt, I] + dbt/dRt * dRt/dQ_cons * dQ_cons/d(ctrl_force)
+ * 
+ * bt = [dt * Rt + qt; Rt]
+ * Rt = \tilde{M}^{-1} * (dt * Q_cons + dt * Q_others + M * qdot)
+ * 
+ * AFTER SOME DERIVATION, the final result:
+ * d(x_next) / d(ctrl_force) = 
+ *      dt * \tilde{M}^{-1} * [dt, I] + dt  * [dt, I] * \tilde{M}^{-1} * dQ_cons/d(ctrl_force)
+ * 
+ * For more details, please check the note "20210105 计算当前状态x对控制力fc的导数"
+ */
+tMatrixXd btGeneralizeWorld::CalcDxnextDCtrlForce(double dt) const
+{
+    BTGEN_ASSERT(mIntegrationScheme ==
+                 eIntegrationScheme::NEW_SEMI_IMPLICIT_SCHEME);
+
+    BTGEN_ASSERT(mMultibody != nullptr);
+    tMatrixXd dQcons_dctrlForce =
+        mLCPContactSolver->GetDGenConsForceDCtrlForce();
+    auto mb = mMultibody;
+    const tMatrixXd &M = mb->GetMassMatrix();
+    const tMatrixXd &inv_M = mb->GetInvMassMatrix();
+    const tMatrixXd &coriolis_mat = mb->GetCoriolisMatrix();
+    const tMatrixXd &damping_mat = mb->GetDampingMatrix();
+    const tMatrixXd &M_dt_C_D_inv =
+        (M + dt * (coriolis_mat + damping_mat)).inverse();
+    int dof = mb->GetNumOfFreedom();
+    int state_size = 2 * dof;
+    tMatrixXd dtI_I = tMatrixXd::Zero(state_size, dof);
+    dtI_I.block(0, 0, dof, dof).noalias() = tMatrixXd::Identity(dof, dof) * dt;
+    dtI_I.block(dof, 0, dof, dof).setIdentity();
+
+    if (dQcons_dctrlForce.size() == 0)
+        dQcons_dctrlForce.noalias() = tMatrixXd::Zero(dof, dof);
+    tMatrixXd dxnext_dctrlForce =
+        dt * dtI_I * M_dt_C_D_inv *
+        (tMatrixXd::Identity(dof, dof) + dQcons_dctrlForce);
+    // std::cout << "[debug] dxnext_dctrlForce = \n"
+    //           << dxnext_dctrlForce << std::endl;
+    return dxnext_dctrlForce;
+}
+
+/**
+ * \brief           test dxnext_dctrlForce
+ * 
+ *      Note that, this test funciton must be called at the last step of stepsimulation
+*/
+void btGeneralizeWorld::TestDxnextDCtrlForce(double dt)
+{
+    // 1. record old state, record current x as xnext, record the ctrl force, calculate the DxnextDctrlforce
+    // print to check
+    auto mb = mMultibody;
+    mb->PushState("TestDxnextDCtrlForce");
+    tVectorXd qnext_old = mb->Getq(), qdotnext_old = mb->Getqdot();
+    tVectorXd q_before = mLastFrameInfo.q, qdot_before = mLastFrameInfo.qdot;
+    // std::cout << "[debug] q before = " << q_before.transpose() << std::endl;
+    // std::cout << "[debug] qdot before = " << qdot_before.transpose()
+    //           << std::endl;
+    // std::cout << "[debug] qnext old = " << qnext_old.transpose() << std::endl;
+    // std::cout << "[debug] qdotnext old = " << qdotnext_old.transpose()
+    //           << std::endl;
+
+    tMatrixXd ideal_DxnextDctrlforce = GetDxnextDCtrlForce();
+    int ctrl_force_dof = mb->GetNumOfFreedom();
+    int mb_dof = mb->GetNumOfFreedom();
+    // get the ctrl force (not the gravity)
+    tVectorXd old_ctrl_force = gTestCtrlForce;
+    // 2. for each freedom, back to the old state, set the control force (only), do the forward simulation
+    // get the new state, calculate the numerical derivative & compare
+    double eps = 1e-4;
+    // std::cout << "-----------------begin to test-----------------\n";
+    for (int i = 0; i < ctrl_force_dof; i++)
+    {
+        // 2.1 back to old state
+        mb->Setq(q_before);
+        mb->Setqdot(qdot_before);
+
+        // 2.2 clear the old force, set the ctrl force
+        old_ctrl_force[i] += eps;
+        ClearForce();
+        mb->SetGeneralizedForce(old_ctrl_force);
+
+        // std::cout << "[debug] after clear & set ctrl, total force = "
+        //           << mb->GetGeneralizedForce().transpose() << std::endl;
+
+        // 2.3 begin to do the forward sim
+        {
+            ApplyGravity();
+            // std::cout << "[debug] after apply gravity, total force = "
+            //           << mb->GetGeneralizedForce().transpose() << std::endl;
+            CollisionDetect();
+            CollisionResponse(dt);
+            // std::cout << "[debug] after collsiion response, total force = "
+            //           << mb->GetGeneralizedForce().transpose() << std::endl;
+            Update(dt);
+        }
+        // 2.4 get the new qnext / qdotnext
+        tVectorXd qnext_new = mb->Getq(), qdotnext_new = mb->Getqdot();
+        // std::cout << "[debug] qnext new = " << qnext_new.transpose()
+        //           << std::endl;
+        // std::cout << "[debug] qdotnext new = " << qdotnext_new.transpose()
+        //           << std::endl;
+
+        // 2.5 calculate the num deriv
+        tVectorXd num_x_deriv = tVectorXd::Zero(2 * mb_dof);
+        num_x_deriv.segment(0, mb_dof) = (qnext_new - qnext_old) / eps;
+        num_x_deriv.segment(mb_dof, mb_dof) =
+            (qdotnext_new - qdotnext_old) / eps;
+
+        tVectorXd ideal_x_deriv = ideal_DxnextDctrlforce.col(i);
+
+        tVectorXd diff = num_x_deriv - ideal_x_deriv;
+        // std::cout << "[debug] diff deriv idx " << i << " = " << diff.norm()
+        //   << std::endl;
+        if (diff.cwiseAbs().maxCoeff() > 10 * eps)
+        {
+            std::cout << "[error] TestDxnextDCtrlForce failed, diff = "
+                      << diff.transpose() << std::endl;
+            std::cout << "[debug] ideal deriv idx " << i << " = "
+                      << ideal_x_deriv.transpose() << std::endl;
+            std::cout << "[debug] num deriv idx " << i << " = "
+                      << num_x_deriv.transpose() << std::endl;
+            // BTGEN_ASSERT(false);
+        }
+        old_ctrl_force[i] -= eps;
+    }
+    // std::cout << "[res] DxnextDctrl = \n"
+    //           << ideal_DxnextDctrlforce << std::endl;
+    // std::cout << "-----------------test done, succ-----------------\n";
+    std::cout << "[debug] TestDxnextDCtrlForce succ, this test effect the "
+                 "ExampleBrowser sim result\n";
+    mb->PopState("TestDxnextDCtrlForce");
+}
+
+void btGeneralizeWorld::GetLastFrameGenCharqAndqdot(tVectorXd &q_pre,
+                                                    tVectorXd &qdot_pre) const
+{
+    q_pre = mLastFrameInfo.q;
+    qdot_pre = mLastFrameInfo.qdot;
 }

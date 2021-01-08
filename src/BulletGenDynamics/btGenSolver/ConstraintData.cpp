@@ -14,7 +14,7 @@ btGenJointLimitData::btGenJointLimitData(int constraint_id_,
                                          int dof_id_, bool is_upper_bound_,
                                          double violate_value_)
 {
-    this->constraint_id = constraint_id_;
+    constraint_id = constraint_id_;
     multibody = multibody_;
     dof_id = dof_id_;
     is_upper_bound = is_upper_bound_;
@@ -237,7 +237,10 @@ void btGenContactPointData::CalcConvertMat(tMatrixXd &S)
 
 //---------------------------------------------------------------------------
 
-btGenCollisionObjData::btGenCollisionObjData(btGenCollisionObject *obj)
+btGenCollisionObjData::btGenCollisionObjData(
+    btGenCollisionObject *obj, bool record_cartesian_convert_mat_of_residual)
+    : mEnableRecordCartesianConvertMatOfResidual(
+          record_cartesian_convert_mat_of_residual)
 {
     mBody = obj;
     Clear();
@@ -248,6 +251,7 @@ void btGenCollisionObjData::Clear()
     mJointLimits.clear();
     mContactPts.clear();
     mIsBody0.clear();
+    mCharacterConvertMatOfResidualRecord.clear();
 
     num_local_contacts = 0;
     num_self_contacts = 0;
@@ -636,6 +640,12 @@ void btGenCollisionObjData::SetupRobotCollider()
         //           << std::endl;
         mConvertCartesianForceToVelocityVec.segment(i_st, i_size).noalias() =
             (*residual_a) * residual_part;
+
+        // record residual_a (residual convert mat from gen to cartesian)
+        if (mEnableRecordCartesianConvertMatOfResidual == true)
+        {
+            mCharacterConvertMatOfResidualRecord.push_back(*residual_a);
+        }
     }
     // std::cout << "convert mat = \n"
     //           << mConvertCartesianForceToVelocityMat << std::endl;
@@ -1033,4 +1043,14 @@ btGenCollisionObjData::CalcRobotColliderJacPartBPrefix(double dt) const
         }
     }
     return prefix;
+}
+
+/**
+ * \brief       get method
+*/
+void btGenCollisionObjData::GetCharacterConvertMatOfResidualRecord(
+    tEigenArr<tMatrixXd> &record) const
+{
+    BTGEN_ASSERT(mEnableRecordCartesianConvertMatOfResidual);
+    record = mCharacterConvertMatOfResidualRecord;
 }

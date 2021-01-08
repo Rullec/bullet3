@@ -81,12 +81,14 @@ protected:
 struct btGenCollisionObjData
 {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-    btGenCollisionObjData(btGenCollisionObject *);
+    btGenCollisionObjData(btGenCollisionObject *,
+                          bool record_cartesian_convert_mat_of_residual);
     void AddContactPoint(btGenContactPointData *, bool isbody0);
     void AddJointLimitConstraint(btGenJointLimitData *);
     void Clear();
     void Setup(int n_total_contacts, int n_total_jointlimits);
-
+    void
+    GetCharacterConvertMatOfResidualRecord(tEigenArr<tMatrixXd> &record) const;
     btGenCollisionObject *mBody;
     tMatrixXd mConvertCartesianForceToVelocityMat;
     tVectorXd mConvertCartesianForceToVelocityVec;
@@ -134,4 +136,8 @@ protected:
         map_local_contact_id_to_nonself_contact_id; // map the local contact id
                                                     // to the index of nonself
                                                     // contact id
+
+    // record the convert mat from gen vel to cartesian vel for diffMBRL
+    bool mEnableRecordCartesianConvertMatOfResidual;
+    tEigenArr<tMatrixXd> mCharacterConvertMatOfResidualRecord;
 };

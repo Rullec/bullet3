@@ -7,11 +7,11 @@ class btGenRigidBody;
 class btGenContactSolver;
 class cRobotModelDynamics;
 class btGenContactForce;
-class btGenConstraintGeneralizedForce;
+struct btGenConstraintGeneralizedForce;
 class btGenCollisionDispatcher;
 class btGenControllerBase;
 class btGenContactAwareController;
-class btTraj;
+struct btTraj;
 class btGenContactManager;
 class btGeneralizeWorld
 {
@@ -66,6 +66,7 @@ public:
     void RemoveObj(int id);
     void StepSimulation(double dt);
     void Reset();
+    void TestDxnextDCtrlForce(double dt);
     // get & set method
     std::vector<btGenContactForce *> GetContactForces() const;
     std::vector<btPersistentManifold *> GetContactManifolds() const;
@@ -90,6 +91,9 @@ public:
     btCollisionShape *GetSphereCollisionShape(double radius);
     btCollisionShape *GetBoxCollisionShape(const tVector3d &half_extends);
     btCollisionShape *GetCapsuleCollisionShape(double radius, double height);
+    tMatrixXd GetDxnextDCtrlForce() const;
+    void GetLastFrameGenCharqAndqdot(tVectorXd &q_pre,
+                                     tVectorXd &qdot_pre) const;
 
 protected:
     btDiscreteDynamicsWorld *mInternalWorld;
@@ -108,9 +112,14 @@ protected:
     double mMBDamping1;
     double mMBDamping2;
     std::string mMBInitPose;
+
+    // test the gradient d(x_next)/d(ctrl_force), used in diff world
+    bool mEnableTestGradientDxnextDctrlForce;
+    bool mEnableTestGradientDxnextDctrlForceRandomCtrlForce;
     // bool mMBEnableRk4;
     double mMBEpsDiagnoalMassMat;
     double mMBMaxVel;
+    tMatrixXd mDxnextDctrlforce; // d(x_next)/d(ctrl_force), jacobian
     // bool mDebugThreeContactForces;
     // bool mMBEnableContactAwareLCP;
 
@@ -162,11 +171,13 @@ protected:
     void UpdateVelocityInternal(double dt);
     // void UpdateVelocityInternalWithoutCoriolis(double dt);
     void PostUpdate(double dt);
+    void PreUpdate(double dt);
 
     // sim record
     struct tFrameInfo
     {
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+        tFrameInfo();
         int frame_id;
         double timestep;
         tVectorXd q, qdot,
@@ -177,9 +188,11 @@ protected:
         tEigenArr<tVector> force_array, torque_array;
     };
     tEigenArr<tFrameInfo> mFrameInfo;
+    tFrameInfo mLastFrameInfo;
     void CollectFrameInfo(double dt);
     void WriteFrameInfo(const std::string &path);
     void RecordMBContactForce();
+    tMatrixXd CalcDxnextDCtrlForce(double dt) const;
     // void InitGuideTraj();
     // void ApplyGuideAction();
     // void CheckGuideTraj();

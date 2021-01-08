@@ -284,6 +284,21 @@ void btGenContactSolver::ClearAllConstraintForce()
 }
 
 /**
+ * \brief           deconstruct the given arrays
+*/
+void btGenContactSolver::ClearConstraintForceTorqueArrays(
+    std::vector<btGenContactForce *> &force_array,
+    std::vector<btGenConstraintGeneralizedForce *> &torque_array) const
+{
+    for (auto &x : force_array)
+        delete x;
+    for (auto &x : torque_array)
+        delete x;
+    force_array.clear();
+    torque_array.clear();
+}
+
+/**
  * \brief		judge wheter this body is a multibody structure and whether
  * it is working in a max vel (aka velocity )
  */

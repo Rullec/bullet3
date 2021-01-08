@@ -36,7 +36,8 @@ public:
     void ApplyGeneralizedForce(int dof_id, double value);
     void ApplyLinkTorque(int link_id, const tVector &torque);
     void ApplyJointTorque(int joint_id, const tVector &torque);
-    tVectorXd GetGeneralizedForce();
+    tVectorXd GetGeneralizedForce() const;
+    void SetGeneralizedForce(const tVectorXd &gen_f);
     tVectorXd DebugGetGeneralizedForce();
     btGenRobotCollider *GetLinkCollider(int link_id);
     void ClearForce();
@@ -51,8 +52,10 @@ public:
     double GetMaxVelThreshold() const;
     bool IsCartesianMaxVel(double max_vel = 100.0) const;
     double GetMaxVel() const;
-    void PushState(const std::string &tag, bool only_vel_and_force = false);
-    void PopState(const std::string &tag, bool only_vel_and_force = false);
+    virtual void PushState(const std::string &tag,
+                           bool only_vel_and_force = false);
+    virtual void PopState(const std::string &tag,
+                          bool only_vel_and_force = false);
     void SetDampingCoeff(double, double);
     // void SetAngleClamp(bool);
     void SetMaxVel(double);

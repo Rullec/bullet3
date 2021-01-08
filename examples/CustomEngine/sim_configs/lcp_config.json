@@ -9,6 +9,8 @@
     "use_lcp_result": true,
     "enable_contact_penetration_resolve": true,
     "enable_joint_limit_penetration_resolve": true,
+    "enable_gradient_over_control_force": true,
+    "enable_test_gradient_over_control_force": false,
     "contact_penetration_resolve_erp": 0.05,
     "joint_limit_penetration_resolve_erp": 1,
     "enable_sequential_impulse_calculation": false,

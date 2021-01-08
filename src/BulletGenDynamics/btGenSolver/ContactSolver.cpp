@@ -98,6 +98,11 @@ btGenContactSolver::btGenContactSolver(const std::string &config_path,
         btJsonUtil::ParseAsBool("enable_frictional_lcp", config);
     mEnableJointLimitLCP =
         btJsonUtil::ParseAsBool("enable_joint_limit_lcp", config);
+    mEnableGradientOverCtrlForce =
+        btJsonUtil::ParseAsBool("enable_gradient_over_control_force", config);
+    mEnableTestGradientOverCtrlForce = btJsonUtil::ParseAsBool(
+        "enable_test_gradient_over_control_force", config);
+
     mUseLCPResult = btJsonUtil::ParseAsBool("use_lcp_result", config);
 
     // sequential impulse config
@@ -174,12 +179,7 @@ btGenContactSolver::~btGenContactSolver()
     if (mLCPSolver)
         delete mLCPSolver;
 
-    for (auto &x : contact_torque_array)
-        delete x;
-    contact_torque_array.clear();
-    for (auto &x : contact_force_array)
-        delete x;
-    contact_force_array.clear();
+    ClearConstraintForceTorqueArrays(contact_force_array, contact_torque_array);
     DeleteColObjData();
 }
 
@@ -193,8 +193,11 @@ void btGenContactSolver::ConstraintProcess(float dt_)
     // std::cout << "--------contact solver frame " << global_frame_id << "
     // ----------" << std::endl;
     cur_dt = dt_;
+    DGenConsForceDGenCtrlForce.resize(0, 0);
     // btTimeUtil::Begin("constraint_setup");
     ConstraintSetup();
+    if (mNumConstraints == 0)
+        return;
     // btTimeUtil::End("constraint_setup");
     // btTimeUtil::Begin("constraint_solve");
     ConstraintSolve();
@@ -213,76 +216,53 @@ btGenContactSolver::GetConstraintGeneralizedForces()
 {
     return contact_torque_array;
 }
+
+/**
+ * \brief           d(gen_constraint_force)/d(gen_control_force)
+*/
+tMatrixXd btGenContactSolver::GetDGenConsForceDCtrlForce() const
+{
+    BTGEN_ASSERT(mEnableGradientOverCtrlForce == true);
+    return this->DGenConsForceDGenCtrlForce;
+}
+
+/**
+ * \brief       finished the constraint solving
+*/
 void btGenContactSolver::ConstraintFinished()
 {
-    for (auto &x : contact_force_array)
-        delete x;
-    for (auto &x : contact_torque_array)
-        delete x;
-    contact_force_array.clear();
-    contact_torque_array.clear();
+    // 1. clear all contact force & torques array
+    ClearConstraintForceTorqueArrays(contact_force_array, contact_torque_array);
 
+    // 2. determine the valid contact solution vector (from sequential impulse or lcp?)
     tVectorXd contact_x;
     if (mUseSIResult)
-    {
         contact_x = x_si;
-    }
     else if (mUseLCPResult)
+        contact_x = x_lcp;
+
+    // 3. calculate the cartesian & generalized contact torque / forces
+    contact_x = ConvertLCPResult(contact_x);
+    CalcContactForceTorqueArrays(contact_force_array, contact_torque_array,
+                                 contact_x);
+
+    // 4. test some utilities
+    if (mEnableGradientOverCtrlForce == true)
     {
-        contact_x = f_lcp;
-    }
-    // std::cout << "[debug] contact num = " << mNumContactPoints << std::endl;
-    // std::cout << "[debug] lcp size = " << f_lcp.size() << std::endl;
-    // std::cout << "[debug] x size = " << contact_x.size() << std::endl;
-    // std::cout << "[lcp] x = " << contact_x.transpose() << std::endl;
-    for (int i = 0; i < mContactConstraintData.size(); i++)
-    {
-        // std::cout << "[bt] contact point " << i << std::endl;
-        btGenContactForce *ptr;
-        auto &data = mContactConstraintData[i];
-        // std::cout << "[debug] for contact " << i << " data = " << data <<
-        // std::endl; std::cout << "contact x size = " << contact_x.size() <<
-        // std::endl; std::cout << "[debug] contact force = " <<
-        // cMathUtil::Expand(contact_x.segment(i * 3, 3), 0).transpose() <<
-        // std::endl; std::cout << "[debug] contact pos = " <<
-        // data->mContactPtOnA.transpose() << std::endl;
-        ptr = new btGenContactForce(
-            data->mBodyA, data->mBodyB,
-            btMathUtil::Expand(contact_x.segment(i * 3, 3), 0),
-            data->mContactPtOnA, data->mIsSelfCollision);
-        // std::cout << "[debug] contact point " << i << " is self collision = "
-        // << data->mIsSelfCollision << std::endl; std::cout << "[bt] user ptr =
-        // " << ptr->mObj->getUserPointer() << std::endl;
-        contact_force_array.push_back(ptr);
-        ptr = new btGenContactForce(
-            data->mBodyB, data->mBodyA,
-            -btMathUtil::Expand(contact_x.segment(i * 3, 3), 0),
-            data->mContactPtOnB, data->mIsSelfCollision);
-        // std::cout << "[bt] user ptr = " << ptr->mObj->getUserPointer() <<
-        // std::endl;
-        contact_force_array.push_back(ptr);
+        if (mEnableTestGradientOverCtrlForce)
+        {
+            TestDnDCtrlForce();
+            TestDxDCtrlForce();
+            TestDGenConsForceDx();
+            TestDGenConsForceDCtrlForce();
+            // exit(0);
+        }
+        // CalcDGenConsForceDx();
+        DGenConsForceDGenCtrlForce = CalcDGenConsForceDCtrlForce();
+        BTGEN_ASSERT(DGenConsForceDGenCtrlForce.hasNaN() == false);
     }
 
-    for (int i = 0; i < mNumJointLimitConstraints; i++)
-    {
-        auto &data = mJointLimitConstraintData[i];
-        btGenConstraintGeneralizedForce *ptr =
-            new btGenConstraintGeneralizedForce(
-                data->multibody, data->dof_id,
-                f_lcp[mNumContactPoints * 3 + i]);
-        contact_torque_array.push_back(ptr);
-        if (mEnableDebugOutput)
-        {
-            std::cout << "[lcp] joint limit " << ptr->dof_id
-                      << " constraint generalized force " << ptr->value
-                      << std::endl;
-        }
-    }
-    // std::cout << "[log] contact force num = " << contact_force_array.size()
-    // << std::endl; std::cout << "[log] contact torque num = " <<
-    // contact_torque_array.size() << std::endl; std::cout << "[debug] result
-    // constraint torque 0 = " <<
-    // contact_torque_array[0]->joint_torque.transpose() << std::endl;
+    // 5. clear the collision object and constraint info
     DeleteColObjData();
     DeleteConstraintData();
 }
@@ -314,7 +294,7 @@ void btGenContactSolver::ConstraintSetup()
         AddJointLimit();
 
     mNumConstraints = mNumJointLimitConstraints + mNumContactPoints;
-    // std::cout << "contact numbers = " << mNumContactPoints << std::endl;
+    // std::cout << "constraint numbers = " << mNumContactPoints << std::endl;
     // if here is a contact
     int self_contact_size = 0;
     for (int i = 0; i < mNumContactPoints; i++)
@@ -407,6 +387,12 @@ void btGenContactSolver::SolveByLCP()
     x_lcp.resize(final_shape), x_lcp.setZero();
     n.resize(final_shape), n.setZero();
 
+    int multibody_dof = 0;
+    if (mEnableGradientOverCtrlForce && mMultibodyArray.size())
+    {
+        multibody_dof = mMultibodyArray[0]->GetNumOfFreedom();
+        n_convert_mat_final.resize(final_shape, multibody_dof);
+    }
     // 2. fill in
     tMatrixXd unit_M(single_size, single_size);
     tVectorXd unit_n(single_size);
@@ -417,10 +403,14 @@ void btGenContactSolver::SolveByLCP()
     // 3. construct LCP problem
     tMatrixXd line_M(single_size, final_shape);
     tVectorXd line_n(single_size);
+    tMatrixXd dline_n_dctrl_force(single_size, multibody_dof);
+
     for (int i = 0; i < mNumContactPoints; i++)
     {
         line_M.setZero();
         line_n.setZero();
+
+        dline_n_dctrl_force.setZero();
 
         // 3.1 basic M and basic n
         line_M.block(0, 0, 1, final_shape) =
@@ -428,6 +418,14 @@ void btGenContactSolver::SolveByLCP()
         line_n.segment(0, 1) =
             normal_vel_convert_result_based_vec.block(i, 0, 1, 1);
 
+        if (mEnableGradientOverCtrlForce && mMultibodyArray.size())
+        {
+            dline_n_dctrl_force.block(0, 0, 1, multibody_dof) =
+                normal_vel_convert_mat_result_based_of_residual.block(
+                    i, 0, 1, multibody_dof);
+        }
+
+        // handle the constraint-drifting
         if (mEnableContactPenetrationResolve == true)
         {
             double penetration = mContactConstraintData[i]->distance;
@@ -452,11 +450,26 @@ void btGenContactSolver::SolveByLCP()
                 C_lambda;
             line_M.block(single_size - 1, i * single_size, 1, single_size) +=
                 C_mufn - C_c;
+
+            if (mEnableGradientOverCtrlForce && mMultibodyArray.size())
+            {
+                dline_n_dctrl_force.block(1, 0, mNumFrictionDirs,
+                                          multibody_dof) =
+                    tangent_vel_convert_mat_result_based_of_residual.block(
+                        i * mNumFrictionDirs, 0, mNumFrictionDirs,
+                        multibody_dof);
+            }
         }
 
         // 3.3 give line M and line n to total M and n
         M.block(i * single_size, 0, single_size, final_shape) = line_M;
         n.segment(i * single_size, single_size) = line_n;
+
+        if (mEnableGradientOverCtrlForce && mMultibodyArray.size())
+        {
+            n_convert_mat_final.block(i * single_size, 0, single_size,
+                                      multibody_dof) = dline_n_dctrl_force;
+        }
     }
 
     for (int i = 0; i < mNumJointLimitConstraints; i++)
@@ -466,7 +479,14 @@ void btGenContactSolver::SolveByLCP()
                                                       1, final_shape);
         n[mNumContactPoints * single_size + i] =
             normal_vel_convert_result_based_vec[mNumContactPoints + i];
+        if (mEnableGradientOverCtrlForce && mMultibodyArray.size())
+        {
+            n_convert_mat_final.row(mNumContactPoints * single_size) =
+                normal_vel_convert_mat_result_based_of_residual.row(
+                    mNumContactPoints + i);
+        }
 
+        // solve the joint limit constraint drifting
         if (mEnableJointLimitPenetrationResolve == true)
         {
             n[mNumContactPoints * single_size + i] +=
@@ -491,6 +511,10 @@ void btGenContactSolver::SolveByLCP()
     //     M(i, i) *= (1 + mDiagonalEps);
     // }
     M += tMatrixXd::Identity(M.rows(), M.cols()) * mDiagonalEps;
+    if (mEnableGradientOverCtrlForce && mMultibodyArray.size())
+    {
+        n_convert_mat_final *= cur_dt;
+    }
     // std::cout << "[lcp] After M cond num = " <<
     // cMathUtil::CalcConditionNumber(M) << std::endl; std::cout << "begin to do
     // lcp solveing\n"; std::ofstream fout(log_path, std::ios::app); fout <<
@@ -549,24 +573,22 @@ void btGenContactSolver::SolveByLCP()
         std::cout << "M=\n" << M << std::endl;
         std::cout << "n=\n" << n.transpose() << std::endl;
     }
-    // Convert LCP result vector to cartesian forces
-    ConvertLCPResult();
-
     // check whether our guess is true？
     // VerifySolution();
 }
 
 /**
- * \brief			convert the result vector of LCP problem into
- * contact forces
+ * \brief			convert the result vector of LCP problem into a readable format
  */
-void btGenContactSolver::ConvertLCPResult()
+tVectorXd
+btGenContactSolver::ConvertLCPResult(const tVectorXd &raw_lcp_result) const
 {
     int single_contact_size = 1;
     if (mEnableFrictionalLCP)
         single_contact_size += mNumFrictionDirs + 1;
 
-    f_lcp.resize(mNumContactPoints * 3 + mNumJointLimitConstraints);
+    tVectorXd new_lcp_result =
+        tVectorXd::Zero(mNumContactPoints * 3 + mNumJointLimitConstraints);
     double total_contact_force_norm = 0;
 
     // 1. extract all contact force
@@ -576,11 +598,12 @@ void btGenContactSolver::ConvertLCPResult()
         {
             std::cout << "[lcp] num contact pt = " << mNumContactPoints
                       << std::endl;
-            std::cout << "[lcp] x = " << x_lcp.transpose() << std::endl;
+            std::cout << "[lcp] x = " << raw_lcp_result.transpose()
+                      << std::endl;
         }
         auto &data = mContactConstraintData[i];
-        tVectorXd x_unit =
-            x_lcp.segment(i * single_contact_size, single_contact_size);
+        tVectorXd x_unit = raw_lcp_result.segment(i * single_contact_size,
+                                                  single_contact_size);
         tVector contact_force = tVector::Zero();
         if (mEnableFrictionalLCP)
         {
@@ -593,7 +616,7 @@ void btGenContactSolver::ConvertLCPResult()
         // std::cout << "[debug] contact " << i << " result vector = " <<
         // x_unit.transpose() << std::endl; std::cout << "[debug] contact " << i
         // << " cartesian force = " << contact_force.transpose() << std::endl;
-        f_lcp.segment(i * 3, 3) = contact_force.segment(0, 3);
+        new_lcp_result.segment(i * 3, 3) = contact_force.segment(0, 3);
         if (mEnableDebugOutput)
             std::cout << "[lcp] contact " << i
                       << " force = " << contact_force.transpose() << std::endl;
@@ -605,11 +628,12 @@ void btGenContactSolver::ConvertLCPResult()
     {
         auto &data = mJointLimitConstraintData[i];
         double generalized_force =
-            x_lcp[mNumContactPoints * single_contact_size + i];
+            raw_lcp_result[mNumContactPoints * single_contact_size + i];
         if (data->is_upper_bound)
             generalized_force *= -1;
-        f_lcp[mNumContactPoints * 3 + i] = generalized_force;
+        new_lcp_result[mNumContactPoints * 3 + i] = generalized_force;
     }
+    return new_lcp_result;
 }
 
 void btGenContactSolver::CalcCMats(tMatrixXd &C_lambda, tMatrixXd &C_mufn,
@@ -699,7 +723,8 @@ void btGenContactSolver::RebuildColObjData()
         if (add_entry)
         {
             map_colobjid_to_groupid[i] = n_group;
-            mColGroupData.push_back(new btGenCollisionObjData(obj));
+            mColGroupData.push_back(
+                new btGenCollisionObjData(obj, mEnableGradientOverCtrlForce));
             n_group++;
         }
     }
@@ -776,6 +801,15 @@ void btGenContactSolver::CalcRelvelConvertMat()
     rel_vel_convert_mat.resize(final_shape, final_shape);
     rel_vel_convert_vec.resize(final_shape);
 
+    // prepare the rel vel convert mat of residual
+    int multibody_dof = 0;
+    if (mEnableGradientOverCtrlForce && mMultibodyArray.size())
+    {
+        multibody_dof = mMultibodyArray[0]->GetNumOfFreedom();
+        rel_vel_convert_mat_of_residual.resize(final_shape, multibody_dof);
+    }
+
+    tEigenArr<tMatrixXd> buffer0, buffer1;
     for (int i = 0; i < mNumContactPoints; i++)
     {
         auto &data = mContactConstraintData[i];
@@ -785,6 +819,14 @@ void btGenContactSolver::CalcRelvelConvertMat()
             int body0_groupid = map_colobjid_to_groupid[data->mBodyId0],
                 body1_groupid = map_colobjid_to_groupid[data->mBodyId1];
 
+            if (mEnableGradientOverCtrlForce && mMultibodyArray.size())
+            {
+                mColGroupData[body0_groupid]
+                    ->GetCharacterConvertMatOfResidualRecord(buffer0);
+                mColGroupData[body1_groupid]
+                    ->GetCharacterConvertMatOfResidualRecord(buffer1);
+            }
+
             // u = v_0 - v_1 = A_0f_0 + a_0 - (A_1f_0 + a_1)
             //  = (A_0 - A_1)f_0 + (a_0 - a_1)
             // here is "mat0 + mat1", because the pair of force applied is oppo
@@ -793,6 +835,17 @@ void btGenContactSolver::CalcRelvelConvertMat()
                 mColGroupData[body0_groupid]
                     ->mConvertCartesianForceToVelocityMat.block(i * 3, 0, 3,
                                                                 final_shape);
+            // here vec is normally "minus", "vec0 - vec1"
+            rel_vel_convert_vec.segment(3 * i, 3) =
+                mColGroupData[body0_groupid]
+                    ->mConvertCartesianForceToVelocityVec.segment(i * 3, 3);
+
+            if (mEnableGradientOverCtrlForce && mMultibodyArray.size())
+            {
+                rel_vel_convert_mat_of_residual.block(
+                    i * 3, 0, 3, multibody_dof) = buffer0[i];
+            }
+
             if (mColGroupData[body1_groupid]->mBody->IsStatic() == false)
             {
                 tMatrixXd res =
@@ -801,19 +854,18 @@ void btGenContactSolver::CalcRelvelConvertMat()
                         ->mConvertCartesianForceToVelocityMat.block(
                             i * 3, 0, 3, final_shape);
                 rel_vel_convert_mat.block(i * 3, 0, 3, final_shape) = res;
-            }
 
-            // here vec is normally "minus", "vec0 - vec1"
-            rel_vel_convert_vec.segment(3 * i, 3) =
-                mColGroupData[body0_groupid]
-                    ->mConvertCartesianForceToVelocityVec.segment(i * 3, 3);
-            if (mColGroupData[body1_groupid]->mBody->IsStatic() == false)
-            {
-                tVectorXd res =
+                tVectorXd res_vec =
                     rel_vel_convert_vec.segment(3 * i, 3) -
                     mColGroupData[body1_groupid]
                         ->mConvertCartesianForceToVelocityVec.segment(i * 3, 3);
-                rel_vel_convert_vec.segment(3 * i, 3) = res;
+                rel_vel_convert_vec.segment(3 * i, 3) = res_vec;
+
+                if (mEnableGradientOverCtrlForce && mMultibodyArray.size())
+                {
+                    rel_vel_convert_mat_of_residual.block(
+                        i * 3, 0, 3, multibody_dof) = -buffer1[i];
+                }
             }
         }
         else
@@ -830,6 +882,12 @@ void btGenContactSolver::CalcRelvelConvertMat()
             rel_vel_convert_vec.segment(3 * i, 3) =
                 mColGroupData[single_groupid]
                     ->mConvertCartesianForceToVelocityVec.segment(i * 3, 3);
+
+            if (mEnableGradientOverCtrlForce && mMultibodyArray.size())
+            {
+                rel_vel_convert_mat_of_residual.block(
+                    i * 3, 0, 3, multibody_dof) = buffer0[i];
+            }
         }
     }
 
@@ -847,6 +905,15 @@ void btGenContactSolver::CalcRelvelConvertMat()
         rel_vel_convert_vec.segment(row_st, 1) =
             mColGroupData[group_id]
                 ->mConvertCartesianForceToVelocityVec.segment(row_st, 1);
+
+        if (mEnableGradientOverCtrlForce && mMultibodyArray.size())
+        {
+            mColGroupData[group_id]->GetCharacterConvertMatOfResidualRecord(
+                buffer0);
+            // std::cout << "buffer size = " << buffer0.size() << std::endl;
+            rel_vel_convert_mat_of_residual.block(row_st, 0, 1, multibody_dof) =
+                buffer0[mNumContactPoints + i];
+        }
     }
     // std::cout << "rel vel convert mat = \n"
     // 		  << rel_vel_convert_mat << std::endl;
@@ -868,6 +935,14 @@ void btGenContactSolver::CalcDecomposedConvertMat()
     if (x_size == 0)
         return;
 
+    int multibody_dof = 0;
+    if (mEnableGradientOverCtrlForce && mMultibodyArray.size())
+    {
+        multibody_dof = mMultibodyArray[0]->GetNumOfFreedom();
+        normal_vel_convert_mat_of_residual.resize(
+            mNumContactPoints + mNumJointLimitConstraints, multibody_dof);
+    }
+
     // the normal vel of one contact point or one joint limit constraint occupy
     // a single line
     normal_vel_convert_mat.resize(mNumContactPoints + mNumJointLimitConstraints,
@@ -884,6 +959,12 @@ void btGenContactSolver::CalcDecomposedConvertMat()
         tangent_vel_convert_vec.resize(
             mNumFrictionDirs *
             mNumContactPoints); // one contact point one real number
+
+        if (mEnableGradientOverCtrlForce && mMultibodyArray.size())
+        {
+            tangent_vel_convert_mat_of_residual.resize(
+                mNumFrictionDirs * mNumContactPoints, multibody_dof);
+        }
     }
 
     for (int i = 0; i < mNumContactPoints; i++)
@@ -896,6 +977,13 @@ void btGenContactSolver::CalcDecomposedConvertMat()
             normal.transpose() * rel_vel_convert_mat.block(i * 3, 0, 3, x_size);
         normal_vel_convert_vec.segment(i, 1) =
             normal.transpose() * rel_vel_convert_vec.segment(i * 3, 3);
+
+        if (mEnableGradientOverCtrlForce && mMultibodyArray.size())
+        {
+            normal_vel_convert_mat_of_residual.block(i, 0, 1, multibody_dof) =
+                normal.transpose() * rel_vel_convert_mat_of_residual.block(
+                                         i * 3, 0, 3, multibody_dof);
+        }
 
         if (mEnableFrictionalLCP)
         {
@@ -911,10 +999,21 @@ void btGenContactSolver::CalcDecomposedConvertMat()
                 mContactConstraintData[i]->mD.transpose() *
                 (rel_vel_convert_vec.segment(3 * i, 3) -
                  normal * normal_vel_convert_vec.segment(i, 1));
+
+            if (mEnableGradientOverCtrlForce && mMultibodyArray.size())
+            {
+                tangent_vel_convert_mat_of_residual.block(
+                    mNumFrictionDirs * i, 0, mNumFrictionDirs, multibody_dof) =
+                    mContactConstraintData[i]->mD.transpose() *
+                    (rel_vel_convert_mat_of_residual.block(3 * i, 0, 3,
+                                                           multibody_dof) -
+                     normal * normal_vel_convert_mat_of_residual.block(
+                                  i, 0, 1, multibody_dof));
+            }
         }
     }
 
-    // copy the normal velocity part
+    // copy the normal velocity part for joint limit constraints from rel vel
     normal_vel_convert_mat.block(mNumContactPoints, 0,
                                  mNumJointLimitConstraints, x_size) =
         rel_vel_convert_mat.block(mNumContactPoints * 3, 0,
@@ -923,6 +1022,14 @@ void btGenContactSolver::CalcDecomposedConvertMat()
                                    mNumJointLimitConstraints) =
         rel_vel_convert_vec.segment(mNumContactPoints * 3,
                                     mNumJointLimitConstraints);
+    if (mEnableGradientOverCtrlForce && mMultibodyArray.size())
+    {
+        normal_vel_convert_mat_of_residual.block(
+            mNumContactPoints, 0, mNumJointLimitConstraints, multibody_dof) =
+            rel_vel_convert_mat_of_residual.block(mNumContactPoints * 3, 0,
+                                                  mNumJointLimitConstraints,
+                                                  multibody_dof);
+    }
 }
 
 /**
@@ -1121,6 +1228,15 @@ void btGenContactSolver::CalcResultVectorBasedConvertMat()
     normal_vel_convert_result_based_mat.setZero();
     normal_vel_convert_result_based_vec.resize(mNumContactPoints +
                                                mNumJointLimitConstraints);
+
+    int multibody_dof = 0;
+    if (mEnableGradientOverCtrlForce && mMultibodyArray.size())
+    {
+        multibody_dof = mMultibodyArray[0]->GetNumOfFreedom();
+        normal_vel_convert_mat_result_based_of_residual.resize(
+            mNumContactPoints + mNumJointLimitConstraints, multibody_dof);
+    }
+
     if (mEnableFrictionalLCP)
     {
         tangent_vel_convert_result_based_mat.resize(
@@ -1129,6 +1245,13 @@ void btGenContactSolver::CalcResultVectorBasedConvertMat()
         tangent_vel_convert_result_based_vec.resize(mNumContactPoints *
                                                     mNumFrictionDirs);
         tangent_vel_convert_result_based_vec.setZero();
+        if (mEnableGradientOverCtrlForce && mMultibodyArray.size())
+        {
+            tangent_vel_convert_mat_result_based_of_residual.resize(
+                mNumContactPoints * mNumFrictionDirs +
+                    mNumJointLimitConstraints,
+                multibody_dof);
+        }
     }
 
     for (int i = 0; i < mNumContactPoints; i++)
@@ -1216,8 +1339,20 @@ void btGenContactSolver::CalcResultVectorBasedConvertMat()
         }
     }
     normal_vel_convert_result_based_vec = normal_vel_convert_vec;
+    if (mEnableGradientOverCtrlForce && mMultibodyArray.size())
+    {
+        normal_vel_convert_mat_result_based_of_residual =
+            normal_vel_convert_mat_of_residual;
+    }
     if (mEnableFrictionalLCP)
+    {
         tangent_vel_convert_result_based_vec = tangent_vel_convert_vec;
+        if (mEnableGradientOverCtrlForce && mMultibodyArray.size())
+        {
+            tangent_vel_convert_mat_result_based_of_residual =
+                tangent_vel_convert_mat_of_residual;
+        }
+    }
 }
 
 /**
@@ -1401,4 +1536,541 @@ cRobotModelDynamics *btGenContactSolver::CollectMultibody()
         }
     }
     return model;
+}
+
+/**
+ * \brief           Calculate d(constraint_force)/d(control_force)
+ * 
+ *      Here, the constraint force is the simply the direct solution of LCP problem, aka "x"
+ *      the control force is what we get from the character "GetGeneralizedForce"
+ * 
+ *      For more details, please check the note "20210105 ..."
+ * 
+ *  1. define   Fi = xi * (A * x + b)_i.  b = b(u), u is the control force. x is the constraint force
+ *              F = [F0, F1, ..., FN-1]
+ *              w = A * x + b
+ *  2. define jacobian
+ *              Q = dFdx = diag(w) + diag(x) * A
+ *              P = dFdu = diag(x) * dbdu
+ *  3. the final d(cons_lcp)/dforce = -Q.inv * P
+ * 
+ *  4. gen_cons_force = T * cons_lcp
+ *      gen_cons_force : generalized constraint force totally
+ *      cons_lsp: the solution vector of LCP problem
+ *      d(gen_cons_force)/d(force) = T * d(cons_lcp)/dforce
+ *      
+*/
+tMatrixXd btGenContactSolver::CalcDGenConsForceDCtrlForce() const
+{
+    BTGEN_ASSERT(mEnableGradientOverCtrlForce == true);
+
+    return CalcDGenConsForceDx() * CalcDxDCtrlForce();
+}
+
+tMatrixXd btGenContactSolver::CalcDxDCtrlForce() const
+{
+    const tVectorXd &w = M * x_lcp + n;
+    tMatrixXd Q = (w.asDiagonal().toDenseMatrix() + x_lcp.asDiagonal() * M);
+
+    // for stability
+    if (std::fabs(Q.determinant()) < 1e-10)
+    {
+        double eps = 1e-10;
+        // std::cout << "Q det = " << Q.determinant() << " add smal eps " << eps
+        //           << std::endl;
+        Q += tMatrixXd::Identity(x_lcp.size(), x_lcp.size()) * eps;
+        // std::cout << "diag(Q) = \n" << Q.diagonal().transpose() << std::endl;
+    }
+    const tMatrixXd &P = x_lcp.asDiagonal() * CalcDnDCtrlForce();
+    tMatrixXd dx_dctrlforce = (-Q.inverse() * P);
+
+    if (dx_dctrlforce.hasNaN() == true)
+    {
+        std::cout << "[error] dx_dctrlforce has Nan\n";
+        std::cout << "Q = \n" << Q << std::endl;
+        std::cout << "P = \n" << P << std::endl;
+        exit(0);
+    }
+
+    return dx_dctrlforce;
+}
+/**
+ * \brief           Calculate d(n)/d(control_force)
+ * here the n is the residual vector in LCP
+*/
+tMatrixXd btGenContactSolver::CalcDnDCtrlForce() const
+{
+    BTGEN_ASSERT(mMultibodyArray.size() && mEnableGradientOverCtrlForce);
+    auto mb = mMultibodyArray[0];
+    const tMatrixXd &M = mb->GetMassMatrix();
+    const tMatrixXd &inv_M = mb->GetInvMassMatrix();
+    const tMatrixXd &coriolis_mat = mb->GetCoriolisMatrix();
+    const tMatrixXd &damping_mat = mb->GetDampingMatrix();
+    const tMatrixXd &M_dt_C_D_inv =
+        (M + cur_dt * (coriolis_mat + damping_mat)).inverse();
+
+    return n_convert_mat_final * M_dt_C_D_inv;
+}
+
+/**
+ * \brief           Test the gradient of d(n)/d(ctrl_force)
+*/
+void btGenContactSolver::TestDnDCtrlForce()
+{
+    // 1. save
+    if (mMultibodyArray.size() == 0 ||
+        mNumJointLimitConstraints + mNumContactPoints == 0)
+        return;
+    auto mb = mMultibodyArray[0];
+    mb->PushState("test_dndctrl");
+    tVectorXd old_n = n;
+    tVectorXd Q_ctrl = mb->GetGeneralizedForce();
+    tMatrixXd ideal_dn_dctrlf = CalcDnDCtrlForce();
+    double eps = 1e-5;
+
+    // 2. restore
+    for (int i = 0; i < mb->GetNumOfFreedom(); i++)
+    {
+        Q_ctrl[i] += eps;
+        mb->SetGeneralizedForce(Q_ctrl);
+        mEnableGradientOverCtrlForce = false;
+        ConstraintFinished();
+        mEnableGradientOverCtrlForce = true;
+        ConstraintSetup();
+        ConstraintSolve();
+
+        tVectorXd new_n = n;
+        tVectorXd num_dn_dctrlfi = (new_n - old_n) / eps;
+        tVectorXd diff = num_dn_dctrlfi - ideal_dn_dctrlf.col(i);
+        if (diff.cwiseAbs().maxCoeff() > 10 * eps)
+        {
+            std::cout << "[error] TestDnDCtrlForce for idx " << i
+                      << " failed = " << diff.transpose() << std::endl;
+            std::cout << "old n = " << old_n.transpose() << std::endl;
+            std::cout << "new n = " << new_n.transpose() << std::endl;
+            std::cout << "num dndctrlf = " << num_dn_dctrlfi.transpose()
+                      << std::endl;
+            std::cout << "ideal dndctrlf = "
+                      << ideal_dn_dctrlf.col(i).transpose() << std::endl;
+            exit(0);
+        }
+        Q_ctrl[i] -= eps;
+    }
+
+    mb->PopState("test_dndctrl");
+    n = old_n;
+    n_convert_mat_final = ideal_dn_dctrlf;
+    mb->SetGeneralizedForce(Q_ctrl);
+    mEnableGradientOverCtrlForce = false;
+    ConstraintFinished();
+    mEnableGradientOverCtrlForce = true;
+    ConstraintSetup();
+    ConstraintSolve();
+    {
+        tVectorXd contact_x;
+        if (mUseSIResult)
+            contact_x = x_si;
+        else if (mUseLCPResult)
+            contact_x = x_lcp;
+
+        // 3. calculate the cartesian & generalized contact torque / forces
+        contact_x = ConvertLCPResult(contact_x);
+        CalcContactForceTorqueArrays(contact_force_array, contact_torque_array,
+                                     contact_x);
+    }
+    std::cout << "[debug] TestDnDCtrlForce succ\n";
+}
+
+/**
+ * \brief           Calculate the jacobian of (d generalized_constraint_force ) / (d x)
+ *          generalized_constraint_force is the total constraint force expressed as gen force
+ *          x is the lcp solution vector
+*/
+tMatrixXd btGenContactSolver::CalcDGenConsForceDx() const
+{
+    if (mMultibodyArray.size() == 0)
+        return tMatrixXd::Zero(0, 0);
+
+    auto mb = mMultibodyArray[0];
+    int multibody_dof = mb->GetNumOfFreedom();
+    tMatrixXd dQconsdx = tMatrixXd::Zero(multibody_dof, GetLCPSolutionSize());
+    // iterate on each contact point
+    tMatrixXd buffer;
+    int idx = 0;
+    for (int i = 0; i < mContactConstraintData.size(); i++)
+    {
+        auto &data = mContactConstraintData[i];
+        int size = mEnableFrictionalLCP == true ? mNumFrictionDirs + 2 : 1;
+
+        if (data->mBodyA->GetType() == eColObjType::RobotCollder)
+        {
+            // is multibody contact force
+            int link_id =
+                static_cast<btGenRobotCollider *>(data->mBodyA)->mLinkId;
+            mb->ComputeJacobiByGivenPointTotalDOFWorldFrame(
+                link_id, data->mContactPtOnA.segment(0, 3), buffer);
+            if (mEnableFrictionalLCP)
+            {
+                // printf("buffer.T size = %d %d\n", buffer.transpose().rows(),
+                //        buffer.transpose().cols());
+                // printf("mS size = %d %d\n", data->mS.rows(), data->mS.cols());
+                dQconsdx.block(0, idx, multibody_dof, size) +=
+                    buffer.transpose() * data->mS;
+            }
+            else
+            {
+                dQconsdx.block(0, idx, multibody_dof, size) +=
+                    buffer.transpose() * data->mNormalPointToA;
+            }
+        }
+
+        if (data->mBodyB->GetType() == eColObjType::RobotCollder)
+        {
+            // is multibody contact force
+            int link_id =
+                static_cast<btGenRobotCollider *>(data->mBodyB)->mLinkId;
+            mb->ComputeJacobiByGivenPointTotalDOFWorldFrame(
+                link_id, data->mContactPtOnB.segment(0, 3), buffer);
+            if (mEnableFrictionalLCP)
+            {
+                dQconsdx.block(0, idx, multibody_dof, size) +=
+                    -buffer.transpose() * data->mS;
+            }
+            else
+            {
+                dQconsdx.block(0, idx, multibody_dof, size) +=
+                    -buffer.transpose() * data->mNormalPointToA;
+            }
+        }
+        idx += size;
+    }
+
+    for (int i = 0; i < mNumJointLimitConstraints; i++)
+    {
+        auto &data = mJointLimitConstraintData[i];
+        dQconsdx(data->dof_id, idx) += data->is_upper_bound == true ? -1 : 1;
+        idx += 1;
+    }
+    BTGEN_ASSERT(idx == GetLCPSolutionSize());
+    return dQconsdx;
+}
+
+/**
+ * \brief           Get the solution size of LCP problem
+*/
+int btGenContactSolver::GetLCPSolutionSize() const
+{
+    int total_size = 0;
+    if (mEnableFrictionalLCP == true)
+        total_size += (mNumFrictionDirs + 2) *
+                      mNumContactPoints; // normal 1, tangent num_dirs, lambda 1
+    else
+        total_size += mNumContactPoints;
+    total_size += mNumJointLimitConstraints;
+    return total_size;
+}
+
+/**
+ * \brief           Calculate contact force & torque arrays, based on x_lcp vector
+*/
+void btGenContactSolver::CalcContactForceTorqueArrays(
+    std::vector<btGenContactForce *> &contact_force_array,
+    std::vector<btGenConstraintGeneralizedForce *> &contact_torque_array,
+    const tVectorXd &result_vector) const
+{
+    ClearConstraintForceTorqueArrays(contact_force_array, contact_torque_array);
+    for (int i = 0; i < mContactConstraintData.size(); i++)
+    {
+        // std::cout << "[bt] contact point " << i << std::endl;
+        btGenContactForce *ptr;
+        auto &data = mContactConstraintData[i];
+        // std::cout << "[debug] for contact " << i << " data = " << data <<
+        // std::endl; std::cout << "contact x size = " << contact_x.size() <<
+        // std::endl; std::cout << "[debug] contact force = " <<
+        // cMathUtil::Expand(contact_x.segment(i * 3, 3), 0).transpose() <<
+        // std::endl; std::cout << "[debug] contact pos = " <<
+        // data->mContactPtOnA.transpose() << std::endl;
+        ptr = new btGenContactForce(
+            data->mBodyA, data->mBodyB,
+            btMathUtil::Expand(result_vector.segment(i * 3, 3), 0),
+            data->mContactPtOnA, data->mIsSelfCollision);
+        // std::cout << "[debug] contact point " << i << " is self collision = "
+        // << data->mIsSelfCollision << std::endl; std::cout << "[bt] user ptr =
+        // " << ptr->mObj->getUserPointer() << std::endl;
+        contact_force_array.push_back(ptr);
+        ptr = new btGenContactForce(
+            data->mBodyB, data->mBodyA,
+            -btMathUtil::Expand(result_vector.segment(i * 3, 3), 0),
+            data->mContactPtOnB, data->mIsSelfCollision);
+        // std::cout << "[bt] user ptr = " << ptr->mObj->getUserPointer() <<
+        // std::endl;
+        contact_force_array.push_back(ptr);
+    }
+
+    for (int i = 0; i < mNumJointLimitConstraints; i++)
+    {
+        auto &data = mJointLimitConstraintData[i];
+        btGenConstraintGeneralizedForce *ptr =
+            new btGenConstraintGeneralizedForce(
+                data->multibody, data->dof_id,
+                result_vector[mNumContactPoints * 3 + i]);
+        contact_torque_array.push_back(ptr);
+        if (mEnableDebugOutput)
+        {
+            std::cout << "[lcp] joint limit " << ptr->dof_id
+                      << " constraint generalized force " << ptr->value
+                      << std::endl;
+        }
+    }
+}
+
+/**
+ * \brief           Test the jacobian d(gen_cons_force)/d(lcp_x_vector)
+*/
+void btGenContactSolver::TestDGenConsForceDx()
+{
+    if (mMultibodyArray.size() == 0)
+        return;
+
+    tVectorXd result_vec = x_lcp;
+    tVectorXd old_gen_force = CalcConsGenForce(result_vec);
+    tMatrixXd dGenConsF_dx = CalcDGenConsForceDx();
+    int total_size = GetLCPSolutionSize();
+    double eps = 1e-6;
+    // std::cout << "dGenConsF_dx = \n" << dGenConsF_dx << std::endl;
+    // std::cout << "x_lcp = " << x_lcp.transpose() << std::endl;
+    // std::cout << "num of constraints = " << mNumConstraints << std::endl;
+    // std::cout << "num of joint limit constraints = "
+    //           << mNumJointLimitConstraints << std::endl;
+    // std::cout << "num of contacts constraints = " << mNumContactPoints
+    //           << std::endl;
+    for (int i = 0; i < total_size; i++)
+    {
+        result_vec[i] += eps;
+        tVectorXd new_gen_force = CalcConsGenForce(result_vec);
+
+        tVectorXd num_deriv = (new_gen_force - old_gen_force) / eps;
+        tVectorXd diff = num_deriv - dGenConsF_dx.col(i);
+        if (diff.cwiseAbs().maxCoeff() > 10 * eps)
+        {
+            printf("[error] TestDGenConsForceDx %d idx failed\n", i);
+            std::cout << "num_deriv = " << num_deriv.transpose() << std::endl;
+            std::cout << "ideal_deriv = " << dGenConsF_dx.col(i).transpose()
+                      << std::endl;
+            std::cout << "old Q = " << old_gen_force.transpose() << std::endl;
+            std::cout << "new Q = " << new_gen_force.transpose() << std::endl;
+            std::cout << "diff = " << diff.transpose() << std::endl;
+            exit(0);
+        }
+        result_vec[i] -= eps;
+    }
+    CalcConsGenForce(result_vec);
+    std::cout << "[debug] TestDGenConsForceDx succ\n";
+}
+
+/**
+ * \brief           given the solution vector of LCP (or SI), calculate the generalized constraint force on the multibody
+*/
+tVectorXd
+btGenContactSolver::CalcConsGenForce(const tVectorXd &result_vec) const
+{
+    auto mb = mMultibodyArray[0];
+    tVectorXd new_vec = ConvertLCPResult(result_vec);
+    std::vector<btGenContactForce *> contact_force_array(0);
+    std::vector<btGenConstraintGeneralizedForce *> contact_torque_array(0);
+    CalcContactForceTorqueArrays(contact_force_array, contact_torque_array,
+                                 new_vec);
+
+    tMatrixXd jac;
+    tVectorXd total_gen_force = tVectorXd::Zero(mb->GetNumOfFreedom());
+    for (auto &f : contact_force_array)
+    {
+        if (f->mObj->GetType() == eColObjType::RobotCollder)
+        {
+            // mb-> f->mWorldPos
+            mb->ComputeJacobiByGivenPointTotalDOFWorldFrame(
+                static_cast<btGenRobotCollider *>(f->mObj)->mLinkId,
+                f->mWorldPos.segment(0, 3), jac);
+            total_gen_force += jac.transpose() * f->mForce.segment(0, 3);
+        }
+    }
+
+    for (auto &x : contact_torque_array)
+    {
+        total_gen_force[x->dof_id] += x->value;
+    }
+
+    ClearConstraintForceTorqueArrays(contact_force_array, contact_torque_array);
+    return total_gen_force;
+}
+
+/**
+ * \brief               Test the jacobian d(generalized_constraint_force)/d(generalized_control_force)
+*/
+void btGenContactSolver::TestDGenConsForceDCtrlForce()
+{
+    // 1. save
+    if (mMultibodyArray.size() == 0 ||
+        mNumJointLimitConstraints + mNumContactPoints == 0)
+        return;
+    auto mb = mMultibodyArray[0];
+    mb->PushState("test_dndctrl");
+    tMatrixXd old_n_convert_mat_final = n_convert_mat_final;
+    tMatrixXd old_DGenConsForceDGenCtrlForce = DGenConsForceDGenCtrlForce;
+    tVectorXd old_cons = CalcConsGenForce(x_lcp);
+    tVectorXd Q_ctrl = mb->GetGeneralizedForce();
+    tMatrixXd ideal_dgencons_dctrlf = CalcDGenConsForceDCtrlForce();
+    double eps = 1e-5;
+
+    // 2. restore
+    bool err = false;
+    for (int i = 0; i < mb->GetNumOfFreedom(); i++)
+    {
+        Q_ctrl[i] += eps;
+        mb->SetGeneralizedForce(Q_ctrl);
+        mEnableGradientOverCtrlForce = false;
+        ConstraintFinished();
+        mEnableGradientOverCtrlForce = true;
+        ConstraintSetup();
+        ConstraintSolve();
+
+        tVectorXd new_cons = CalcConsGenForce(x_lcp);
+        tVectorXd num_dn_dctrlfi = (new_cons - old_cons) / eps;
+        tVectorXd ideal_dn_dctrlfi = ideal_dgencons_dctrlf.col(i);
+        tVectorXd diff = num_dn_dctrlfi - ideal_dgencons_dctrlf.col(i);
+
+        // calculate the element wise violation (percentage)
+        tVectorXd base_value =
+            ideal_dn_dctrlfi.cwiseAbs().cwiseMax(num_dn_dctrlfi.cwiseAbs());
+        double violate_perc =
+            diff.cwiseAbs().cwiseProduct(base_value.cwiseInverse()).maxCoeff();
+
+        if (diff.cwiseAbs().maxCoeff() > 100 * eps && violate_perc > 0.01)
+        {
+            err = true;
+            std::cout << "[error] TestDGenConsForceDCtrlForce for idx " << i
+                      << " failed = " << diff.transpose() << std::endl;
+            std::cout << "old gen cons force = " << old_cons.transpose()
+                      << std::endl;
+            std::cout << "new gen cons force = " << new_cons.transpose()
+                      << std::endl;
+            std::cout << "num dgencons_dctrlf = " << num_dn_dctrlfi.transpose()
+                      << std::endl;
+            std::cout << "ideal dgencons_dctrlf = "
+                      << ideal_dgencons_dctrlf.col(i).transpose() << std::endl;
+            std::cout << "q = " << mb->Getq().transpose() << std::endl;
+            std::cout << "qdot = " << mb->Getqdot().transpose() << std::endl;
+            // exit(0);
+        }
+        else
+        {
+            // std::cout << "old gen cons force = " << old_cons.transpose()
+            //           << std::endl;
+            // std::cout << "new gen cons force = " << new_cons.transpose()
+            //           << std::endl;
+            // std::cout << "num dgencons_dctrlf = " << num_dn_dctrlfi.transpose()
+            //           << std::endl;
+            // std::cout << "ideal dgencons_dctrlf = "
+            //           << ideal_dgencons_dctrlf.col(i).transpose() << std::endl;
+            // std::cout << "q = " << mb->Getq().transpose() << std::endl;
+            // std::cout << "qdot = " << mb->Getqdot().transpose() << std::endl;
+        }
+        Q_ctrl[i] -= eps;
+    }
+
+    mb->PopState("test_dndctrl");
+    mb->SetGeneralizedForce(Q_ctrl);
+    n_convert_mat_final = old_n_convert_mat_final;
+    DGenConsForceDGenCtrlForce = old_DGenConsForceDGenCtrlForce;
+    mEnableGradientOverCtrlForce = false;
+    ConstraintFinished();
+    mEnableGradientOverCtrlForce = true;
+    ConstraintSetup();
+    ConstraintSolve();
+    {
+        tVectorXd contact_x;
+        if (mUseSIResult)
+            contact_x = x_si;
+        else if (mUseLCPResult)
+            contact_x = x_lcp;
+
+        // 3. calculate the cartesian & generalized contact torque / forces
+        contact_x = ConvertLCPResult(contact_x);
+        CalcContactForceTorqueArrays(contact_force_array, contact_torque_array,
+                                     contact_x);
+    }
+    if (err == false)
+        std::cout << "[debug] TestDGenConsForceDCtrlForce succ\n";
+    else
+        std::cout << "[error] TestDGenConsForceDCtrlForce failed\n";
+}
+
+/**
+ * \brief           
+*/
+// void btGenContactSolver::TestDxDn() {}
+
+void btGenContactSolver::TestDxDCtrlForce()
+{
+    // 1. save
+    if (mMultibodyArray.size() == 0 ||
+        mNumJointLimitConstraints + mNumContactPoints == 0)
+        return;
+    auto mb = mMultibodyArray[0];
+    mb->PushState("TestDxDCtrlForce");
+    tVectorXd old_x = x_lcp;
+    tVectorXd Q_ctrl = mb->GetGeneralizedForce();
+    tMatrixXd ideal_dx_dctrlf = CalcDxDCtrlForce();
+    double eps = 1e-4;
+
+    // 2. restore
+    for (int i = 0; i < mb->GetNumOfFreedom(); i++)
+    {
+        Q_ctrl[i] += eps;
+        mb->SetGeneralizedForce(Q_ctrl);
+        mEnableGradientOverCtrlForce = false;
+        ConstraintFinished();
+        mEnableGradientOverCtrlForce = true;
+        ConstraintSetup();
+        ConstraintSolve();
+
+        tVectorXd new_x = x_lcp;
+        tVectorXd num_dx_dctrlfi = (new_x - old_x) / eps;
+        tVectorXd diff = num_dx_dctrlfi - ideal_dx_dctrlf.col(i);
+        if (diff.cwiseAbs().maxCoeff() > 1e3 * eps)
+        {
+            std::cout << "[error] TestDxDCtrlForce for idx " << i
+                      << " failed = " << diff.transpose() << std::endl;
+            std::cout << "old n = " << old_x.transpose() << std::endl;
+            std::cout << "new n = " << new_x.transpose() << std::endl;
+            std::cout << "num dxdctrlf = " << num_dx_dctrlfi.transpose()
+                      << std::endl;
+            std::cout << "ideal dxdctrlf = "
+                      << ideal_dx_dctrlf.col(i).transpose() << std::endl;
+            // exit(0);
+        }
+        Q_ctrl[i] -= eps;
+    }
+
+    mb->PopState("TestDxDCtrlForce");
+    x_lcp = old_x;
+    mb->SetGeneralizedForce(Q_ctrl);
+    mEnableGradientOverCtrlForce = false;
+    ConstraintFinished();
+    mEnableGradientOverCtrlForce = true;
+    ConstraintSetup();
+    ConstraintSolve();
+    {
+        tVectorXd contact_x;
+        if (mUseSIResult)
+            contact_x = x_si;
+        else if (mUseLCPResult)
+            contact_x = x_lcp;
+
+        // 3. calculate the cartesian & generalized contact torque / forces
+        contact_x = ConvertLCPResult(contact_x);
+        CalcContactForceTorqueArrays(contact_force_array, contact_torque_array,
+                                     contact_x);
+    }
+    std::cout << "[debug] TestDxDCtrlForce succ\n";
 }

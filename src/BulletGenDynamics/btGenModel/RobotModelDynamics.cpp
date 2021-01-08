@@ -604,7 +604,7 @@ void cRobotModelDynamics::ApplyJointTorque(int joint_id, const tVector &torque)
 }
 
 tVectorXd cRobotModelDynamics::DebugGetGeneralizedForce() { return mGenForce; }
-tVectorXd cRobotModelDynamics::GetGeneralizedForce()
+tVectorXd cRobotModelDynamics::GetGeneralizedForce() const
 {
     tVectorXd Q = tVectorXd::Zero(GetNumOfFreedom());
     for (int i = 0; i < GetNumOfLinks(); i++)
@@ -619,6 +619,15 @@ tVectorXd cRobotModelDynamics::GetGeneralizedForce()
     // add lefted generalized force
     Q += mGenForce;
     return Q;
+}
+
+/**
+ * \brief           set the total gen force of this character brutely
+*/
+void cRobotModelDynamics::SetGeneralizedForce(const tVectorXd &gen_f)
+{
+    ClearForce();
+    mGenForce = gen_f;
 }
 
 btGenRobotCollider *cRobotModelDynamics::GetLinkCollider(int link_id)

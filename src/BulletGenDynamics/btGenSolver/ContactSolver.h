@@ -65,9 +65,9 @@ class btGenContactSolver
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
-    btGenContactSolver(const std::string &config_path,
-                       btGeneralizeWorld *world);
+    btGenContactSolver();
+    explicit btGenContactSolver(const std::string &config_path,
+                                btGeneralizeWorld *world);
     virtual ~btGenContactSolver();
 
     void ConstraintProcess(float dt);
@@ -75,6 +75,7 @@ public:
     std::vector<btGenContactForce *> GetContactForces();
     std::vector<btGenConstraintGeneralizedForce *>
     GetConstraintGeneralizedForces();
+    tMatrixXd GetDGenConsForceDCtrlForce() const;
 
 protected:
     int mNumFrictionDirs;
@@ -96,6 +97,8 @@ protected:
     bool mEnableContactLCP;
     bool mEnableFrictionalLCP;
     bool mEnableJointLimitLCP;
+    bool mEnableGradientOverCtrlForce;
+    bool mEnableTestGradientOverCtrlForce;
     bool mUseLCPResult;
 
     // SI config
@@ -125,22 +128,39 @@ protected:
     // velocity
     tMatrixXd rel_vel_convert_mat;
     tVectorXd rel_vel_convert_vec;
+    tMatrixXd
+        rel_vel_convert_mat_of_residual; // the convert mat from multibody gen vel to rel vel, used in diff MBRL
 
     // 2. LCP buffer vars, normal and tangent convert mat buffer, cartesian
     // force to normal and tangent rel vel
-    tMatrixXd normal_vel_convert_mat;  // one contact point one line
-    tVectorXd normal_vel_convert_vec;  // one contact point one real number
+    tMatrixXd normal_vel_convert_mat; // one contact point one line
+    tVectorXd normal_vel_convert_vec; // one contact point one real number
+    tMatrixXd
+        normal_vel_convert_mat_of_residual; // the convert mat from multibody gen vel to normal rel vel, used in diff MBRL
+
     tMatrixXd tangent_vel_convert_mat; // one contact point N lines, N =
                                        // mNumFrictionDir
     tVectorXd tangent_vel_convert_vec; // one contact point one real number
+
+    tMatrixXd
+        tangent_vel_convert_mat_of_residual; // the convert mat from multibody gen vel to tangent rel vel, used in diff MBRL
 
     // 3. LCP buffer vars, from result vector to normal/tangent velcoity
     // (ultimate convert mat)
     tMatrixXd normal_vel_convert_result_based_mat;
     tVectorXd normal_vel_convert_result_based_vec;
+    tMatrixXd
+        normal_vel_convert_mat_result_based_of_residual; // the convert mat from multibody gen vel to normal rel vel, based on result vector, used in diff MBRL
+
     tMatrixXd tangent_vel_convert_result_based_mat;
     tVectorXd tangent_vel_convert_result_based_vec;
+    tMatrixXd
+        tangent_vel_convert_mat_result_based_of_residual; // the convert mat from multibody gen vel to tangent rel vel, based on result vector, used in diff MBRL
+    tMatrixXd
+        n_convert_mat_final; // convert matrix from robot collider residual to n (LCP residual)
 
+    tMatrixXd
+        DGenConsForceDGenCtrlForce; // the derivative of LCP constraint force w.r.t generalized control force of the char
     // LCP condition: x \perp (M * x + n)
     tMatrixXd M;
     tVectorXd x_lcp, n;
@@ -157,7 +177,7 @@ protected:
     void ConstraintSolve();
     void SolveByLCP();
     void SolveBySI();
-    void ConvertLCPResult();
+    tVectorXd ConvertLCPResult(const tVectorXd &raw_lcp_result) const;
     void VerifySolution();
     double InternalIterationSI();
     void SetupDataForSI();
@@ -166,6 +186,10 @@ protected:
 
     void UpdateVelocity(float dt);
     void ClearAllConstraintForce();
+    void ClearConstraintForceTorqueArrays(
+        std::vector<btGenContactForce *> &contact_force_array,
+        std::vector<btGenConstraintGeneralizedForce *> &contact_torque_array)
+        const;
     void ConstraintFinished();
     void CalcCMats(tMatrixXd &C_lambda, tMatrixXd &C_mufn, tMatrixXd &C_c);
     cRobotModelDynamics *CollectMultibody();
@@ -181,7 +205,10 @@ protected:
                                      // normal/tangent rel vel
     void CalcResultVectorBasedConvertMat(); // result vector -> contact point
                                             // normal/tangent rel vel
-
+    void CalcContactForceTorqueArrays(
+        std::vector<btGenContactForce *> &contact_force_array,
+        std::vector<btGenConstraintGeneralizedForce *> &contact_torque_array,
+        const tVectorXd &) const;
     // Test cartesian force to cartesian velcoity convert mat
     void PushState(const std::string &name);
     void PopState(const std::string &name);
@@ -200,4 +227,20 @@ protected:
     TestAddContactAwareForceIfPossible(const tEigenArr<tVector> &contact_forces,
                                        const std::vector<int> &);
     bool IsMultibodyAndVelMax(btGenCollisionObject *body);
+
+    // calculate jacobian d(gen_constraint_force)/d(x_lcp_vector)
+    tMatrixXd CalcDGenConsForceDx() const;
+    void TestDGenConsForceDx(); // test
+    // void TestDxDn(const tVectorXd &M, const tVectorXd &n); // test
+    // calculate jacobian d(n)/d(control_gen_force), n is the residual vector in LCP
+    tMatrixXd CalcDnDCtrlForce() const;
+    void TestDnDCtrlForce(); // test
+    // calculate d(gen_constraint_force)/d(control_gen_force)
+    tMatrixXd CalcDxDCtrlForce() const;
+    void TestDxDCtrlForce();
+    tMatrixXd CalcDGenConsForceDCtrlForce() const;
+    void TestDGenConsForceDCtrlForce();
+
+    int GetLCPSolutionSize() const;
+    tVectorXd CalcConsGenForce(const tVectorXd &lcp_result_vector) const;
 };
