@@ -35,10 +35,10 @@ int btGenMobyLCPSovler::Solve(int num_of_vars, const tMatrixXd &A,
     bool fast_fail = judge_fail(fast_left_min, fast_perp_vio);
     if (fast_fail)
     {
-        printf("[warn] moby fast left min %.5f, perp vio %.5f\n", fast_left_min,
-               fast_perp_vio);
+        // printf("[warn] moby fast left min %.5f, perp vio %.5f\n", fast_left_min,
+        //        fast_perp_vio);
         mSolver->lcp_lemke(A, b, &x, 1e-10);
-        std::cout << "[warn] lcp fast failed, use lemke solver\n";
+        // std::cout << "[warn] lcp fast failed, degenerate to lemke solver\n";
         // std::ofstream fout("output.txt");
         // fout << "A = \n" << A << std::endl;
         // fout << "b = " << b.transpose() << std::endl;
