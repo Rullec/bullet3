@@ -7,6 +7,7 @@
 #include "BulletGenDynamics/btGenModel/SimObj.h"
 #include "BulletGenDynamics/btGenSolver/LCPSolverBuilder.hpp"
 #include "BulletGenDynamics/btGenUtil/JsonUtil.h"
+#include "BulletGenDynamics/btGenUtil/TimeUtil.hpp"
 #include "btBulletDynamicsCommon.h"
 #include <iostream>
 #include <set>
@@ -183,21 +184,29 @@ btGenContactSolver::~btGenContactSolver()
     DeleteColObjData();
 }
 
+void btGenContactSolver::Reset()
+{
+    DGenConsForceDGenCtrlForce.resize(0, 0);
+    ClearConstraintForceTorqueArrays(contact_force_array, contact_torque_array);
+    DeleteColObjData();
+    DeleteConstraintData();
+}
 /**
  * \brief	 return the contact forces. col_id->vector[pair<ColObj*, force>]
  */
-
-#include "BulletGenDynamics/btGenUtil/TimeUtil.hpp"
 void btGenContactSolver::ConstraintProcess(float dt_)
 {
-    // std::cout << "--------contact solver frame " << global_frame_id << "
-    // ----------" << std::endl;
+    // std::cout << "--------contact solver frame " << global_frame_id << "----------" << std::endl;
+    // 1. reset the solver
     cur_dt = dt_;
-    DGenConsForceDGenCtrlForce.resize(0, 0);
+    Reset();
+
     // btTimeUtil::Begin("constraint_setup");
-    ConstraintSetup();
-    if (mNumConstraints == 0)
+    // 2. if there is no constraint return directly
+    if (false == ConstraintSetup())
         return;
+
+    // 3. else, begin to solve the constraint and calculate the reaction forces
     // btTimeUtil::End("constraint_setup");
     // btTimeUtil::Begin("constraint_solve");
     ConstraintSolve();
@@ -272,7 +281,7 @@ void btGenContactSolver::ConstraintFinished()
  *          Calculate the LCP constraint tMatrixXd A and vec b, so that:
  *                  0 <= x \cdot (Ax + b) >= 0
  */
-void btGenContactSolver::ConstraintSetup()
+bool btGenContactSolver::ConstraintSetup()
 {
     // 1. build collision objects data
     RebuildColObjData();
@@ -343,6 +352,8 @@ void btGenContactSolver::ConstraintSetup()
             printf("[log] LCP Convert Mat verified succ\n");
         }
     }
+
+    return mNumConstraints != 0;
 }
 extern std::map<int, std::string> col_name;
 void btGenContactSolver::ConstraintSolve()
@@ -538,7 +549,7 @@ void btGenContactSolver::SolveByLCP()
         btTimeUtil::End("lcp_solver");
     // std::cout << "[lcp] M norm = " << M.norm() << std::endl;
     // std::cout << "[lcp] n norm = " << n.norm() << std::endl;
-    // std::cout << "[lcp] x norm = " << x_lcp.norm() << std::endl;
+    // std::cout << "[lcp] x = " << x_lcp.transpose() << std::endl;
     // btTimeUtil::End("MLCPSolver->Solver");
     // fout << "x = " << x_lcp.transpose() << std::endl;
     // std::cout << "x_lcp = " << x_lcp.transpose() << std::endl;

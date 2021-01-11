@@ -71,6 +71,7 @@ public:
     virtual ~btGenContactSolver();
 
     void ConstraintProcess(float dt);
+    void Reset();
     bool GetEnableConvertMatTest() { return mEnableConvertMatTest; }
     std::vector<btGenContactForce *> GetContactForces();
     std::vector<btGenConstraintGeneralizedForce *>
@@ -173,7 +174,7 @@ protected:
     std::vector<btGenContactForce *> contact_force_array;
     std::vector<btGenConstraintGeneralizedForce *> contact_torque_array;
 
-    void ConstraintSetup();
+    bool ConstraintSetup();
     void ConstraintSolve();
     void SolveByLCP();
     void SolveBySI();

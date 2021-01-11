@@ -868,17 +868,17 @@ void btGeneralizeWorld::CollisionResponse(double dt)
 
     for (auto &f : mContactForces)
     {
-        // std::cout << "add contact f = " << f->mForce.transpose() <<
-        // std::endl;
+        // std::cout << "add contact f = " << f->mForce.transpose() << std::endl;
         f->mObj->ApplyForce(f->mForce, f->mWorldPos);
     }
 
     // apply contact torques
     for (auto &t : mConstraintGenalizedForce)
     {
-        // std::cout << "[sim] model dof " << t->dof_id << " add constraint
-        // generalized force " << t->value << std::endl;
-        // t->model->ApplyJointTorque(t->joint_id, t->joint_torque);
+        // std::cout << "[sim] model dof " << t->dof_id
+        //           << " add constraint generalized force " << t->value
+        //           << std::endl;
+        // t->model->ApplyJointTorque(t->dof_id, t->value);
         t->model->ApplyGeneralizedForce(t->dof_id, t->value);
     }
 
@@ -1380,7 +1380,8 @@ void btGeneralizeWorld::Reset()
     global_frame_id = mFrameId;
     mMultibody->ClearForce();
     mContactForces.clear();
-
+    if (mLCPContactSolver)
+        mLCPContactSolver->Reset();
     m_broadphase->resetPool(m_dispatcher);
 
     btOverlappingPairCache *pair_cache =
