@@ -8,7 +8,7 @@ extern btGenCollisionObject *UpcastColObj(const btCollisionObject *col);
 
 void btGenContactSolver::SolveBySI()
 {
-    if (mContactConstraintData.size() == 0)
+    if (mContactPairConsData.size() == 0)
         return;
     PushState("before_SI");
 
@@ -62,10 +62,10 @@ void btGenContactSolver::SolveBySI()
     PopState("before_SI");
 
     // fetch the result
-    x_si.resize(mContactConstraintData.size() * 3);
-    for (int i = 0; i < mContactConstraintData.size(); i++)
+    x_si.resize(mContactPairConsData.size() * 3);
+    for (int i = 0; i < mContactPairConsData.size(); i++)
     {
-        auto &data = mContactConstraintData[i];
+        auto &data = mContactPairConsData[i];
 
         x_si.segment(i * 3, 3) =
             (data->mSI_normal_contact_value * data->mNormalPointToA +
@@ -82,9 +82,9 @@ double btGenContactSolver::InternalIterationSI()
     // 1. iterate on each contact point
     double total_normal_changed = 0;
     double total_tangent_changed = 0;
-    for (auto &data : mContactConstraintData)
+    for (auto &data : mContactPairConsData)
     {
-        int contact_id = data->contact_id;
+        int contact_id = data->constraint_id;
         // 2. calculate the desired normal contact force
         double delta_normal_force =
 
@@ -172,9 +172,9 @@ double btGenContactSolver::InternalIterationSI()
 void btGenContactSolver::SetupDataForSI()
 {
     // std::cout << "-----------setup data for SI begin----------\n";
-    for (auto &data : mContactConstraintData)
+    for (auto &data : mContactPairConsData)
     {
-        int contact_id = data->contact_id;
+        int contact_id = data->constraint_id;
         // 1. clear data
         data->mSI_normal_contact_value = 0;
         data->mSI_tangent_contact_dir[0].setZero();
@@ -229,9 +229,9 @@ void btGenContactSolver::SetupDataForSI()
 
 void btGenContactSolver::UpdateDataForSI()
 {
-    for (auto &data : mContactConstraintData)
+    for (auto &data : mContactPairConsData)
     {
-        int contact_id = data->contact_id;
+        int contact_id = data->constraint_id;
         int body0_id = data->GetBody0Id(), body1_id = data->GetBody1Id();
         int body0_groupid = map_colobjid_to_groupid[body0_id],
             body1_groupid = map_colobjid_to_groupid[body1_id];
@@ -247,7 +247,7 @@ void btGenContactSolver::UpdateDataForSI()
 
 void btGenContactSolver::TestSICartesianConvertMatAndVec()
 {
-    for (auto &data : mContactConstraintData)
+    for (auto &data : mContactPairConsData)
     {
         PushState("testSI");
         // for a single contact point
@@ -261,7 +261,7 @@ void btGenContactSolver::TestSICartesianConvertMatAndVec()
         // CalcAbsvelConvertMat();
         // SetupDataForSI();
         tVector true_relvel = data->GetRelVel();
-        int id = data->contact_id;
+        int id = data->constraint_id;
 
         if ((true_relvel - pred_relvel).norm() > 1e-6)
         {
@@ -320,7 +320,7 @@ bool btGenContactSolver::IsMultibodyAndVelMax(btGenCollisionObject *body)
 
 void btGenContactSolver::CompareSILCPResult()
 {
-    for (int i = 0; i < mContactConstraintData.size(); i++)
+    for (int i = 0; i < mContactPairConsData.size(); i++)
     {
         if (i == 0)
             std::cout << "----------begin to compare result between LCP and "

@@ -782,7 +782,7 @@ void btGenContactAwareController::RecordTraj()
                 rec_contacts.push_back(new btGenMBContactForce(
                     link_collider, cur_contact->mPassiveObj,
                     cur_contact->mForce, cur_contact->mWorldPos, local_pos,
-                    cur_contact->mIsSelfCollision));
+                    cur_contact->mIsMBSelfCollision));
             }
         }
     }

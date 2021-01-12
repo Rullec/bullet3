@@ -167,7 +167,7 @@ void btGenCollisionDispatcher::RestoreContactInfoFromTraj(
     {
         // 1. get current contact force
         auto &cur_force = contact_force_array[i];
-        if (cur_force->mIsSelfCollision == true)
+        if (cur_force->mIsMBSelfCollision == true)
             continue;
 
         // 2. get link id

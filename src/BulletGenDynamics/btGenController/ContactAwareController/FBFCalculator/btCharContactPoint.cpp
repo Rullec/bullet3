@@ -1,6 +1,6 @@
 #include "btCharContactPoint.h"
 #include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
-btCharContactPt::btCharContactPt(int c_id) : btGenContactPointData(c_id)
+btCharContactPt::btCharContactPt(int c_id) : btGenContactPairData(c_id)
 {
     mCollider = nullptr;
     mLocalPos = tVector::Zero();
@@ -11,9 +11,9 @@ btCharContactPt::btCharContactPt(int c_id) : btGenContactPointData(c_id)
 void btCharContactPt::Init(double dt, btPersistentManifold *manifold,
                            int contact_id_in_manifold)
 {
-    btGenContactPointData::Init(dt, manifold, contact_id_in_manifold);
+    btGenContactPairData::Init(dt, manifold, contact_id_in_manifold);
 
-    if (mIsSelfCollision == true)
+    if (mIsMBSelfCollision == true)
     {
         std::cout << "[error] CalcContactStatus cannot handle self "
                      "collsion at this moment\n";
@@ -28,8 +28,8 @@ void btCharContactPt::Init(const tVector &world_pos,
     mCollider = collider;
     mBodyA = mCollider;
     mBodyB = mCollider;
-    mContactPtOnA = mWorldPos;
-    mContactPtOnB = mWorldPos;
+    mContactPosOnA = mWorldPos;
+    mContactPosOnB = mWorldPos;
 }
 bool btCharContactPt::IsMultibodyInvolved(cRobotModelDynamics *model)
 {
@@ -49,13 +49,13 @@ void btCharContactPt::CalcCharacterInfo()
     if (eColObjType::RobotCollder == mBodyA->GetType())
     {
         mCollider = dynamic_cast<btGenRobotCollider *>(mBodyA);
-        mWorldPos = mContactPtOnA;
+        mWorldPos = mContactPosOnA;
     }
 
     else if (eColObjType::RobotCollder == mBodyB->GetType())
     {
         mCollider = dynamic_cast<btGenRobotCollider *>(mBodyB);
-        mWorldPos = mContactPtOnB;
+        mWorldPos = mContactPosOnB;
     }
 
     mWorldPos[3] = 1;

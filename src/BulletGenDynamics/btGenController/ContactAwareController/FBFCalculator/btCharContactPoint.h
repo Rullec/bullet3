@@ -1,6 +1,6 @@
 #include "BulletGenDynamics/btGenSolver/ContactSolver.h"
 #include "btGenFrameByFrameCalculator.h"
-struct btCharContactPt : public btGenContactPointData
+struct btCharContactPt : public btGenContactPairData
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;

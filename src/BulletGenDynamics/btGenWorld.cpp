@@ -443,7 +443,8 @@ void btGeneralizeWorld::StepSimulation(double dt)
         // ApplyGuideAction();
         CollisionResponse(dt);
         // CheckGuideTraj();
-        mDxnextDctrlforce = CalcDxnextDCtrlForce(dt);
+        if (mLCPContactSolver->GetEnableGradientOverCtrlForce())
+            mDxnextDctrlforce = CalcDxnextDCtrlForce(dt);
 
         Update(dt);
         PostUpdate(dt);

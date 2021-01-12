@@ -118,7 +118,7 @@ void btGenFBFTargetCalculator::CalcConstraints()
  */
 void btGenFBFTargetCalculator::AddSlidingConstraint(btCharContactPt *pt)
 {
-    int contact_id = pt->contact_id;
+    int contact_id = pt->constraint_id;
     int offset = mContactSolOffset[contact_id];
     int size = mContactSolSize[contact_id];
     // 1. ineqaulty make fn, ft >=0
@@ -127,7 +127,7 @@ void btGenFBFTargetCalculator::AddSlidingConstraint(btCharContactPt *pt)
         tVectorXd res = tVectorXd::Zero(size);
         mConstraint->AddIneqCon(jac, res, offset,
                                 "sliding_force_point_" +
-                                    std::to_string(pt->contact_id));
+                                    std::to_string(pt->constraint_id));
     }
     // 2. equalities make ft = mu * fn
     {
@@ -136,7 +136,7 @@ void btGenFBFTargetCalculator::AddSlidingConstraint(btCharContactPt *pt)
         jac.block(0, 1, 1, size - 1).fill(-1);
         mConstraint->AddEqCon(jac, tVectorXd::Zero(1), offset,
                               "sliding_force_point_" +
-                                  std::to_string(pt->contact_id));
+                                  std::to_string(pt->constraint_id));
     }
 }
 
@@ -147,8 +147,8 @@ void btGenFBFTargetCalculator::AddSlidingConstraint(btCharContactPt *pt)
 void btGenFBFTargetCalculator::AddStaticConstraint(btCharContactPt *pt)
 {
     // add static constraint on the contact force
-    int static_size = mContactSolSize[pt->contact_id];
-    int offset = mContactSolOffset[pt->contact_id];
+    int static_size = mContactSolSize[pt->constraint_id];
+    int offset = mContactSolOffset[pt->constraint_id];
     tMatrixXd jac = tMatrixXd::Zero(static_size + 1, static_size);
     tVectorXd residual = tVectorXd::Zero(static_size + 1);
 
@@ -158,7 +158,7 @@ void btGenFBFTargetCalculator::AddStaticConstraint(btCharContactPt *pt)
     jac.block(static_size, 1, 1, mNumOfFrictionDirs).fill(-1);
     mConstraint->AddIneqCon(jac, residual, offset,
                             "static_force_point_" +
-                                std::to_string(pt->contact_id));
+                                std::to_string(pt->constraint_id));
 }
 
 /**
@@ -167,11 +167,11 @@ void btGenFBFTargetCalculator::AddStaticConstraint(btCharContactPt *pt)
  */
 void btGenFBFTargetCalculator::AddBreakageConstraint(btCharContactPt *pt)
 {
-    int offset = mContactSolOffset[pt->contact_id];
+    int offset = mContactSolOffset[pt->constraint_id];
     tMatrixXd jac = tMatrix3d::Identity();
     mConstraint->AddEqCon(jac, tVector3d::Zero(), offset,
                           "breakage_force_point_" +
-                              std::to_string(pt->contact_id));
+                              std::to_string(pt->constraint_id));
 }
 
 /**
@@ -215,8 +215,8 @@ void btGenFBFTargetCalculator::AddDynamicConstraint()
     for (int c_id = 0; c_id < mContactPoints.size(); c_id++)
     {
         auto pt = mContactPoints[c_id];
-        int size = mContactSolSize[pt->contact_id];
-        int offset = mContactSolOffset[pt->contact_id];
+        int size = mContactSolSize[pt->constraint_id];
+        int offset = mContactSolOffset[pt->constraint_id];
 
         // (N * 3) * (3 * size) = N * size
         A1.block(0, offset, num_of_freedom, size).noalias() =
@@ -283,8 +283,8 @@ void btGenFBFTargetCalculator::AddDynamicEnergyTermPos()
         for (int c_id = 0; c_id < mContactPoints.size(); c_id++)
         {
             auto pt = mContactPoints[c_id];
-            int size = mContactSolSize[pt->contact_id];
-            int offset = mContactSolOffset[pt->contact_id];
+            int size = mContactSolSize[pt->constraint_id];
+            int offset = mContactSolOffset[pt->constraint_id];
 
             // (N * 3) * (3 * size) = N * size
             A1.block(0, offset, num_of_freedom, size).noalias() =
@@ -349,8 +349,8 @@ void btGenFBFTargetCalculator::AddDynamicEnergyTermVel()
     for (int c_id = 0; c_id < mContactPoints.size(); c_id++)
     {
         auto pt = mContactPoints[c_id];
-        int size = mContactSolSize[pt->contact_id];
-        int offset = mContactSolOffset[pt->contact_id];
+        int size = mContactSolSize[pt->constraint_id];
+        int offset = mContactSolOffset[pt->constraint_id];
 
         // (N * 3) * (3 * size) = N * size
         A1.block(0, offset, num_of_freedom, size).noalias() =
@@ -408,8 +408,8 @@ void btGenFBFTargetCalculator::AddDynamicEnergyTermAccel()
     for (int c_id = 0; c_id < mContactPoints.size(); c_id++)
     {
         auto pt = mContactPoints[c_id];
-        int size = mContactSolSize[pt->contact_id];
-        int offset = mContactSolOffset[pt->contact_id];
+        int size = mContactSolSize[pt->constraint_id];
+        int offset = mContactSolOffset[pt->constraint_id];
 
         // (N * 3) * (3 * size) = N * size
         A1.block(0, offset, num_of_freedom, size).noalias() =
@@ -461,8 +461,8 @@ void btGenFBFTargetCalculator::AddDynamicEnergyTermMinAccel()
     for (int c_id = 0; c_id < mContactPoints.size(); c_id++)
     {
         auto pt = mContactPoints[c_id];
-        int size = mContactSolSize[pt->contact_id];
-        int offset = mContactSolOffset[pt->contact_id];
+        int size = mContactSolSize[pt->constraint_id];
+        int offset = mContactSolOffset[pt->constraint_id];
 
         // (N * 3) * (3 * size) = N * size
         A1.block(0, offset, num_of_freedom, size).noalias() =
@@ -510,7 +510,7 @@ void btGenFBFTargetCalculator::AddFixStaticContactPointConstraint()
     tMatrixXd J_assemble = tMatrixXd::Zero(num_of_freedom, mTotalSolutionSize);
     for (auto &pt : mContactPoints)
     {
-        int id = pt->contact_id;
+        int id = pt->constraint_id;
         int offset = mContactSolOffset[id];
         int sol_size = GetSolutionSizeByContactStatus(pt->mStatus);
         J_assemble.block(0, offset, num_of_freedom, sol_size) =
@@ -538,14 +538,14 @@ void btGenFBFTargetCalculator::AddFixStaticContactPointConstraint()
         if (eContactStatus::STATIC == pt->mStatus)
         {
 
-            int id = pt->contact_id;
+            int id = pt->constraint_id;
             // std::cout << "[FBF] add static hard position constraint for "
             //              "contact point "
             //           << id << ", on link " << pt->mCollider->mLinkId
             //           << std::endl;
             mConstraint->AddEquivalentEqCon(
                 pt->mJac * A_base, pt->mJac * b_base, 0, 1e-12,
-                "fix_static_contact_point_" + std::to_string(pt->contact_id));
+                "fix_static_contact_point_" + std::to_string(pt->constraint_id));
         }
     }
 }
@@ -900,8 +900,8 @@ void btGenFBFTargetCalculator::AddLinkPosEnergyTerm(
     for (int c_id = 0; c_id < mContactPoints.size(); c_id++)
     {
         auto pt = mContactPoints[c_id];
-        int size = mContactSolSize[pt->contact_id];
-        int offset = mContactSolOffset[pt->contact_id];
+        int size = mContactSolSize[pt->constraint_id];
+        int offset = mContactSolOffset[pt->constraint_id];
 
         // (3 * N) * (N * 3) * (3 * size) = 3 * size
         A.block(0, offset, 3, size).noalias() =
@@ -964,8 +964,8 @@ void btGenFBFTargetCalculator::AddLinkPosEnergyTermIgnoreRoot(
     for (int c_id = 0; c_id < mContactPoints.size(); c_id++)
     {
         auto pt = mContactPoints[c_id];
-        int size = mContactSolSize[pt->contact_id];
-        int offset = mContactSolOffset[pt->contact_id];
+        int size = mContactSolSize[pt->constraint_id];
+        int offset = mContactSolOffset[pt->constraint_id];
 
         // (3 * N) * (N * 3) * (3 * size) = 3 * size
         A.block(0, offset, 3, size).noalias() =
@@ -1047,8 +1047,8 @@ void btGenFBFTargetCalculator::AddLinkOrientationEnergyTerm(
     for (int c_id = 0; c_id < mContactPoints.size(); c_id++)
     {
         auto pt = mContactPoints[c_id];
-        int size = mContactSolSize[pt->contact_id];
-        int offset = mContactSolOffset[pt->contact_id];
+        int size = mContactSolSize[pt->constraint_id];
+        int offset = mContactSolOffset[pt->constraint_id];
 
         // (3 * N) * (N * 3) * (3 * size) = 3 * size
         convert_mat.block(0, offset, num_of_freedom, size).noalias() =
@@ -1102,8 +1102,8 @@ void btGenFBFTargetCalculator::AddLinkVelEnergyTerm(
     for (int c_id = 0; c_id < mContactPoints.size(); c_id++)
     {
         auto pt = mContactPoints[c_id];
-        int size = mContactSolSize[pt->contact_id];
-        int offset = mContactSolOffset[pt->contact_id];
+        int size = mContactSolSize[pt->constraint_id];
+        int offset = mContactSolOffset[pt->constraint_id];
 
         // (3 * N) * (N * 3) * (3 * size) = 3 * size
         convert_mat.block(0, offset, num_of_freedom, size).noalias() =
@@ -1156,8 +1156,8 @@ void btGenFBFTargetCalculator::AddNonPenetrationContactConstraint()
     for (int c_id = 0; c_id < mContactPoints.size(); c_id++)
     {
         auto pt = mContactPoints[c_id];
-        int size = mContactSolSize[pt->contact_id];
-        int offset = mContactSolOffset[pt->contact_id];
+        int size = mContactSolSize[pt->constraint_id];
+        int offset = mContactSolOffset[pt->constraint_id];
 
         // (3 * N) * (N * 3) * (3 * size) = 3 * size
         A.block(0, offset, num_of_freedom, size).noalias() =
@@ -1247,8 +1247,8 @@ void btGenFBFTargetCalculator::AddTrackRefContactEnergyTerm()
         for (int c_id = 0; c_id < mContactPoints.size(); c_id++)
         {
             auto pt = mContactPoints[c_id];
-            int size = mContactSolSize[pt->contact_id];
-            int offset = mContactSolOffset[pt->contact_id];
+            int size = mContactSolSize[pt->constraint_id];
+            int offset = mContactSolOffset[pt->constraint_id];
 
             // (3 * N) * (N * 3) * (3 * size) = 3 * size
             K.block(0, offset, num_of_freedom, size).noalias() =
@@ -1492,8 +1492,8 @@ void btGenFBFTargetCalculator::AddLimitSlidingContactPointConstraintVel()
         for (int c_id = 0; c_id < mContactPoints.size(); c_id++)
         {
             auto pt = mContactPoints[c_id];
-            int size = mContactSolSize[pt->contact_id];
-            int offset = mContactSolOffset[pt->contact_id];
+            int size = mContactSolSize[pt->constraint_id];
+            int offset = mContactSolOffset[pt->constraint_id];
 
             // (3 * N) * (N * 3) * (3 * size) = 3 * size
             K.block(0, offset, num_of_freedom, size).noalias() =
@@ -1519,6 +1519,6 @@ void btGenFBFTargetCalculator::AddLimitSlidingContactPointConstraintVel()
             mdt * normal.transpose() * pt->mJac * Minv * (Qg - C * qdot) -
             normal.transpose() * pt->mJac * qdot;
         mConstraint->AddIneqCon(
-            jac, res, 0, "limit_sliding_vel_" + std::to_string(pt->contact_id));
+            jac, res, 0, "limit_sliding_vel_" + std::to_string(pt->constraint_id));
     }
 }

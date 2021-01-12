@@ -214,7 +214,7 @@ void btGenFBFTargetCalculator::CalcContactStatus()
 
             // judge whether it belongs to the multibody
             if (data->IsMultibodyInvolved(mModel) == true &&
-                data->mIsSelfCollision == false)
+                data->mIsMBSelfCollision == false)
             {
                 data->CalcCharacterInfo();
                 mContactPoints.push_back(data);
@@ -828,9 +828,9 @@ void btGenFBFTargetCalculator::CalcContactConvertMat(btCharContactPt *contact,
                                                      tMatrixXd &convert_mat)
 {
     // 1. confirm this contact point is not self collision
-    if (true == contact->mIsSelfCollision)
+    if (true == contact->mIsMBSelfCollision)
     {
-        std::cout << "[error] the contact point " << contact->contact_id
+        std::cout << "[error] the contact point " << contact->constraint_id
                   << " is self collision, cannot calculate the convert mat\n";
         exit(0);
     }
@@ -838,7 +838,7 @@ void btGenFBFTargetCalculator::CalcContactConvertMat(btCharContactPt *contact,
     if (contact->mBodyA->GetType() != eColObjType::RobotCollder)
     {
         std::cout << "[error] the bodyA of contact point "
-                  << contact->contact_id
+                  << contact->constraint_id
                   << " is not the robot collider, it will make the convert mat "
                      "become error";
         exit(0);
@@ -849,7 +849,7 @@ void btGenFBFTargetCalculator::CalcContactConvertMat(btCharContactPt *contact,
     // 4. confirm that the contact normal is 0, 1, 0
     if ((contact->mNormalPointToA - tVector(0, 1, 0, 0)).norm() > 1e-10)
     {
-        std::cout << "[error] contact " << contact->contact_id
+        std::cout << "[error] contact " << contact->constraint_id
                   << " normal to A is not normed Y = "
                   << contact->mNormalPointToA.transpose() << std::endl;
         exit(0);

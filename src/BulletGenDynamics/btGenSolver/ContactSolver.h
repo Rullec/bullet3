@@ -13,7 +13,7 @@ class btGenRigidBody;
 // class cMatlabQPSolver;
 class cLCPSolverBase;
 struct btGenRobotCollider;
-struct btGenCollisionObjData;
+struct btGenCollisionGroupData;
 class cRobotModelDynamics;
 class btGenContactForce
 {
@@ -26,7 +26,7 @@ public:
     btGenCollisionObject *mObj;        // object that force is applied
     btGenCollisionObject *mPassiveObj; // collision pair obj
     tVector mForce, mWorldPos; // position in world and force in world frame
-    bool mIsSelfCollision;
+    bool mIsMBSelfCollision;
 };
 
 class btGenMBContactForce : public btGenContactForce
@@ -73,6 +73,8 @@ public:
     void ConstraintProcess(float dt);
     void Reset();
     bool GetEnableConvertMatTest() { return mEnableConvertMatTest; }
+    bool GetEnableGradientOverCtrlForce();
+
     std::vector<btGenContactForce *> GetContactForces();
     std::vector<btGenConstraintGeneralizedForce *>
     GetConstraintGeneralizedForces();
@@ -116,12 +118,13 @@ protected:
     btDiscreteDynamicsWorld *mWorld;
     cLCPSolverBase *mLCPSolver;
 
-    std::vector<int> map_colobjid_to_groupid;
-    std::vector<btGenCollisionObjData *> mColGroupData;
-    std::vector<btGenContactPointData *> mContactConstraintData;
+    std::vector<int>
+        map_colobjid_to_groupid; // which collision group does this colliion-object belong to?
+    std::vector<btGenCollisionGroupData *> mColGroupData;
+    std::vector<btGenContactPairData *> mContactPairConsData;
     std::vector<btGenJointLimitData *> mJointLimitConstraintData;
     std::vector<cRobotModelDynamics *> mMultibodyArray;
-    int mNumContactPoints;
+    int mNumContactPairs;
     int mNumConstraints;
     int mNumJointLimitConstraints;
 
@@ -194,7 +197,7 @@ protected:
     void ConstraintFinished();
     void CalcCMats(tMatrixXd &C_lambda, tMatrixXd &C_mufn, tMatrixXd &C_c);
     cRobotModelDynamics *CollectMultibody();
-    void RebuildColObjData();
+    void RebuildCollisionGroup();
     void DeleteColObjData();
     void DeleteConstraintData();
     void AddManifold(btPersistentManifold *mani);

@@ -463,7 +463,7 @@ bool btTraj::SaveTraj(const std::string &path, cRobotModelDynamics *model)
                 btJsonUtil::BuildVectorJsonValue(f->mWorldPos);
             contact_info["force_value"] =
                 btJsonUtil::BuildVectorJsonValue(f->mForce);
-            contact_info["is_self_collision"] = f->mIsSelfCollision;
+            contact_info["is_self_collision"] = f->mIsMBSelfCollision;
             data_perframe["contact_info"].append(contact_info);
         }
         // write joint
