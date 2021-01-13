@@ -8,7 +8,7 @@
  * 
  * R_local = R_twist * R_swing. first do swing, then do twist
 */
-class ExpMapRotation;
+class btGenExpMapRotation;
 class BallInSocketJoint : public Joint
 {
 public:
@@ -32,7 +32,7 @@ public:
     CalcTargetPoseByTargetLocalTransform(const tQuaternion &orient) const;
 
 protected:
-    ExpMapRotation *mExpMap;
+    btGenExpMapRotation *mExpMap;
     enum eTwistAxis
     {
         INVALID_TWIST,

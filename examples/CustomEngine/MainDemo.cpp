@@ -339,7 +339,7 @@ void CustomEngineMainDemo::SinglestepSim(float dt)
 void CustomEngineMainDemo::Test()
 {
     std::cout << "[debug] begin test\n";
-    auto exp_map = new ExpMapRotation();
+    auto exp_map = new btGenExpMapRotation();
     exp_map->SetAxis(tVector::Random());
     exp_map->Test();
     delete exp_map;

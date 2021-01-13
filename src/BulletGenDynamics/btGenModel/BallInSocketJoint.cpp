@@ -5,7 +5,7 @@
 BallInSocketJoint::BallInSocketJoint(const BaseObjectJsonParam &param)
     : Joint(param)
 {
-    mExpMap = new ExpMapRotation();
+    mExpMap = new btGenExpMapRotation();
     mTwistAxis = INVALID_TWIST;
     mMapFromDofIdToAxisAngleId[0] = 0;
     mMapFromDofIdToAxisAngleId[1] = 0;
@@ -82,7 +82,7 @@ void BallInSocketJoint::ComputeLocalTransformFirstDerive()
     // for freedom 0, 1
     for (int i = 0; i < 2; i++)
     {
-        int axis_id = ExpMapRotation::GetFreedomAxisId(freedoms[i].axis);
+        int axis_id = btGenExpMapRotation::GetFreedomAxisId(freedoms[i].axis);
         mTq[i] = r_m[2] * mExpMap->GetFirstDeriv(axis_id);
         // std::cout << "[debug] ball in socket mTq" << i << " = " << mTq[i]
         //           << std::endl;

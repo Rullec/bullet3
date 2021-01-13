@@ -5,7 +5,7 @@
     "enable_lcp_calculation": true,
     "enable_contact_lcp": true,
     "enable_frictional_lcp": true,
-    "enable_joint_limit_lcp": false,
+    "enable_joint_limit_lcp": true,
     "use_lcp_result": true,
     "enable_contact_penetration_resolve": true,
     "enable_joint_limit_penetration_resolve": true,

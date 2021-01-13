@@ -1,7 +1,7 @@
 #include "ExpMapRotMat.h"
 #include <iostream>
 #define THETA_EPS 1e-3
-ExpMapRotation::ExpMapRotation()
+btGenExpMapRotation::btGenExpMapRotation()
 {
     mAxis.setZero();
     mAxis[0] += 1e-10;
@@ -20,8 +20,8 @@ ExpMapRotation::ExpMapRotation()
         SetAxis(mAxis);
 }
 
-tVector ExpMapRotation::GetAxis() const { return mAxis; }
-void ExpMapRotation::SetAxis(const tVector &axis)
+tVector btGenExpMapRotation::GetAxis() const { return mAxis; }
+void btGenExpMapRotation::SetAxis(const tVector &axis)
 {
     mAxis = axis;
     mAxis[3] = 0;
@@ -51,7 +51,7 @@ void ExpMapRotation::SetAxis(const tVector &axis)
     CalcdR2dq2();
 }
 
-void ExpMapRotation::CalcdR2dq2()
+void btGenExpMapRotation::CalcdR2dq2()
 {
     tMatrix part1 = tMatrix::Zero(), part2 = tMatrix::Zero(),
             part3 = tMatrix::Zero(), part4 = tMatrix::Zero();
@@ -132,7 +132,7 @@ void ExpMapRotation::CalcdR2dq2()
         }
     }
 }
-void ExpMapRotation::CalcdRdq()
+void btGenExpMapRotation::CalcdRdq()
 {
     for (int i = 0; i < 3; i++)
     {
@@ -157,7 +157,7 @@ void ExpMapRotation::CalcdRdq()
     }
 }
 
-void ExpMapRotation::CalcRotation()
+void btGenExpMapRotation::CalcRotation()
 {
     if (std::fabs(mt) < THETA_EPS)
     {
@@ -174,14 +174,14 @@ void ExpMapRotation::CalcRotation()
  * \brief           Get the rot mat of this exp map
  * 
 */
-tMatrix ExpMapRotation::GetRotation() const { return mRotation; }
+tMatrix btGenExpMapRotation::GetRotation() const { return mRotation; }
 /**
  * \brief           Get the dR/dqi of this exp map
 */
 
-tMatrix ExpMapRotation::GetFirstDeriv(int i) const { return mdRdq[i]; }
+tMatrix btGenExpMapRotation::GetFirstDeriv(int i) const { return mdRdq[i]; }
 
-tMatrix ExpMapRotation::GetFirstDeriv_method1(int i) const
+tMatrix btGenExpMapRotation::GetFirstDeriv_method1(int i) const
 {
     // =================== old method =================
     /*
@@ -198,7 +198,7 @@ tMatrix ExpMapRotation::GetFirstDeriv_method1(int i) const
            (mt * mst - 2 * (1 - mct)) / mt4 * ai * mSkewA2 +
            (1 - mct) / (mt2)*btMathUtil::SkewMat2FirstDeriv(mAxis, i);
 }
-tMatrix ExpMapRotation::GetFirstDeriv_method2(int i) const
+tMatrix btGenExpMapRotation::GetFirstDeriv_method2(int i) const
 {
     // =================== new method ==================
     /*
@@ -221,7 +221,7 @@ tMatrix ExpMapRotation::GetFirstDeriv_method2(int i) const
  * +        (t * sin(t) - 2 * (1 - cos(t)))/(t^4) * (aj * d[a]^2/dai + ai * d[a]^2/daj)
  * +        (1 - cos(t))/(t^2) * (d^2[a]^2)/(daiaj)
 */
-tMatrix ExpMapRotation::GetSecondDeriv(int i, int j) const
+tMatrix btGenExpMapRotation::GetSecondDeriv(int i, int j) const
 {
     // the storage require i>=j
     if (i < j)
@@ -232,7 +232,7 @@ tMatrix ExpMapRotation::GetSecondDeriv(int i, int j) const
 /**
  * 
 */
-tMatrix ExpMapRotation::GetFirstDerivPart1(int i) const
+tMatrix btGenExpMapRotation::GetFirstDerivPart1(int i) const
 {
     return (mt * mct - mst) / (mt3)*mAxis[i] * mSkewA;
 }
@@ -241,7 +241,7 @@ tMatrix ExpMapRotation::GetFirstDerivPart1(int i) const
  * \brief   
  * 
 */
-tMatrix ExpMapRotation::GetFirstDerivPart1_1(int i) const
+tMatrix btGenExpMapRotation::GetFirstDerivPart1_1(int i) const
 {
     double t = mt, t2 = mt * mt, st = mst, ct = mct, t3 = mt * mt * mt;
     double ai = mAxis[i];
@@ -255,7 +255,7 @@ tMatrix ExpMapRotation::GetFirstDerivPart1_1(int i) const
  * \brief               get value of d(ai/theta + theta * d[a]/dai)/daj
  * 
 */
-tMatrix ExpMapRotation::GetSecondDerivPart1_1(int i, int j) const
+tMatrix btGenExpMapRotation::GetSecondDerivPart1_1(int i, int j) const
 {
     double t = mt, t2 = mt * mt, st = mst, ct = mct;
     double ai = mAxis[i], aj = mAxis[j];
@@ -263,7 +263,7 @@ tMatrix ExpMapRotation::GetSecondDerivPart1_1(int i, int j) const
     return res;
 }
 
-tMatrix ExpMapRotation::GetSecondDerivPart1_2(int i, int j) const
+tMatrix btGenExpMapRotation::GetSecondDerivPart1_2(int i, int j) const
 {
     double t = mt, t2 = mt * mt, st = mst, ct = mct;
     double ai = mAxis[i], aj = mAxis[j];
@@ -272,31 +272,31 @@ tMatrix ExpMapRotation::GetSecondDerivPart1_2(int i, int j) const
             maidaj(i, j) * mSkewA);
 }
 
-tMatrix ExpMapRotation::GetFirstDerivPart2(int i) const
+tMatrix btGenExpMapRotation::GetFirstDerivPart2(int i) const
 {
     return mst / mt * btMathUtil::SkewMatFirstDeriv(mAxis, i);
 }
-tMatrix ExpMapRotation::GetFirstDerivPart3(int i) const
+tMatrix btGenExpMapRotation::GetFirstDerivPart3(int i) const
 {
     double t = mt, t2 = mt * mt, st = mst, ct = mct;
     double ai = mAxis[i];
     return ai * (t * st - 2 + 2 * ct) / (mt4)*mSkewA2;
 }
-tMatrix ExpMapRotation::GetSecondDerivPart1(int i, int j) const
+tMatrix btGenExpMapRotation::GetSecondDerivPart1(int i, int j) const
 {
     double t = mt, t2 = mt * mt, st = mst, ct = mct;
     double ai = mAxis[i], aj = mAxis[j];
 
     return GetSecondDerivPart1_1(i, j) + GetSecondDerivPart1_2(i, j);
 }
-tMatrix ExpMapRotation::GetSecondDerivPart2(int i, int j) const
+tMatrix btGenExpMapRotation::GetSecondDerivPart2(int i, int j) const
 {
     double t = mt, t2 = mt * mt, st = mst, ct = mct;
     double ai = mAxis[i], aj = mAxis[j];
     return (t * ct - st) / (mt3)*aj * btMathUtil::SkewMatFirstDeriv(mAxis, i);
 }
 
-tMatrix ExpMapRotation::GetSecondDerivPart3(int i, int j) const
+tMatrix btGenExpMapRotation::GetSecondDerivPart3(int i, int j) const
 {
     double t = mt, t2 = mt * mt, st = mst, ct = mct;
     double ai = mAxis[i], aj = mAxis[j];
@@ -306,7 +306,7 @@ tMatrix ExpMapRotation::GetSecondDerivPart3(int i, int j) const
                 ai * btMathUtil::SkewMat2FirstDeriv(mAxis, j));
 }
 
-tMatrix ExpMapRotation::GetSecondDerivPart3_1(int i, int j) const
+tMatrix btGenExpMapRotation::GetSecondDerivPart3_1(int i, int j) const
 {
 
     double t = mt, t2 = mt * mt, st = mst, ct = mct;
@@ -314,7 +314,7 @@ tMatrix ExpMapRotation::GetSecondDerivPart3_1(int i, int j) const
     return ((t2 - 8) * ct - 5 * t * st + 8) / (mt6)*ai * aj * mSkewA2;
 }
 
-tMatrix ExpMapRotation::GetSecondDerivPart3_1R(int i, int j) const
+tMatrix btGenExpMapRotation::GetSecondDerivPart3_1R(int i, int j) const
 {
     double t = mt, t2 = mt * mt, st = mst, ct = mct;
     double ai = mAxis[i], aj = mAxis[j];
@@ -324,7 +324,7 @@ tMatrix ExpMapRotation::GetSecondDerivPart3_1R(int i, int j) const
     return (1 / t) * tMatrix::Identity();
 }
 
-tMatrix ExpMapRotation::GetSecondDerivPart3_2(int i, int j) const
+tMatrix btGenExpMapRotation::GetSecondDerivPart3_2(int i, int j) const
 {
     double t = mt, t2 = mt * mt, st = mst, ct = mct;
     double ai = mAxis[i], aj = mAxis[j];
@@ -332,11 +332,11 @@ tMatrix ExpMapRotation::GetSecondDerivPart3_2(int i, int j) const
            (maidaj(i, j) * mSkewA2 +
             ai * btMathUtil::SkewMat2FirstDeriv(mAxis, j));
 }
-tMatrix ExpMapRotation::GetFirstDerivPart4(int i) const
+tMatrix btGenExpMapRotation::GetFirstDerivPart4(int i) const
 {
     return (1 - mct) / (mt2)*btMathUtil::SkewMat2FirstDeriv(mAxis, i);
 }
-tMatrix ExpMapRotation::GetSecondDerivPart4(int i, int j) const
+tMatrix btGenExpMapRotation::GetSecondDerivPart4(int i, int j) const
 {
     double t = mt, t2 = mt * mt, st = mst, ct = mct;
     double ai = mAxis[i], aj = mAxis[j];
@@ -346,7 +346,7 @@ tMatrix ExpMapRotation::GetSecondDerivPart4(int i, int j) const
            (1 - ct) / t2 * btMathUtil::SkewMat2SecondDeriv(mAxis, i, j);
 }
 
-tMatrix ExpMapRotation::GetFirstJacobian() const
+tMatrix btGenExpMapRotation::GetFirstJacobian() const
 {
     return GetRotation() *
            (tMatrix::Identity() - (1 - mct) / (mt * mt) * mSkewA +
@@ -355,7 +355,7 @@ tMatrix ExpMapRotation::GetFirstJacobian() const
 /**
  * \brief           Get the dR^3/d(qiqjqk) of this exp map
 */
-tMatrix ExpMapRotation::GetThirdDeriv(int i, int j, int k) const
+tMatrix btGenExpMapRotation::GetThirdDeriv(int i, int j, int k) const
 {
     return GetThirdDerivPart1(i, j, k) + GetThirdDerivPart2(i, j, k) +
            GetThirdDerivPart3(i, j, k) + GetThirdDerivPart4(i, j, k);
@@ -364,7 +364,7 @@ tMatrix ExpMapRotation::GetThirdDeriv(int i, int j, int k) const
 /**
  * \brief           Test the exp map
 */
-void ExpMapRotation::Test()
+void btGenExpMapRotation::Test()
 {
     // btMathUtil::TestSkewMatDeriv();
     // TestSimpleFormula();
@@ -373,7 +373,7 @@ void ExpMapRotation::Test()
     TestThirdDeriv();
 }
 
-void ExpMapRotation::TestFirstDeriv()
+void btGenExpMapRotation::TestFirstDeriv()
 {
     tVectorXd old_axis = mAxis;
     double eps = 1e-6;
@@ -400,7 +400,7 @@ void ExpMapRotation::TestFirstDeriv()
     }
     SetAxis(old_axis);
 }
-void ExpMapRotation::TestSecondDeriv()
+void btGenExpMapRotation::TestSecondDeriv()
 {
     tVector old_axis = mAxis;
     double eps = 1e-5;
@@ -453,7 +453,7 @@ void ExpMapRotation::TestSecondDeriv()
     SetAxis(old_axis);
 }
 
-void ExpMapRotation::TestThirdDeriv()
+void btGenExpMapRotation::TestThirdDeriv()
 {
     tVector old_axis = mAxis;
     // 1. given old second order deriv
@@ -516,7 +516,7 @@ void ExpMapRotation::TestThirdDeriv()
 /**
  * \brief           dR/dq = R * (I3 - (1-cos(t))/t^2 * [q] + (t - sin(t))/t^3 * [q]^2) * d[q]dq
 */
-void ExpMapRotation::TestSimpleFormula()
+void btGenExpMapRotation::TestSimpleFormula()
 {
     tMatrix jac = GetFirstJacobian();
 
@@ -533,7 +533,7 @@ void ExpMapRotation::TestSimpleFormula()
 /**
  * \brief       input axis vector (united), return the one id
 */
-int ExpMapRotation::GetFreedomAxisId(const tVector3d &axis)
+int btGenExpMapRotation::GetFreedomAxisId(const tVector3d &axis)
 {
     BTGEN_ASSERT(std::fabs(axis.norm() - 1) < 1e-10);
     BTGEN_ASSERT(axis.minCoeff() >= 0);
@@ -546,7 +546,7 @@ int ExpMapRotation::GetFreedomAxisId(const tVector3d &axis)
     return -1;
 }
 
-tMatrix ExpMapRotation::GetThirdDerivPart1_1(int i, int j, int k) const
+tMatrix btGenExpMapRotation::GetThirdDerivPart1_1(int i, int j, int k) const
 {
     double t2 = mt * mt, t3 = mt * mt * mt;
     double ai = mAxis[i], aj = mAxis[j], ak = mAxis[k];
@@ -558,7 +558,7 @@ tMatrix ExpMapRotation::GetThirdDerivPart1_1(int i, int j, int k) const
                   ai * aj * btMathUtil::SkewMatFirstDeriv(mAxis, k));
     return p1 + p2;
 }
-tMatrix ExpMapRotation::GetThirdDerivPart1_2(int i, int j, int k) const
+tMatrix btGenExpMapRotation::GetThirdDerivPart1_2(int i, int j, int k) const
 {
     double t2 = mt * mt, t3 = mt * mt * mt;
     double ai = mAxis[i], aj = mAxis[j], ak = mAxis[k];
@@ -569,7 +569,7 @@ tMatrix ExpMapRotation::GetThirdDerivPart1_2(int i, int j, int k) const
                (maidaj(i, k) * btMathUtil::SkewMatFirstDeriv(mAxis, j) +
                 maidaj(i, j) * btMathUtil::SkewMatFirstDeriv(mAxis, k));
 }
-tMatrix ExpMapRotation::GetThirdDerivPart1(int i, int j, int k) const
+tMatrix btGenExpMapRotation::GetThirdDerivPart1(int i, int j, int k) const
 {
     double t2 = mt * mt, t3 = mt * mt * mt;
     double ai = mAxis[i], aj = mAxis[j], ak = mAxis[k];
@@ -602,7 +602,7 @@ tMatrix ExpMapRotation::GetThirdDerivPart1(int i, int j, int k) const
                  maidaj(i, j) * btMathUtil::SkewMatFirstDeriv(mAxis, k));
     return p1 + p2 + p4;
 }
-tMatrix ExpMapRotation::GetThirdDerivPart2(int i, int j, int k) const
+tMatrix btGenExpMapRotation::GetThirdDerivPart2(int i, int j, int k) const
 {
     double t2 = mt * mt, t3 = mt * mt * mt;
     double ai = mAxis[i], aj = mAxis[j], ak = mAxis[k];
@@ -623,7 +623,7 @@ tMatrix ExpMapRotation::GetThirdDerivPart2(int i, int j, int k) const
     return coef1 * ak * aj * btMathUtil::SkewMatFirstDeriv(mAxis, i) +
            coef2 * maidaj(j, k) * btMathUtil::SkewMatFirstDeriv(mAxis, i);
 }
-tMatrix ExpMapRotation::GetThirdDerivPart3_1(int i, int j, int k) const
+tMatrix btGenExpMapRotation::GetThirdDerivPart3_1(int i, int j, int k) const
 {
     double t2 = mt * mt, t3 = mt * mt * mt, t5 = mt5, t4 = mt4, t6 = mt6,
            t8 = std::pow(mt, 8);
@@ -645,7 +645,7 @@ tMatrix ExpMapRotation::GetThirdDerivPart3_1(int i, int j, int k) const
                     ai * aj * btMathUtil::SkewMat2FirstDeriv(mAxis, k));
 }
 
-tMatrix ExpMapRotation::GetThirdDerivPart3_1R(int i, int j, int k) const
+tMatrix btGenExpMapRotation::GetThirdDerivPart3_1R(int i, int j, int k) const
 {
     double t2 = mt * mt, t3 = mt * mt * mt, t5 = mt5, t4 = mt4, t6 = mt6,
            t8 = std::pow(mt, 8);
@@ -658,7 +658,7 @@ tMatrix ExpMapRotation::GetThirdDerivPart3_1R(int i, int j, int k) const
     // return -6 / t7 * tMatrix::Identity();
     // return -1 / t2 * tMatrix::Identity();
 }
-tMatrix ExpMapRotation::GetThirdDerivPart3_2(int i, int j, int k) const
+tMatrix btGenExpMapRotation::GetThirdDerivPart3_2(int i, int j, int k) const
 {
     double t2 = mt * mt, t3 = mt * mt * mt;
     double ai = mAxis[i], aj = mAxis[j], ak = mAxis[k];
@@ -683,11 +683,11 @@ tMatrix ExpMapRotation::GetThirdDerivPart3_2(int i, int j, int k) const
                       ai * btMathUtil::SkewMat2SecondDeriv(mAxis, j, k) +
                       maidaj(i, j) * btMathUtil::SkewMat2FirstDeriv(mAxis, k));
 }
-tMatrix ExpMapRotation::GetThirdDerivPart3(int i, int j, int k) const
+tMatrix btGenExpMapRotation::GetThirdDerivPart3(int i, int j, int k) const
 {
     return GetThirdDerivPart3_1(i, j, k) + GetThirdDerivPart3_2(i, j, k);
 }
-tMatrix ExpMapRotation::GetThirdDerivPart4(int i, int j, int k) const
+tMatrix btGenExpMapRotation::GetThirdDerivPart4(int i, int j, int k) const
 {
     double t2 = mt * mt, t3 = mt * mt * mt;
     double ai = mAxis[i], aj = mAxis[j], ak = mAxis[k];

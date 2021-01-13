@@ -1,11 +1,20 @@
 #pragma once
 #include "BulletGenDynamics/btGenUtil/MathUtil.h"
 
-class ExpMapRotation
+/**
+ * \brief           the class for exponential map rotation
+ * 
+ *          Given an axix-angle (axis * theta, in another word, the "exponential map" representation)
+ *          Calc the rotmat
+ *          Calc the d(rotmat)/daa
+ *          Calc the d^2(rotmat)/daa^2
+ *          Calc the d^3(rotmat)/daa^3
+*/
+class btGenExpMapRotation
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-    ExpMapRotation();
+    btGenExpMapRotation();
 
     void SetAxis(const tVector &axis);
     tVector GetAxis() const;
