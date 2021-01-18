@@ -352,7 +352,8 @@ void CustomEngineMainDemo::Test()
     int dof = mb->GetNumOfFreedom();
     tVectorXd q = tVectorXd::Random(dof), qdot = tVectorXd::Random(dof);
     mb->SetqAndqdot(q, qdot);
-
+    
+    // exit(0);
     // for (int i = 0; i < mb->GetNumOfLinks(); i++)
     // {
     //     auto joint = dynamic_cast<Joint *>(mb->GetJointById(i));
@@ -368,13 +369,14 @@ void CustomEngineMainDemo::Test()
     mb->TestmWqqq();
 
     mb->TestdMassMatrixdq();
-    mb->TestSecondJacobian();
+    mb->TestLinkSecondJacobian();
+    mb->TestJointSecondJacobian();
     mb->TestThirdJacobian();
     mb->TestdJdotdq();
     mb->TestJacobian();
 
     mb->TestdJdotdq();
-    mb->TestSecondJacobian();
+    mb->TestLinkSecondJacobian();
     mb->TestReducedAPI();
     mb->TestThirdJacobian();
     mb->TestdJdotdqdot();

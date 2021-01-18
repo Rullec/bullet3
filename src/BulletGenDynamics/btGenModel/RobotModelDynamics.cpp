@@ -271,7 +271,7 @@ void cRobotModelDynamics::TestJacobian()
  * d(Jv)/dq = 3xnxn = Jv'
  * d(Jw)/dq = 3xnxn = Jw'
  */
-void cRobotModelDynamics::TestSecondJacobian()
+void cRobotModelDynamics::TestLinkSecondJacobian()
 {
     PushState("test_second_jacobian");
     int num_of_links = GetNumOfLinks();
@@ -411,6 +411,55 @@ void cRobotModelDynamics::TestSecondJacobian()
     // 3. compare
     // exit(0);
     PopState("test_second_jacobian");
+}
+
+/**
+ * \brief               Test the second jacobian for joints
+ * d(Jw)/dq
+*/
+void cRobotModelDynamics::TestJointSecondJacobian()
+{
+    PushState("test_joints_second_jac");
+    int num_of_joints = GetNumOfJoint();
+    for (int j_id = 0; j_id < num_of_joints; j_id++)
+    {
+        // begin to test the d(JKw)/dq for this joint
+        // 1. get current Jw, get current d(Jw)/dq
+        Joint *joint = dynamic_cast<Joint *>(GetJointById(j_id));
+        tMatrixXd jw_old = joint->GetJKw();
+        tEigenArr<tMatrixXd> djw_dq(num_of_freedom);
+
+        for (int i = 0; i < num_of_freedom; i++)
+        {
+            djw_dq[i].noalias() = joint->GetTotalDofdJKw_dq(i);
+        }
+
+        // 2. get current q, begin to verify
+        tVectorXd cur_q = mq;
+        double eps = 1e-6;
+        for (int i = 0; i < num_of_freedom; i++)
+        {
+            cur_q[i] += eps;
+            Setq(cur_q);
+
+            tMatrixXd jw_new = joint->GetJKw();
+            tMatrixXd num_djwdqi = (jw_new - jw_old) / eps;
+            tMatrixXd ana_djwdqi = djw_dq[i];
+
+            tMatrixXd diff = ana_djwdqi - num_djwdqi;
+            if (diff.norm() > 10 * eps)
+            {
+                std::cout << "[error] test joint second jac for joint " << j_id
+                          << " dof " << i << std::endl;
+                std::cout << "diff = \n" << diff << std::endl;
+                exit(0);
+            }
+            cur_q[i] -= eps;
+        }
+        std::cout << "[log] test joint " << j_id << " second jac succ\n";
+    }
+
+    PopState("test_joints_second_jac");
 }
 
 void cRobotModelDynamics::SetqAndqdot(const tVectorXd &q_,

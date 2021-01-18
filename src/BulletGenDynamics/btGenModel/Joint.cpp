@@ -117,6 +117,9 @@ void Joint::InitMatrix()
     // jkv_dq.resize(global_freedom, tMatrixXd::Zero(3, global_freedom));
     // jkw_dq.resize(global_freedom, tMatrixXd::Zero(3, global_freedom));
 
+    // new version: only impl the jkw part but leave jkv part off
+    jkw_dq.resize(3, tMatrixXd::Zero(global_freedom, global_freedom));
+
     // =================second order===============
     mTqq.resize(local_freedom);
 
@@ -189,6 +192,9 @@ void Joint::UpdateState(bool compute_gradient)
             ComputeLocalSecondDeriveMatrix();
             ComputeLocalTransformSecondDerive();
             ComputeGlobalTransformSecondDerive();
+
+            // add this calculation for joints in 2021/01/19, for DeepMimic diffWorld purpose
+            // ComputeDJkwdq();
         }
 
         // third order derivatives need another switch
@@ -738,6 +744,8 @@ const tMatrix &Joint::GetMWQQ(int i, int j) const
 {
     int r = std::max(i, j);
     int c = std::min(i, j);
+    BTGEN_ASSERT(r < total_freedoms);
+    BTGEN_ASSERT(c < total_freedoms);
     return mWqq[r][c];
 }
 
@@ -1235,4 +1243,66 @@ void Joint::ComputeLocalJkw()
         tVector col = btMathUtil::SkewMatToVector3d(dRdq_RT);
         JK_w_local.col(i) = col.segment(0, 3);
     }
+}
+
+/**
+ * \brief           Compute d(Jw)/dq for joints
+ * 
+ *  def: Jw = {  [dRdqi * RT]^{-1} for i in [1, N]}
+ *  so: d(Jw)/dqj 
+ *          = { d( [dRdqi * RT]^{-1} ) /dqj for i in [1, N]}
+ *  For more details, please check the code in Link.cpp
+ *  and the note "20201029 求Jw对q的二阶导数"
+ * 
+*/
+void Joint::ComputeDJkwdq()
+{
+    // jkw_dq: 3 * (n, n)
+    jkw_dq[0].setZero();
+    jkw_dq[1].setZero();
+    jkw_dq[2].setZero();
+    int global_i = -1, global_j = -1;
+    for (int i = 0; i < total_freedoms; i++)
+    {
+        global_i = dependent_dof_id[i];
+
+        // only calculate the half triangular and do copy
+        for (int j = 0; j < total_freedoms; j++)
+        {
+            global_j = dependent_dof_id[j];
+            /*
+                [
+                    dR^2/dqiqj * R^T
+                    +
+                    dR/dqi * dR^T/dqj
+                ]^{-1}
+            */
+
+            tMatrix3d dR2dqiqj = GetMWQQ(i, j).topLeftCorner<3, 3>();
+            tMatrix3d RT = GetWorldOrientation().transpose();
+            tMatrix3d dRdqi = GetMWQ(i).topLeftCorner<3, 3>();
+            tMatrix3d dRdqjT = GetMWQ(j).topLeftCorner<3, 3>().transpose();
+
+            tMatrix3d skew = dR2dqiqj * RT + dRdqi * dRdqjT;
+            tVector3d value = btMathUtil::SkewMatToVector3d(skew).segment(0, 3);
+            jkw_dq[0](global_i, global_j) = value[0];
+            jkw_dq[1](global_i, global_j) = value[1];
+            jkw_dq[2](global_i, global_j) = value[2];
+        }
+    }
+}
+
+/**
+ * \brief                   similar to GetTotalDofdJKv_dq
+ * \param   target_dof_id   the freedom index in [0, global_freedoms]
+*/
+tMatrixXd Joint::GetTotalDofdJKw_dq(int target_dof_id) const
+{
+    tMatrixXd dJkw_dq = tMatrixXd::Zero(3, global_freedom);
+    for (int i = 0; i < 3; i++)
+        for (int j = 0; j < global_freedom; j++)
+        {
+            dJkw_dq(i, j) = GetdJKwdq_nxnversion(i)(j, target_dof_id);
+        }
+    return dJkw_dq;
 }

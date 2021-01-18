@@ -381,7 +381,7 @@ void btGeneralizeWorld::AddMultibody(const std::string &skeleton_name)
     // if (mMBTestJacobian)
     // {
     // 	mMultibody->TestJacobian();
-    // 	mMultibody->TestSecondJacobian();
+    // 	mMultibody->TestLinkSecondJacobian();
     // 	exit(0);
     // }
     // if (mEnablePDControl)

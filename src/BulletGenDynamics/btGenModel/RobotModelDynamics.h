@@ -65,7 +65,8 @@ public:
         tVector3d &root_force, tVector3d &root_torque) const;
     void TestConvertGenForceToJointTorque();
     void TestJacobian();
-    void TestSecondJacobian();
+    void TestLinkSecondJacobian();
+    void TestJointSecondJacobian();
     void TestReducedAPI();
     void TestThirdJacobian();
     void TestdJdotdq();

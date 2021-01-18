@@ -50,6 +50,8 @@ public:
     virtual void ComputeLocalSecondDeriveMatrix();
     virtual void ComputeLocalTransformSecondDerive();
     void ComputeGlobalTransformSecondDerive();
+    virtual void ComputeDJkwdq() override final;
+    tMatrixXd GetTotalDofdJKw_dq(int target_dof_id) const;
 
     // =============Third order derivative=============
     virtual void ComputeLocalThirdDeriveMatrix();
