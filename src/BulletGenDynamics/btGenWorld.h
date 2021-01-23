@@ -66,7 +66,7 @@ public:
     void RemoveObj(int id);
     void StepSimulation(double dt);
     void Reset();
-    void TestDxnextDCtrlForce(double dt);
+    void TestDxnextDCtrlForce();
     // get & set method
     std::vector<btGenContactForce *> GetContactForces() const;
     std::vector<btPersistentManifold *> GetContactManifolds() const;
@@ -91,11 +91,16 @@ public:
     btCollisionShape *GetSphereCollisionShape(double radius);
     btCollisionShape *GetBoxCollisionShape(const tVector3d &half_extends);
     btCollisionShape *GetCapsuleCollisionShape(double radius, double height);
-    tMatrixXd GetDxnextDCtrlForce() const;
     void GetLastFrameGenCharqAndqdot(tVectorXd &q_pre,
                                      tVectorXd &qdot_pre) const;
 
+    tMatrixXd GetDQcDu() const;
+    tMatrixXd GetDxnextDQc_u() const;
+    tMatrixXd GetDxnextDQGDQGDxcur() const;
+    tMatrixXd GetDxnextDxcur() const;
+
 protected:
+    double mCurdt;
     btDiscreteDynamicsWorld *mInternalWorld;
     btBroadphaseInterface *m_broadphase;
     btGenCollisionDispatcher *m_dispatcher;
@@ -119,7 +124,7 @@ protected:
     // bool mMBEnableRk4;
     double mMBEpsDiagnoalMassMat;
     double mMBMaxVel;
-    tMatrixXd mDxnextDctrlforce; // d(x_next)/d(ctrl_force), jacobian
+
     // bool mDebugThreeContactForces;
     // bool mMBEnableContactAwareLCP;
 
@@ -192,8 +197,28 @@ protected:
     void CollectFrameInfo(double dt);
     void WriteFrameInfo(const std::string &path);
     void RecordMBContactForce();
-    tMatrixXd CalcDxnextDCtrlForce(double dt) const;
-    // void InitGuideTraj();
-    // void ApplyGuideAction();
-    // void CheckGuideTraj();
+
+    // API in diffWorld
+    void CalcDiffWorld();
+    tMatrixXd CalcDQconsDu() const;
+    tMatrixXd CalcDxnextDQc_Qu() const;
+    tMatrixXd CalcDxnextDQGDQGDxcur() const;
+    tMatrixXd CalcDxnextDxcur() const;
+    // tMatrixXd CalcDxnextDxcur_noforce() const;
+    tMatrixXd mDQconsDu;          // d(x_next)/d(ctrl_force), jacobian
+    tMatrixXd mDxnextDQc_u;       // d(x_next)/d(Q_c), jacobian
+    tMatrixXd mDxnextDQGDQGDxcur; // d(x_next)/d(QG) * d(QG)/d(xcur), jacobian
+    tMatrixXd mDxnextDxcur;       // d(x_next)/d(x_cur)
+    void TestAllDxnextDxcur();
+
+    // tMatrixXd CalcDqnextDqcur() const;
+    // tMatrixXd CalcDqnextDqdotcur() const;
+    // tMatrixXd CalcDqdotnextDqcur() const;
+    // tMatrixXd CalcDqdotnextDqdotcur() const;
+    // tMatrixXd mDqnextDqcur, mDqnextDqdotcur, mDqdotnextDqcur,
+    //     mDqdotnextDqdotcur;
+    // void TestDqnextDqcur();
+    // void TestDqdotnextDqcur();
+    // void TestDqnextDqdotcur();
+    // void TestDqdotnextDqdotcur();
 };

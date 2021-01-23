@@ -57,6 +57,7 @@ public:
     virtual void PopState(const std::string &tag,
                           bool only_vel_and_force = false);
     void SetDampingCoeff(double, double);
+
     // void SetAngleClamp(bool);
     void SetMaxVel(double);
     const tMatrixXd &GetDampingMatrix() const { return mDampingMatrix; }
@@ -87,6 +88,13 @@ public:
     bool GetCollisionEnabled() const;
 
     btGeneralizeWorld::eIntegrationScheme GetIntegrationScheme() const;
+
+    tMatrixXd GetMTilde(double dt) const;
+    tVectorXd Getx() const;
+    void Setx(const tVectorXd & );
+    void GetdMTildeDx(tEigenArr<tMatrixXd> &dMtdx, double dt);
+    void TestdMTildeDx();
+    void TestdMTildeinvDx();
 
 protected:
     // -------------------------simulation status-----------------------

@@ -428,6 +428,7 @@ void cRobotModelDynamics::TestJointSecondJacobian()
         Joint *joint = dynamic_cast<Joint *>(GetJointById(j_id));
         tMatrixXd jw_old = joint->GetJKw();
         tEigenArr<tMatrixXd> djw_dq(num_of_freedom);
+        joint->ComputeDJkwdq();
 
         for (int i = 0; i < num_of_freedom; i++)
         {
@@ -451,7 +452,12 @@ void cRobotModelDynamics::TestJointSecondJacobian()
             {
                 std::cout << "[error] test joint second jac for joint " << j_id
                           << " dof " << i << std::endl;
+                std::cout << "joint dof = " << joint->GetNumOfFreedom()
+                          << std::endl;
                 std::cout << "diff = \n" << diff << std::endl;
+                std::cout << "num = \n" << num_djwdqi << std::endl;
+                std::cout << "ana = \n" << ana_djwdqi << std::endl;
+
                 exit(0);
             }
             cur_q[i] -= eps;
@@ -1061,6 +1067,127 @@ void cRobotModelDynamics::SetDampingCoeff(double damp1, double damp2)
     // exit(0);
 }
 
+/**
+ * \brief           Get \tilde{M} matrix
+ * 
+ * M_tilde = M + dt * (C + D)
+*/
+tMatrixXd cRobotModelDynamics::GetMTilde(double dt) const
+{
+    return mass_matrix + dt * (coriolis_matrix + mDampingMatrix);
+}
+
+tVectorXd cRobotModelDynamics::Getx() const
+{
+    tVectorXd x = tVectorXd::Zero(2 * num_of_freedom);
+    x.segment(0, num_of_freedom) = mq;
+    x.segment(num_of_freedom, num_of_freedom) = mqdot;
+    return x;
+}
+void cRobotModelDynamics::Setx(const tVectorXd &x)
+{
+    BTGEN_ASSERT(x.size() == 2 * num_of_freedom);
+    mq = x.segment(0, num_of_freedom);
+    mqdot = x.segment(num_of_freedom, num_of_freedom);
+    SetqAndqdot(mq, mqdot);
+}
+/**
+ * \brief           Calc dMtdx
+ * 
+ * D = coef1 * M + coef2 * C
+ * d(M_tilde)dx = dMdx + dt * (dCdx + dDdx)
+ *              = dMdx + dt * (dCdx + c1 * dMdx + c2 * dCdx)
+ *              = dMdx + dt * dCdx + dt * c1 * dMdx + dt * c2 * dCdx
+ *              = (I + dt * c1)dMdx + dt( I + c2) dCdx
+ * 
+ * d(M_tilde)dq = (I + dt * c1)dMdq + dt*(I + c2) dCdq
+ * d(M_tilde)dqdot = dt( I + c2) dCdqdot
+*/
+void cRobotModelDynamics::GetdMTildeDx(tEigenArr<tMatrixXd> &dMtdx, double dt)
+{
+    tEigenArr<tMatrixXd> dCdq, dCdqdot, dMdq;
+    ComputeDCoriolisMatrixDq(mqdot, dCdq);
+    ComputeDCoriolisMatrixDqdot(dCdqdot);
+    ComputedMassMatrixdq(dMdq);
+    int state_size = 2 * num_of_freedom;
+    dMtdx.resize(state_size, tMatrixXd::Zero(num_of_freedom, num_of_freedom));
+
+    tMatrixXd I_dt_c1 = tMatrixXd::Identity(num_of_freedom, num_of_freedom) *
+                        (1 + dt * this->mDampingCoef1);
+    tMatrixXd dt_I_c2 = dt * (1 + mDampingCoef2) *
+                        tMatrixXd::Identity(num_of_freedom, num_of_freedom);
+    for (int i = 0; i < num_of_freedom; i++)
+    {
+        // 1. give dMtdq
+        {
+            dMtdx[i].noalias() = I_dt_c1 * dMdq[i] + dt_I_c2 * dCdq[i];
+        }
+        // 2. give dMtdqdot
+        {
+            dMtdx[i + num_of_freedom].noalias() = dt_I_c2 * dCdqdot[i];
+        }
+    }
+}
+
+/**
+ * \brief           Test dMtdx
+ *  
+*/
+void cRobotModelDynamics::TestdMTildeDx()
+{
+    double dt = 1.0 / 600;
+    PushState("test_dmtdx");
+    tMatrixXd old_Mt = GetMTilde(dt);
+    tEigenArr<tMatrixXd> dMtdx;
+    GetdMTildeDx(dMtdx, dt);
+
+    double eps = 1e-5;
+    tVectorXd x = Getx();
+    for (int i = 0; i < x.size(); i++)
+    {
+        x[i] += eps;
+        Setx(x);
+        tMatrixXd new_Mt = GetMTilde(dt);
+        tMatrixXd num_dMtdxi = (new_Mt - old_Mt) / eps;
+        tMatrixXd ana_dMtdxi = (new_Mt - old_Mt) / eps;
+        tMatrixXd diff = ana_dMtdxi - num_dMtdxi;
+        BTGEN_ASSERT(diff.norm() < eps);
+        x[i] -= eps;
+    }
+
+    PopState("test_dmtdx");
+    std::cout << "[log] test_dmtdx succ\n";
+}
+
+void cRobotModelDynamics::TestdMTildeinvDx()
+{
+    double dt = 1.0 / 600;
+    PushState("test_dmtinvdx");
+    tMatrixXd old_Mtinv = GetMTilde(dt).inverse();
+    tEigenArr<tMatrixXd> dMtinvdx;
+    GetdMTildeDx(dMtinvdx, dt);
+    for (auto &x : dMtinvdx)
+    {
+        x = -old_Mtinv * x * old_Mtinv;
+    }
+
+    double eps = 1e-5;
+    tVectorXd x = Getx();
+    for (int i = 0; i < x.size(); i++)
+    {
+        x[i] += eps;
+        Setx(x);
+        tMatrixXd new_Mtinv = GetMTilde(dt).inverse();
+        tMatrixXd num_dMtinvdxi = (new_Mtinv - old_Mtinv) / eps;
+        tMatrixXd ana_dMtinvdxi = (new_Mtinv - old_Mtinv) / eps;
+        tMatrixXd diff = ana_dMtinvdxi - num_dMtinvdxi;
+        BTGEN_ASSERT(diff.norm() < eps);
+        x[i] -= eps;
+    }
+
+    PopState("test_dmtinvdx");
+    std::cout << "[log] test_dmtinvdx succ\n";
+}
 // void cRobotModelDynamics::SetAngleClamp(bool val)
 // {
 // 	this->mEnableEulerAngleClamp = val;

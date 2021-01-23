@@ -13,6 +13,10 @@
 #include "BulletDynamics/MLCPSolvers/btSolveProjectedGaussSeidel.h"
 #include "BulletGenDynamics/btGenController/ContactAwareController/FBFCalculator/btGenFrameByFrameCalculator.h"
 #include "BulletGenDynamics/btGenController/ContactAwareController/btGenContactAwareController.h"
+#include "BulletGenDynamics/btGenModel/ExpMapRotMat.h"
+#include "BulletGenDynamics/btGenModel/Joint.h"
+#include "BulletGenDynamics/btGenModel/Link.h"
+#include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
 #include "BulletGenDynamics/btGenUtil/JsonUtil.h"
 #include "BulletGenDynamics/btGenUtil/TimeUtil.hpp"
 #include "BulletGenDynamics/btGenWorld.h"
@@ -125,6 +129,9 @@ void CustomEngineMainDemo::initPhysics()
     if (physics_param->mAddMultibody)
     {
         mGenWorld->AddMultibody(physics_param->mMultibodyPath);
+
+        // mGenWorld->GetMultibody()->SetComputeSecondDerive(true);
+        mGenWorld->GetMultibody()->SetComputeThirdDerive(true);
         // Test();
 
         // add controller
@@ -332,10 +339,7 @@ void CustomEngineMainDemo::SinglestepSim(float dt)
     global_frame_id++;
     return;
 }
-#include "BulletGenDynamics/btGenModel/ExpMapRotMat.h"
-#include "BulletGenDynamics/btGenModel/Joint.h"
-#include "BulletGenDynamics/btGenModel/Link.h"
-#include "BulletGenDynamics/btGenModel/RobotModelDynamics.h"
+
 void CustomEngineMainDemo::Test()
 {
     std::cout << "[debug] begin test\n";
@@ -352,8 +356,8 @@ void CustomEngineMainDemo::Test()
     int dof = mb->GetNumOfFreedom();
     tVectorXd q = tVectorXd::Random(dof), qdot = tVectorXd::Random(dof);
     mb->SetqAndqdot(q, qdot);
-    
-    // exit(0);
+    mb->TestdMTildeDx();
+    exit(0);
     // for (int i = 0; i < mb->GetNumOfLinks(); i++)
     // {
     //     auto joint = dynamic_cast<Joint *>(mb->GetJointById(i));

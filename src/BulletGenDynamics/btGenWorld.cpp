@@ -48,6 +48,7 @@ btGeneralizeWorld::btGeneralizeWorld()
     mGuideTraj = nullptr;
     mContactManager = nullptr;
     mFrameId = 0;
+    mCurdt = 0;
     mIntegrationScheme = eIntegrationScheme::OLD_SEMI_IMPLICIT_SCHEME;
 }
 
@@ -420,12 +421,16 @@ void OutputJacobianTestJson(cRobotModelDynamics *, const std::string &path);
 void OutputDynamicsFTestJson(cRobotModelDynamics *, const std::string &path);
 void btGeneralizeWorld::StepSimulation(double dt)
 {
+    mCurdt = dt;
     // btTimeUtil::Begin("stepsim");
     // std::cout << "------------------begin step simulation for frame "
     //           << mFrameId << " time " << mTime << "------------------\n";
-    // std::cout <<
-    // "[bt] col obj num = " << mInternalWorld->getNumCollisionObjects() <<
-    // std::endl;
+    // std::cout << "3 = " << mMultibody->GetComputeThirdDerive()
+    //           << " 2 = " << mMultibody->GetComputeSecondDerive() << std::endl;
+    // mMultibody->SetComputeThirdDerive(true);
+    // mMultibody->TestDCoriolisMatrixDq();
+    // std::cout << "[bt] col obj num = "
+    //           << mInternalWorld->getNumCollisionObjects() << std::endl;
     // std::cout << "[bt update] frame " << mFrameId
     //           << " q0 = " << mMultibody->Getq().transpose() << std::endl;
     // btTimeUtil::Begin("step");
@@ -444,14 +449,27 @@ void btGeneralizeWorld::StepSimulation(double dt)
         CollisionResponse(dt);
         // CheckGuideTraj();
         if (mLCPContactSolver->GetEnableGradientOverCtrlForce())
-            mDxnextDctrlforce = CalcDxnextDCtrlForce(dt);
+        {
+            // mMultibody->TestdMTildeinvDx();
+            CalcDiffWorld();
+        }
 
         Update(dt);
         PostUpdate(dt);
 
         if (mEnableTestGradientDxnextDctrlForce)
         {
-            TestDxnextDCtrlForce(dt);
+            // TestDqnextDqcur();
+            // TestDqdotnextDqcur();
+            // TestDqnextDqdotcur();
+            // TestDqdotnextDqdotcur();
+            // TestDqnextDqdotcur();
+            // TestDqdotnextDqcur();
+            // TestDqdotnextDqdotcur();
+            // // TestDxnextDCtrlForce(dt);
+            // // exit(0);
+            TestAllDxnextDxcur();
+            TestDxnextDCtrlForce();
         }
     }
 
@@ -779,93 +797,6 @@ void btGeneralizeWorld::CollisionResponse(double dt)
         exit(0);
         break;
     }
-
-    // if (mMBEnableContactAwareLCP == true && mContactForces.size() != 0 &&
-    //     mDebugThreeContactForces == true)
-    // {
-    //     std::cout << "[debug] begin to debug three contact forces\n";
-    //     // 1. save the contact force and control force
-
-    //     std::vector<btGenContactForce *> mContactForces_old(0);
-    //     for (auto &x : mContactForces)
-    //         mContactForces_old.push_back(new btGenContactForce(*x));
-
-    //     std::vector<btGenConstraintGeneralizedForce *>
-    //         mConstraintGenalizedForce_old(0);
-    //     for (auto &x : mConstraintGenalizedForce)
-    //         mConstraintGenalizedForce_old.push_back(
-    //             new btGenConstraintGeneralizedForce(*x));
-
-    //     std::vector<btGenConstraintGeneralizedForce *>
-    //         mContactAwareControlForce_old(0);
-
-    //     for (auto &x : mContactAwareControlForce)
-    //         mContactAwareControlForce_old.push_back(
-    //             new btGenConstraintGeneralizedForce(*x));
-
-    //     // 2. apply the control force, resolve the contact force
-    //     // 3. compare the contact force
-    //     std::cout
-    //         << "------------------contact aware contact forces-------------\n";
-    //     DebugPrintContactForce(mContactForces);
-
-    //     // CollisionResponseLCP(dt);
-    //     auto active_applied_contact_forces =
-    //         DebugGetContactForces(dt, mContactAwareControlForce);
-    //     std::cout
-    //         << "------------------active applied contact forces-------------\n";
-    //     std::cout << "now apply force = ";
-    //     for (auto &x : mContactAwareControlForce)
-    //     {
-    //         std::cout << x->value << " ";
-    //     }
-    //     std::cout << std::endl;
-    //     DebugPrintContactForce(active_applied_contact_forces);
-
-    //     // output the legacy contact forces
-    //     std::cout
-    //         << "------------------contact forces from ref traj-------------\n";
-    //     int ref_frameid = mControlController->GetRefFrameId() - 1;
-    //     // std::cout << "ref frame id = " << ref_frameid << std::endl;
-    //     auto traj = mControlController->GetRefTraj();
-    //     DebugPrintContactForce(traj->mContactForce[ref_frameid]);
-    //     tVectorXd legacy_gen_contact_force =
-    //         DebugConvertCartesianContactForceToGenForce(
-    //             traj->mq[ref_frameid], traj->mContactForce[ref_frameid]);
-    //     // std::cout << "gen = " << legacy_gen_contact_force.transpose()
-    //     //           << std::endl;
-
-    //     tVectorXd legacy_active_force = DebugGetGenControlForce(ref_frameid);
-    //     std::cout << "truth joint forces = " << legacy_active_force.transpose()
-    //               << std::endl;
-
-    //     std::cout << "-------------contact force after applying the control "
-    //                  "force from ref traj--------------\n";
-    //     auto contact_forces_after_applying_the_ref_control =
-    //         DebugGetContactForces(dt, legacy_active_force);
-    //     DebugPrintContactForce(contact_forces_after_applying_the_ref_control);
-
-    //     std::cout << "q = " << mMultibody->Getq().norm() << std::endl;
-    //     std::cout << "qdot = " << mMultibody->Getqdot().norm() << std::endl;
-    //     // 4. restore the controller state, and the old contact forces
-    //     this->mMultibody->SetEnableContactAwareController(true);
-    //     mMBEnableContactAwareLCP = true;
-
-    //     // apply the old contact forces, then return
-    //     mContactForces = mContactForces_old;
-    //     mConstraintGenalizedForce = mConstraintGenalizedForce_old;
-    //     mContactAwareControlForce = mContactAwareControlForce_old;
-    // }
-    // btTimeUtil::End("LCP total");
-    // tVectorXd qnew = mMultibody->Getq();
-    // tVectorXd qdotnew = mMultibody->Getqdot();
-    // tVectorXd qddotnew = mMultibody->Getqddot();
-    // double qdiff = (qnew - qold).norm(),
-    // 	   qdotdiff = (qdotnew - qdotold).norm(),
-    // 	   qddotdiff = (qddotnew - qddotold).norm();
-    // std::cout << "q diff = " << qdiff << std::endl;
-    // std::cout << "qdot diff = " << qdotdiff << std::endl;
-    // std::cout << "qddot diff = " << qddotdiff << std::endl;
 
     for (auto &f : mContactForces)
     {
@@ -1531,10 +1462,12 @@ btCollisionShape *btGeneralizeWorld::GetCapsuleCollisionShape(double radius,
     return mCollisionShapeArray.back().second;
 }
 
-tMatrixXd btGeneralizeWorld::GetDxnextDCtrlForce() const
-{
-    return mDxnextDctrlforce;
-}
+/**
+ * \brief           get d(xnext)/du, u is the gen control force
+ * 
+ *   d(xnext)/d(Qc) * d(Qc)/du
+*/
+tMatrixXd btGeneralizeWorld::GetDQcDu() const { return mDQconsDu; }
 // /**
 //  * \brief			Initialize the guide trajectory from target file
 // */
@@ -1625,49 +1558,38 @@ btGeneralizeWorld::GetIntegrationScheme() const
 }
 
 /**
- * \brief       calculate d(x_next) /d(ctrl_force)
+ * \brief           Calculate variables in differentiable world
+*/
+void btGeneralizeWorld::CalcDiffWorld()
+{
+    // btTimeUtil::Begin("calc_diff_world");
+    mDQconsDu.noalias() = CalcDQconsDu();
+    mDxnextDQc_u.noalias() = CalcDxnextDQc_Qu();
+    mDxnextDQGDQGDxcur.noalias() = CalcDxnextDQGDQGDxcur();
+    mDxnextDxcur.noalias() = CalcDxnextDxcur();
+    // mDxnextDxcur.noalias() = CalcDxnextDxcur_noforce();
+
+    // mDqnextDqcur = CalcDqnextDqcur();
+    // mDqnextDqdotcur = CalcDqnextDqdotcur();
+    // mDqdotnextDqcur = CalcDqdotnextDqcur();
+    // mDqdotnextDqdotcur = CalcDqdotnextDqdotcur();
+    // btTimeUtil::End("calc_diff_world");
+}
+/**
+ * \brief       calculate partial gradinet d(x_next) /d(ctrl_force)
+ *              
+ *              d(x_next) /d(ctrl_force) = A_t
  * 
- * d(x_next) / d(ctrl_force)
- *  = dt * \tilde{M}^{-1} * [dt, I] + dbt/dRt * dRt/dQ_cons * dQ_cons/d(ctrl_force)
- * 
- * bt = [dt * Rt + qt; Rt]
- * Rt = \tilde{M}^{-1} * (dt * Q_cons + dt * Q_others + M * qdot)
- * 
- * AFTER SOME DERIVATION, the final result:
- * d(x_next) / d(ctrl_force) = 
- *      dt * \tilde{M}^{-1} * [dt, I] + dt  * [dt, I] * \tilde{M}^{-1} * dQ_cons/d(ctrl_force)
- * 
- * For more details, please check the note "20210105 计算当前状态x对控制力fc的导数"
+ * For more details, please check the note "系统的思考.md"
  */
-tMatrixXd btGeneralizeWorld::CalcDxnextDCtrlForce(double dt) const
+tMatrixXd btGeneralizeWorld::CalcDQconsDu() const
 {
     BTGEN_ASSERT(mIntegrationScheme ==
                  eIntegrationScheme::NEW_SEMI_IMPLICIT_SCHEME);
 
     BTGEN_ASSERT(mMultibody != nullptr);
-    tMatrixXd dQcons_dctrlForce =
-        mLCPContactSolver->GetDGenConsForceDCtrlForce();
-    auto mb = mMultibody;
-    const tMatrixXd &M = mb->GetMassMatrix();
-    const tMatrixXd &inv_M = mb->GetInvMassMatrix();
-    const tMatrixXd &coriolis_mat = mb->GetCoriolisMatrix();
-    const tMatrixXd &damping_mat = mb->GetDampingMatrix();
-    const tMatrixXd &M_dt_C_D_inv =
-        (M + dt * (coriolis_mat + damping_mat)).inverse();
-    int dof = mb->GetNumOfFreedom();
-    int state_size = 2 * dof;
-    tMatrixXd dtI_I = tMatrixXd::Zero(state_size, dof);
-    dtI_I.block(0, 0, dof, dof).noalias() = tMatrixXd::Identity(dof, dof) * dt;
-    dtI_I.block(dof, 0, dof, dof).setIdentity();
-
-    if (dQcons_dctrlForce.size() == 0)
-        dQcons_dctrlForce.noalias() = tMatrixXd::Zero(dof, dof);
-    tMatrixXd dxnext_dctrlForce =
-        dt * dtI_I * M_dt_C_D_inv *
-        (tMatrixXd::Identity(dof, dof) + dQcons_dctrlForce);
-    // std::cout << "[debug] dxnext_dctrlForce = \n"
-    //           << dxnext_dctrlForce << std::endl;
-    return dxnext_dctrlForce;
+    double dt = mCurdt;
+    return mLCPContactSolver->GetDGenConsForceDCtrlForce();
 }
 
 /**
@@ -1675,10 +1597,11 @@ tMatrixXd btGeneralizeWorld::CalcDxnextDCtrlForce(double dt) const
  * 
  *      Note that, this test funciton must be called at the last step of stepsimulation
 */
-void btGeneralizeWorld::TestDxnextDCtrlForce(double dt)
+void btGeneralizeWorld::TestDxnextDCtrlForce()
 {
     // 1. record old state, record current x as xnext, record the ctrl force, calculate the DxnextDctrlforce
     // print to check
+    double dt = mCurdt;
     auto mb = mMultibody;
     mb->PushState("TestDxnextDCtrlForce");
     tVectorXd qnext_old = mb->Getq(), qdotnext_old = mb->Getqdot();
@@ -1690,11 +1613,17 @@ void btGeneralizeWorld::TestDxnextDCtrlForce(double dt)
     // std::cout << "[debug] qdotnext old = " << qdotnext_old.transpose()
     //           << std::endl;
 
-    tMatrixXd ideal_DxnextDctrlforce = GetDxnextDCtrlForce();
+    tMatrixXd ideal_DxnextDctrlforce = GetDxnextDQc_u();
+    if (GetDQcDu().size() != 0)
+    {
+        ideal_DxnextDctrlforce += ideal_DxnextDctrlforce * GetDQcDu();
+    }
     int ctrl_force_dof = mb->GetNumOfFreedom();
     int mb_dof = mb->GetNumOfFreedom();
     // get the ctrl force (not the gravity)
     tVectorXd old_ctrl_force = gTestCtrlForce;
+    if (old_ctrl_force.size() == 0)
+        old_ctrl_force = tVectorXd::Zero(mb_dof);
     // 2. for each freedom, back to the old state, set the control force (only), do the forward simulation
     // get the new state, calculate the numerical derivative & compare
     double eps = 1e-4;
@@ -1746,10 +1675,10 @@ void btGeneralizeWorld::TestDxnextDCtrlForce(double dt)
         {
             std::cout << "[error] TestDxnextDCtrlForce failed, diff = "
                       << diff.transpose() << std::endl;
-            std::cout << "[debug] ideal deriv idx " << i << " = "
-                      << ideal_x_deriv.transpose() << std::endl;
-            std::cout << "[debug] num deriv idx " << i << " = "
-                      << num_x_deriv.transpose() << std::endl;
+            std::cout << "[debug] TestDxnextDCtrlForce ideal deriv idx " << i
+                      << " = " << ideal_x_deriv.transpose() << std::endl;
+            std::cout << "[debug] TestDxnextDCtrlForce num deriv idx " << i
+                      << " = " << num_x_deriv.transpose() << std::endl;
             // BTGEN_ASSERT(false);
         }
         old_ctrl_force[i] -= eps;
@@ -1768,3 +1697,588 @@ void btGeneralizeWorld::GetLastFrameGenCharqAndqdot(tVectorXd &q_pre,
     q_pre = mLastFrameInfo.q;
     qdot_pre = mLastFrameInfo.qdot;
 }
+
+/**
+ * \brief       Calc the partial gradient:
+ *      d(xnext)/d(Q_{constraint}) = d(xnext)/d(u) 
+ *      Qc is the constraint forces solved by LCP solver
+ * 
+ *      d(xnext)/d(Q_{constraint}) = dt * [dt * I; I] * \tilde{M}^{-1}
+*/
+tMatrixXd btGeneralizeWorld::CalcDxnextDQc_Qu() const
+{
+    BTGEN_ASSERT(mMultibody != nullptr);
+    int dof = mMultibody->GetNumOfFreedom();
+    int state_size = 2 * dof;
+    const tMatrixXd &M_tilde = mMultibody->GetMTilde(mCurdt);
+    const tMatrixXd &M_tilde_inv = M_tilde.inverse();
+
+    tMatrixXd A = tMatrixXd::Zero(state_size, dof);
+    A.block(0, 0, dof, dof).setIdentity();
+    A.block(0, 0, dof, dof) *= mCurdt;
+    A.block(dof, 0, dof, dof).setIdentity();
+    A = mCurdt * A * M_tilde_inv;
+    return A;
+}
+
+/**
+ * \brief       Get d(xnext)/d(Q_constraint)
+*/
+tMatrixXd btGeneralizeWorld::GetDxnextDQc_u() const { return mDxnextDQc_u; }
+/**
+ * \brief       Calc d(xnext)/d(QG) * d(QG)/dxcur
+*/
+tMatrixXd btGeneralizeWorld::CalcDxnextDQGDQGDxcur() const
+{
+    int dof = mMultibody->GetNumOfFreedom();
+    tMatrixXd DxnextDxcur = tMatrixXd::Zero(2 * dof, 2 * dof);
+    const tMatrixXd &DxnextDQG = mDxnextDQc_u;
+    DxnextDxcur.block(0, 0, 2 * dof, dof).noalias() =
+        DxnextDQG * mMultibody->CalcdGenGravitydq(GetGravity());
+    // std::cout << "DxnextDQGDQGDxcur = " << DxnextDxcur << std::endl;
+    return DxnextDxcur;
+}
+/**
+ * \brief       Get d(xnext)/d(QG) * d(QG)/dxcur
+*/
+tMatrixXd btGeneralizeWorld::GetDxnextDQGDQGDxcur() const
+{
+    return mDxnextDQGDQGDxcur;
+}
+/**
+ * \brief       Calc partial gradient d(xnext)/d(xcur)
+ * 
+ * 
+ *          d(xnext)/d(xcur) = dAdx * u + dbdx
+ *  dAdx * [dtI; I] * d \tilde{M}^{-1}/dx * Q_{total}
+ * +
+ *  [dtI; I] * \tilde{M}^{-1} * (dMdx * qdot + M * dqdotdx) 
+ * + 
+ * [I 0]
+ * [0 0]
+ * 
+ *      For more detals please check the note "系统的思考.md"
+ * 
+*/
+tMatrixXd btGeneralizeWorld::CalcDxnextDxcur() const
+{
+    // btTimeUtil::Begin("CalcDxnextDxcur");
+    // mMultibody->TestdMTildeDx();
+    int dof = mMultibody->GetNumOfFreedom();
+    int state_size = 2 * dof;
+    const tMatrixXd &M_tilde = mMultibody->GetMTilde(mCurdt);
+    const tMatrixXd &M_tilde_inv = M_tilde.inverse();
+
+    tMatrixXd dtI_I = tMatrixXd::Zero(state_size, dof);
+    dtI_I.block(0, 0, dof, dof).setIdentity();
+    dtI_I.block(0, 0, dof, dof) *= mCurdt;
+    dtI_I.block(dof, 0, dof, dof).setIdentity();
+    const tMatrixXd &mTinv = mMultibody->GetMTilde(mCurdt).inverse();
+    tMatrixXd dxnextdcur = tMatrixXd::Zero(state_size, state_size);
+    // 1. part1
+    {
+        // get dMtildinvdx
+        // btTimeUtil::Begin("CalcDxnextDxcur1");
+        EIGEN_V_MATXD dMtinvdx;
+        mMultibody->GetdMTildeDx(dMtinvdx, mCurdt);
+        for (int i = 0; i < state_size; i++)
+        {
+            dMtinvdx[i] = -mTinv * dMtinvdx[i] * mTinv;
+        }
+        const tVectorXd &dt_Qtotal_Mqdot =
+            mCurdt * mMultibody->GetGeneralizedForce() +
+            mMultibody->GetMassMatrix() * mMultibody->Getqdot();
+        tMatrixXd res = tMatrixXd::Zero(dof, state_size);
+        for (int i = 0; i < state_size; i++)
+        {
+            res.col(i) = dMtinvdx[i] * dt_Qtotal_Mqdot;
+        }
+        // std::cout << "res = \n" << res << std::endl;
+        dxnextdcur += dtI_I * res;
+        // btTimeUtil::End("CalcDxnextDxcur1");
+    }
+    // 2. part2
+    {
+        // btTimeUtil::Begin("CalcDxnextDxcur2");
+        EIGEN_V_MATXD dMdq;
+        mMultibody->ComputedMassMatrixdq(dMdq);
+        const tVectorXd &qdot = mMultibody->Getqdot();
+        tMatrixXd res = tMatrixXd::Zero(dof, state_size);
+        for (int i = 0; i < dof; i++)
+        {
+            res.col(i) = dMdq[i] * qdot;
+        }
+
+        tMatrixXd dqdotdx = tMatrixXd::Zero(dof, state_size);
+        dqdotdx.block(0, dof, dof, dof).setIdentity();
+        res += mMultibody->GetMassMatrix() * dqdotdx;
+        dxnextdcur += dtI_I * mTinv * res;
+        // btTimeUtil::End("CalcDxnextDxcur2");
+    }
+    // 3. part3
+    {
+        dxnextdcur.block(0, 0, dof, dof) += tMatrixXd::Identity(dof, dof);
+    }
+    // std::cout << "dxnextdcur = \n" << dxnextdcur << std::endl;
+    // exit(0);
+    // btTimeUtil::End("CalcDxnextDxcur");
+    return dxnextdcur;
+}
+
+// tMatrixXd btGeneralizeWorld::CalcDxnextDxcur_noforce() const
+// {
+//     int dof = mMultibody->GetNumOfFreedom();
+//     int state_size = 2 * dof;
+//     const tMatrixXd &M_tilde = mMultibody->GetMTilde(mCurdt);
+//     const tMatrixXd &M_tilde_inv = M_tilde.inverse();
+//     const tMatrixXd &M = mMultibody->GetMassMatrix();
+//     EIGEN_V_MATXD dMtdx, dMdx;
+//     mMultibody->GetdMTildeDx(dMtdx, mCurdt);
+//     mMultibody->ComputedMassMatrixdq(dMdx);
+//     while (dMdx.size() < state_size)
+//         dMdx.push_back(tMatrixXd::Zero(dof, dof));
+
+//     tMatrixXd dtI_I = tMatrixXd::Zero(state_size, dof);
+//     dtI_I.block(0, 0, dof, dof) = tMatrixXd::Identity(dof, dof) * mCurdt;
+//     dtI_I.block(dof, 0, dof, dof) = tMatrixXd::Identity(dof, dof);
+//     tMatrixXd dxnextdxcur = tMatrixXd::Zero(state_size, state_size);
+
+//     // 1. part1
+//     {
+//         const tVectorXd qdot = mMultibody->Getqdot();
+//         tMatrixXd res = tMatrixXd::Zero(dof, state_size);
+
+//         for (int i = 0; i < state_size; i++)
+//         {
+//             res.col(i) += -M_tilde_inv * dMtdx[i] * M_tilde_inv * M * qdot;
+//             res.col(i) += M_tilde_inv * dMdx[i] * qdot;
+//         }
+//         res.block(0, dof, dof, dof) += M_tilde_inv * M;
+//         dxnextdxcur.block(0, 0, dof, state_size) = mCurdt * res;
+//         dxnextdxcur.block(dof, 0, dof, state_size) = res;
+//     }
+
+//     dxnextdxcur.block(0, 0, dof, dof) += tMatrixXd::Identity(dof, dof);
+//     return dxnextdxcur;
+// }
+/**
+ * \brief       Get        
+*/
+tMatrixXd btGeneralizeWorld::GetDxnextDxcur() const { return mDxnextDxcur; }
+
+/**
+ * \brief           Test the full gradient of d(xnext)/dxcur
+ * 
+ *   it is definied as: d(xnext)/dxcur = dp(xnext)/dp(xcur) + dp(xnext)/dp(QG) * d(QG)/dxcur
+ * 
+ *      If there are constraint forces in this world, the test may failed cuz we ignore the gradient d(Qc)/dxcur
+*/
+void btGeneralizeWorld::TestAllDxnextDxcur()
+{
+
+    auto mb = mMultibody;
+    mb->PushState("TestAllDxnextDxcur");
+    int dof = mb->GetNumOfFreedom();
+    int state_dof = 2 * dof;
+    tVectorXd xnext_old = mb->Getx();
+    tVectorXd x_before = tVectorXd::Zero(state_dof);
+    x_before.segment(0, dof) = mLastFrameInfo.q;
+    x_before.segment(dof, dof) = mLastFrameInfo.qdot;
+    // std::cout << "[debug] q before = " << q_before.transpose() << std::endl;
+    // std::cout << "[debug] qdot before = " << qdot_before.transpose()
+    //           << std::endl;
+    // std::cout << "[debug] qnext old = " << qnext_old.transpose() << std::endl;
+    // std::cout << "[debug] qdotnext old = " << qdotnext_old.transpose()
+    //           << std::endl;
+
+    tMatrixXd ideal_DxnextDxcur = GetDxnextDxcur() + GetDxnextDQGDQGDxcur();
+    // {
+    //     // check the 4 blocks
+
+    //     BTGEN_ASSERT(
+    //         (ideal_DxnextDxcur.block(0, 0, dof, dof) - mDqnextDqcur).norm() <
+    //         1e-6);
+    //     BTGEN_ASSERT(
+    //         (ideal_DxnextDxcur.block(dof, 0, dof, dof) - this->mDqdotnextDqcur)
+    //             .norm() < 1e-6);
+    //     BTGEN_ASSERT(
+    //         (ideal_DxnextDxcur.block(0, dof, dof, dof) - this->mDqnextDqdotcur)
+    //             .norm() < 1e-6);
+    //     BTGEN_ASSERT((ideal_DxnextDxcur.block(dof, dof, dof, dof) -
+    //                   this->mDqdotnextDqdotcur)
+    //                      .norm() < 1e-6);
+    // }
+    // std::cout << "[debug] ideal size = " << ideal_DxnextDxcur.rows() << " "
+    //           << ideal_DxnextDxcur.cols() << std::endl;
+    // 2. for each freedom, back to the old state, set the control force (only), do the forward simulation
+    // get the new state, calculate the numerical derivative & compare
+    double eps = 1e-6;
+    // double eps = 0;
+    // std::cout << "-----------------begin to test-----------------\n";
+    // std::cout << "q before = " << x_before.transpose() << std::endl;
+    for (int i = 0; i < state_dof; i++)
+    {
+        // 2.1 back to old state
+        x_before[i] += eps;
+        mb->Setx(x_before);
+        // std::cout << "set q = " << mb->Getq().transpose() << std::endl;
+        // 2.2 clear the old force, set the ctrl force
+        ClearForce();
+
+        // std::cout << "[debug] after clear & set ctrl, total force = "
+        //           << mb->GetGeneralizedForce().transpose() << std::endl;
+
+        // 2.3 begin to do the forward sim
+        {
+            ApplyGravity();
+            // std::cout << "[debug] after apply gravity, total force = "
+            //           << mb->GetGeneralizedForce().transpose() << std::endl;
+            CollisionDetect();
+            CollisionResponse(mCurdt);
+            // std::cout << "[debug] after collsiion response, total force = "
+            //           << mb->GetGeneralizedForce().transpose() << std::endl;
+            Update(mCurdt);
+        }
+        // 2.4 get the new qnext / qdotnext
+        tVectorXd xnext_new = mb->Getx();
+        // std::cout << "[debug] qnext new = " << xnext_new.transpose()
+        //           << std::endl;
+        // std::cout << "[debug] qdotnext new = " << qdotnext_new.transpose()
+        //           << std::endl;
+        // std::cout << "xnext old = " << xnext_old.transpose() << std::endl;
+        // std::cout << "xnext new = " << xnext_new.transpose() << std::endl;
+        // 2.5 calculate the num deriv
+        tVectorXd num_x_deriv = (xnext_new - xnext_old) / eps;
+
+        tVectorXd ideal_x_deriv = ideal_DxnextDxcur.col(i);
+
+        tVectorXd diff = num_x_deriv - ideal_x_deriv;
+        // std::cout << "[debug] diff deriv idx " << i << " = " << diff.norm()
+        //   << std::endl;
+        if (diff.cwiseAbs().maxCoeff() > 10 * eps)
+        {
+            std::cout << "[error] TestAllDxnextDxcur failed, diff = "
+                      << diff.transpose() << std::endl;
+            std::cout << "[debug] ideal deriv idx " << i << " = "
+                      << ideal_x_deriv.transpose() << std::endl;
+            std::cout << "[debug] num deriv idx " << i << " = "
+                      << num_x_deriv.transpose() << std::endl;
+            // BTGEN_ASSERT(false);
+        }
+        x_before[i] -= eps;
+    }
+    // std::cout << "[res] DxnextDctrl = \n"
+    //           << ideal_DxnextDctrlforce << std::endl;
+    // std::cout << "-----------------test done, succ-----------------\n";
+    std::cout << "[debug] TestAllDxnextDxcur done, this test effect the "
+                 "ExampleBrowser sim result\n"
+              << ideal_DxnextDxcur << std::endl;
+    mb->PopState("TestAllDxnextDxcur");
+}
+
+// tMatrixXd btGeneralizeWorld::CalcDqnextDqcur() const
+// {
+//     EIGEN_V_MATXD dMdq, dMTdx;
+//     mMultibody->ComputedMassMatrixdq(dMdq);
+//     mMultibody->GetdMTildeDx(dMTdx, mCurdt);
+//     const tMatrixXd &Mt = mMultibody->GetMTilde(mCurdt);
+//     const tMatrixXd &Mtinv = Mt.inverse();
+//     const tVectorXd &qdot = mMultibody->Getqdot();
+//     const tMatrixXd &M = mMultibody->GetMassMatrix();
+//     int dof = mMultibody->GetNumOfFreedom();
+//     tMatrixXd dqnextdqcur = tMatrixXd::Identity(dof, dof);
+//     for (int i = 0; i < dof; i++)
+//     {
+//         dqnextdqcur.col(i) += mCurdt * (-Mtinv * dMTdx[i] * Mtinv * M * qdot +
+//                                         Mtinv * dMdq[i] * qdot);
+//     }
+//     return dqnextdqcur;
+// }
+// tMatrixXd btGeneralizeWorld::CalcDqdotnextDqcur() const
+// {
+//     EIGEN_V_MATXD dMdq, dMTdx;
+//     mMultibody->ComputedMassMatrixdq(dMdq);
+//     mMultibody->GetdMTildeDx(dMTdx, mCurdt);
+//     const tMatrixXd &Mt = mMultibody->GetMTilde(mCurdt);
+//     const tMatrixXd &Mtinv = Mt.inverse();
+//     const tVectorXd &qdot = mMultibody->Getqdot();
+//     const tMatrixXd &M = mMultibody->GetMassMatrix();
+//     int dof = mMultibody->GetNumOfFreedom();
+//     tMatrixXd dqdotnext_dqcur = tMatrixXd::Zero(dof, dof);
+//     for (int i = 0; i < dof; i++)
+//     {
+//         dqdotnext_dqcur.col(i) =
+//             -Mtinv * dMTdx[i] * Mtinv * M * qdot + Mtinv * dMdq[i] * qdot;
+//     }
+//     return dqdotnext_dqcur;
+// }
+
+// void btGeneralizeWorld::TestDqnextDqcur()
+// {
+//     auto mb = mMultibody;
+//     mb->PushState("TestDqnextDqcur");
+//     int dof = mb->GetNumOfFreedom();
+//     tVectorXd qnext_old = mb->Getq();
+//     tVectorXd q_before = mLastFrameInfo.q;
+//     tVectorXd qdot_before = mLastFrameInfo.qdot;
+
+//     tMatrixXd ideal_DxnextDxcur = mDqnextDqcur;
+//     // 2. for each freedom, back to the old state, set the control force (only), do the forward simulation
+//     // get the new state, calculate the numerical derivative & compare
+//     double eps = 1e-7;
+//     for (int i = 0; i < dof; i++)
+//     {
+//         // 2.1 back to old state
+//         q_before[i] += eps;
+//         mb->Setq(q_before);
+//         mb->Setqdot(qdot_before);
+
+//         // 2.2 clear the old force, set the ctrl force
+//         ClearForce();
+
+//         // 2.3 begin to do the forward sim
+//         {
+//             ApplyGravity();
+//             CollisionDetect();
+//             CollisionResponse(mCurdt);
+//             Update(mCurdt);
+//         }
+//         // 2.4 get the new qnext / qdotnext
+//         tVectorXd qnext_new = mb->Getq();
+
+//         // 2.5 calculate the num deriv
+//         tVectorXd num_x_deriv = (qnext_new - qnext_old) / eps;
+
+//         tVectorXd ideal_x_deriv = ideal_DxnextDxcur.col(i);
+
+//         tVectorXd diff = num_x_deriv - ideal_x_deriv;
+//         if (diff.cwiseAbs().maxCoeff() > 10 * eps)
+//         {
+//             std::cout << "[error] TestDqnextDqcur failed, diff = "
+//                       << diff.transpose() << std::endl;
+//             std::cout << "[debug] TestDqnextDqcur ideal deriv idx " << i
+//                       << " = " << ideal_x_deriv.transpose() << std::endl;
+//             std::cout << "[debug] TestDqnextDqcur num deriv idx " << i << " = "
+//                       << num_x_deriv.transpose() << std::endl;
+//             // BTGEN_ASSERT(false);
+//         }
+//         q_before[i] -= eps;
+//     }
+//     std::cout << "[debug] TestDqnextDqcur done, this test effect the "
+//                  "ExampleBrowser sim result\n"
+//               << ideal_DxnextDxcur << std::endl;
+//     mb->PopState("TestDqnextDqcur");
+// }
+// void btGeneralizeWorld::TestDqdotnextDqcur()
+// {
+//     auto mb = mMultibody;
+//     mb->PushState("TestDqdotnextDqcur");
+//     int dof = mb->GetNumOfFreedom();
+//     tVectorXd qdotnext_old = mb->Getqdot();
+//     tVectorXd q_before = mLastFrameInfo.q;
+//     tVectorXd qdot_before = mLastFrameInfo.qdot;
+
+//     tMatrixXd ideal_DxnextDxcur = mDqdotnextDqcur;
+//     // 2. for each freedom, back to the old state, set the control force (only), do the forward simulation
+//     // get the new state, calculate the numerical derivative & compare
+//     double eps = 1e-7;
+//     for (int i = 0; i < dof; i++)
+//     {
+//         // 2.1 back to old state
+//         q_before[i] += eps;
+//         mb->Setq(q_before);
+//         mb->Setqdot(qdot_before);
+
+//         // 2.2 clear the old force, set the ctrl force
+//         ClearForce();
+
+//         // 2.3 begin to do the forward sim
+//         {
+//             ApplyGravity();
+//             CollisionDetect();
+//             CollisionResponse(mCurdt);
+//             Update(mCurdt);
+//         }
+//         // 2.4 get the new qnext / qdotnext
+//         tVectorXd qdotnext_new = mb->Getqdot();
+
+//         // 2.5 calculate the num deriv
+//         tVectorXd num_x_deriv = (qdotnext_new - qdotnext_old) / eps;
+
+//         tVectorXd ideal_x_deriv = ideal_DxnextDxcur.col(i);
+
+//         tVectorXd diff = num_x_deriv - ideal_x_deriv;
+//         if (diff.cwiseAbs().maxCoeff() > 10 * eps)
+//         {
+//             std::cout << "[error] TestDqdotnextDqcur failed, diff = "
+//                       << diff.transpose() << std::endl;
+//             std::cout << "[debug] TestDqdotnextDqcur ideal deriv idx " << i
+//                       << " = " << ideal_x_deriv.transpose() << std::endl;
+//             std::cout << "[debug] TestDqdotnextDqcur num deriv idx " << i
+//                       << " = " << num_x_deriv.transpose() << std::endl;
+//             BTGEN_ASSERT(false);
+//         }
+//         q_before[i] -= eps;
+//     }
+//     std::cout << "[debug] TestDqdotnextDqcur succ, this test effect the "
+//                  "ExampleBrowser sim result\n"
+//               << ideal_DxnextDxcur << std::endl;
+//     mb->PopState("TestDqdotnextDqcur");
+// }
+
+// tMatrixXd btGeneralizeWorld::CalcDqnextDqdotcur() const
+// {
+//     EIGEN_V_MATXD dMTinvdqdot;
+//     int dof = mMultibody->GetNumOfFreedom();
+//     mMultibody->GetdMTildeDx(dMTinvdqdot, mCurdt);
+//     for (int i = 0; i < dof; i++)
+//         dMTinvdqdot.erase(dMTinvdqdot.begin());
+
+//     const tMatrixXd &Mt = mMultibody->GetMTilde(mCurdt);
+//     const tMatrixXd &Mtinv = Mt.inverse();
+//     const tVectorXd &qdot = mMultibody->Getqdot();
+//     const tMatrixXd &M = mMultibody->GetMassMatrix();
+//     tMatrixXd dqnext_dqdotcur = tMatrixXd::Zero(dof, dof);
+//     for (int i = 0; i < dof; i++)
+//     {
+//         dMTinvdqdot[i] = -Mtinv * dMTinvdqdot[i] * Mtinv;
+//         dqnext_dqdotcur.col(i) = dMTinvdqdot[i] * M * qdot;
+//     }
+//     dqnext_dqdotcur = mCurdt * (dqnext_dqdotcur + Mtinv * M);
+//     return dqnext_dqdotcur;
+// }
+
+// tMatrixXd btGeneralizeWorld::CalcDqdotnextDqdotcur() const
+// {
+//     EIGEN_V_MATXD dMTinvdqdot;
+//     int dof = mMultibody->GetNumOfFreedom();
+//     mMultibody->GetdMTildeDx(dMTinvdqdot, mCurdt);
+//     for (int i = 0; i < dof; i++)
+//         dMTinvdqdot.erase(dMTinvdqdot.begin());
+
+//     const tMatrixXd &Mt = mMultibody->GetMTilde(mCurdt);
+//     const tMatrixXd &Mtinv = Mt.inverse();
+//     const tVectorXd &qdot = mMultibody->Getqdot();
+//     const tMatrixXd &M = mMultibody->GetMassMatrix();
+//     tMatrixXd ddotqnext_dqdotcur = tMatrixXd::Zero(dof, dof);
+//     for (int i = 0; i < dof; i++)
+//     {
+//         dMTinvdqdot[i] = -Mtinv * dMTinvdqdot[i] * Mtinv;
+//         ddotqnext_dqdotcur.col(i) = dMTinvdqdot[i] * M * qdot;
+//     }
+//     ddotqnext_dqdotcur = ddotqnext_dqdotcur + Mtinv * M;
+//     return ddotqnext_dqdotcur;
+// }
+
+// void btGeneralizeWorld::TestDqnextDqdotcur()
+// {
+//     auto mb = mMultibody;
+//     mb->PushState("TestDqnextDqdotcur");
+//     int dof = mb->GetNumOfFreedom();
+//     tVectorXd qnext_old = mb->Getq();
+//     tVectorXd q_before = mLastFrameInfo.q;
+//     tVectorXd qdot_before = mLastFrameInfo.qdot;
+
+//     tMatrixXd ideal_DxnextDxcur = mDqnextDqdotcur;
+//     // 2. for each freedom, back to the old state, set the control force (only), do the forward simulation
+//     // get the new state, calculate the numerical derivative & compare
+//     double eps = 1e-7;
+//     for (int i = 0; i < dof; i++)
+//     {
+//         // 2.1 back to old state
+//         qdot_before[i] += eps;
+//         mb->Setq(q_before);
+//         mb->Setqdot(qdot_before);
+
+//         // 2.2 clear the old force, set the ctrl force
+//         ClearForce();
+
+//         // 2.3 begin to do the forward sim
+//         {
+//             ApplyGravity();
+//             CollisionDetect();
+//             CollisionResponse(mCurdt);
+//             Update(mCurdt);
+//         }
+//         // 2.4 get the new qnext / qdotnext
+//         tVectorXd qnext_new = mb->Getq();
+
+//         // 2.5 calculate the num deriv
+//         tVectorXd num_x_deriv = (qnext_new - qnext_old) / eps;
+
+//         tVectorXd ideal_x_deriv = ideal_DxnextDxcur.col(i);
+
+//         tVectorXd diff = num_x_deriv - ideal_x_deriv;
+//         if (diff.cwiseAbs().maxCoeff() > 10 * eps)
+//         {
+//             std::cout << "[error] TestDqnextDqdotcur failed, diff = "
+//                       << diff.transpose() << std::endl;
+//             std::cout << "[debug] TestDqnextDqdotcur ideal deriv idx " << i
+//                       << " = " << ideal_x_deriv.transpose() << std::endl;
+//             std::cout << "[debug] TestDqnextDqdotcur num deriv idx " << i
+//                       << " = " << num_x_deriv.transpose() << std::endl;
+//             BTGEN_ASSERT(false);
+//         }
+//         qdot_before[i] -= eps;
+//     }
+//     std::cout << "[debug] TestDqnextDqdotcur succ, this test effect the "
+//                  "ExampleBrowser sim result\n"
+//               << ideal_DxnextDxcur << std::endl;
+//     mb->PopState("TestDqnextDqdotcur");
+// }
+// void btGeneralizeWorld::TestDqdotnextDqdotcur()
+// {
+//     auto mb = mMultibody;
+//     mb->PushState("TestDqdotnextDqdotcur");
+//     int dof = mb->GetNumOfFreedom();
+//     tVectorXd qdotnext_old = mb->Getqdot();
+//     tVectorXd q_before = mLastFrameInfo.q;
+//     tVectorXd qdot_before = mLastFrameInfo.qdot;
+
+//     tMatrixXd ideal_DxnextDxcur = mDqdotnextDqdotcur;
+//     // 2. for each freedom, back to the old state, set the control force (only), do the forward simulation
+//     // get the new state, calculate the numerical derivative & compare
+//     double eps = 1e-7;
+//     for (int i = 0; i < dof; i++)
+//     {
+//         // 2.1 back to old state
+//         qdot_before[i] += eps;
+//         mb->Setq(q_before);
+//         mb->Setqdot(qdot_before);
+
+//         // 2.2 clear the old force, set the ctrl force
+//         ClearForce();
+
+//         // 2.3 begin to do the forward sim
+//         {
+//             ApplyGravity();
+//             CollisionDetect();
+//             CollisionResponse(mCurdt);
+//             Update(mCurdt);
+//         }
+//         // 2.4 get the new qnext / qdotnext
+//         tVectorXd qdotnext_new = mb->Getqdot();
+
+//         // 2.5 calculate the num deriv
+//         tVectorXd num_x_deriv = (qdotnext_new - qdotnext_old) / eps;
+
+//         tVectorXd ideal_x_deriv = ideal_DxnextDxcur.col(i);
+
+//         tVectorXd diff = num_x_deriv - ideal_x_deriv;
+//         if (diff.cwiseAbs().maxCoeff() > 10 * eps)
+//         {
+//             std::cout << "[error] TestDqdotnextDqdotcur failed, diff = "
+//                       << diff.transpose() << std::endl;
+//             std::cout << "[debug] TestDqdotnextDqdotcur ideal deriv idx " << i
+//                       << " = " << ideal_x_deriv.transpose() << std::endl;
+//             std::cout << "[debug] TestDqdotnextDqdotcur num deriv idx " << i
+//                       << " = " << num_x_deriv.transpose() << std::endl;
+//             BTGEN_ASSERT(false);
+//         }
+//         qdot_before[i] -= eps;
+//     }
+//     std::cout << "[debug] TestDqdotnextDqdotcur succ, this test effect the "
+//                  "ExampleBrowser sim result\n"
+//               << ideal_DxnextDxcur << std::endl;
+//     mb->PopState("TestDqdotnextDqdotcur");
+// }

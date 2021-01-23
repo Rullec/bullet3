@@ -865,14 +865,22 @@ void Link::ComputedJkwdot_dq(const tVectorXd &qdot)
  * \param dof       d(Jkvdot)/q, the target freedom id in "[0, total_freedoms]"
  * \return d(Jkvdot)/q \in R^{3 x total_freedoms}
 */
-tMatrixXd Link::GetdJkvdotdq(int dof) { return dJkvdot_dq[dof]; }
+tMatrixXd Link::GetdJkvdotdq(int dof)
+{
+    BTGEN_ASSERT(compute_third_derive);
+    return dJkvdot_dq[dof];
+}
 
 /**
  * \brief           get d(jkwdot)/dq
  * \param dof       d(Jkwdot)/q, the target freedom id in "[0, total_freedoms]"
  * \return d(Jkwdot)/q \in R^{3 x total_freedoms}
 */
-tMatrixXd Link::GetdJkwdotdq(int dof) { return dJkwdot_dq[dof]; }
+tMatrixXd Link::GetdJkwdotdq(int dof)
+{
+    BTGEN_ASSERT(compute_third_derive);
+    return dJkwdot_dq[dof];
+}
 
 /**
  * \brief           dJkwdqq : 3xnxnxn, 3 x i x j x k
@@ -895,6 +903,7 @@ EIGEN_V_MATXD Link::GetddJKw_dqq_last_channel(int k)
 */
 tMatrixXd Link::GetdJkdotdq(int dof)
 {
+    BTGEN_ASSERT(compute_third_derive);
     tMatrixXd dJkdotdqi = tMatrixXd::Zero(6, total_freedoms);
     dJkdotdqi.block(0, 0, 3, total_freedoms).noalias() = GetdJkvdotdq(dof);
     dJkdotdqi.block(3, 0, 3, total_freedoms).noalias() = GetdJkwdotdq(dof);

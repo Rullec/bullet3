@@ -890,7 +890,11 @@ void btGenContactSolver::CalcRelvelConvertMat()
             rel_vel_convert_vec.segment(3 * i, 3) =
                 mColGroupData[single_groupid]
                     ->mConvertCartesianForceToVelocityVec.segment(i * 3, 3);
-
+            if (mEnableGradientOverCtrlForce && mMultibodyArray.size())
+            {
+                mColGroupData[single_groupid]
+                    ->GetCharacterConvertMatOfResidualRecord(buffer0);
+            }
             if (mEnableGradientOverCtrlForce && mMultibodyArray.size())
             {
                 // std::cout << "[rel] residual shape "
@@ -1600,7 +1604,7 @@ tMatrixXd btGenContactSolver::CalcDxDCtrlForce() const
     if (dx_dctrlforce.hasNaN() == true)
     {
         std::cout << "[error] dx_dctrlforce has Nan\n";
-        std::cout << "Q = \n" << Q << std::endl;
+        std::cout << "Q inv = \n" << Q.inverse() << std::endl;
         std::cout << "P = \n" << P << std::endl;
         exit(0);
     }
