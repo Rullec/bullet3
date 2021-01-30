@@ -148,6 +148,7 @@ public:
     void TestmTq();
     void TestmWqq();
     void TestmWq();
+    Freedom *GetFreedom(int id);
 
 protected:
     void TestJointmTqqq(int joint);

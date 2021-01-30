@@ -10,7 +10,7 @@
     "mb_damping2": 0,
     "mb_scale": 1,
     "enable_RK4_for_multibody": false,
-    "mb_init_pose": "examples/CustomEngine/motions/2d_3links_init_pose.json",
+    "mb_init_pose": "examples/CustomEngine/motions/2d_hammer_init_pose.json",
     "mb_test_jacobian": false,
     "mb_enable_collect_frame_info": false,
     "mb_collect_frame_num": 50,

@@ -66,6 +66,7 @@ public:
     void RemoveObj(int id);
     void StepSimulation(double dt);
     void Reset();
+    void ClearDiffBuffer();
     void TestDxnextDCtrlForce();
     // get & set method
     std::vector<btGenContactForce *> GetContactForces() const;

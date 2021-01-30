@@ -1172,7 +1172,7 @@ void cRobotModel::LoadJsonModel(const char *file_path, double model_scale)
             continue;
         }
 
-        // For non-rot joint
+        // For non-root joint
         BaseObject *joint = nullptr;
         if (joint_type == JointType::BALLINSOCKET_JOINT)
         {
@@ -1240,6 +1240,10 @@ void cRobotModel::LoadJsonModel(const char *file_path, double model_scale)
                       swing_axis1 = two_axis.segment(3, 3);
             AddBallInSocketJointFreedoms(joint, lb, ub, swing_axis0,
                                          swing_axis1);
+            break;
+        }
+        case JointType::FIXED_JOINT:
+        {
             break;
         }
         default:
@@ -3087,6 +3091,12 @@ void cRobotModel::TestmWq()
     }
     Apply(q_old, true);
     std::cout << "[log] TestmWq for all joints succ\n";
+}
+
+Freedom *cRobotModel::GetFreedom(int id)
+{
+    BTGEN_ASSERT(id >= 0 && id < num_of_freedom);
+    return this->freedoms[id];
 }
 
 void cRobotModel::TestJointmTq(int id)

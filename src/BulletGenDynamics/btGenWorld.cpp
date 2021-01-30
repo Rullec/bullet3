@@ -448,11 +448,12 @@ void btGeneralizeWorld::StepSimulation(double dt)
         // ApplyGuideAction();
         CollisionResponse(dt);
         // CheckGuideTraj();
-        if (mLCPContactSolver->GetEnableGradientOverCtrlForce())
-        {
-            // mMultibody->TestdMTildeinvDx();
-            CalcDiffWorld();
-        }
+        CalcDiffWorld();
+        // if (mLCPContactSolver->GetEnableGradientOverCtrlForce())
+        // {
+        //     // mMultibody->TestdMTildeinvDx();
+
+        // }
 
         Update(dt);
         PostUpdate(dt);
@@ -1306,6 +1307,7 @@ void OutputDynamicsFTestJson(cRobotModelDynamics *mb, const std::string &path)
  */
 void btGeneralizeWorld::Reset()
 {
+    ClearDiffBuffer();
     mTime = 0;
     mFrameId = 0;
 
@@ -1326,6 +1328,13 @@ void btGeneralizeWorld::Reset()
     mMultibody->SyncToBullet();
 }
 
+void btGeneralizeWorld::ClearDiffBuffer()
+{
+    mDQconsDu.resize(0, 0);
+    mDxnextDQc_u.resize(0, 0);
+    mDxnextDQGDQGDxcur.resize(0, 0);
+    mDxnextDxcur.resize(0, 0);
+}
 bool btGeneralizeWorld::HasController() const { return mCtrl != nullptr; }
 bool btGeneralizeWorld::HasContactAwareController() const
 {
@@ -1563,10 +1572,10 @@ btGeneralizeWorld::GetIntegrationScheme() const
 void btGeneralizeWorld::CalcDiffWorld()
 {
     // btTimeUtil::Begin("calc_diff_world");
-    mDQconsDu.noalias() = CalcDQconsDu();
+    // mDQconsDu.noalias() = CalcDQconsDu();
     mDxnextDQc_u.noalias() = CalcDxnextDQc_Qu();
-    mDxnextDQGDQGDxcur.noalias() = CalcDxnextDQGDQGDxcur();
-    mDxnextDxcur.noalias() = CalcDxnextDxcur();
+    // mDxnextDQGDQGDxcur.noalias() = CalcDxnextDQGDQGDxcur();
+    // mDxnextDxcur.noalias() = CalcDxnextDxcur();
     // mDxnextDxcur.noalias() = CalcDxnextDxcur_noforce();
 
     // mDqnextDqcur = CalcDqnextDqcur();
@@ -1589,7 +1598,13 @@ tMatrixXd btGeneralizeWorld::CalcDQconsDu() const
 
     BTGEN_ASSERT(mMultibody != nullptr);
     double dt = mCurdt;
-    return mLCPContactSolver->GetDGenConsForceDCtrlForce();
+    const tMatrixXd &res = mLCPContactSolver->GetDGenConsForceDCtrlForce();
+
+    if (res.size() == 0)
+        return tMatrixXd::Zero(mMultibody->GetNumOfFreedom(),
+                               mMultibody->GetNumOfFreedom());
+    else
+        return res;
 }
 
 /**
