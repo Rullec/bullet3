@@ -882,6 +882,71 @@ void btGenCollisionGroupData::GetCharacterConvertMatOfResidualRecord(
 }
 
 /**
+ * \brief       print debug info of this group
+*/
+void btGenCollisionGroupData::PrintDebugInfo() const
+{
+    std::cout << "----------\n";
+    printf("[debug] group_id %d, contact pairs %d joint limits %d\n", mGroupId,
+           mContactPairs.size(), mJointLimits.size());
+    std::cout << "isbody0 = ";
+    for (auto b : mIsBody0)
+        std::cout << b << " ";
+    std::cout << std::endl;
+    std::cout << "abs mat norm = " << mConvertCartesianForceToVelocityMat.norm()
+              << std::endl;
+    std::cout << "abs mat norm = " << mConvertCartesianForceToVelocityVec.norm()
+              << std::endl;
+    for (int i = 0; i < mContactPairs.size(); i++)
+    {
+        {
+            auto bodya = mContactPairs[i]->mBodyA;
+            if (UpcastColObj(bodya) == nullptr)
+            {
+                std::cout << "[debug] bodyB cannot be recognized\n";
+            }
+            else
+            {
+                BTGEN_ASSERT(bodya != nullptr);
+                printf("[debug] pair %d bodyA type %d\n", i, bodya->GetType());
+                if (bodya->GetType() == eColObjType::RobotCollder)
+                {
+                    std::cout
+                        << "a link id = " << UpcastRobotCollider(bodya)->mLinkId
+                        << std::endl;
+                }
+                std::cout << "a world trans = \n"
+                          << btBulletUtil::btTransformTotMatrix(
+                                 bodya->getWorldTransform())
+                          << std::endl;
+            }
+        }
+        {
+            auto bodyb = mContactPairs[i]->mBodyB;
+            if (UpcastColObj(bodyb) == nullptr)
+            {
+                std::cout << "[debug] bodyB cannot be recognized\n";
+            }
+            else
+            {
+                BTGEN_ASSERT(bodyb != nullptr);
+                printf("[debug] pair %d bodyB type %d\n", i, bodyb->GetType());
+                if (bodyb->GetType() == eColObjType::RobotCollder)
+                {
+                    std::cout
+                        << "b link id = " << UpcastRobotCollider(bodyb)->mLinkId
+                        << std::endl;
+                }
+                std::cout << "b world trans = \n"
+                          << btBulletUtil::btTransformTotMatrix(
+                                 bodyb->getWorldTransform())
+                          << std::endl;
+            }
+        }
+    }
+    std::cout << "----------\n";
+}
+/**
  * \brief           Given the constraint_id_ingroup, do
  *      calculate the occupied size & bias of this constraint, in world row convert mat
 */

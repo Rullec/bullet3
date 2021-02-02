@@ -15,6 +15,7 @@
 #include <fstream>
 #include <iostream>
 // #define __DEBUG__
+bool gUseBulletGroundDebug = false;
 
 int global_frame_id = 0;
 std::map<int, std::string> col_name;
@@ -219,6 +220,7 @@ void btGeneralizeWorld::Init(const std::string &config_path)
 
 void btGeneralizeWorld::AddGround(double height)
 {
+    gUseBulletGroundDebug = true;
     if (mGround == nullptr)
     {
         btStaticPlaneShape *plane =
@@ -443,9 +445,20 @@ void btGeneralizeWorld::StepSimulation(double dt)
     {
         PreUpdate(dt);
         ApplyGravity();
+        if (gUseBulletGroundDebug == true)
+        {
+            mMultibody->ClearForce();
+            tVectorXd f(9);
+            f << -392, 0, 0.35210294458949320529, -24.161848936358872209,
+                -36.014052768958428885, -3.6767052469693073391,
+                94.566121177741180759, -46.691904118449265582,
+                1.1589562516815035131;
+            for (int i = 0; i < 9; i++)
+                mMultibody->ApplyGeneralizedForce(i, f[i]);
+        }
         CollisionDetect();
         UpdateController(dt);
-        // ApplyGuideAction();
+
         CollisionResponse(dt);
         // CheckGuideTraj();
         CalcDiffWorld();
@@ -476,6 +489,7 @@ void btGeneralizeWorld::StepSimulation(double dt)
 
     mFrameId++;
     global_frame_id = mFrameId;
+    // exit(0);
     // btTimeUtil::End("step");
     // if (mMultibody)
     // 	std::cout << "q = " << mMultibody->Getq().transpose() << std::endl;

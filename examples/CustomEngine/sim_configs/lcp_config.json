@@ -1,11 +1,11 @@
 {
     "lcp_solver_type": "MobyOld",
-    "enable_multibody_self_collision": true,
+    "enable_multibody_self_collision": false,
     "enable_convert_mat_test": false,
     "enable_lcp_calculation": true,
     "enable_contact_lcp": true,
     "enable_frictional_lcp": true,
-    "enable_joint_limit_lcp": false,
+    "enable_joint_limit_lcp": true,
     "use_lcp_result": true,
     "enable_contact_penetration_resolve": true,
     "enable_joint_limit_penetration_resolve": true,
@@ -23,5 +23,5 @@
     "diagonal_eps": 1e-8,
     "mu": 1,
     "num_of_friction_cone": 4,
-    "enable_lcp_profiling": true
+    "enable_lcp_profiling": false
 }

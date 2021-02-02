@@ -165,8 +165,8 @@ public:
     void SetParent(BaseObject *parent);
     BaseObject *GetParent() const;
     BaseObject *GetFirstChild();
-    tMatrix4f GetMeshMatrix();
-    tMatrix3d GetMeshRotation();
+    const tMatrix4f & GetMeshMatrix();
+    const tMatrix3d & GetMeshRotation();
     Mesh *GetMesh() const;
     tMatrix GetModelMatrix() const;
     tVector3d GetWorldPos();

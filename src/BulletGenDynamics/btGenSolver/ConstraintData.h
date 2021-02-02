@@ -137,6 +137,7 @@ struct btGenCollisionGroupData
     void Setup(int n_total_contacts, int n_total_jointlimits);
     void
     GetCharacterConvertMatOfResidualRecord(tEigenArr<tMatrixXd> &record) const;
+    void PrintDebugInfo() const;
     btGenCollisionObject
         *mBody; // the representing collision object of this collision group
     tMatrixXd mConvertCartesianForceToVelocityMat;

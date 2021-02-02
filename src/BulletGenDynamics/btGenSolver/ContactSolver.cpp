@@ -9,11 +9,13 @@
 #include "BulletGenDynamics/btGenUtil/JsonUtil.h"
 #include "BulletGenDynamics/btGenUtil/TimeUtil.hpp"
 #include "btBulletDynamicsCommon.h"
+#include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <set>
 // const std::string rigidbody_path = "rigidbody.txt";
 // const std::string multibody_path = "multibody.txt";
-
+extern bool gUseBulletGroundDebug;
 // int contact_times = 0;
 extern int global_frame_id;
 btGenRigidBody *UpcastRigidBody(const btCollisionObject *col)
@@ -382,6 +384,30 @@ void btGenContactSolver::ConstraintSolve()
     }
 }
 
+void print(btCollisionObject *obj, std::string name)
+{
+
+    std::cout << name << ": " << obj->getAnisotropicFriction() << " "
+              << obj->getContactProcessingThreshold() << " "
+              << obj->getCollisionShape() << " " << obj->getCollisionShape()
+              << " " << obj->internalGetExtensionPointer() << " "
+              << obj->getActivationState() << " " << obj->getDeactivationTime()
+              << " " << obj->getRestitution() << " " << obj->getFriction()
+              << " " << obj->getRollingFriction() << " "
+              << obj->getSpinningFriction() << " " << obj->getContactStiffness()
+              << " " << obj->getContactDamping() << " "
+              << obj->getInternalType() << " " << obj->getBroadphaseHandle()
+              << " " << obj->getBroadphaseHandle() << " " << obj->getIslandTag()
+              << " " << obj->getCompanionId() << " "
+              << obj->getWorldArrayIndex() << " " << obj->getHitFraction()
+              << " " << obj->getCollisionFlags() << " "
+              << obj->getCcdSweptSphereRadius() << " "
+              << obj->getCcdMotionThreshold() << " "
+              << obj->getCcdSquareMotionThreshold() << " "
+              << obj->getUserPointer() << " " << obj->getUserIndex() << " "
+              << obj->getUserIndex2() << " " << obj->getUserIndex3() << " "
+              << obj->getUpdateRevisionInternal() << " " << std::endl;
+}
 // extern std::string gOutputLogPath;
 void btGenContactSolver::SolveByLCP()
 {
@@ -585,12 +611,73 @@ void btGenContactSolver::SolveByLCP()
     {
         std::cout << "[error] bt LCP solved failed, ret !=0 \n";
     }
-    if (x_lcp.hasNaN() == true)
+    if (x_lcp.hasNaN() == true || (gUseBulletGroundDebug == true))
     {
+        std::cout << "-----------------------\n";
         std::cout << "[lcp] constraint force has Nan = " << x_lcp.transpose()
                   << std::endl;
-        std::cout << "M=\n" << M << std::endl;
-        std::cout << "n=\n" << n.transpose() << std::endl;
+
+        std::cout << "M norm = " << M.norm() << std::endl;
+        std::cout << "n norm = " << n.norm() << std::endl;
+        // std::ofstream fout("fail.log");
+        std::cout << std::setprecision(20);
+        std::cout << "char q = " << mMultibodyArray[0]->Getq().transpose()
+                  << std::endl;
+        std::cout << "char qdot = " << mMultibodyArray[0]->Getqdot().transpose()
+                  << std::endl;
+        std::cout << "gen force = "
+                  << this->mMultibodyArray[0]->GetGeneralizedForce().transpose()
+                  << std::endl;
+        for (int i = 0; i < mContactPairConsData.size(); i++)
+        {
+            auto &d = mContactPairConsData[i];
+            std::cout << "contact pair " << i << " bodyA = " << d->mBodyId0
+                      << " bodyB = " << d->mBodyId1 << std::endl;
+            std::cout << "contact on A = " << d->mContactPosOnA.transpose()
+                      << std::endl;
+            std::cout << "contact on B = " << d->mContactPosOnB.transpose()
+                      << std::endl;
+        }
+        {
+            btDispatcher *dispatcher = mWorld->getDispatcher();
+            int n_manifolds = dispatcher->getNumManifolds();
+            for (int i = 0; i < n_manifolds; i++)
+            {
+                const auto &manifold =
+                    dispatcher->getManifoldByIndexInternal(i);
+                if (manifold->getNumContacts() == 0)
+                    continue;
+                std::cout << "for manifold " << i << ", breaking thre = "
+                          << manifold->getContactBreakingThreshold()
+                          << " procesing thre ="
+                          << manifold->getContactProcessingThreshold()
+                          << "contact pts num = " << manifold->getNumContacts()
+                          << std::endl;
+            }
+        }
+        {
+            // examing overlapping pairs
+            auto cache = mWorld->getPairCache();
+            int num_pairs = cache->getNumOverlappingPairs();
+            auto array = cache->getOverlappingPairArray();
+            std::cout << "num pairs = " << num_pairs << std::endl;
+            for (int i = 0; i < array.size(); i++)
+            {
+                std::cout << "array " << i << " aabbmin = "
+                          << btBulletUtil::btVectorTotVector0(
+                                 array[i].m_pProxy0->m_aabbMin)
+                                 .transpose()
+                          << std::endl;
+                std::cout << "array " << i << " aabbmax = "
+                          << btBulletUtil::btVectorTotVector0(
+                                 array[i].m_pProxy0->m_aabbMax)
+                                 .transpose()
+                          << std::endl;
+            }
+        }
+
+        std::cout << "-----------------------\n";
+        BTGEN_ASSERT(false);
     }
     // check whether our guess is true？
     // VerifySolution();

@@ -520,8 +520,8 @@ void BaseObject::UpdateMeshMatrix()
         global_transform.cast<float>() * mesh_transform * scale_matrix;
 }
 
-tMatrix4f BaseObject::GetMeshMatrix() { return mesh_matrix; }
-tMatrix3d BaseObject::GetMeshRotation()
+const tMatrix4f &BaseObject::GetMeshMatrix() { return mesh_matrix; }
+const tMatrix3d &BaseObject::GetMeshRotation()
 {
     return mesh_transform.matrix().cast<double>().block(0, 0, 3, 3);
 }
