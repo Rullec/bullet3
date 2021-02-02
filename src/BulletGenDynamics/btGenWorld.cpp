@@ -15,7 +15,9 @@
 #include <fstream>
 #include <iostream>
 // #define __DEBUG__
-bool gUseBulletGroundDebug = false;
+bool gUseBulletGroundDebug_step = false;
+
+extern bool gUseBulletGroundDebug_inside_solver;
 
 int global_frame_id = 0;
 std::map<int, std::string> col_name;
@@ -220,7 +222,9 @@ void btGeneralizeWorld::Init(const std::string &config_path)
 
 void btGeneralizeWorld::AddGround(double height)
 {
-    gUseBulletGroundDebug = true;
+    gUseBulletGroundDebug_step = true;
+    gUseBulletGroundDebug_inside_solver = true;
+
     if (mGround == nullptr)
     {
         btStaticPlaneShape *plane =
@@ -445,7 +449,7 @@ void btGeneralizeWorld::StepSimulation(double dt)
     {
         PreUpdate(dt);
         ApplyGravity();
-        if (gUseBulletGroundDebug == true)
+        if (gUseBulletGroundDebug_step == true)
         {
             mMultibody->ClearForce();
             tVectorXd f(9);
@@ -455,6 +459,7 @@ void btGeneralizeWorld::StepSimulation(double dt)
                 1.1589562516815035131;
             for (int i = 0; i < 9; i++)
                 mMultibody->ApplyGeneralizedForce(i, f[i]);
+            std::cout << "[debug] stepsimulation clear & set gen force\n";
         }
         CollisionDetect();
         UpdateController(dt);

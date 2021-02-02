@@ -126,6 +126,10 @@ void CustomEngineMainDemo::initPhysics()
     if (physics_param->mAddObj)
         mGenWorld->AddObj(physics_param->mObjLinkNum, physics_param->mObjType,
                           physics_param->mEnableObjPerturb);
+
+    if (physics_param->mEnableGround)
+        mGenWorld->AddGround(physics_param->mGroundHeight);
+
     if (physics_param->mAddMultibody)
     {
         mGenWorld->AddMultibody(physics_param->mMultibodyPath);
@@ -156,9 +160,6 @@ void CustomEngineMainDemo::initPhysics()
             }
         }
     }
-
-    if (physics_param->mEnableGround)
-        mGenWorld->AddGround(physics_param->mGroundHeight);
 
     // {
     // 	btBoxShape* groundShape = createBoxShape(btVector3(btScalar(1.),

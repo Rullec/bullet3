@@ -15,7 +15,7 @@
 #include <set>
 // const std::string rigidbody_path = "rigidbody.txt";
 // const std::string multibody_path = "multibody.txt";
-extern bool gUseBulletGroundDebug;
+bool gUseBulletGroundDebug_inside_solver = false;
 // int contact_times = 0;
 extern int global_frame_id;
 btGenRigidBody *UpcastRigidBody(const btCollisionObject *col)
@@ -611,7 +611,7 @@ void btGenContactSolver::SolveByLCP()
     {
         std::cout << "[error] bt LCP solved failed, ret !=0 \n";
     }
-    if (x_lcp.hasNaN() == true || (gUseBulletGroundDebug == true))
+    if (x_lcp.hasNaN() == true || (gUseBulletGroundDebug_inside_solver == true))
     {
         std::cout << "-----------------------\n";
         std::cout << "[lcp] constraint force has Nan = " << x_lcp.transpose()
@@ -674,6 +674,10 @@ void btGenContactSolver::SolveByLCP()
                                  .transpose()
                           << std::endl;
             }
+        }
+        {
+            const auto &array = mWorld->getCollisionObjectArray();
+            std::cout << "num col objs = " << array.size() << std::endl;
         }
 
         std::cout << "-----------------------\n";
